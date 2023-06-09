@@ -477,6 +477,8 @@ define(function( require )
 		}
 		else if ( ( PACKETVER.value >= 20120307 ) && ( PACKETVER.value < 20151001 ) ) {
 			pkt = new PACKET.CH.MAKE_CHAR2();
+		} else {
+			pkt = new PACKET.CH.MAKE_CHAR3();
 		}
 		else {
 			pkt = new PACKET.CH.MAKE_CHAR3();

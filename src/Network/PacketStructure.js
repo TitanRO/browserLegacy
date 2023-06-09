@@ -4681,8 +4681,8 @@ define(['Utils/BinaryWriter', './PacketVerManager', 'Utils/Struct', 'Core/Config
 		pkt_buf.writeUChar(this.CharNum);
 		pkt_buf.writeShort(this.headPal);
 		pkt_buf.writeShort(this.head);
-		pkt_buf.writeShort(this.job);
-		offset += 2;
+		pkt_buf.writeShort(this.job); // TODO: For Doram class selection
+		pkt_buf.skip(2);
 		pkt_buf.writeUChar(this.Sex) // TODO: Sex
 		return pkt_buf;
 	};

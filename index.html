@@ -1,42 +1,50 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>ROBrowser's App from http://www.robrowser.com</title>
-		<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
-		<script type="text/javascript" src="../api.js"></script>
-		<script type="text/javascript">
-			function initialize() {
-				document.getElementById('robrowser').addEventListener("click", function(){
-					var ROConfig = {
-						type:          ROBrowser.TYPE.POPUP,
-						application:   ROBrowser.APP.ONLINE,
-						remoteClient:  "https://grf.robrowser.com/",
-						width:          800,
-						height:         600,
-						development:    true,
-						servers: [{
-							display:     "TitanRO2",
-							desc:        "TitanRO2 demo server",
-							address:     "play.titanro.net",
-							port:        6901,
-							version:     46,
-							langtype:    1,
-							packetver:   20151029,
-							packetKeys:  true,
-							socketProxy: "wss://ws.titanro.net/",
-							adminList:   [2000000]
-						}],
-						skipServerList:  true,
-						skipIntro:       false,
-					};
-					var RO = new ROBrowser(ROConfig);
-					RO.start();
-				}, false );
-			}
-			window.addEventListener("load", initialize, false);
-		</script>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+		<title>roBrowser [1.0.0 - 2024-09-28 06:17:51]</title>
 	</head>
 	<body>
-		<input type="button" value="Run roBrowser" id="robrowser"/>
+		<script>
+			window.addEventListener("load", (event) => {
+				window.ROConfig = {
+					development: false, // don't need to compile javascript files in chrome app since it's already a package.
+					remoteClient:  "https://grf.robrowser.com/",
+					servers: [
+						{
+							display: 'TitanRO2',
+							desc: "TitanRO2 demo server",
+							address: 'play.titanro.net',
+							port: 6901,
+							version: 46,
+							langtype: 1,
+							packetver: 20151029,
+							forceUseAddress: false,
+							socketProxy: "wss://ws.titanro.net/",
+							packetKeys: true
+						},
+					],
+					packetDump:  false,
+					skipServerList:  true,
+					skipIntro:       false,
+					clientVersionMode: 'PacketVer',
+					plugins: {},
+					clientHash: null,
+					enableCashShop: false,
+					enableBank: false,
+					enableMapName: false,
+					enableRefineUI: false,
+					enableDmgSuffix: false,
+					enableCheckAttendance: false,
+					CameraMaxZoomOut: 5,
+					loadLua: true,
+				};
+
+				script = document.createElement('script');
+				script.type = 'text/javascript';
+				script.src = 'Online.js';
+				document.getElementsByTagName('body')[0].appendChild(script);
+			});
+		</script>
 	</body>
 </html>

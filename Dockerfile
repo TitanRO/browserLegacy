@@ -1,30 +1,23 @@
-FROM node:20.10.0 as client
+# syntax=docker/dockerfile:experimental
+# DOCKER_BUILDKIT=1 docker build --ssh default -t registry.digitalocean.com/titanro-docr/robrowserlegacy . && docker image push registry.digitalocean.com/titanro-docr/robrowserlegacy
 
-USER root
+FROM node:20.10.0 AS node
 
-RUN apt update -y -qq && apt install build-essential -y -qq && mkdir -p /app
+WORKDIR /usr/app
+COPY ./ ./
 
-RUN npm install wsproxy -g
+RUN npm install
+RUN npm run build -- -O -T -H
 
-WORKDIR /app
 
-EXPOSE 8000
+FROM php:8-apache
 
-ENTRYPOINT "/bin/bash"
+RUN apt-get update -y && apt-get install -y libpng-dev
+RUN docker-php-ext-install pdo pdo_mysql mysqli gd
+RUN a2enmod rewrite
 
-FROM php:8.1-apache as server
+COPY --from=node /usr/app/dist/Web /var/www/html
+COPY ./index.html /var/www/html/
 
-LABEL org.opencontainers.image.description="Creates a environment to serve PHP files for the Remote Client API."
-
-WORKDIR /var/www/html
-
-USER root
-
-RUN apt-get update -y -qq
-
-RUN a2enmod rewrite && \
-    a2enmod headers
-
-EXPOSE 80
-
-USER www-data
+RUN chown -R www-data:www-data /var/www/html
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"

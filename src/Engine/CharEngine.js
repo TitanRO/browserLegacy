@@ -480,9 +480,6 @@ define(function( require )
 		} else {
 			pkt = new PACKET.CH.MAKE_CHAR3();
 		}
-		else {
-			pkt = new PACKET.CH.MAKE_CHAR3();
-		}
 
 		pkt.name    = name;
 		pkt.head    = hair;

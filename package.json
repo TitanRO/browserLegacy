@@ -24,5 +24,8 @@
 		"live-server": "^1.2.2",
 		"requirejs": "^2.3.6",
 		"terser": "^5.19.4"
+	},
+	"dependencies": {
+		"node": "^22.9.0"
 	}
 }

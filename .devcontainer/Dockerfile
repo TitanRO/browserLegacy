@@ -1,4 +1,6 @@
 FROM ubuntu
+RUN userdel -r ubuntu
+
 ARG USERNAME=devuser
 
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
@@ -13,6 +15,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     sudo \
     gnupg2 \
     lsb-release \
+    mariadb-client \
     && curl -fsSL https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]')/gpg | apt-key add - 2>/dev/null \
     && echo "deb [arch=amd64] https://download.docker.com/linux/$(lsb_release -is | tr '[:upper:]' '[:lower:]') $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list \
     && apt-get update \
@@ -37,6 +40,9 @@ RUN echo "#!/bin/sh\n\
 RUN curl -sL https://github.com/digitalocean/doctl/releases/download/v1.63.1/doctl-1.63.1-linux-amd64.tar.gz | tar -xzv && mv doctl /usr/local/bin
 RUN curl -s https://raw.githubusercontent.com/viaduct-ai/kustomize-sops/master/scripts/install-ksops-archive.sh | bash
 
+### Custom changes (root) START
+### Custom changes (root) END
+
 USER $USERNAME
 ENV HOME /home/$USERNAME
 
@@ -51,3 +57,6 @@ ENV XDG_CONFIG_HOME $HOME/.config
 # The script will also execute CMD if you need to alter startup behaviors.
 ENTRYPOINT [ "/usr/local/share/docker-init.sh" ]
 CMD [ "sleep", "infinity" ]
+
+### Custom changes (non-root) START
+### Custom changes (non-root) END

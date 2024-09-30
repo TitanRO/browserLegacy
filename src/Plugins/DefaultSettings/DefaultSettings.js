@@ -1,5 +1,6 @@
 define(function( require )
 {
+    var Preferences = require('Core/Preferences');
 	var Audio = require('Preferences/Audio');
 	var Map = require('Preferences/Map');
 

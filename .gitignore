@@ -6,7 +6,6 @@
 /client/System/*
 /dist/
 /node_modules/
-/src/Plugins/*/
 /package-lock.json
 /GrannyModelViewer.js
 /GrfViewer.js

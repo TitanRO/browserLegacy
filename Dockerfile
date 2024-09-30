@@ -18,7 +18,7 @@ RUN a2enmod rewrite
 
 COPY --from=node /usr/app/dist/Web /var/www/html
 COPY ./index.html /var/www/html/
-COPY src/Plugins /var/www/html/src/
+COPY src/Plugins /var/www/html/src/Plugins/
 
 RUN chown -R www-data:www-data /var/www/html
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"

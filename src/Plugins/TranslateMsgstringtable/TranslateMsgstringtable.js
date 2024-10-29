@@ -8,9 +8,9 @@
 define(function( require )
 {
     // Dependencies
-    var DB = require('DB/DBManager');
-    var Engine = require('Engine/GameEngine');
-	var Queue       = require('Utils/Queue');
+    var DB               = require('DB/DBManager');
+    var Client           = require('Core/Client');
+    var TextEncoding     = require('Vendors/text-encoding');
 
 	var MsgStringTable_tr = [];
 
@@ -22,51 +22,48 @@ define(function( require )
     return function Init(){
         console.log('TranslateMsgstringtable Init() called');
         // Already loaded.
-        // if (DB.TranslateMsgstringtableEnabled) {
-        //     return true;
-        // }
+        if (DB.TranslateMsgstringtableEnabled) {
+            return true;
+        }
 
         lang_list.forEach(lang => {
             MsgStringTable_tr[lang] = [];
         });
 
-        const defaultLoadFiles = Engine.loadFiles;
-        const customLoadFiles = function(callback) {
-            console.log('TranslateMsgstringtable customLoadFiles() called');
-            defaultLoadFiles.apply(this, arguments);
+        function loadTable(filename, separator, size, callback)
+        {
+            Client.loadFile( filename, function(data) {
+                console.log('Loading file "'+ filename +'"...');
 
-            lang_list.forEach(lang => {
-                DB.loadTable( 'data/msgstringtable_br.txt', '#', 1, function(index, val){ MsgStringTable_tr['br'][index] = val;}, function(){});
+                // Remove commented lines
+                var content  = ('\n' + data).replace(/\n(\/\/[^\n]+)/g, '');
+                var elements = content.split(separator);
+                var i, count = elements.length;
+                var args     = new Array(size+1);
+
+                for (i = 0; i < count; i++) {
+                    if (i%size === 0) {
+                        if (i) {
+                            callback.apply( null, args );
+                        }
+                        args[i%size] = i;
+                    }
+
+                    args[(i%size)+1] = elements[i].replace(/^\s+|\s+$/g, ''); // trim
+                }
             });
         }
-        Engine.loadFiles = customLoadFiles;
 
-        const defaultInit = DB.Init;
+        const defaultInit = DB.init;
         const customInit = function() {
-            console.log('TranslateMsgstringtable customInit() called');
             defaultInit.apply(this, arguments);
-            // TODO: Not sure if this works as expected in a plugin, but see if it breaks anything.
-            var index = 0, count = 0;
-            function onLoad(){
-                count++;
-                return function OnLoadClosure(){
-                    index++;
 
-                    if (DB.onProgress) {
-                        DB.onProgress(index, count);
-                    }
-
-                    if (index === count && DB.onReady) {
-                        DB.onReady();
-                    }
-                };
-            }
             lang_list.forEach(lang => {
-                DB.loadTable( 'data/msgstringtable_' + lang + '.txt', '#', 1, function(index, val){ MsgStringTable_tr['br'][index] = val;}, onLoad());
+                loadTable( 'data/msgstringtable_' + lang + '.txt', '#', 1, function(index, val){ MsgStringTable_tr['br'][index] = val;});
             });
             // MsgStringTable_tr[default_lang] = DB.MsgStringTable;
         }
-        DB.Init = customInit;
+        DB.init = customInit;
 
         const defaultGetMessage = DB.getMessage;
         //DB.getMessage = function getMessage(id, defaultText, lang=undefined)
@@ -86,7 +83,7 @@ define(function( require )
         DB.getMessage = customGetMessage;
 
         // Record plugin as enabled.
-        // DB.TranslateMsgstringtableEnabled = true;
+        DB.TranslateMsgstringtableEnabled = true;
 
         // Return true to signal successful initialization
         return true;

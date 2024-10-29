@@ -13,7 +13,7 @@
 					servers: [
 						{
 							display: 'TitanRO2',
-							desc: "TitanRO2 demo server",
+							desc: "SeasonRO demo server",
 							address: 'play.titanro.net',
 							port: 6901,
 							version: 46,
@@ -23,14 +23,25 @@
 							socketProxy: "wss://ws.titanro.net/",
 							packetKeys: true
 						},
+						{
+							display: 'JitanRO',
+							desc: "JitanRO test server",
+							address: 'test.titanro.net',
+							port: 6903,
+							version: 46,
+							langtype: 1,
+							packetver: 20151029,
+							forceUseAddress: false,
+							socketProxy: "wss://test.ws.titanro.net/",
+							packetKeys: true
+						},
 					],
 					packetDump:  false,
-					skipServerList:  true,
+					skipServerList:  false,
 					skipIntro:       false,
 					clientVersionMode: 'PacketVer',
 					plugins: {
 						DefaultSettings: 'DefaultSettings/DefaultSettings',
-						TranslateMsgstringtable: 'TranslateMsgstringtable/TranslateMsgstringtable',
 					},
 					clientHash: null,
 					enableCashShop: false,

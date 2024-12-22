@@ -9,7 +9,7 @@
 			window.addEventListener("load", (event) => {
 				window.ROConfig = {
 					development: false, // don't need to compile javascript files in chrome app since it's already a package.
-					remoteClient:  "https://grf.robrowser.com/",
+					remoteClient:  "https://grf.titanro.net/",
 					servers: [
 						{
 							display: 'TitanRO2',
@@ -33,12 +33,12 @@
 							packetver: 20151029,
 							forceUseAddress: false,
 							socketProxy: "wss://test.ws.titanro.net/",
-							packetKeys: true
+							packetKeys: false
 						},
 					],
 					packetDump:  false,
 					skipServerList:  false,
-					skipIntro:       false,
+					skipIntro:       true,
 					clientVersionMode: 'PacketVer',
 					plugins: {
 						DefaultSettings: 'DefaultSettings/DefaultSettings',
@@ -50,9 +50,9 @@
 					enableRefineUI: false,
 					enableDmgSuffix: false,
 					enableCheckAttendance: false,
-					CameraMaxZoomOut: 5,
+					CameraMaxZoomOut: 7,
 					loadLua: true,
-					enableConsole: true,
+					enableConsole: false,
 				};
 
 				script = document.createElement('script');

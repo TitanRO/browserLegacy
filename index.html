@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-		<title>roBrowser [1.0.0 - 2024-09-28 06:17:51]</title>
+		<title>TitanRO2 test server</title>
 	</head>
 	<body>
 		<script>
@@ -13,7 +13,7 @@
 					servers: [
 						{
 							display: 'TitanRO2',
-							desc: "SeasonRO demo server",
+							desc: "TitanRO2 test server",
 							address: 'play.titanro.net',
 							port: 6901,
 							version: 46,
@@ -23,21 +23,9 @@
 							socketProxy: "wss://ws.titanro.net/",
 							packetKeys: true
 						},
-						{
-							display: 'JitanRO',
-							desc: "JitanRO test server",
-							address: 'test.titanro.net',
-							port: 6903,
-							version: 46,
-							langtype: 1,
-							packetver: 20151029,
-							forceUseAddress: false,
-							socketProxy: "wss://test.ws.titanro.net/",
-							packetKeys: false
-						},
 					],
 					packetDump:  false,
-					skipServerList:  false,
+					skipServerList:  true,
 					skipIntro:       true,
 					clientVersionMode: 'PacketVer',
 					plugins: {
@@ -50,7 +38,7 @@
 					enableRefineUI: false,
 					enableDmgSuffix: false,
 					enableCheckAttendance: false,
-					CameraMaxZoomOut: 7,
+					CameraMaxZoomOut: 5,
 					loadLua: true,
 					enableConsole: false,
 				};

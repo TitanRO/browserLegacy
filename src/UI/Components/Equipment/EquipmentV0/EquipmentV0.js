@@ -33,6 +33,7 @@ define(function(require)
 	var UIComponent        = require('UI/UIComponent');
 	var ItemInfo           = require('UI/Components/ItemInfo/ItemInfo');
 	var CartItems          = require('UI/Components/CartItems/CartItems');
+	var WinStats           = require('UI/Components/WinStats/WinStats');
 	var htmlText           = require('text!./EquipmentV0.html');
 	var cssText            = require('text!./EquipmentV0.css');
 	var getModule          = require;
@@ -354,17 +355,15 @@ define(function(require)
 	 */
 	function toggleStatus()
 	{
-		if (UIVersionManager.getEquipmentVersion() > 0) {
-			var status = EquipmentV0.ui.find('.status_component');
-			var self   = EquipmentV0.ui.find('.view_status');
-			var state  = status.is(':visible') ? 'on' : 'off';
+		var self   = EquipmentV0.ui.find('.view_status');
+		var status = WinStats.getUI().ui;
+		var state  = status.is(':visible') ? 'on' : 'off';
 
-			status.toggle();
+		status.toggle();
 
-			Client.loadFile( DB.INTERFACE_PATH + 'basic_interface/view' + state + '.bmp', function(data){
-				self.css('backgroundImage', 'url(' + data + ')');
-			});
-		}
+		Client.loadFile( DB.INTERFACE_PATH + 'basic_interface/view' + state + '.bmp', function(data){
+			self.css('backgroundImage', 'url(' + data + ')');
+		});
 	}
 
 
@@ -512,7 +511,7 @@ define(function(require)
 			if (data.type === 'item') {
 				item = data.data;
 
-				if ((item.type === ItemType.WEAPON || item.type === ItemType.EQUIP) &&
+				if ((item.type === ItemType.WEAPON || item.type === ItemType.ARMOR || item.type === ItemType.SHADOWGEAR) &&
 				    item.IsIdentified && !item.IsDamaged) {
 					selector = getSelectorFromLocation( 'location' in item ? item.location : item.WearLocation);
 					ui       = EquipmentV0.ui.find(selector);
@@ -558,7 +557,7 @@ define(function(require)
 		if (data && data.type === 'item') {
 			item = data.data;
 
-			if ((item.type === ItemType.WEAPON || item.type === ItemType.EQUIP || item.type === ItemType.AMMO) &&
+			if ((item.type === ItemType.WEAPON || item.type === ItemType.ARMOR || item.type === ItemType.AMMO || item.type === ItemType.SHADOWGEAR) &&
 			    item.IsIdentified && !item.IsDamaged) {
 			    EquipmentV0.ui.find('td').css('backgroundImage','none');
 				EquipmentV0.onEquipItem( item.index, 'location' in item ? item.location : item.WearState );

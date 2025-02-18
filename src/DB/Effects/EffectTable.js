@@ -1,5 +1,5 @@
 /**
- * DB/Effects/EffectTable.js
+ * @module DB/Effects/EffectTable
  *
  * List effects
  * TODO: complete the list, add informations about sound.
@@ -4024,7 +4024,7 @@ define(function( require )
 		//229: [{}],	//EF_CLOUD	   (Nothing)
 		//230: [{}],	//EF_CLOUD2	   (Nothing)
 		//231: [{}],	//EF_MAPPILLAR	   Map Light Pillar Animation 1
-		
+
 		232: [{	//EF_LINELINK	   Sacrifice (Visual Effect)
 			type: '3D',
 			alphaMax: 0.5,
@@ -4046,7 +4046,7 @@ define(function( require )
 			zOffset: 1,
 			zIndex: 1
 		}],
-		
+
 		//233: [{}],	//EF_CLOUD3	   Fog
 
 		234: [{	//EF_SPELLBREAKER	Spell Breaker
@@ -4781,7 +4781,7 @@ define(function( require )
 				}
 			}
 		}],
-		
+
 		296: [{	//EF_TALK_SCREAM	   Scream
 			type: 'FUNC',
 			attachedEntity: true,
@@ -4798,7 +4798,7 @@ define(function( require )
 				}
 			}
 		}],
-		
+
 		//297: [{}],	//EF_POKJUK	   Fire Works (Visual Effect)
 
 		298: [{	//EF_THROWITEM	   Acid Terror Animnation
@@ -11557,10 +11557,124 @@ define(function( require )
 			file: '\xc3\xbb\xb7\xcf\xbb\xf6\xc6\xae\xb7\xa6',
 			attachedEntity: true,
 		}],
+		
+		'ef_trap_01': [{
+			type: 'RSM',
+			file: '\xbf\xdc\xba\xce\xbc\xd2\xc7\xb0\x5c\xc6\xae\xb7\xa601',
+			attachedEntity: true
+		}],
+		
+		'ef_trap_02': [{
+			type: 'RSM',
+			file: '\xbf\xdc\xba\xce\xbc\xd2\xc7\xb0\x5c\xc6\xae\xb7\xa602',
+			attachedEntity: true
+		}],
+		
+		'ef_trap_03': [{
+			type: 'RSM',
+			file: '\xbf\xdc\xba\xce\xbc\xd2\xc7\xb0\x5c\xc6\xae\xb7\xa603',
+			attachedEntity: true
+		}],
+		
+		'ef_trap_03_2': [{
+			type: 'RSM',
+			file: '\xbf\xdc\xba\xce\xbc\xd2\xc7\xb0\x5c\xc6\xae\xb7\xa603_2',
+			attachedEntity: true
+		}],
+		
+		'ef_trap_03_3': [{
+			type: 'RSM',
+			file: '\xbf\xdc\xba\xce\xbc\xd2\xc7\xb0\x5c\xc6\xae\xb7\xa603_3',
+			attachedEntity: true
+		}],
+		
+		'ef_trap_03_4': [{
+			type: 'RSM',
+			file: '\xbf\xdc\xba\xce\xbc\xd2\xc7\xb0\x5c\xc6\xae\xb7\xa603_4',
+			attachedEntity: true
+		}],
+		
+		'ef_trap_03_5': [{
+			type: 'RSM',
+			file: '\xbf\xdc\xba\xce\xbc\xd2\xc7\xb0\x5c\xc6\xae\xb7\xa603_5',
+			attachedEntity: true
+		}],
+		
+		'ef_trap_03_6': [{
+			type: 'RSM',
+			file: '\xbf\xdc\xba\xce\xbc\xd2\xc7\xb0\x5c\xc6\xae\xb7\xa603_6',
+			attachedEntity: true
+		}],
+		
+		'ef_trap_04': [{
+			type: 'RSM',
+			file: '\xbf\xdc\xba\xce\xbc\xd2\xc7\xb0\x5c\xc6\xae\xb7\xa604',
+			attachedEntity: true
+		}],
+		
+		'ef_trap_05': [{
+			type: 'RSM',
+			file: '\xbf\xdc\xba\xce\xbc\xd2\xc7\xb0\x5c\xc6\xae\xb7\xa605',
+			attachedEntity: true
+		}],
+		
+		'ef_trap_3_thorn': [{
+			type: 'RSM',
+			file: 'event/3\xc2\xf7\xc6\xae\xb7\xa6_\xb0\xa1\xbd\xc301',
+			attachedEntity: true
+		}],
+		
+		'ef_trap_3_cobalt': [{
+			type: 'RSM',
+			file: 'event/3\xc2\xf7\xc6\xae\xb7\xa6_\xba\xaf\xbc\xf601',
+			attachedEntity: true
+		}],
+		
+		'ef_trap_3_maze': [{
+			type: 'RSM',
+			file: 'event/3\xc2\xf7\xc6\xae\xb7\xa6_\xba\xaf\xc1\xf601',
+			attachedEntity: true
+		}],
+		
+		'ef_trap_3_verdure': [{
+			type: 'RSM',
+			file: 'event/3\xc2\xf7\xc6\xae\xb7\xa6_\xba\xaf\xc7\xb301',
+			attachedEntity: true
+		}],
+		
+		'ef_trap_3_magenta': [{
+			type: 'RSM',
+			file: 'event/3\xc2\xf7\xc6\xae\xb7\xa6_\xba\xaf\xc8\xad01',
+			attachedEntity: true
+		}],
+		
+		'ef_trap_3_ice': [{
+			type: 'RSM',
+			file: 'event/3\xc2\xf7\xc6\xae\xb7\xa6_\xbc\xf601',
+			attachedEntity: true
+		}],
+		
+		'ef_trap_3_cluster': [{
+			type: 'RSM',
+			file: 'event/3\xc2\xf7\xc6\xae\xb7\xa6_\xc1\xf601',
+			attachedEntity: true
+		}],
+		
+		'ef_trap_3_shock': [{
+			type: 'RSM',
+			file: 'event/3\xc2\xf7\xc6\xae\xb7\xa6_\xc7\xb301',
+			attachedEntity: true
+		}],
+		
+		'ef_trap_3_fire': [{
+			type: 'RSM',
+			file: 'event/3\xc2\xf7\xc6\xae\xb7\xa6_\xc8\xad01',
+			attachedEntity: true
+		}],
 
 		'ef_': [{
 			wav: 'effect/',
 			attachedEntity: true
-		}]
+		}],
 	};
 });

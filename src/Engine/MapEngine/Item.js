@@ -557,15 +557,29 @@ define(function( require )
 	 */
 	function onMakeitem_List( pkt )
 	{
-		if (!pkt.idList.length) {
-			return;
+		let itemList;
+		let makeType;
+		if (PACKETVER.value >= 20211103) {
+			if (!pkt.items.length) {
+				return;
+			}
+			itemList = pkt.items.map(item => item.itemId);
+			makeType = pkt.makeItem;
+		} else {
+			if (!pkt.idList.length) {
+				return;
+			}
+			itemList = pkt.idList;
+			makeType = itemList[0]; // First item is mktype for older versions
+			itemList = itemList.slice(1); // Remove mktype from item list
 		}
+
 		MakeItemSelection.append();
-		MakeItemSelection.setCookingList(pkt.idList);
+		MakeItemSelection.setCookingList(itemList, makeType);
 		MakeItemSelection.setTitle(DB.getMessage(425));
 		MakeItemSelection.onIndexSelected = function(index, material, mkType) {
 			if (index >= -1) {
-				var pkt   = new PACKET.CZ.REQ_MAKINGITEM();
+				var pkt = new PACKET.CZ.REQ_MAKINGITEM();
 				pkt.mkType = mkType;
 				pkt.id = index;
 				Network.sendPacket(pkt);
@@ -737,7 +751,8 @@ define(function( require )
 		Network.hookPacket( PACKET.ZC.CART_NORMAL_ITEMLIST4,        onCartSetList );
 		Network.hookPacket( PACKET.ZC.CART_EQUIPMENT_ITEMLIST3,        onCartSetList );
 		Network.hookPacket( PACKET.ZC.CART_EQUIPMENT_ITEMLIST4,        onCartSetList );
-		Network.hookPacket( PACKET.ZC.NOTIFY_CARTITEM_COUNTINFO,        onCartSetInfo );
+		Network.hookPacket( PACKET.ZC.CART_EQUIPMENT_ITEMLIST5,        onCartSetList );
+		Network.hookPacket( PACKET.ZC.NOTIFY_CARTITEM_COUNTINFO,       onCartSetInfo );
 		Network.hookPacket( PACKET.ZC.EQUIPMENT_ITEMLIST,     onInventorySetList );
 		Network.hookPacket( PACKET.ZC.EQUIPMENT_ITEMLIST2,    onInventorySetList );
 		Network.hookPacket( PACKET.ZC.EQUIPMENT_ITEMLIST3,    onInventorySetList );

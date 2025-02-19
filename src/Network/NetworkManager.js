@@ -44,6 +44,31 @@ define(function( require )
 	 */
 	var _socket  = null;
 
+	/**
+	 * Add a socket to the list
+	 * @param {Socket} socket
+	 */
+	function addSocket(socket) {
+		_sockets.push(socket);
+		_socket = socket;
+	}
+
+	/**
+	 * Get the current socket
+	 * @return {Socket}
+	 */
+	function getSocket() {
+		return _socket;
+	}
+
+	/**
+	 * Get the list of sockets
+	 * @return {Socket[]}
+	 */
+	function getSockets() {
+		return _sockets;
+	}
+
 
 	/**
 	 * Buffer to use to read packets
@@ -503,10 +528,15 @@ define(function( require )
 			connect:    connect,
 			hookPacket: hookPacket,
 			close:      close,
+			onClose:    onClose,
 			read:       read,
+			receive:    receive,
+			addSocket:  addSocket,
+			getSocket:  getSocket,
+			getSockets: getSockets,
 			utils: {
 				longToIP: utilsLongToIP
-			}
+			},
 		};
 	})();
 });

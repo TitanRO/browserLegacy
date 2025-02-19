@@ -587,10 +587,21 @@ define(['Core/Configs'], function( Configs )
 
 
 	/**
+	 * Get the packet keys
+	 * To be used with the ServiceWorker plugin which handles encryption (and
+	 * updating keys) in the service worker.
+	 * @returns {Uint32Array}
+	 */
+	function getKeys() {
+		return _keys;
+	}
+
+	/**
 	 * Export
 	 */
 	return {
 		init:    Init,
-		process: Process
+		process: Process,
+		getKeys: getKeys
 	};
 });

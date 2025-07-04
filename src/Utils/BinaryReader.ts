@@ -1,544 +1,659 @@
 /**
  * Utils/BinaryReader.ts
  *
- * Modern Binary Data Reader for ROBrowser
- * Helper to load/parse binary data from sockets, files, and other sources
+ * BinaryReader Helper
+ *
+ * Helper to load/parse Binary data (sockets, files)
  *
  * This file is part of ROBrowser, (http://www.robrowser.com/).
  *
  * @author Vincent Thibault
  */
 
-// import Struct from './Struct'; // TODO: Modernize Struct.js first
+import Struct from './Struct';
 
 /**
- * Temporary Struct interface for compatibility
- */
-interface Struct {
-  getFieldList(): Record<string, { count: number; func: string }>;
-}
-
-/**
- * Seek constants for cursor positioning
+ * Binary seek constants
  */
 export const SEEK_CUR = 1;
 export const SEEK_SET = 2;
 export const SEEK_END = 3;
 
 /**
- * Position data type
+ * Seek mode type
  */
-export type Position = [number, number, number]; // [x, y, direction]
+export type SeekMode = typeof SEEK_CUR | typeof SEEK_SET | typeof SEEK_END;
 
 /**
- * Extended position data type for movement
+ * Text encoding options
  */
-export type Position2 = [number, number, number, number, number, number]; // [from_x, from_y, to_x, to_y, subx, suby]
+export interface TextEncodingOptions {
+    /** Text encoding (default: 'utf-8') */
+    encoding?: string;
+    /** Whether to handle null-terminated strings */
+    nullTerminated?: boolean;
+    /** Whether to trim whitespace */
+    trim?: boolean;
+}
 
 /**
- * Supported buffer input types
+ * Position data structure
  */
-export type BufferInput = string | ArrayBuffer | Uint8Array;
+export interface Position {
+    x: number;
+    y: number;
+    direction: number;
+}
 
 /**
- * Modern binary data reader with comprehensive type safety
+ * Position2 data structure (movement)
+ */
+export interface Position2 {
+    fromX: number;
+    fromY: number;
+    toX: number;
+    toY: number;
+    subX: number;
+    subY: number;
+}
+
+/**
+ * BinaryReader statistics
+ */
+export interface BinaryReaderStats {
+    /** Total buffer size */
+    totalSize: number;
+    /** Current position */
+    position: number;
+    /** Remaining bytes */
+    remaining: number;
+    /** Bytes read */
+    bytesRead: number;
+}
+
+/**
+ * Modern BinaryReader with comprehensive type safety and advanced features
  */
 export class BinaryReader {
-  private buffer: ArrayBuffer;
-  private view: DataView;
-  private _offset = 0;
-  private _length: number;
-
-  // Static buffers for position reading (performance optimization)
-  private static readonly positionBuffer = new ArrayBuffer(4);
-  private static readonly positionByteArray = new Int8Array(BinaryReader.positionBuffer);
-  private static readonly positionIntArray = new Int32Array(BinaryReader.positionBuffer);
-
-  /**
-   * Create a new BinaryReader instance
-   *
-   * @param input - Buffer data (string, ArrayBuffer, or Uint8Array)
-   * @param start - Start offset (optional)
-   * @param end - End offset (optional)
-   */
-  constructor(input: BufferInput, start = 0, end?: number) {
-    this.buffer = this.normalizeBuffer(input);
-    const actualEnd = end ?? this.buffer.byteLength;
-    this._length = actualEnd - start;
+    /** Underlying ArrayBuffer */
+    public readonly buffer: ArrayBuffer;
     
-    this.view = new DataView(this.buffer, start, this._length);
-    this._offset = 0;
-  }
-
-  /**
-   * Normalize input to ArrayBuffer
-   */
-  private normalizeBuffer(input: BufferInput): ArrayBuffer {
-    if (typeof input === 'string') {
-      const length = input.length;
-      const buffer = new ArrayBuffer(length);
-      const uint8 = new Uint8Array(buffer);
-
-      for (let i = 0; i < length; i++) {
-        uint8[i] = input.charCodeAt(i) & 0xff;
-      }
-
-      return buffer;
-    }
-
-    if (input instanceof ArrayBuffer) {
-      return input;
-    }
-
-    if (input instanceof Uint8Array) {
-      return input.buffer.slice(input.byteOffset, input.byteOffset + input.byteLength);
-    }
-
-    throw new Error('BinaryReader: Unsupported buffer type');
-  }
-
-  /**
-   * Get current offset position
-   */
-  get offset(): number {
-    return this._offset;
-  }
-
-  /**
-   * Get total buffer length
-   */
-  get length(): number {
-    return this._length;
-  }
-
-  /**
-   * Get remaining bytes count
-   */
-  get remaining(): number {
-    return this._length - this._offset;
-  }
-
-  /**
-   * Check if we've reached the end of buffer
-   */
-  get isEOF(): boolean {
-    return this._offset >= this._length;
-  }
-
-  /**
-   * Read signed 8-bit integer
-   */
-  getInt8(): number {
-    this.checkBounds(1);
-    return this.view.getInt8(this._offset++);
-  }
-
-  readChar(): number {
-    return this.getInt8();
-  }
-
-  readByte(): number {
-    return this.getInt8();
-  }
-
-  /**
-   * Read unsigned 8-bit integer
-   */
-  getUint8(): number {
-    this.checkBounds(1);
-    return this.view.getUint8(this._offset++);
-  }
-
-  readUChar(): number {
-    return this.getUint8();
-  }
-
-  readUByte(): number {
-    return this.getUint8();
-  }
-
-  /**
-   * Read signed 16-bit integer (little-endian)
-   */
-  getInt16(): number;
-  readShort(): number;
-  getInt16(): number {
-    this.checkBounds(2);
-    const data = this.view.getInt16(this._offset, true);
-    this._offset += 2;
-    return data;
-  }
-
-  readShort = this.getInt16;
-
-  /**
-   * Read unsigned 16-bit integer (little-endian)
-   */
-  getUint16(): number;
-  readUShort(): number;
-  getUint16(): number {
-    this.checkBounds(2);
-    const data = this.view.getUint16(this._offset, true);
-    this._offset += 2;
-    return data;
-  }
-
-  readUShort = this.getUint16;
-
-  /**
-   * Read signed 32-bit integer (little-endian)
-   */
-  getInt32(): number;
-  readInt(): number;
-  readLong(): number;
-  getInt32(): number {
-    this.checkBounds(4);
-    const data = this.view.getInt32(this._offset, true);
-    this._offset += 4;
-    return data;
-  }
-
-  readInt = this.getInt32;
-  readLong = this.getInt32;
-
-  /**
-   * Read unsigned 32-bit integer (little-endian)
-   */
-  getUint32(): number;
-  readUInt(): number;
-  readULong(): number;
-  getUint32(): number {
-    this.checkBounds(4);
-    const data = this.view.getUint32(this._offset, true);
-    this._offset += 4;
-    return data;
-  }
-
-  readUInt = this.getUint32;
-  readULong = this.getUint32;
-
-  /**
-   * Read 32-bit float (little-endian)
-   */
-  getFloat32(): number;
-  readFloat(): number;
-  getFloat32(): number {
-    this.checkBounds(4);
-    const data = this.view.getFloat32(this._offset, true);
-    this._offset += 4;
-    return data;
-  }
-
-  readFloat = this.getFloat32;
-
-  /**
-   * Read 64-bit float (little-endian)
-   */
-  getFloat64(): number;
-  readDouble(): number;
-  getFloat64(): number {
-    this.checkBounds(8);
-    const data = this.view.getFloat64(this._offset, true);
-    this._offset += 8;
-    return data;
-  }
-
-  readDouble = this.getFloat64;
-
-  /**
-   * Read unsigned 64-bit integer (little-endian)
-   * Note: JavaScript's Number precision limitation applies
-   */
-  getUint64(): number;
-  readUInt64(): number;
-  getUint64(): number {
-    this.checkBounds(8);
+    /** DataView for efficient binary operations */
+    public readonly view: DataView;
     
-    // Split 64-bit number into two 32-bit parts (little-endian)
-    const left = this.view.getUint32(this._offset, true);
-    const right = this.view.getUint32(this._offset + 4, true);
+    /** Current read offset */
+    public offset: number = 0;
     
-    // Combine the two 32-bit values
-    const combined = left + 2 ** 32 * right;
+    /** Total length of the buffer */
+    public readonly length: number;
     
-    if (!Number.isSafeInteger(combined)) {
-      console.warn(`Value ${combined} exceeds MAX_SAFE_INTEGER. Precision may be lost`);
-    }
+    /** Text decoder for string operations */
+    private _textDecoder: TextDecoder;
     
-    this._offset += 8;
-    return combined;
-  }
+    /** Temporary buffer for position operations */
+    private static _tempBuffer = new ArrayBuffer(4);
+    private static _tempInt8Array = new Int8Array(BinaryReader._tempBuffer);
+    private static _tempInt32Array = new Int32Array(BinaryReader._tempBuffer);
 
-  readUInt64 = this.getUint64;
+    /**
+     * Create a new BinaryReader
+     * 
+     * @param source - Source data (string, ArrayBuffer, or Uint8Array)
+     * @param start - Start offset (optional)
+     * @param end - End offset (optional)
+     * @throws {Error} If source type is not supported
+     */
+    constructor(source: string | ArrayBuffer | Uint8Array, start?: number, end?: number) {
+        let buffer: ArrayBuffer;
 
-  /**
-   * Get current buffer position
-   */
-  tell(): number {
-    return this._offset;
-  }
-
-  /**
-   * Read UTF-8 string of specified length
-   */
-  getString(length: number): string;
-  readString(length: number): string;
-  getString(length: number): string {
-    this.checkBounds(length);
-    
-    const startOffset = this._offset;
-    const data = new Uint8Array(length);
-    let actualLength = 0;
-
-    for (let i = 0; i < length; i++) {
-      const byte = this.getUint8();
-      if (byte === 0) {
-        break;
-      }
-      data[i] = byte;
-      actualLength++;
-    }
-
-    this._offset = startOffset + length;
-
-    // Use TextDecoder for proper UTF-8 decoding
-    try {
-      const decoder = new TextDecoder('utf-8', { fatal: true });
-      return decoder.decode(data.subarray(0, actualLength));
-    } catch (error) {
-      // Fallback to binary string if UTF-8 decoding fails
-      console.warn('Failed to decode as UTF-8, falling back to binary string');
-      return this.decodeBinaryString(data.subarray(0, actualLength));
-    }
-  }
-
-  readString = this.getString;
-
-  /**
-   * Read binary string (raw bytes as characters)
-   */
-  getBinaryString(length: number): string;
-  readBinaryString(length: number): string;
-  getBinaryString(length: number): string {
-    this.checkBounds(length);
-    
-    const startOffset = this._offset;
-    const bytes = new Uint8Array(length);
-    let actualLength = 0;
-
-    for (let i = 0; i < length; i++) {
-      const byte = this.getUint8();
-      if (byte === 0) {
-        break;
-      }
-      bytes[i] = byte;
-      actualLength++;
-    }
-
-    this._offset = startOffset + length;
-    return this.decodeBinaryString(bytes.subarray(0, actualLength));
-  }
-
-  readBinaryString = this.getBinaryString;
-
-  /**
-   * Decode binary data as string
-   */
-  private decodeBinaryString(data: Uint8Array): string {
-    let result = '';
-    for (let i = 0; i < data.length; i++) {
-      result += String.fromCharCode(data[i]);
-    }
-    return result;
-  }
-
-  /**
-   * Read structured data using Struct definition
-   */
-  getStruct<T = any>(struct: Struct): T;
-  readStruct<T = any>(struct: Struct): T;
-  getStruct<T = any>(struct: Struct): T {
-    if (!(struct instanceof Struct)) {
-      throw new Error('BinaryReader.getStruct: Invalid struct argument');
-    }
-
-    const list = struct.getFieldList();
-    const result: any = {};
-
-    for (const [name, field] of Object.entries(list)) {
-      if (field.count > 1) {
-        result[name] = new Array(field.count);
-        for (let i = 0; i < field.count; i++) {
-          result[name][i] = (this as any)[field.func]();
+        if (typeof source === 'string') {
+            buffer = this._stringToArrayBuffer(source);
+        } else if (source instanceof ArrayBuffer) {
+            buffer = source;
+        } else if (source instanceof Uint8Array) {
+            buffer = source.buffer.slice(source.byteOffset, source.byteOffset + source.byteLength);
+        } else {
+            throw new Error('BinaryReader() - Unsupported source type');
         }
-      } else {
-        result[name] = (this as any)[field.func]();
-      }
+
+        this.buffer = buffer;
+        this.length = (end || buffer.byteLength) - (start || 0);
+        this.view = new DataView(buffer, start || 0, this.length);
+        this._textDecoder = new TextDecoder('utf-8');
     }
 
-    return result as T;
-  }
-
-  readStruct = this.getStruct;
-
-  /**
-   * Move cursor to specified position
-   */
-  seek(offset: number, whence = SEEK_SET): void {
-    switch (whence) {
-      case SEEK_CUR:
-        this._offset += offset;
-        break;
-      case SEEK_END:
-        this._offset = this._length + offset;
-        break;
-      case SEEK_SET:
-      default:
-        this._offset = offset;
-        break;
+    /**
+     * Convert string to ArrayBuffer
+     * 
+     * @param str - Input string
+     * @returns ArrayBuffer representation
+     */
+    private _stringToArrayBuffer(str: string): ArrayBuffer {
+        const buffer = new ArrayBuffer(str.length);
+        const uint8Array = new Uint8Array(buffer);
+        
+        for (let i = 0; i < str.length; i++) {
+            uint8Array[i] = str.charCodeAt(i) & 0xff;
+        }
+        
+        return buffer;
     }
 
-    // Clamp to valid range
-    this._offset = Math.max(0, Math.min(this._offset, this._length));
-  }
-
-  /**
-   * Read position data (3 bytes -> x, y, direction)
-   */
-  getPos(): Position;
-  readPos(): Position;
-  getPos(): Position {
-    this.checkBounds(3);
-    
-    const { positionByteArray, positionIntArray } = BinaryReader;
-    
-    positionByteArray[2] = this.getUint8();
-    positionByteArray[1] = this.getUint8();
-    positionByteArray[0] = this.getUint8();
-    positionByteArray[3] = 0;
-
-    let packed = positionIntArray[0];
-    const dir = packed & 0x0f;
-    packed >>= 4;
-
-    const y = packed & 0x03ff;
-    packed >>= 10;
-
-    const x = packed & 0x03ff;
-
-    return [x, y, dir];
-  }
-
-  readPos = this.getPos;
-
-  /**
-   * Read movement position data (6 bytes -> from_x, from_y, to_x, to_y, subx, suby)
-   */
-  getPos2(): Position2;
-  readPos2(): Position2;
-  getPos2(): Position2 {
-    this.checkBounds(6);
-    
-    const a = this.getInt8();
-    const b = this.getInt8();
-    const c = this.getInt8();
-    const d = this.getInt8();
-    const e = this.getInt8();
-    const f = this.getInt8();
-
-    return [
-      ((a & 0xff) << 2) | ((b & 0xc0) >> 6), // from_x
-      ((b & 0x3f) << 4) | ((c & 0xf0) >> 4), // from_y
-      ((d & 0xfc) >> 2) | ((c & 0x0f) << 6), // to_x
-      ((d & 0x03) << 8) | (e & 0xff),        // to_y
-      (f & 0xf0) >> 4,                       // sub_x
-      f & 0x0f,                              // sub_y
-    ];
-  }
-
-  readPos2 = this.getPos2;
-
-  /**
-   * Read array of bytes
-   */
-  getBytes(length: number): Uint8Array {
-    this.checkBounds(length);
-    
-    const bytes = new Uint8Array(length);
-    for (let i = 0; i < length; i++) {
-      bytes[i] = this.getUint8();
+    /**
+     * Read Int8 from buffer
+     * 
+     * @returns Int8 value
+     */
+    public getInt8(): number {
+        this._checkBounds(1);
+        return this.view.getInt8(this.offset++);
     }
-    
-    return bytes;
-  }
 
-  /**
-   * Skip specified number of bytes
-   */
-  skip(count: number): void {
-    this.seek(count, SEEK_CUR);
-  }
-
-  /**
-   * Create a slice of the current buffer
-   */
-  slice(length?: number): BinaryReader {
-    const actualLength = length ?? this.remaining;
-    this.checkBounds(actualLength);
-    
-    const start = this._offset;
-    this._offset += actualLength;
-    
-    return new BinaryReader(this.buffer, start, start + actualLength);
-  }
-
-  /**
-   * Check if we have enough bytes to read
-   */
-  private checkBounds(bytesNeeded: number): void {
-    if (this._offset + bytesNeeded > this._length) {
-      throw new Error(
-        `BinaryReader: Attempted to read ${bytesNeeded} bytes at offset ${this._offset}, ` +
-        `but only ${this.remaining} bytes remaining`
-      );
+    public readChar(): number {
+        return this.getInt8();
     }
-  }
 
-  /**
-   * Get a copy of the underlying buffer
-   */
-  getBuffer(): ArrayBuffer {
-    return this.buffer.slice(0);
-  }
+    public readByte(): number {
+        return this.getInt8();
+    }
 
-  /**
-   * Reset reader to beginning
-   */
-  reset(): void {
-    this._offset = 0;
-  }
+    /**
+     * Read Uint8 from buffer
+     * 
+     * @returns Uint8 value
+     */
+    public getUint8(): number {
+        this._checkBounds(1);
+        return this.view.getUint8(this.offset++);
+    }
 
-  /**
-   * Create a new reader from current position
-   */
-  fork(): BinaryReader {
-    return new BinaryReader(this.buffer, this._offset);
-  }
+    public readUChar(): number {
+        return this.getUint8();
+    }
 
-  /**
-   * Read all remaining data as Uint8Array
-   */
-  readRemainingBytes(): Uint8Array {
-    return this.getBytes(this.remaining);
-  }
+    public readUByte(): number {
+        return this.getUint8();
+    }
+
+    /**
+     * Read Int16 from buffer (little-endian)
+     * 
+     * @returns Int16 value
+     */
+    public getInt16(): number {
+        this._checkBounds(2);
+        const value = this.view.getInt16(this.offset, true);
+        this.offset += 2;
+        return value;
+    }
+
+    public readShort(): number {
+        return this.getInt16();
+    }
+
+    /**
+     * Read Uint16 from buffer (little-endian)
+     * 
+     * @returns Uint16 value
+     */
+    public getUint16(): number {
+        this._checkBounds(2);
+        const value = this.view.getUint16(this.offset, true);
+        this.offset += 2;
+        return value;
+    }
+
+    public readUShort(): number {
+        return this.getUint16();
+    }
+
+    /**
+     * Read Int32 from buffer (little-endian)
+     * 
+     * @returns Int32 value
+     */
+    public getInt32(): number {
+        this._checkBounds(4);
+        const value = this.view.getInt32(this.offset, true);
+        this.offset += 4;
+        return value;
+    }
+
+    public readInt(): number {
+        return this.getInt32();
+    }
+
+    public readLong(): number {
+        return this.getInt32();
+    }
+
+    /**
+     * Read Uint32 from buffer (little-endian)
+     * 
+     * @returns Uint32 value
+     */
+    public getUint32(): number {
+        this._checkBounds(4);
+        const value = this.view.getUint32(this.offset, true);
+        this.offset += 4;
+        return value;
+    }
+
+    public readUInt(): number {
+        return this.getUint32();
+    }
+
+    public readULong(): number {
+        return this.getUint32();
+    }
+
+    /**
+     * Read Float32 from buffer (little-endian)
+     * 
+     * @returns Float32 value
+     */
+    public getFloat32(): number {
+        this._checkBounds(4);
+        const value = this.view.getFloat32(this.offset, true);
+        this.offset += 4;
+        return value;
+    }
+
+    public readFloat(): number {
+        return this.getFloat32();
+    }
+
+    /**
+     * Read Float64 from buffer (little-endian)
+     * 
+     * @returns Float64 value
+     */
+    public getFloat64(): number {
+        this._checkBounds(8);
+        const value = this.view.getFloat64(this.offset, true);
+        this.offset += 8;
+        return value;
+    }
+
+    public readDouble(): number {
+        return this.getFloat64();
+    }
+
+    /**
+     * Read UInt64 from buffer (little-endian)
+     * Note: JavaScript numbers lose precision beyond 2^53
+     * 
+     * @returns UInt64 value (may lose precision)
+     */
+    public getUInt64(): number {
+        this._checkBounds(8);
+        
+        // Split 64-bit number into two 32-bit parts
+        const left = this.view.getUint32(this.offset, true);
+        const right = this.view.getUint32(this.offset + 4, true);
+        
+        // Combine the two 32-bit values (little-endian)
+        const combined = left + (2 ** 32) * right;
+        
+        if (!Number.isSafeInteger(combined)) {
+            console.warn(`UInt64 value ${combined} exceeds MAX_SAFE_INTEGER. Precision may be lost.`);
+        }
+        
+        this.offset += 8;
+        return combined;
+    }
+
+    public readUInt64(): number {
+        return this.getUInt64();
+    }
+
+    /**
+     * Read BigUInt64 from buffer (little-endian)
+     * Uses BigInt for full precision
+     * 
+     * @returns BigUInt64 value
+     */
+    public getBigUint64(): bigint {
+        this._checkBounds(8);
+        const value = this.view.getBigUint64(this.offset, true);
+        this.offset += 8;
+        return value;
+    }
+
+    /**
+     * Get current buffer position
+     * 
+     * @returns Current offset
+     */
+    public tell(): number {
+        return this.offset;
+    }
+
+    /**
+     * Read string from buffer with modern text decoding
+     * 
+     * @param length - String length in bytes
+     * @param options - Text encoding options
+     * @returns Decoded string
+     */
+    public getString(length: number, options: TextEncodingOptions = {}): string {
+        this._checkBounds(length);
+        
+        const { encoding = 'utf-8', nullTerminated = true, trim = false } = options;
+        const startOffset = this.offset;
+        
+        // Find actual string length if null-terminated
+        let actualLength = length;
+        if (nullTerminated) {
+            for (let i = 0; i < length; i++) {
+                if (this.view.getUint8(this.offset + i) === 0) {
+                    actualLength = i;
+                    break;
+                }
+            }
+        }
+        
+        // Create view for the string data
+        const stringData = new Uint8Array(this.buffer, this.view.byteOffset + this.offset, actualLength);
+        
+        // Decode the string
+        let result: string;
+        try {
+            const decoder = new TextDecoder(encoding);
+            result = decoder.decode(stringData);
+        } catch {
+            // Fallback to manual decoding for compatibility
+            result = this._manualStringDecode(stringData);
+        }
+        
+        // Update offset
+        this.offset = startOffset + length;
+        
+        return trim ? result.trim() : result;
+    }
+
+    public readString(length: number, options?: TextEncodingOptions): string {
+        return this.getString(length, options);
+    }
+
+    /**
+     * Read binary string from buffer (legacy compatibility)
+     * 
+     * @param length - String length
+     * @returns Binary string
+     */
+    public getBinaryString(length: number): string {
+        this._checkBounds(length);
+        
+        const startOffset = this.offset;
+        let result = '';
+        
+        for (let i = 0; i < length; i++) {
+            const byte = this.view.getUint8(this.offset + i);
+            if (byte === 0) break;
+            result += String.fromCharCode(byte);
+        }
+        
+        this.offset = startOffset + length;
+        return result;
+    }
+
+    public readBinaryString(length: number): string {
+        return this.getBinaryString(length);
+    }
+
+    /**
+     * Read structured data using Struct definition
+     * 
+     * @param struct - Struct definition
+     * @returns Parsed structured data
+     */
+    public getStruct<T = any>(struct: Struct): T {
+        if (!(struct instanceof Struct)) {
+            throw new Error('BinaryReader::getStruct() - Invalid struct argument');
+        }
+
+        const result: any = {};
+        const fieldNames = struct.getFieldNames();
+
+        for (const fieldName of fieldNames) {
+            const field = struct.getField(fieldName)!;
+            
+            if (field.count > 1) {
+                // Array field
+                result[fieldName] = [];
+                for (let i = 0; i < field.count; i++) {
+                    result[fieldName].push((this as any)[field.func]());
+                }
+            } else {
+                // Single field
+                result[fieldName] = (this as any)[field.func]();
+            }
+        }
+
+        return result as T;
+    }
+
+    public readStruct<T = any>(struct: Struct): T {
+        return this.getStruct<T>(struct);
+    }
+
+    /**
+     * Move cursor to another offset
+     * 
+     * @param offset - Offset value
+     * @param mode - Seek mode (SEEK_SET, SEEK_CUR, SEEK_END)
+     */
+    public seek(offset: number, mode: SeekMode = SEEK_SET): void {
+        let newOffset: number;
+        
+        switch (mode) {
+            case SEEK_CUR:
+                newOffset = this.offset + offset;
+                break;
+            case SEEK_END:
+                newOffset = this.length + offset;
+                break;
+            case SEEK_SET:
+            default:
+                newOffset = offset;
+                break;
+        }
+        
+        if (newOffset < 0 || newOffset > this.length) {
+            throw new Error(`BinaryReader::seek() - Invalid offset: ${newOffset}`);
+        }
+        
+        this.offset = newOffset;
+    }
+
+    /**
+     * Read position from buffer (legacy RO format)
+     * 
+     * @returns Position data
+     */
+    public getPos(): Position {
+        this._checkBounds(3);
+        
+        const tempArray = BinaryReader._tempInt8Array;
+        const tempInt32 = BinaryReader._tempInt32Array;
+        
+        tempArray[2] = this.getUint8();
+        tempArray[1] = this.getUint8();
+        tempArray[0] = this.getUint8();
+        tempArray[3] = 0;
+        
+        let packed = tempInt32[0];
+        const direction = packed & 0x0f;
+        packed >>= 4;
+        
+        const y = packed & 0x03ff;
+        packed >>= 10;
+        
+        const x = packed & 0x03ff;
+        
+        return { x, y, direction };
+    }
+
+    public readPos(): Position {
+        return this.getPos();
+    }
+
+    /**
+     * Read position2 from buffer (movement data)
+     * 
+     * @returns Position2 data
+     */
+    public getPos2(): Position2 {
+        this._checkBounds(6);
+        
+        const bytes = [
+            this.getInt8(),
+            this.getInt8(),
+            this.getInt8(),
+            this.getInt8(),
+            this.getInt8(),
+            this.getInt8()
+        ];
+        
+        return {
+            fromX: ((bytes[0] & 0xFF) << 2) | ((bytes[1] & 0xC0) >> 6),
+            fromY: ((bytes[1] & 0x3F) << 4) | ((bytes[2] & 0xF0) >> 4),
+            toX: ((bytes[3] & 0xFC) >> 2) | ((bytes[2] & 0x0F) << 6),
+            toY: ((bytes[3] & 0x03) << 8) | (bytes[4] & 0xFF),
+            subX: (bytes[5] & 0xF0) >> 4,
+            subY: bytes[5] & 0xF
+        };
+    }
+
+    public readPos2(): Position2 {
+        return this.getPos2();
+    }
+
+    /**
+     * Read raw bytes from buffer
+     * 
+     * @param length - Number of bytes to read
+     * @returns Uint8Array with the bytes
+     */
+    public getBytes(length: number): Uint8Array {
+        this._checkBounds(length);
+        
+        const bytes = new Uint8Array(this.buffer, this.view.byteOffset + this.offset, length);
+        this.offset += length;
+        
+        return bytes;
+    }
+
+    /**
+     * Skip bytes in the buffer
+     * 
+     * @param count - Number of bytes to skip
+     */
+    public skip(count: number): void {
+        this._checkBounds(count);
+        this.offset += count;
+    }
+
+    /**
+     * Check if there are enough bytes remaining
+     * 
+     * @param count - Number of bytes needed
+     * @returns True if enough bytes are available
+     */
+    public hasBytes(count: number): boolean {
+        return this.offset + count <= this.length;
+    }
+
+    /**
+     * Get remaining bytes count
+     * 
+     * @returns Number of remaining bytes
+     */
+    public remaining(): number {
+        return this.length - this.offset;
+    }
+
+    /**
+     * Check if at end of buffer
+     * 
+     * @returns True if at end of buffer
+     */
+    public isEOF(): boolean {
+        return this.offset >= this.length;
+    }
+
+    /**
+     * Get reader statistics
+     * 
+     * @returns Current statistics
+     */
+    public getStats(): BinaryReaderStats {
+        return {
+            totalSize: this.length,
+            position: this.offset,
+            remaining: this.remaining(),
+            bytesRead: this.offset
+        };
+    }
+
+    /**
+     * Create a sub-reader for a portion of the buffer
+     * 
+     * @param length - Length of the sub-buffer
+     * @returns New BinaryReader instance
+     */
+    public createSubReader(length: number): BinaryReader {
+        this._checkBounds(length);
+        
+        const subReader = new BinaryReader(
+            this.buffer,
+            this.view.byteOffset + this.offset,
+            this.view.byteOffset + this.offset + length
+        );
+        
+        this.offset += length;
+        return subReader;
+    }
+
+    /**
+     * Reset reader to beginning
+     */
+    public reset(): void {
+        this.offset = 0;
+    }
+
+    /**
+     * Check bounds before reading
+     * 
+     * @param bytesNeeded - Number of bytes needed
+     * @throws {Error} If not enough bytes available
+     */
+    private _checkBounds(bytesNeeded: number): void {
+        if (this.offset + bytesNeeded > this.length) {
+            throw new Error(
+                `BinaryReader: Not enough bytes available. ` +
+                `Needed: ${bytesNeeded}, Available: ${this.length - this.offset}`
+            );
+        }
+    }
+
+    /**
+     * Manual string decoding fallback
+     * 
+     * @param data - Uint8Array data
+     * @returns Decoded string
+     */
+    private _manualStringDecode(data: Uint8Array): string {
+        let result = '';
+        for (let i = 0; i < data.length; i++) {
+            result += String.fromCharCode(data[i]);
+        }
+        return result;
+    }
 }
 
-// Export constants to global scope for backward compatibility
-if (typeof globalThis !== 'undefined') {
-  (globalThis as any).SEEK_CUR = SEEK_CUR;
-  (globalThis as any).SEEK_SET = SEEK_SET;
-  (globalThis as any).SEEK_END = SEEK_END;
-}
-
-// Default export
+/**
+ * Export the BinaryReader class as default
+ */
 export default BinaryReader;

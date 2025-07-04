@@ -10,296 +10,307 @@
  */
 
 /**
- * Event types for MemoryItem
+ * Event types for memory items
  */
-export type MemoryItemEventType = 'load' | 'error';
+export type MemoryItemEvent = 'load' | 'error';
 
 /**
- * Event listener function type
+ * Callback function for load events
  */
-export type MemoryItemEventListener<T = any> = (data?: T) => void;
+export type LoadCallback<T = any> = (data: T) => void;
 
 /**
- * Memory item configuration interface
+ * Callback function for error events
  */
-export interface MemoryItemConfig<T = any> {
-  onLoad?: MemoryItemEventListener<T>;
-  onError?: MemoryItemEventListener<string>;
-  autoCleanup?: boolean;
-  maxAge?: number;
+export type ErrorCallback = (error: string) => void;
+
+/**
+ * Generic callback function
+ */
+export type MemoryItemCallback<T = any> = LoadCallback<T> | ErrorCallback;
+
+/**
+ * Memory item status
+ */
+export interface MemoryItemStatus {
+    /** Whether the item is loaded */
+    complete: boolean;
+    /** Whether the item has data */
+    hasData: boolean;
+    /** Whether the item has an error */
+    hasError: boolean;
+    /** Last time the item was accessed */
+    lastTimeUsed: number;
+    /** Number of load callbacks */
+    loadCallbackCount: number;
+    /** Number of error callbacks */
+    errorCallbackCount: number;
 }
 
 /**
- * Memory item statistics interface
- */
-export interface MemoryItemStats {
-  created: number;
-  lastAccessed: number;
-  accessCount: number;
-  size?: number;
-}
-
-/**
- * Object stored in cache
- * Modern implementation with TypeScript generics and event-driven architecture
+ * Object stored in cache with modern event handling and type safety
  */
 export class MemoryItem<T = any> {
-  private _data: T | null = null;
-  private _error: string = '';
-  private _onLoadListeners: MemoryItemEventListener<T>[] = [];
-  private _onErrorListeners: MemoryItemEventListener<string>[] = [];
-  private _complete: boolean = false;
-  private _stats: MemoryItemStats;
-  private _config: MemoryItemConfig<T>;
+    /** Data stored in the memory item */
+    private _data: T | null = null;
+    
+    /** Error information */
+    private _error: string = '';
+    
+    /** Load event callbacks */
+    private _onload: LoadCallback<T>[] = [];
+    
+    /** Error event callbacks */
+    private _onerror: ErrorCallback[] = [];
+    
+    /** Whether the item is loaded */
+    public complete: boolean = false;
+    
+    /** Last time the item was accessed */
+    public lastTimeUsed: number = 0;
 
-  /**
-   * Create a new MemoryItem
-   */
-  constructor(config: MemoryItemConfig<T> = {}) {
-    this._config = {
-      autoCleanup: true,
-      maxAge: 0,
-      ...config
-    };
-
-    this._stats = {
-      created: Date.now(),
-      lastAccessed: Date.now(),
-      accessCount: 0
-    };
-
-    // Store initial callbacks
-    if (config.onLoad) {
-      this.addEventListener('load', config.onLoad);
-    }
-
-    if (config.onError) {
-      this.addEventListener('error', config.onError);
-    }
-  }
-
-  /**
-   * Get data from Item with automatic access tracking
-   */
-  get data(): T | null {
-    this._stats.lastAccessed = Date.now();
-    this._stats.accessCount++;
-    return this._data;
-  }
-
-  /**
-   * Get error information
-   */
-  get error(): string {
-    return this._error;
-  }
-
-  /**
-   * Check if the item is loaded
-   */
-  get complete(): boolean {
-    return this._complete;
-  }
-
-  /**
-   * Get last time the item was accessed
-   */
-  get lastTimeUsed(): number {
-    return this._stats.lastAccessed;
-  }
-
-  /**
-   * Get item statistics
-   */
-  get stats(): Readonly<MemoryItemStats> {
-    return { ...this._stats };
-  }
-
-  /**
-   * Check if item has expired based on maxAge
-   */
-  get isExpired(): boolean {
-    if (!this._config.maxAge) return false;
-    return Date.now() - this._stats.created > this._config.maxAge;
-  }
-
-  /**
-   * Add event listener for load/error events
-   */
-  addEventListener(
-    event: MemoryItemEventType,
-    callback: MemoryItemEventListener<T> | MemoryItemEventListener<string>
-  ): void {
-    if (typeof callback !== 'function') {
-      throw new Error('MemoryItem::addEventListener() - callback must be a function!');
-    }
-
-    switch (event.toLowerCase()) {
-      case 'load':
-        if (this._complete && this._data !== null) {
-          // Item already loaded, execute callback immediately
-          (callback as MemoryItemEventListener<T>)(this._data);
-          return;
+    /**
+     * Create a new memory item
+     * 
+     * @param onload - Optional load callback
+     * @param onerror - Optional error callback
+     */
+    constructor(onload?: LoadCallback<T>, onerror?: ErrorCallback) {
+        if (onload) {
+            this.addEventListener('load', onload);
         }
-        this._onLoadListeners.push(callback as MemoryItemEventListener<T>);
-        break;
 
-      case 'error':
-        if (this._complete && this._error) {
-          // Item already errored, execute callback immediately
-          (callback as MemoryItemEventListener<string>)(this._error);
-          return;
+        if (onerror) {
+            this.addEventListener('error', onerror);
         }
-        this._onErrorListeners.push(callback as MemoryItemEventListener<string>);
-        break;
-
-      default:
-        throw new Error(`MemoryItem::addEventListener() - Invalid event "${event}" used.`);
     }
-  }
 
-  /**
-   * Remove event listener
-   */
-  removeEventListener(
-    event: MemoryItemEventType,
-    callback: MemoryItemEventListener<T> | MemoryItemEventListener<string>
-  ): void {
-    switch (event.toLowerCase()) {
-      case 'load':
-        const loadIndex = this._onLoadListeners.indexOf(callback as MemoryItemEventListener<T>);
-        if (loadIndex !== -1) {
-          this._onLoadListeners.splice(loadIndex, 1);
+    /**
+     * Get data from the memory item
+     * Updates the last access time
+     * 
+     * @returns The stored data or null if not loaded
+     */
+    public get data(): T | null {
+        this.lastTimeUsed = Date.now();
+        return this._data;
+    }
+
+    /**
+     * Get error information
+     * 
+     * @returns Error string or empty string if no error
+     */
+    public get error(): string {
+        return this._error;
+    }
+
+    /**
+     * Check if the item has data
+     * 
+     * @returns True if the item has data
+     */
+    public get hasData(): boolean {
+        return this._data !== null;
+    }
+
+    /**
+     * Check if the item has an error
+     * 
+     * @returns True if the item has an error
+     */
+    public get hasError(): boolean {
+        return this._error !== '';
+    }
+
+    /**
+     * Get the current status of the memory item
+     * 
+     * @returns Status information
+     */
+    public get status(): MemoryItemStatus {
+        return {
+            complete: this.complete,
+            hasData: this.hasData,
+            hasError: this.hasError,
+            lastTimeUsed: this.lastTimeUsed,
+            loadCallbackCount: this._onload.length,
+            errorCallbackCount: this._onerror.length
+        };
+    }
+
+    /**
+     * Add an event listener for load or error events
+     * 
+     * @param event - Event type ('load' or 'error')
+     * @param callback - Callback function
+     * @throws {Error} If callback is not a function or event type is invalid
+     */
+    public addEventListener(event: 'load', callback: LoadCallback<T>): void;
+    public addEventListener(event: 'error', callback: ErrorCallback): void;
+    public addEventListener(event: MemoryItemEvent, callback: MemoryItemCallback<T>): void {
+        if (typeof callback !== 'function') {
+            throw new Error('MemoryItem::addEventListener() - callback must be a function!');
         }
-        break;
 
-      case 'error':
-        const errorIndex = this._onErrorListeners.indexOf(callback as MemoryItemEventListener<string>);
-        if (errorIndex !== -1) {
-          this._onErrorListeners.splice(errorIndex, 1);
+        switch (event.toLowerCase()) {
+            case 'load':
+                // If already loaded with data, call immediately
+                if (this.complete && this.hasData) {
+                    (callback as LoadCallback<T>)(this._data!);
+                    return;
+                }
+                this._onload.push(callback as LoadCallback<T>);
+                break;
+
+            case 'error':
+                // If already completed with error, call immediately
+                if (this.complete && this.hasError) {
+                    (callback as ErrorCallback)(this._error);
+                    return;
+                }
+                this._onerror.push(callback as ErrorCallback);
+                break;
+
+            default:
+                throw new Error(`MemoryItem::addEventListener() - Invalid event "${event}" used.`);
         }
-        break;
-
-      default:
-        throw new Error(`MemoryItem::removeEventListener() - Invalid event "${event}" used.`);
-    }
-  }
-
-  /**
-   * Execute load callbacks when item is successfully loaded
-   */
-  onLoad(data: T): void {
-    if (this._complete) {
-      throw new Error('MemoryItem::onLoad() - Item already completed');
     }
 
-    this._data = data;
-    this._complete = true;
-    this._stats.lastAccessed = Date.now();
+    /**
+     * Remove an event listener
+     * 
+     * @param event - Event type ('load' or 'error')
+     * @param callback - Callback function to remove
+     * @returns True if the callback was found and removed
+     */
+    public removeEventListener(event: 'load', callback: LoadCallback<T>): boolean;
+    public removeEventListener(event: 'error', callback: ErrorCallback): boolean;
+    public removeEventListener(event: MemoryItemEvent, callback: MemoryItemCallback<T>): boolean {
+        switch (event.toLowerCase()) {
+            case 'load':
+                const loadIndex = this._onload.indexOf(callback as LoadCallback<T>);
+                if (loadIndex !== -1) {
+                    this._onload.splice(loadIndex, 1);
+                    return true;
+                }
+                break;
 
-    // Execute all load callbacks
-    for (const callback of this._onLoadListeners) {
-      try {
-        callback(data);
-      } catch (error) {
-        console.error('MemoryItem load callback error:', error);
-      }
-    }
+            case 'error':
+                const errorIndex = this._onerror.indexOf(callback as ErrorCallback);
+                if (errorIndex !== -1) {
+                    this._onerror.splice(errorIndex, 1);
+                    return true;
+                }
+                break;
 
-    // Auto cleanup if enabled
-    if (this._config.autoCleanup) {
-      this._cleanup();
-    }
-  }
-
-  /**
-   * Execute error callbacks when an error occurs
-   */
-  onError(error: string = 'Unknown error'): void {
-    if (this._complete) {
-      throw new Error('MemoryItem::onError() - Item already completed');
-    }
-
-    this._error = error;
-    this._complete = true;
-    this._stats.lastAccessed = Date.now();
-
-    // Execute all error callbacks
-    for (const callback of this._onErrorListeners) {
-      try {
-        callback(error);
-      } catch (callbackError) {
-        console.error('MemoryItem error callback error:', callbackError);
-      }
-    }
-
-    // Auto cleanup if enabled
-    if (this._config.autoCleanup) {
-      this._cleanup();
-    }
-  }
-
-  /**
-   * Clear all event listeners and data
-   */
-  destroy(): void {
-    this._cleanup();
-    this._data = null;
-    this._error = '';
-    this._complete = false;
-  }
-
-  /**
-   * Create a Promise-based interface for the MemoryItem
-   */
-  toPromise(): Promise<T> {
-    return new Promise((resolve, reject) => {
-      if (this._complete) {
-        if (this._data !== null) {
-          resolve(this._data);
-        } else {
-          reject(new Error(this._error || 'Unknown error'));
+            default:
+                throw new Error(`MemoryItem::removeEventListener() - Invalid event "${event}" used.`);
         }
-        return;
-      }
+        return false;
+    }
 
-      this.addEventListener('load', (data) => resolve(data as T));
-      this.addEventListener('error', (error) => reject(new Error(error)));
-    });
-  }
+    /**
+     * Mark the item as loaded with data
+     * Executes all load callbacks and clears callback arrays
+     * 
+     * @param data - The loaded data
+     */
+    public onload(data: T): void {
+        this._data = data;
+        this.complete = true;
+        this.lastTimeUsed = Date.now();
 
-  /**
-   * Clean up event listeners
-   */
-  private _cleanup(): void {
-    this._onLoadListeners.length = 0;
-    this._onErrorListeners.length = 0;
-  }
+        // Execute all load callbacks
+        const callbacks = [...this._onload]; // Copy to avoid issues if callbacks modify the array
+        for (const callback of callbacks) {
+            try {
+                callback(data);
+            } catch (error) {
+                console.error('MemoryItem load callback error:', error);
+            }
+        }
+
+        // Clear all callbacks
+        this._onload.length = 0;
+        this._onerror.length = 0;
+    }
+
+    /**
+     * Mark the item as failed with an error
+     * Executes all error callbacks and clears callback arrays
+     * 
+     * @param error - Error message
+     */
+    public onerror(error: string = 'Unknown error'): void {
+        this._error = error;
+        this.complete = true;
+        this.lastTimeUsed = Date.now();
+
+        // Execute all error callbacks
+        const callbacks = [...this._onerror]; // Copy to avoid issues if callbacks modify the array
+        for (const callback of callbacks) {
+            try {
+                callback(error);
+            } catch (callbackError) {
+                console.error('MemoryItem error callback error:', callbackError);
+            }
+        }
+
+        // Clear all callbacks
+        this._onload.length = 0;
+        this._onerror.length = 0;
+    }
+
+    /**
+     * Reset the memory item to its initial state
+     * Clears data, error, and completion status
+     */
+    public reset(): void {
+        this._data = null;
+        this._error = '';
+        this.complete = false;
+        this.lastTimeUsed = 0;
+        this._onload.length = 0;
+        this._onerror.length = 0;
+    }
+
+    /**
+     * Create a Promise that resolves when the item is loaded
+     * 
+     * @returns Promise that resolves with the data or rejects with the error
+     */
+    public toPromise(): Promise<T> {
+        return new Promise((resolve, reject) => {
+            if (this.complete) {
+                if (this.hasData) {
+                    resolve(this._data!);
+                } else {
+                    reject(new Error(this._error));
+                }
+                return;
+            }
+
+            this.addEventListener('load', resolve);
+            this.addEventListener('error', (error) => reject(new Error(error)));
+        });
+    }
+
+    /**
+     * Get a human-readable string representation of the memory item
+     * 
+     * @returns String representation
+     */
+    public toString(): string {
+        const status = this.complete ? 
+            (this.hasData ? 'loaded' : 'error') : 
+            'pending';
+        
+        return `MemoryItem { status: ${status}, lastUsed: ${this.lastTimeUsed} }`;
+    }
 }
 
 /**
- * Factory function for creating MemoryItem instances
+ * Export the MemoryItem class as default
  */
-export function createMemoryItem<T = any>(config?: MemoryItemConfig<T>): MemoryItem<T> {
-  return new MemoryItem<T>(config);
-}
-
-/**
- * Utility function for creating a MemoryItem with immediate data
- */
-export function createLoadedMemoryItem<T>(data: T): MemoryItem<T> {
-  const item = new MemoryItem<T>();
-  item.onLoad(data);
-  return item;
-}
-
-/**
- * Utility function for creating a MemoryItem with immediate error
- */
-export function createErrorMemoryItem<T = any>(error: string): MemoryItem<T> {
-  const item = new MemoryItem<T>();
-  item.onError(error);
-  return item;
-}
-
 export default MemoryItem;

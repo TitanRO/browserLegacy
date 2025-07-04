@@ -1,0 +1,53 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": false,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "Utils/*": ["src/Utils/*"],
+      "Core/*": ["src/Core/*"],
+      "UI/*": ["src/UI/*"],
+      "Engine/*": ["src/Engine/*"],
+      "Renderer/*": ["src/Renderer/*"],
+      "Controls/*": ["src/Controls/*"],
+      "DB/*": ["src/DB/*"],
+      "Loaders/*": ["src/Loaders/*"],
+      "Network/*": ["src/Network/*"],
+      "Audio/*": ["src/Audio/*"],
+      "Plugins/*": ["src/Plugins/*"],
+      "Preferences/*": ["src/Preferences/*"],
+      "App/*": ["src/App/*"],
+      "Vendors/*": ["src/Vendors/*"]
+    },
+    "types": ["node", "vite/client"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"]
+  },
+  "include": [
+    "src/**/*",
+    "*.config.js",
+    "*.config.ts",
+    "vite-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tools/build",
+    "src/Vendors"
+  ]
+}

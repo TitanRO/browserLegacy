@@ -2,30 +2,46 @@
 	"name": "robrowser",
 	"main": "index.html",
 	"version": "1.0.0",
+	"type": "module",
 	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview",
+		"build:legacy": "node ./tools/builder-web.js",
 		"serve": "live-server ./dist/Web",
 		"live": "live-server .  --no-browser --port=8000",
-		"build": "node ./tools/builder-web.js",
-		"build:online": "npm run build -- -O",
-		"build:mapviewer": "npm run build -- -V",
-		"build:grfviewer": "npm run build -- -G",
-		"build:modelviewer": "npm run build -- -M",
-		"build:strviewer": "npm run build -- -S",
-		"build:effectviewer": "npm run build -- -E",
-		"build:threadhandler": "npm run build -- -T",
-		"build:html": "npm run build -- -H",
-		"build:ai": "npm run build -- -A",
-		"build:all": "npm run build -- --all",
-		"build:all:minify": "npm run build -- --all --m"
+		"lint": "eslint src --ext .js,.ts,.tsx --report-unused-disable-directives --max-warnings 0",
+		"lint:fix": "eslint src --ext .js,.ts,.tsx --fix",
+		"format": "prettier --write \"src/**/*.{js,ts,tsx,css,html}\"",
+		"type-check": "tsc --noEmit",
+		"test": "vitest",
+		"test:ui": "vitest --ui",
+		"build:online": "npm run build -- --mode online",
+		"build:mapviewer": "npm run build -- --mode mapviewer",
+		"build:grfviewer": "npm run build -- --mode grfviewer",
+		"build:modelviewer": "npm run build -- --mode modelviewer",
+		"build:strviewer": "npm run build -- --mode strviewer",
+		"build:effectviewer": "npm run build -- --mode effectviewer"
 	},
 	"author": "Vincent Thibault",
 	"license": "GNU GPL V3",
 	"devDependencies": {
+		"@types/node": "^22.0.0",
+		"@typescript-eslint/eslint-plugin": "^7.0.0",
+		"@typescript-eslint/parser": "^7.0.0",
+		"@vitejs/plugin-legacy": "^5.0.0",
+		"eslint": "^8.57.0",
+		"eslint-config-prettier": "^9.0.0",
+		"eslint-plugin-prettier": "^5.0.0",
+		"jsdom": "^24.0.0",
 		"live-server": "^1.2.2",
-		"requirejs": "^2.3.6",
-		"terser": "^5.19.4"
+		"prettier": "^3.0.0",
+		"terser": "^5.19.4",
+		"typescript": "^5.4.0",
+		"vite": "^5.3.0",
+		"vitest": "^1.6.0"
 	},
 	"dependencies": {
-		"node": "^22.9.0"
+		"spark-md5": "^3.0.2"
 	}
 }

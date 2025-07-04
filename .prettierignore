@@ -1,0 +1,9 @@
+dist/
+node_modules/
+tools/build/
+src/Vendors/
+*.min.js
+*.min.css
+package-lock.json
+*.md
+*.html

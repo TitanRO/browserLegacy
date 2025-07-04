@@ -43,8 +43,8 @@
 - **Phase 5**: ✅ COMPLETED
 
 ## Modernization Status by Directory
-- **src/Core**: 🔄 6/15 files modernized (Context, Configs, Events, Thread, Preferences, Client[WIP])
-- **src/Utils**: 🔄 6/20 files modernized (colors, Texture, WebGL, partyColors, DOM, BinaryReader[WIP])
+- **src/Core**: 🔄 7/15 files modernized (Context, Configs, Events, Thread, Preferences, Client[WIP], MemoryItem)
+- **src/Utils**: 🔄 12/25 files modernized (colors, Texture, WebGL, partyColors, DOM, BinaryReader[WIP], BinaryWriter, CRC32, ConsoleManager, Inflate, PathFinding, jquery-wrapper)
 - **src/Loaders**: 🔄 1/10 files modernized (Targa)
 - **src/UI**: ⏳ 0/300+ files modernized
 - **src/Engine**: ⏳ 0/20 files modernized
@@ -55,7 +55,7 @@
 
 ## Current Focus: Systematic Modernization of ALL 378 JavaScript Files
 
-**Progress**: 13/378 files completed (3.4% of total codebase modernized)
+**Progress**: 20/378 files completed (5.3% of total codebase modernized)
 
 ### Recently Modernized:
 1. ✅ Core/Events.ts - Modern event management with async patterns
@@ -66,6 +66,12 @@
 6. ✅ Utils/BinaryReader.ts - Binary data reading with modern patterns [WIP]  
 7. ✅ Utils/Queue.ts - Advanced queue system with concurrency control
 8. ✅ Utils/Executable.ts - PE file analysis with async processing
+9. ✅ Core/MemoryItem.ts - Cache management with Promise-based API
+10. ✅ Utils/BinaryWriter.ts - Binary data writing with auto-resize buffers
+11. ✅ Utils/CRC32.ts - CRC32 calculation with TypeScript types
+12. ✅ Utils/ConsoleManager.ts - Console management with singleton pattern
+13. ✅ Utils/Inflate.ts - GZIP decompression with modern error handling
+14. ✅ Utils/PathFinding.ts - A* pathfinding with performance optimizations
 
 ### Critical Dependencies Identified:
 1. **Struct.js** - Required by BinaryReader (next priority)

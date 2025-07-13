@@ -113,6 +113,12 @@ define(function (require) {
 				);
 				MapPreferences.aura = isSimplified ? 1 : 2;
 				MapPreferences.save();
+
+				var EntityManager = getModule("Renderer/EntityManager");
+				var EffectManager = getModule("Renderer/EffectManager");
+				EntityManager.forEach(function (entity) {
+					entity.aura.load(EffectManager);
+				});
 				return;
 			},
 		},
@@ -131,6 +137,12 @@ define(function (require) {
 				);
 				MapPreferences.aura = MapPreferences.aura ? 0 : 1;
 				MapPreferences.save();
+
+				var EntityManager = getModule("Renderer/EntityManager");
+				var EffectManager = getModule("Renderer/EffectManager");
+				EntityManager.forEach(function (entity) {
+					entity.aura.load(EffectManager);
+				});
 				return;
 			},
 		},
@@ -519,23 +531,24 @@ define(function (require) {
 			callback: function () {
 				Session.merCustomAI = !Session.merCustomAI;
 				if (Session.merCustomAI) {
+					getModule(
+						"UI/Components/MercenaryInformations/MercenaryInformations"
+					).resetAI();
 					this.addText(
 						DB.getMessage(1273),
 						this.TYPE.INFO,
 						this.FILTER.PUBLIC_LOG
 					);
 				} else {
+					getModule(
+						"UI/Components/MercenaryInformations/MercenaryInformations"
+					).resetAI();
 					this.addText(
 						DB.getMessage(1274),
 						this.TYPE.INFO,
 						this.FILTER.PUBLIC_LOG
 					);
 				}
-				this.addText(
-					"(Mercenary not supported yet)",
-					this.TYPE.INFO,
-					this.FILTER.PUBLIC_LOG
-				);
 				return;
 			},
 		},

@@ -19,6 +19,8 @@ This guide has the goal to help you to Setup/Play RoBrowser. If there's any trou
   - [4.2 Serving Game: Development](#42-serving-game-development)
   - [4.3 Serving Game: using Browser](#43-serving-game-using-browser)
 - [5. Add game assets](#5-add-game-assets)
+  - [Local Assets](#local-assets)
+  - [Remote Client](#remote-client)
 - [6. Adding Custom Plugins](#6-adding-custom-plugins)
 - [7. ROBrowser Settings Overview](#7-robrowser-settings-overview)
   - [8. Play the Game](#8-play-the-game)
@@ -281,8 +283,11 @@ TODO: improve this flow (important!)
 - check the `.htaccess` file if the ErrorDocument option points to the `index.php` via the correct url. If you don't run roBrowser from the www root and you use remote client then you need to adjust this url (see examples in the file)
 
 In all `AI/*.lua` files :
+- Replace all `dofile` with `require`
 - Replace all `require "AI\\Const"` with `require "AI/Const"`
 - Replace all `require "AI\\Util"` with `require "AI/Util"`
+- Replace all `require("./AI/Const.lua")` with `require("AI/Const")`
+- Replace all `require("./AI/Util.lua")` with `require("AI/Util")`
 
 # 6. Adding Custom Plugins
 - copy your custom plugins into `src\Plugins` 
@@ -312,11 +317,12 @@ function initialize() {
               langtype:     12,            // Must match your game server's
               packetver:    20191223,      // Must match your game server's
               grfList:      "DATA.INI",    // By default uses DATA.INI to get grf list, but you can define an array (grfList: ['custom.grf', 'palette.grf', 'data.grf'],) or a regex (grfList: /\.grf$/i,)
-              remoteClient: "http://127.0.0.1/client", // Your remote client address. Defaults to http://grf.robrowser.com/
+              remoteClient: "http://127.0.0.1/client", // Your remote client address. Defaults to https://grf.robrowser.com/
               renewal:      true,          // Must match your game server's type (true/false). When using clientinfo.xml you can add the <renewal>true</renewal> custom tag.
               packetKeys:   false,         // Packet encryption keys ( not implemented?? )
               socketProxy:  "ws://127.0.0.1:5999/",  // The websocket proxy's address you set up previously for robrowser (wsproxy)
-              adminList:    [2000000]      // List admins' account IDs here like: [2000000, 2000001, 2000002 .... etc]
+              adminList:    [2000000],     // List admins' account IDs here like: [2000000, 2000001, 2000002 .... etc]
+              aura: { defaultLv: 99 }      // optional aura levels
           }],
 
       // OTHER CONFIG - These can be part of the server config as well, thus making them adjustable per server
@@ -340,6 +346,7 @@ function initialize() {
           enableRefineUI:  false,  // Enable Renewal Refine UI? (Requires client data (GRF) newer than 2016.10.12) (Should also enable in server side)
           enableDmgSuffix: false,  // Enable Damage Suffix (>1M = K, >100M = M) - Requires client data (GRF) newer or equals to 2019.05.08
           enableCheckAttendance: false, // Enable Check Attendance? (Requires PACKETVER 20180307 above)
+          enableHomunAutoFeed: false, // Enable Homunculus Auto Feed for older PACKETVER than 20170920
           loadLua:         false,  // Enable this option to load LUA tables (currently only item table) from client/System/...
           
           //clientHash:    '113e195e6c051bb1cfb12a644bb084c5', // Set fixed client hash value here (less secure, for development only)

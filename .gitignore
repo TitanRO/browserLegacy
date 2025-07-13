@@ -1,5 +1,4 @@
 /AI/*
-/applications/settings.js
 /client/BGM/*
 /client/data/*
 /client/resources/*
@@ -15,6 +14,7 @@
 /StrViewer.js
 /ThreadEventHandler.js
 /data/*
+/save/*
 
 # IDE files
 .idea/

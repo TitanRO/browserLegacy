@@ -20,7 +20,9 @@
 		"build:all": "npm run build -- --all",
 		"build:all:minify": "npm run build -- --all --m",
 		"build:pwa": "npm run build -- --O --T --PWA",
-		"build:nw": "build --concurrent --tasks win-x86,win-x64 --mirror https://dl.nwjs.io/ ./applications/nwjs"
+		"build:nw": "build --concurrent --tasks win-x86,win-x64 --mirror https://dl.nwjs.io/ ./applications/nwjs",
+		"test": "jest",
+		"test:integration": "jest tests/integration"
 	},
 	"author": "Vincent Thibault",
 	"license": "GNU GPL V3",
@@ -29,7 +31,8 @@
 		"nw": "^0.99.0-sdk",
 		"nwjs-builder-phoenix": "^1.15.0",
 		"requirejs": "^2.3.6",
-		"terser": "^5.19.4"
+		"terser": "^5.19.4",
+		"jest": "^29.7.0"
 	},
 	"build": {
 		"nwVersion": "stable",

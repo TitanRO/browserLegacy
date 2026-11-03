@@ -8,7 +8,7 @@
  * @author Vincent Thibault
  */
 
-define(['Utils/jquery'], function( jQuery )
+define(function()
 {
 	"use strict";
 
@@ -61,7 +61,7 @@ define(['Utils/jquery'], function( jQuery )
 	/**
 	 * Track mouse move event
 	 */
-	jQuery(window).mousemove(function(event)
+	window.addEventListener('mousemove', function(event)
 	{
 		Mouse.screen.x = event.pageX;
 		Mouse.screen.y = event.pageY;

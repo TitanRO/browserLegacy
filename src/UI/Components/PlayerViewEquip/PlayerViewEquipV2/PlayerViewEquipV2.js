@@ -17,7 +17,6 @@ define(function(require)
 	 */
 	var DB                 = require('DB/DBManager');
 	var EquipLocation      = require('DB/Items/EquipmentLocation');
-	var jQuery             = require('Utils/jquery');
 	var Client             = require('Core/Client');
 	var Preferences        = require('Core/Preferences');
 	var Renderer           = require('Renderer/Renderer');
@@ -29,6 +28,7 @@ define(function(require)
 	var htmlText           = require('text!./PlayerViewEquipV2.html');
 	var cssText            = require('text!./PlayerViewEquipV2.css');
 	var getModule          = require;
+	var DOM             = require('Utils/DOM');
 
 	/**
 	 * Create Component
@@ -75,8 +75,9 @@ define(function(require)
 	 */
 	PlayerViewEquipV2.init = function init()
 	{
-		_vieweqctx.push(this.ui.find('canvas')[0].getContext('2d'));
-		_vieweqctx.push(this.ui.find('canvas')[1].getContext('2d'));
+		var canvases = this.ui.querySelectorAll('canvas');
+		_vieweqctx.push(canvases[0].getContext('2d'));
+		_vieweqctx.push(canvases[1].getContext('2d'));
 	
 		// Grab the tab links and content divs from the page
 		var tabListItems = document.getElementById('vieweqtabs').childNodes;
@@ -112,23 +113,23 @@ define(function(require)
 			}
 		}
 
-		this.ui.addClass('PlayerViewEquipV2');
+		this.ui.classList.add('PlayerViewEquipV2');
 		// Don't activate drag drop when clicking on buttons
-		this.ui.find('.titlebar .base').mousedown(stopPropagation);
-		this.ui.find('.titlebar .mini').click(function(){ PlayerViewEquipV2.ui.find('.panel').toggle(); });
-		this.ui.find('.titlebar .close').click(function(){ PlayerViewEquipV2.remove(); });
+		this.ui.querySelector('.titlebar .base').addEventListener('mousedown', stopPropagation);
+		this.ui.querySelector('.titlebar .mini').addEventListener('click', function(){ DOM.toggleDisplay(PlayerViewEquipV2.ui.querySelector('.panel')); });
+		this.ui.querySelector('.titlebar .close').addEventListener('click', function(){ PlayerViewEquipV2.remove(); });
 
 
 		// drag, drop items
-		this.ui.on('dragleave', onDragLeave);
+		this.ui.addEventListener('dragleave', onDragLeave);
 
 		// Bind items
-		this.ui.find('.vieweqcontent')
-			.on('contextmenu', '.item',  onEquipmentInfo)
-			.on('mouseover',   'button', onEquipmentOver)
-			.on('mouseout',    'button', onEquipmentOut);
+		var _viewEqContent = this.ui.querySelector('.vieweqcontent');
+		DOM.addDelegatedEvent(_viewEqContent, 'contextmenu', '.item', onEquipmentInfo);
+		DOM.addDelegatedEvent(_viewEqContent, 'mouseover', 'button', onEquipmentOver);
+		DOM.addDelegatedEvent(_viewEqContent, 'mouseout', 'button', onEquipmentOut);
 
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 	};
 
 	/**
@@ -188,12 +189,12 @@ define(function(require)
 	PlayerViewEquipV2.onAppend = function onAppend()
 	{
 		// Apply preferences
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 
-		if (this.ui.find('canvas').is(':visible')) {
+		if (DOM.isVisible(this.ui.querySelector('canvas'))) {
 			Renderer.render(renderCharacter);
 		}
 	};
@@ -209,13 +210,13 @@ define(function(require)
 
 		// Clean equipments
 		_list = {};
-		this.ui.find('.col1, .col3, .ammo').empty();
+		this.ui.querySelector('.col1, .col3, .ammo').innerHTML = '';
 
 		// Save preferences
-		_preferences.show   =  this.ui.is(':visible');
-		_preferences.reduce =  this.ui.find('.panel').css('display') === 'none';
-		_preferences.y      =  parseInt(this.ui.css('top'), 10);
-		_preferences.x      =  parseInt(this.ui.css('left'), 10);
+		_preferences.show   =  DOM.isVisible(this.ui);
+		_preferences.reduce =  this.ui.querySelector('.panel').style.display === 'none';
+		_preferences.y      =  parseInt(this.ui.style.top, 10);
+		_preferences.x      =  parseInt(this.ui.style.left, 10);
 		_preferences.save();
 	};
 
@@ -249,15 +250,15 @@ define(function(require)
 			return string;
 		}
 
-		this.ui.find(getSelectorFromLocation(location)).html(
+		this.ui.querySelector(getSelectorFromLocation(location)).innerHTML =
 			'<div class="item" data-index="'+ item.index +'">' +
 				'<button></button>' +
-				'<span class="itemName">' + add3Dots(jQuery.escape(DB.getItemName(item)), 19) + '</span>' +
+				'<span class="itemName">' + add3Dots(DOM.escapeHtml(DB.getItemName(item)), 19) + '</span>' +
 			'</div>'
-		);
+		;
 
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + it.identifiedResourceName + '.bmp', function(data){
-			this.ui.find('.item[data-index="'+ item.index +'"] button').css('backgroundImage', 'url('+ data +')');
+			this.ui.querySelector('.item[data-index="'+ item.index +'"] button').style.backgroundImage = 'url('+ data +')';
 		}.bind(this));
 	};
 
@@ -271,7 +272,7 @@ define(function(require)
 	PlayerViewEquipV2.setEquipmentData = function setEquipmentData(equipmentData) {
 		// Clear existing equipment
 		_list = {};
-		this.ui.find('.col1, .col3, .ammo').empty();
+		this.ui.querySelector('.col1, .col3, .ammo').innerHTML = '';
 	
 		// Populate with new equipment data
 		equipmentData.forEach(function(item) {
@@ -285,7 +286,7 @@ define(function(require)
  	* @param {string} characterName The character's name
  	*/
 	PlayerViewEquipV2.setTitleBar = function setTitleBar(characterName) {
-		this.ui.find('.PlayerName').text(DB.getMessage(1361).replace('%s',characterName));
+		this.ui.querySelector('.PlayerName').textContent = DB.getMessage(1361).replace('%s',characterName);
 	};
 
 	/**
@@ -425,7 +426,7 @@ define(function(require)
 	 */
 	function onDragLeave( event )
 	{
-		PlayerViewEquipV2.ui.find('td').css('backgroundImage', 'none');
+		PlayerViewEquipV2.ui.querySelector('td').style.backgroundImage = 'none';
 		event.stopImmediatePropagation();
 		return false;
 	};
@@ -470,18 +471,14 @@ define(function(require)
 		}
 
 		// Get back data
-		var overlay = PlayerViewEquipV2.ui.find('.overlay');
-		var pos     = jQuery(this).position();
-
-		// Possible jquery error
-		if (!pos.top && !pos.left) {
-			return;
-		}
+		var overlay = PlayerViewEquipV2.ui.querySelector('.overlay');
+		var rect    = this.getBoundingClientRect();
+		var uiRect  = PlayerViewEquipV2.ui.getBoundingClientRect();
 
 		// Display box
-		overlay.show();
-		overlay.css({top: pos.top-22, left:pos.left-22});
-		overlay.text(DB.getItemName(item));
+		overlay.style.display = '';
+		DOM.setCss(overlay, {top: (rect.top - uiRect.top - 22) + 'px', left: (rect.left - uiRect.left - 22) + 'px'});
+		overlay.textContent = DB.getItemName(item);
 	};
 
 
@@ -490,7 +487,7 @@ define(function(require)
 	 */
 	function onEquipmentOut()
 	{
-		PlayerViewEquipV2.ui.find('.overlay').hide();
+		PlayerViewEquipV2.ui.querySelector('.overlay').style.display = 'none';
 	};
 
 	/**
@@ -500,7 +497,7 @@ define(function(require)
 		for (var index in _list) {
 			var item = _list[index];
 			if(item.slot && [0x00FF, 0x00FE, 0xFF00].includes(item.slot.card1)){
-				PlayerViewEquipV2.ui.find('.item[data-index="'+ index +'"] .itemName').text( jQuery.escape(DB.getItemName(item)) );
+				PlayerViewEquipV2.ui.querySelector('.item[data-index="'+ index +'"] .itemName').textContent = DOM.escapeHtml(DB.getItemName(item));
 			}
 		}
 	};

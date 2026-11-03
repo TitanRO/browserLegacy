@@ -76,13 +76,13 @@ define(function(require)
 			premultipliedAlpha: false,
 		});
 
-		Renderer.show();
+		Renderer.style.display = '';
 		EffectManager.init(Renderer.getContext());
 		Client.init([]);
 
 		// Initialize the dropdown
 		if (!Configs.get('API')) {
-			initDropDown( this.ui.find('select').get(0) );
+			initDropDown( this.ui.querySelector('select') );
 		}
 		else {
 			var hash      = decodeURIComponent(location.hash);
@@ -130,7 +130,7 @@ define(function(require)
 				loadEffect( select.value );
 			}
 
-			Viewer.ui.find('.head').show();
+			Viewer.ui.querySelector('.head').style.display = '';
 			select.focus();
 		});
 	}

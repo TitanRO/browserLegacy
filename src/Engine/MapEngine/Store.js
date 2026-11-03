@@ -39,8 +39,8 @@ define(function( require )
 		NpcStore.setList(pkt.itemList);
 
 		var entity = Session.Entity;
-		NpcStore.ui.find('.cashuser .buyer').text( entity ? entity.display.name : '');
-		NpcStore.ui.find('.cashuser .cashpoints').text(pkt.KafraPoint);
+		NpcStore.ui.querySelector('.cashuser .buyer').textContent =  entity ? entity.display.name : '';
+		NpcStore.ui.querySelector('.cashuser .cashpoints').textContent = pkt.KafraPoint;
 
 		NpcStore.onSubmit = function(itemList)  // add prompt confirmation first later...
         {
@@ -214,7 +214,7 @@ define(function( require )
 			default: ChatBox.addText( DB.getMessage(1814),   ChatBox.TYPE.ERROR, ChatBox.FILTER.PUBLIC_LOG); break; // deal failed
 		}
 
-		NpcStore.ui.find('.cashuser .cashpoints').text(pkt.KafraPoint);
+		NpcStore.ui.querySelector('.cashuser .cashpoints').textContent = pkt.KafraPoint;
 	}
 
 
@@ -297,7 +297,7 @@ define(function( require )
 
 		// Get seller name
 		var entity = EntityManager.get(_pkt.AID);
-		NpcStore.ui.find('.seller').text( entity ? entity.display.name : '');
+		NpcStore.ui.querySelector('.seller').textContent =  entity ? entity.display.name : '';
 
 		// Bying items
 		NpcStore.onSubmit = function(itemList) {
@@ -345,7 +345,7 @@ define(function( require )
 
 		// Get seller name
 		var entity = EntityManager.get(_pkt.AID);
-		NpcStore.ui.find('.seller').text( entity ? entity.display.name : '');
+		NpcStore.ui.querySelector('.seller').textContent =  entity ? entity.display.name : '';
 
 		// Bying items
 		NpcStore.onSubmit = function(itemList) {

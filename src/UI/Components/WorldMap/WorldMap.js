@@ -20,6 +20,7 @@ define(function (require) {
     const MAPS = require('DB/Map/WorldMap');
     const htmlText = require('text!./WorldMap.html');
     const cssText = require('text!./WorldMap.css');
+    const DOM = require('Utils/DOM');
 
     /**
      * Create Component
@@ -56,14 +57,14 @@ define(function (require) {
      * Initialize UI
      */
     WorldMap.init = function init () {
-        this.ui.find('.titlebar .base').mousedown(stopPropagation);
-        this.ui.find('.titlebar select').change(onSelect);
-        this.ui.find('.titlebar .togglemaps').click(onToggleMaps);
-        this.ui.find('.titlebar .close').click(onClose);
+        this.ui.querySelector('.titlebar .base').addEventListener('mousedown', stopPropagation);
+        this.ui.querySelector('.titlebar select').addEventListener('change', onSelect);
+        this.ui.querySelector('.titlebar .togglemaps').addEventListener('click', onToggleMaps);
+        this.ui.querySelector('.titlebar .close').addEventListener('click', onClose);
 
         // worldmap dialog
-        this.ui.find('.map .content').on('click', onWorldMapClick);
-        this.ui.find('#dialog-map-view-backdrop').on('click', onWorldMapDialogClick);
+        this.ui.querySelector('.map .content').addEventListener('click', onWorldMapClick);
+        this.ui.querySelector('#dialog-map-view-backdrop').addEventListener('click', onWorldMapDialogClick);
     };
 
 
@@ -71,22 +72,21 @@ define(function (require) {
      * Create WorldMap list of maps (select Element)
      */
     function setMapList () {
-        WorldMap.ui.find('#WorldMaps').html(function () {
+        WorldMap.ui.querySelector('#WorldMaps').innerHTML = (function () {
             let list = '';
             for (const map of MAPS) {
-                // list += '<option value="' + mapList[wmap].img + '">' + mapList[wmap].name + '</option>'
                 // Episode check
                 if (WorldMap.settings.episode >= map.ep_from && WorldMap.settings.episode < map.ep_to) {
-                    list += `<option value="${map.id}">${map.name}</option>`;
+                    list += '<option value="' + map.id + '">' + map.name + '</option>';
                 }
             }
             return list;
-        });
+        })();
     }
 
 
     function onSelect () {
-        selectMap(WorldMap.ui.find('.titlebar select').val());
+        selectMap(WorldMap.ui.querySelector('.titlebar select').value);
     }
 
 
@@ -115,7 +115,7 @@ define(function (require) {
      */
     function resizeMap () {
 
-        const mapContainer = WorldMap.ui.find('.map-view');
+        const mapContainer = WorldMap.ui.querySelector('.map-view');
 
         const currentwidth = Renderer.width;
         const currentheight = Renderer.height - C_TITLEBARHEIGHT;
@@ -128,10 +128,10 @@ define(function (require) {
             mult = ymult;
         }
 
-        mapContainer.width(C_BASEWIDTH * mult);
-        mapContainer.height(C_BASEHEIGHT * mult);
+        mapContainer.style.width = (C_BASEWIDTH * mult) + 'px';
+        mapContainer.style.height = (C_BASEHEIGHT * mult) + 'px';
 
-        const dialogImg = WorldMap.ui.find('#img-map-view');
+        const dialogImg = WorldMap.ui.querySelector('#img-map-view');
         let d_width = C_DIALOG_BASEWIDTH;
         let d_height = C_DIALOG_BASEHEIGHT;
         if (currentwidth < C_DIALOG_BASEWIDTH + C_DIALOGPADDING || currentheight < C_DIALOG_BASEHEIGHT + C_DIALOGPADDING) {
@@ -146,8 +146,8 @@ define(function (require) {
             d_width = C_DIALOG_BASEWIDTH * mult;
             d_height = C_DIALOG_BASEHEIGHT * mult;
         }
-        dialogImg.width(d_width);
-        dialogImg.height(d_height);
+        dialogImg.style.width = (d_width) + 'px';
+        dialogImg.style.height = (d_height) + 'px';
     }
 
 
@@ -160,12 +160,12 @@ define(function (require) {
         const section = e.target.closest('.section');
         if (!section) return;
 
-		const overlay = WorldMap.ui.find('#dialog-map-view-backdrop')[0];
+		const overlay = WorldMap.ui.querySelector('#dialog-map-view-backdrop');
         if (overlay == null) return;
-        const dialog = WorldMap.ui.find('#dialog-map-view')[0];
+        const dialog = WorldMap.ui.querySelector('#dialog-map-view');
         if (dialog == null) return;
-        WorldMap.ui.find('#dialog-map-view .mapname').text(section.getAttribute('data-name'));
-        WorldMap.ui.find('#dialog-map-view .mapid').text(section.id);
+        WorldMap.ui.querySelector('#dialog-map-view .mapname').textContent = section.getAttribute('data-name');
+        WorldMap.ui.querySelector('#dialog-map-view .mapid').textContent = section.id;
 
         overlay.classList.add("show");
 
@@ -198,7 +198,7 @@ define(function (require) {
                 memberList += member.Name + '<br/>';
             });
         }
-        WorldMap.ui.find('#dialog-map-view .memberlist').text(memberList);
+        WorldMap.ui.querySelector('#dialog-map-view .memberlist').textContent = memberList;
     }
 
 
@@ -209,7 +209,7 @@ define(function (require) {
      * @returns
      */
     function onWorldMapDialogClick (e) {
-        const dialog = WorldMap.ui.find('#dialog-map-view')[0];
+        const dialog = WorldMap.ui.querySelector('#dialog-map-view');
         if (dialog == null) {
             return;
         }
@@ -234,8 +234,8 @@ define(function (require) {
 
     function closeMapDialog () {
         // Remove image (causes fps drop)
-        WorldMap.ui.find('#img-map-view').attr('src', '');
-        const dialog = WorldMap.ui.find('#dialog-map-view-backdrop')[0];
+        WorldMap.ui.querySelector('#img-map-view').setAttribute('src', '');
+        const dialog = WorldMap.ui.querySelector('#dialog-map-view-backdrop');
         if (dialog) {
 			dialog.classList.remove("show");
         }
@@ -250,14 +250,14 @@ define(function (require) {
      * @param {string} imgData world map image data as a base64
      */
     function createWorldMapView (map, imgData) {
-        const container = WorldMap.ui.find('.map .content');
+        const container = WorldMap.ui.querySelector('.map .content');
         const worldmap = document.createElement('div');
         const currentMap = MapRenderer.currentMap.replace(/\.gat$/i, '');
 
         worldmap.className = 'worldmap';
 
         // set loaded worldmap background image
-        // worldmap.css('backgroundImage', `url(${imgData})`);
+        // worldmap.style.backgroundImage = `url(${imgData}`);
         const mapView = document.createElement('div');
         mapView.id = map.id;
         mapView.className = 'map-view';
@@ -307,7 +307,8 @@ define(function (require) {
             loadAirplane(mapView);
         }
         worldmap.appendChild(mapView);
-        container.html(worldmap);
+        container.innerHTML = '';
+        container.appendChild(worldmap);
     }
 
 
@@ -399,7 +400,7 @@ define(function (require) {
     WorldMap.onAppend = function onAppend () {
         // Apply preferences
         if (!_preferences.show) {
-            this.ui.hide();
+            DOM.hide(this.ui);
         }
 
         // settings
@@ -433,7 +434,7 @@ define(function (require) {
         // resize map container & add sections
         selectMap();
 
-        this.ui.css({
+        DOM.setCss(this.ui, {
             top: 0,
             left: 0,
         });
@@ -441,7 +442,7 @@ define(function (require) {
 
     WorldMap.onRemove = function onRemove () {
         // Save preferences
-        _preferences.show = this.ui.is(':visible');
+        _preferences.show = DOM.isVisible(this.ui);
         _preferences.y = 0;
         _preferences.x = 0;
         _preferences.width = 0;
@@ -453,9 +454,9 @@ define(function (require) {
      * Show/Hide UI
      */
     WorldMap.toggle = function toggle () {
-        this.ui.toggle();
+        DOM.toggleDisplay(this.ui);
 
-        if (this.ui.is(':visible')) {
+        if (DOM.isVisible(this.ui)) {
             this.focus();
         } else {
             closeMapDialog();
@@ -470,7 +471,7 @@ define(function (require) {
     WorldMap.onShortCut = function onShortCut (key) {
         switch (key.cmd) {
             case 'TOGGLE':
-                this.toggle();
+                DOM.toggleDisplay(this.ui);
                 break;
         }
     };
@@ -499,9 +500,10 @@ define(function (require) {
             }
         });
 
-        WorldMap.ui.find('.worldmap .section').removeClass('membersonmap');
+        Array.from(WorldMap.ui.querySelectorAll('.worldmap .section')).forEach(function(el) { el.classList.remove('membersonmap'); });
         for (const [mapId, members] of Object.entries(_partyMembersByMap)) {
-            WorldMap.ui.find('.worldmap .section#' + mapId).addClass('membersonmap');
+            var sectionEl = WorldMap.ui.querySelector('.worldmap .section#' + mapId);
+            if (sectionEl) sectionEl.classList.add('membersonmap');
         }
     };
 
@@ -511,10 +513,10 @@ define(function (require) {
      */
     function onToggleMaps () {
         if (WorldMap.showAllMaps) {
-            WorldMap.ui.find('.worldmap .section').removeClass('allmapvisible');
+            Array.from(WorldMap.ui.querySelectorAll('.worldmap .section')).forEach(function(el) { el.classList.remove('allmapvisible'); });
             WorldMap.showAllMaps = false;
         } else {
-            WorldMap.ui.find('.worldmap .section').addClass('allmapvisible');
+            Array.from(WorldMap.ui.querySelectorAll('.worldmap .section')).forEach(function(el) { el.classList.add('allmapvisible'); });
             WorldMap.showAllMaps = true;
         }
     }
@@ -534,7 +536,7 @@ define(function (require) {
      * Closing window
      */
     function onClose () {
-        WorldMap.ui.hide();
+        DOM.hide(WorldMap.ui);
     }
 
 

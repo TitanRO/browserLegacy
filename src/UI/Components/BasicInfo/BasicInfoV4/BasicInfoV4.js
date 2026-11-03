@@ -16,6 +16,7 @@ define(function(require)
 	 * Dependencies
 	 */
 	var DB                 = require('DB/DBManager');
+	var DOM                = require('Utils/DOM');
 	var Configs            = require('Core/Configs');
 	var PACKETVER          = require('Network/PacketVerManager');
 	var MonsterTable       = require('DB/Monsters/MonsterTable');
@@ -51,6 +52,39 @@ define(function(require)
 	var BasicInfoV4 = new UIComponent( 'BasicInfoV4', htmlText, cssText );
 
 
+	function qs(selector)
+	{
+		return DOM.qs(BasicInfoV4.ui, selector);
+	}
+
+
+	function qsa(selector)
+	{
+		return DOM.qsa(BasicInfoV4.ui, selector);
+	}
+
+
+	function setText(selector, value)
+	{
+		qsa(selector).forEach(function(el) {
+			el.textContent = value;
+		});
+	}
+
+
+	function toggleSizeClass()
+	{
+		if (BasicInfoV4.ui.classList.contains('large')) {
+			BasicInfoV4.ui.classList.remove('large');
+			BasicInfoV4.ui.classList.add('small');
+		}
+		else {
+			BasicInfoV4.ui.classList.remove('small');
+			BasicInfoV4.ui.classList.add('large');
+		}
+	}
+
+
 	/**
 	 * Stored data
 	 */
@@ -83,68 +117,83 @@ define(function(require)
 	BasicInfoV4.init = function init()
 	{
 		// Don't activate drag drop when clicking on buttons
-		this.ui.find('.topbar div').mousedown(function( event ){
-			event.stopImmediatePropagation();
+		qsa('.topbar div').forEach(function(el) {
+			el.addEventListener('mousedown', function( event ){
+				event.stopImmediatePropagation();
+			});
 		});
 
-		this.ui.find('.topbar').dblclick(BasicInfoV4.toggleMode.bind(this));
-		this.ui.find('.topbar .right').click(BasicInfoV4.toggleMode.bind(this));
-		this.ui.find('.toggle_btns').click(BasicInfoV4.toggleButtons.bind(this));
+		var topbar = qs('.topbar');
+		if (topbar) {
+			topbar.addEventListener('dblclick', BasicInfoV4.toggleMode.bind(this));
+		}
 
-		this.ui.find('.buttons button').click(function(){
-			switch (this.id) {
-				case 'item':
-					Inventory.getUI().toggle();
-					break;
+		var right = qs('.topbar .right');
+		if (right) {
+			right.addEventListener('click', BasicInfoV4.toggleMode.bind(this));
+		}
 
-				case 'info':
-					WinStats.getUI().toggle();
-					break;
+		var toggleBtns = qs('.toggle_btns');
+		if (toggleBtns) {
+			toggleBtns.addEventListener('click', BasicInfoV4.toggleButtons.bind(this));
+		}
 
-				case 'equip':
-					Equipment.getUI().toggle();
-					break;
+		qsa('.buttons button').forEach(function(btn) {
+			btn.addEventListener('click', function(){
+				switch (this.id) {
+					case 'item':
+						Inventory.getUI().toggle();
+						break;
 
-				case 'skill':
-					SkillList.getUI().toggle();
-					break;
+					case 'info':
+						WinStats.getUI().toggle();
+						break;
 
-				case 'option':
-					Escape.ui.toggle();
-					break;
+					case 'equip':
+						Equipment.getUI().toggle();
+						break;
 
-				case 'party':
-					PartyFriends.toggle();
-					break;
+					case 'skill':
+						SkillList.getUI().toggle();
+						break;
 
-				case 'guild':
-					Guild.toggle();
-					break;
+					case 'option':
+						Escape.toggle();
+						break;
 
-				case 'quest':
-					Quest.getUI().toggle();
-					break;
+					case 'party':
+						PartyFriends.toggle();
+						break;
 
-				case 'map':
-					WorldMap.toggle();
-					break;
+					case 'guild':
+						Guild.toggle();
+						break;
 
-				case 'bank':
-					Bank.toggle();
-					break;
+					case 'quest':
+						Quest.getUI().toggle();
+						break;
 
-				case 'attendance':
-					if(Configs.get('enableCheckAttendance') && PACKETVER.value >= 20180307) {
-						CheckAttendance.toggle();
-					}
-					break;
-				case 'mail':
-					Rodex.toggle();
-					break;
-				case 'navigation':
-					Navigation.toggle();
-					break;
-			}
+					case 'map':
+						WorldMap.toggle();
+						break;
+
+					case 'bank':
+						Bank.toggle();
+						break;
+
+					case 'attendance':
+						if(Configs.get('enableCheckAttendance') && PACKETVER.value >= 20180307) {
+							CheckAttendance.toggle();
+						}
+						break;
+					case 'mail':
+						Rodex.toggle();
+						break;
+					case 'navigation':
+						Navigation.toggle();
+						break;
+				}
+			});
 		});
 
 		this.draggable();
@@ -158,9 +207,9 @@ define(function(require)
 	BasicInfoV4.onAppend = function onAppend()
 	{
 		// Apply preferences
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight) + 'px',
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth) + 'px'
 		});
 
 		this.magnet.TOP = _preferences.magnet_top;
@@ -169,31 +218,31 @@ define(function(require)
 		this.magnet.RIGHT = _preferences.magnet_right;
 
 		// large/small window
-		this.ui.removeClass('small large');
+		this.ui.classList.remove('small', 'large');
 		if (_preferences.reduce) {
-			this.ui.addClass('small');
+			this.ui.classList.add('small');
 		}
 		else {
-			this.ui.addClass('large');
+			this.ui.classList.add('large');
 		}
 
 		if (_preferences.buttons) {
-			this.ui.find('.buttons').show();
-			this.ui.find('.btn_open').hide();
-			this.ui.find('.btn_close').show();
+			DOM.show(qs('.buttons'));
+			DOM.hide(qs('.btn_open'));
+			DOM.show(qs('.btn_close'));
 		}
 		else {
-			this.ui.find('.buttons').hide();
-			this.ui.find('.btn_open').show();
-			this.ui.find('.btn_close').hide();
+			DOM.hide(qs('.buttons'));
+			DOM.show(qs('.btn_open'));
+			DOM.hide(qs('.btn_close'));
 		}
 
-		this.ui.find('#battle').hide();
-		this.ui.find('#replay').hide();
-		this.ui.find('#achievment').hide();
-		this.ui.find('#tipbox').hide();
-		this.ui.find('#shortcut').hide();
-		this.ui.find('#agency').hide();
+		DOM.hide(qs('#battle'));
+		DOM.hide(qs('#replay'));
+		DOM.hide(qs('#achievment'));
+		DOM.hide(qs('#tipbox'));
+		DOM.hide(qs('#shortcut'));
+		DOM.hide(qs('#agency'));
 	};
 
 
@@ -202,10 +251,12 @@ define(function(require)
 	 */
 	BasicInfoV4.onRemove = function onRemove()
 	{
-		_preferences.x       = parseInt(this.ui.css('left'), 10);
-		_preferences.y       = parseInt(this.ui.css('top'), 10);
-		_preferences.reduce  = this.ui.hasClass('small');
-		_preferences.buttons = this.ui.find('.buttons').is(':visible');
+		var buttons = qs('.buttons');
+
+		_preferences.x       = parseInt(this.ui.style.left, 10);
+		_preferences.y       = parseInt(this.ui.style.top, 10);
+		_preferences.reduce  = this.ui.classList.contains('small');
+		_preferences.buttons = buttons ? DOM.isVisible(buttons) : false;
 		_preferences.magnet_top = this.magnet.TOP;
 		_preferences.magnet_bottom = this.magnet.BOTTOM;
 		_preferences.magnet_left = this.magnet.LEFT;
@@ -236,17 +287,17 @@ define(function(require)
 	{
 		var type;
 
-		this.ui.toggleClass('small large');
+		toggleSizeClass();
 
 		if (_preferences.buttons) {
-			this.ui.find('.buttons').show();
-			this.ui.find('#btn_open').hide();
-			this.ui.find('.btn_close').show();
+			DOM.show(qs('.buttons'));
+			DOM.hide(qs('#btn_open'));
+			DOM.show(qs('.btn_close'));
 		}
 		else {
-			this.ui.find('.buttons').hide();
-			this.ui.find('.btn_open').show();
-			this.ui.find('.btn_close').hide();
+			DOM.hide(qs('.buttons'));
+			DOM.show(qs('.btn_open'));
+			DOM.hide(qs('.btn_close'));
 		}
 	};
 
@@ -257,19 +308,19 @@ define(function(require)
 	BasicInfoV4.toggleButtons = function toggleButtons( event )
 	{
 		var type;
-		var $buttons = this.ui.find('.buttons');
+		var buttons = qs('.buttons');
 
-		_preferences.buttons = !$buttons.is(':visible');
+		_preferences.buttons = buttons ? !DOM.isVisible(buttons) : false;
 
 		if (_preferences.buttons) {
-			this.ui.find('.buttons').show();
-			this.ui.find('#btn_open').hide();
-			this.ui.find('.btn_close').show();
+			DOM.show(qs('.buttons'));
+			DOM.hide(qs('#btn_open'));
+			DOM.show(qs('.btn_close'));
 		}
 		else {
-			this.ui.find('.buttons').hide();
-			this.ui.find('.btn_open').show();
-			this.ui.find('.btn_close').hide();
+			DOM.hide(qs('.buttons'));
+			DOM.show(qs('.btn_open'));
+			DOM.hide(qs('.btn_close'));
 		}
 
 		event.stopImmediatePropagation();
@@ -285,11 +336,13 @@ define(function(require)
 	 */
 	BasicInfoV4.update = function update( type, val1, val2 )
 	{
+		var el, barDiv;
+
 		switch (type) {
 			case 'name':
 			case 'blvl':
 			case 'jlvl':
-				this.ui.find('.'+ type +'_value').text(val1);
+				setText('.' + type + '_value', val1);
 				break;
 
 			case 'zeny':
@@ -303,65 +356,86 @@ define(function(require)
 					str = list[count-i-1] + (i && i%3 ===0 ? ',' : '') + str;
 				}
 
-				this.ui.find('.'+ type +'_value').text(str);
+				setText('.' + type + '_value', str);
 				break;
 
 			case 'job':
 				Session.Character.job = val1;
 
-				this.ui.find('.job_value').text(MonsterTable[val1]);
+				setText('.job_value', MonsterTable[val1]);
 				break;
 
 			case 'bexp':
 			case 'jexp':
+				el = qs('.' + type);
 				if (!val2) {
-					this.ui.find('.' + type).hide();
+					DOM.hide(el);
 					break;
 				}
 
-				this.ui.find('.'+ type).show();
-				this.ui.find('.'+ type +' div').css('width', Math.min( 100, Math.floor(val1 * 100 / val2) ) + '%');
-				this.ui.find('.'+ type).attr('title', ((val1/val2)*100).toFixed(1) + '%');
-				this.ui.find('.'+ type +'_value').text( Math.min( 100, (Math.floor(val1 * 1000 / val2) * 0.1).toFixed(1)) + '%');
+				DOM.show(el);
+				barDiv = qs('.' + type + ' div');
+				if (barDiv) {
+					barDiv.style.width = Math.min( 100, Math.floor(val1 * 100 / val2) ) + '%';
+				}
+				if (el) {
+					el.title = ((val1/val2)*100).toFixed(1) + '%';
+				}
+				setText('.' + type + '_value', Math.min( 100, (Math.floor(val1 * 1000 / val2) * 0.1).toFixed(1)) + '%');
 				break;
 
 			case 'weight':
-				this.ui.find('.weight_value').text(val1 / 10 | 0);
-				this.ui.find('.weight_total').text(val2 / 10 | 0);
-				this.ui.find('.weight').css('color',  val1 < (val2/2) ? '' : 'red');
-				this.ui.find('.weight').attr('title', ((val1/val2)*100).toFixed(1) + '%');
+				setText('.weight_value', val1 / 10 | 0);
+				setText('.weight_total', val2 / 10 | 0);
+				el = qs('.weight');
+				if (el) {
+					el.style.color = val1 < (val2/2) ? '' : 'red';
+					el.title = ((val1/val2)*100).toFixed(1) + '%';
+				}
 				break;
 
 			case 'hp':
 			case 'sp':
 				var perc  = Math.floor(val1 * 100 / val2);
 				var color = perc < 25 ? 'red' : 'blue';
-				this.ui.find('.'+ type +'_value').text(val1);
-				this.ui.find('.'+ type +'_max_value').text(val2);
-				this.ui.find('.'+ type +'_perc').text( perc + '%');
+				setText('.' + type + '_value', val1);
+				setText('.' + type + '_max_value', val2);
+				setText('.' + type + '_perc', perc + '%');
 
 				if (perc <= 0) {
-					this.ui.find('.'+ type +'_bar div').css('backgroundImage', 'none');
+					barDiv = qs('.' + type + '_bar div');
+					if (barDiv) {
+						barDiv.style.backgroundImage = 'none';
+					}
 					break;
 				}
 
 				Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/gze'+ color +'_left.bmp', function(url){
-					this.ui.find('.'+ type +'_bar_left').css('backgroundImage', 'url('+ url +')');
-				}.bind(this));
+					el = qs('.' + type + '_bar_left');
+					if (el) {
+						el.style.backgroundImage = 'url('+ url +')';
+					}
+				});
 
 				Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/gze'+ color +'_mid.bmp', function(url){
-					this.ui.find('.'+ type +'_bar_middle').css({
-						backgroundImage: 'url('+ url +')',
-						width: Math.floor( Math.min( perc, 100 ) * 1.27 ) + 'px'
-					});
-				}.bind(this));
+					el = qs('.' + type + '_bar_middle');
+					if (el) {
+						DOM.setCss(el, {
+							backgroundImage: 'url('+ url +')',
+							width: Math.floor( Math.min( perc, 100 ) * 1.27 ) + 'px'
+						});
+					}
+				});
 
 				Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/gze'+ color +'_right.bmp', function(url){
-					this.ui.find('.'+ type +'_bar_right').css({
-						backgroundImage: 'url('+ url +')',
-						left: Math.floor( Math.min( perc, 100) * 1.27 ) + 'px'
-					});
-				}.bind(this));
+					el = qs('.' + type + '_bar_right');
+					if (el) {
+						DOM.setCss(el, {
+							backgroundImage: 'url('+ url +')',
+							left: Math.floor( Math.min( perc, 100) * 1.27 ) + 'px'
+						});
+					}
+				});
 				break;
 		}
 	};

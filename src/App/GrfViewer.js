@@ -26,7 +26,6 @@ require({
 	baseUrl: '../../src/',
 	paths: {
 		text:   'Vendors/text.require',
-		jquery: 'Vendors/jquery-1.9.1'
 	}
 }, ['UI/Components/GrfViewer/GrfViewer', 'Core/Context'], function( GRFViewer, Context )
 {

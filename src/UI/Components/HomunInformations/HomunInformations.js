@@ -22,6 +22,7 @@ define(function (require) {
     var SkillListMH = require('UI/Components/SkillListMH/SkillListMH');
     var htmlText = require('text!./HomunInformations.html');
     var cssText = require('text!./HomunInformations.css');
+    var DOM = require('Utils/DOM');
     var Session = require('Engine/SessionStorage');
     var AIDriver = require('Core/AIDriver');
     var Configs = require('Core/Configs');
@@ -50,25 +51,25 @@ define(function (require) {
      * Initialize component
      */
     HomunInformations.init = function init() {
-        this.draggable(this.ui.find('.content'));
+        this.draggable(this.ui.querySelector('.content'));
 
-        this.ui.find('.base').mousedown(stopPropagation);
-        this.ui.find('.close').click(onClose);
-        this.ui.find('.modify').click(onChangeName);
-        this.ui.find('.feed').click(onFeed);
-        this.ui.find('.del').click(onDelete);
-        this.ui.find('.homun_auto_feed').click(homunToggleAutoFeed);
+        this.ui.querySelector('.base').addEventListener('mousedown', stopPropagation);
+        this.ui.querySelector('.close').addEventListener('click', onClose);
+        this.ui.querySelector('.modify').addEventListener('click', onChangeName);
+        this.ui.querySelector('.feed').addEventListener('click', onFeed);
+        this.ui.querySelector('.del').addEventListener('click', onDelete);
+        this.ui.querySelector('.homun_auto_feed').addEventListener('click', homunToggleAutoFeed);
 
         if (!_preferences.show) {
-            this.ui.hide();
+            DOM.hide(this.ui);
         }
 
-        this.ui.css({
-            top: Math.min(Math.max(0, _preferences.y), Renderer.height - this.ui.height()),
-            left: Math.min(Math.max(0, _preferences.x), Renderer.width - this.ui.width())
+        DOM.setCss(this.ui, {
+            top: Math.min(Math.max(0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+            left: Math.min(Math.max(0, _preferences.x), Renderer.width - this.ui.offsetWidth)
         });
 
-        this.ui.find('.skill').mousedown(function () {
+        this.ui.querySelector('.skill').addEventListener('mousedown', function () {
             SkillListMH.homunculus.toggle()
         });
 
@@ -80,7 +81,7 @@ define(function (require) {
 
     HomunInformations.onAppend = function onAppend() {
         Client.loadFile(DB.INTERFACE_PATH + 'checkbox_' + (_preferences.autoFeed ? '1' : '0') + '.bmp', function (data) {
-            HomunInformations.ui.find('.homun_auto_feed').css('backgroundImage', 'url(' + data + ')');
+            HomunInformations.ui.querySelector('.homun_auto_feed').style.backgroundImage = 'url(' + data + ')';
         });
 
         if (PACKETVER.value < 20170920) {
@@ -88,7 +89,7 @@ define(function (require) {
                 // added support to autofeed for older clients with setInterval
                 HomunInformations.startAutoFeed();
             } else {
-                HomunInformations.ui.find('.feeding').hide();
+                HomunInformations.ui.querySelector('.feeding').style.display = 'none';
             }
         }
     }
@@ -154,9 +155,9 @@ define(function (require) {
      */
     HomunInformations.onRemove = function onRemove() {
         // Save preferences
-        _preferences.show = this.ui.is(':visible');
-        _preferences.y = parseInt(this.ui.css('top'), 10);
-        _preferences.x = parseInt(this.ui.css('left'), 10);
+        _preferences.show = DOM.isVisible(this.ui);
+        _preferences.y = parseInt(this.ui.style.top, 10);
+        _preferences.x = parseInt(this.ui.style.left, 10);
         _preferences.save();
         HomunInformations.stopAutoFeed();
         this.stopAI();
@@ -177,16 +178,16 @@ define(function (require) {
         switch (key.cmd) {
             case 'TOGGLE':
                 if (Session.homunId) {
-                    this.ui.toggle();
-                    if (this.ui.is(':visible')) {
+                    DOM.toggleDisplay(this.ui);
+                    if (DOM.isVisible(this.ui)) {
                         this.focus();
                     }
-                    if (!this.ui.is(':visible')) {
-                        SkillListMH.homunculus.ui.hide();
+                    if (!DOM.isVisible(this.ui)) {
+                        DOM.hide(SkillListMH.homunculus.ui);
                     }
                 } else {
-                    SkillListMH.homunculus.ui.hide();
-                    this.ui.hide();
+                    DOM.hide(SkillListMH.homunculus.ui);
+                    DOM.hide(this.ui);
                 }
                 break;
             case 'AGGRESSIVE':
@@ -202,17 +203,17 @@ define(function (require) {
      * @param {object} homunculus info
      */
     HomunInformations.setInformations = function setInformations(info) {
-        this.ui.find('.name').val(info.szName);
-        this.ui.find('.level').text(info.nLevel);
+        this.ui.querySelector('.name').value = info.szName;
+        this.ui.querySelector('.level').textContent = info.nLevel;
 
-        this.ui.find('.stats .atk').text(info.atk);
-        this.ui.find('.stats .Matk').text(info.Matk);
-        this.ui.find('.stats .hit').text(info.hit);
-        this.ui.find('.stats .critical').text(info.critical);
-        this.ui.find('.stats .def').text(info.def);
-        this.ui.find('.stats .Mdef').text(info.Mdef);
-        this.ui.find('.stats .flee').text(info.flee);
-        this.ui.find('.stats .aspd').text(Math.floor(200 - info.aspd / 10));
+        this.ui.querySelector('.stats .atk').textContent = info.atk;
+        this.ui.querySelector('.stats .Matk').textContent = info.Matk;
+        this.ui.querySelector('.stats .hit').textContent = info.hit;
+        this.ui.querySelector('.stats .critical').textContent = info.critical;
+        this.ui.querySelector('.stats .def').textContent = info.def;
+        this.ui.querySelector('.stats .Mdef').textContent = info.Mdef;
+        this.ui.querySelector('.stats .flee').textContent = info.flee;
+        this.ui.querySelector('.stats .aspd').textContent = Math.floor(200 - info.aspd / 10);
 
         this.setHpSpBar('hp', info.hp, info.maxHP);
         this.setHpSpBar('sp', info.sp, info.maxSP);
@@ -222,9 +223,9 @@ define(function (require) {
         this.setIntimacy(info.nRelationship);
 
         if (info.bModified < 5) {
-            this.ui.find('.name, .modify').removeClass('disabled').attr('disabled', false);
+            this.ui.querySelector('.name, .modify').classList.remove('disabled').setAttribute('disabled', false);
         } else {
-            this.ui.find('.name, .modify').addClass('disabled').attr('disabled', true);
+            this.ui.querySelector('.name, .modify').classList.add('disabled').setAttribute('disabled', true);
         }
 
         SkillListMH.homunculus.setPoints(info.SKPoint);
@@ -241,33 +242,31 @@ define(function (require) {
     HomunInformations.setHpSpBar = function setHpSpBar(type, val, val2) {
         var perc = Math.floor(val * 100 / val2);
         var color = perc < 25 ? 'red' : 'blue';
-        this.ui.find('.' + type + '_value').text(val);
-        this.ui.find('.' + type + '_max_value').text(val2);
-        this.ui.find('.' + type + '_perc').text(perc + '%');
+        this.ui.querySelector('.' + type + '_value').textContent = val;
+        this.ui.querySelector('.' + type + '_max_value').textContent = val2;
+        this.ui.querySelector('.' + type + '_perc').textContent = perc + '%';
 
         if (perc <= 0) {
-            this.ui.find('.' + type + '_bar div').css('backgroundImage', 'none');
+            this.ui.querySelector('.' + type + '_bar div').style.backgroundImage = 'none';
         }
 
         Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/gze' + color + '_left.bmp', function (url) {
-            this.ui.find('.' + type + '_bar_left').css('backgroundImage', 'url(' + url + ')');
+            this.ui.querySelector('.' + type + '_bar_left').style.backgroundImage = 'url(' + url + ')';
         }.bind(this));
 
         Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/gze' + color + '_mid.bmp', function (url) {
-            this.ui.find('.' + type + '_bar_middle').css({
-                backgroundImage: 'url(' + url + ')',
-                width: Math.floor(Math.min(perc, 100) * 0.75) + 'px'
-            });
+            var el = this.ui.querySelector('.' + type + '_bar_middle');
+            el.style.backgroundImage = 'url(' + url + ')';
+            el.style.width = Math.floor(Math.min(perc, 100) * 0.75) + 'px';
         }.bind(this));
 
         Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/gze' + color + '_right.bmp', function (url) {
-            this.ui.find('.' + type + '_bar_right').css({
-                backgroundImage: 'url(' + url + ')',
-                left: Math.floor(Math.min(perc, 100) * 1.27) + 'px'
-            });
+            var el = this.ui.querySelector('.' + type + '_bar_right');
+            el.style.backgroundImage = 'url(' + url + ')';
+            el.style.left = Math.floor(Math.min(perc, 100) * 1.27) + 'px';
         }.bind(this));
 
-        this.ui.find('.' + type + '2').text(val + '/' + val2);
+        this.ui.querySelector('.' + type + '2').textContent = val + '/' + val2;
     }
 
 
@@ -281,13 +280,13 @@ define(function (require) {
             return;
         }
 
-        this.ui.find('.intimacy').text(DB.getMessage(
+        this.ui.querySelector('.intimacy').textContent = DB.getMessage(
             val < 100 ? 672 :
                 val < 250 ? 673 :
                     val < 600 ? 669 :
                         val < 900 ? 674 :
                             675
-        ));
+        );
     };
 
 
@@ -302,8 +301,8 @@ define(function (require) {
             return;
         }
 
-        var canvasExp = this.ui.find('.block2 canvas.life.title_exp');
-        var ctx = canvasExp.get(0).getContext('2d')
+        var canvasExp = this.ui.querySelector('.block2 canvas.life.title_exp');
+        var ctx = canvasExp.getContext('2d');
 
         var width = 60, height = 5;
         var exp_per = exp / maxEXP;
@@ -319,7 +318,7 @@ define(function (require) {
         ctx.fillStyle = '#205cc3';
         ctx.fillRect(1, 1, Math.round((width - 2) * exp_per), 3);
 
-        this.ui.find('.exp').text(exp + '/' + maxEXP);
+        this.ui.querySelector('.exp').textContent = exp + '/' + maxEXP;
     }
 
 
@@ -333,8 +332,8 @@ define(function (require) {
             return;
         }
 
-        var canvasHunger = this.ui.find('.block2 canvas.life.title_hunger');
-        var ctx = canvasHunger.get(0).getContext('2d')
+        var canvasHunger = this.ui.querySelector('.block2 canvas.life.title_hunger');
+        var ctx = canvasHunger.getContext('2d');
 
         var width = 60, height = 5;
         var hunger_per = val / 100;
@@ -350,7 +349,7 @@ define(function (require) {
         ctx.fillStyle = (hunger_per < 0.25) ? '#ff1e00' : '#205cc3';
         ctx.fillRect(1, 1, Math.round((width - 2) * hunger_per), 3);
 
-        this.ui.find('.hunger').text(val + '/' + 100);
+        this.ui.querySelector('.hunger').textContent = val + '/' + 100;
     };
 
     HomunInformations.toggleAggressive = function toggleAggressive() {
@@ -388,7 +387,7 @@ define(function (require) {
         // server sent this info before of homun
         if (HomunInformations.ui) {
             Client.loadFile(DB.INTERFACE_PATH + 'checkbox_' + (_preferences.autoFeed ? '1' : '0') + '.bmp', function (data) {
-                HomunInformations.ui.find('.homun_auto_feed').css('backgroundImage', 'url(' + data + ')');
+                HomunInformations.ui.querySelector('.homun_auto_feed').style.backgroundImage = 'url(' + data + ')';
             });
         }
         autoFeedCheck();
@@ -407,8 +406,8 @@ define(function (require) {
      * Request to modify homun's name
      */
     function onChangeName() {
-        var input = HomunInformations.ui.find('.name');
-        HomunInformations.reqNameEdit(input.val());
+        var input = HomunInformations.ui.querySelector('.name');
+        HomunInformations.reqNameEdit(input.value);
     }
 
 
@@ -416,8 +415,8 @@ define(function (require) {
      * Closing window
      */
     function onClose() {
-        HomunInformations.ui.hide();
-        SkillListMH.homunculus.ui.hide();
+        HomunInformations.ui.style.display = 'none';
+        SkillListMH.homunculus.ui.style.display = 'none';
     }
 
 

@@ -15,7 +15,6 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
-	var jQuery      = require('Utils/jquery');
 	var Events      = require('Core/Events');
 	var Renderer    = require('Renderer/Renderer');
 	var UIManager   = require('UI/UIManager');
@@ -59,13 +58,12 @@ define(function(require)
 	{
 		this.canvas = document.createElement('canvas');
 		this.ctx    = this.canvas.getContext('2d');
-		this.ui     = jQuery(this.canvas);
+		this.ui     = this.canvas;
 
-		this.ui.attr('id', 'Announce').css({
-			position: 'absolute',
-			top:       40,
-			zIndex:    40
-		});
+		this.ui.id = 'Announce';
+		this.ui.style.position = 'absolute';
+		this.ui.style.top = '40px';
+		this.ui.style.zIndex = '40';
 	};
 
 
@@ -78,7 +76,6 @@ define(function(require)
 			Events.clearTimeout( _timer );
 			this.timer = 0;
 		}
-		this.ui.remove(); // Remove from DOM
 	};
 
 

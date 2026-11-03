@@ -14,7 +14,6 @@ define(function(require)
 	 * Dependencies
 	 */
 	var DB           = require('DB/DBManager');
-	var jQuery       = require('Utils/jquery');
 	var Client       = require('Core/Client');
 	var Session      = require('Engine/SessionStorage');
 	var Renderer     = require('Renderer/Renderer');
@@ -26,6 +25,7 @@ define(function(require)
 	var ChatBox      = require('UI/Components/ChatBox/ChatBox');
 	var htmlText     = require('text!./Trade.html');
 	var cssText      = require('text!./Trade.css');
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -64,25 +64,24 @@ define(function(require)
 	Trade.init = function Init()
 	{
 		// Bind buttons
-		this.ui.find('.ok.enabled').click(onConclude);
-		this.ui.find('.trade.enabled').click(onTrade.bind(this));
-		this.ui.find('.cancel').click(onCancel.bind(this));
+		this.ui.querySelector('.ok.enabled').addEventListener('click', onConclude);
+		this.ui.querySelector('.trade.enabled').addEventListener('click', onTrade.bind(this));
+		this.ui.querySelector('.cancel').addEventListener('click', onCancel.bind(this));
 
-		this.ui
-			.on('mousedown', '.disabled', stopPropagation)
-			.on('drop',     onDrop)
-			.on('dragover', stopPropagation);
+		DOM.addDelegatedEvent(this.ui, 'mousedown', '.disabled', stopPropagation);
+		this.ui.addEventListener('drop', onDrop);
+		this.ui.addEventListener('dragover', stopPropagation);
 
-		this.ui.find('.zeny.send').mousedown(function(){
+		this.ui.querySelector('.zeny.send').addEventListener('mousedown', function(){
 			this.select();
 		});
 
-		this.ui.find('.box')
-			.on('mouseover',   '.item', onItemOver)
-			.on('mouseout',    '.item', onItemOut)
-			.on('contextmenu', '.item', onItemInfo);
+		var _tradeBox = this.ui.querySelector('.box');
+		DOM.addDelegatedEvent(_tradeBox, 'mouseover', '.item', onItemOver);
+		DOM.addDelegatedEvent(_tradeBox, 'mouseout', '.item', onItemOut);
+		DOM.addDelegatedEvent(_tradeBox, 'contextmenu', '.item', onItemInfo);
 
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 	};
 
 
@@ -93,11 +92,11 @@ define(function(require)
 	{
 		// Clean up (interface)
 		this.onRemove();
-		this.ui.find('.titlebar .title').text(this.title);
+		this.ui.querySelector('.titlebar .title').textContent = this.title;
 
-		this.ui.css({
-			top:  (Renderer.height - this.ui.height()) / 2,
-			left: (Renderer.width  - this.ui.width()) / 2
+		DOM.setCss(this.ui, {
+			top:  (Renderer.height - this.ui.offsetHeight) / 2,
+			left: (Renderer.width  - this.ui.offsetWidth) / 2
 		});
 	};
 
@@ -111,12 +110,15 @@ define(function(require)
 		_recv.length = 0;
 		_send.length = 0;
 
-		this.ui.find('.overlay').hide();
-		this.ui.find('.ok.disabled, .trade.enabled').hide();
-		this.ui.find('.ok.enabled, .trade.disabled').show();
-		this.ui.find('.box').removeClass('disabled').empty();
-		this.ui.find('.zeny.send').val(0).removeClass('disabled').attr('disabled', false);
-		this.ui.find('.zeny.recv').text('0');
+		this.ui.querySelector('.overlay').style.display = 'none';
+		this.ui.querySelector('.ok.disabled, .trade.enabled').style.display = 'none';
+		this.ui.querySelector('.ok.enabled, .trade.disabled').style.display = '';
+		this.ui.querySelector('.box').classList.remove('disabled').innerHTML = '';
+		var zenySend = this.ui.querySelector('.zeny.send');
+		zenySend.value = 0;
+		zenySend.classList.remove('disabled');
+		zenySend.removeAttribute('disabled');
+		this.ui.querySelector('.zeny.recv').textContent = '0';
 	};
 
 
@@ -136,26 +138,26 @@ define(function(require)
 
 		// ZENY
 		if (index === 0) {
-			this.ui.find('.zeny.send').val(prettifyZeny(_tmpCount[index]));
+			this.ui.querySelector('.zeny.send').value = prettifyZeny(_tmpCount[index]);
 			return;
 		}
 
-		var item    = jQuery.extend({}, Inventory.getUI().removeItem(index, _tmpCount[index]));
+		var item    = Object.assign({}, Inventory.getUI().removeItem(index, _tmpCount[index]));
 		var it      = DB.getItemInfo( item.ITID );
 		var idx     = _send.push(item) - 1;
-		var box     = this.ui.find('.box.send');
+		var box     = this.ui.querySelector('.box.send');
 		item.count  = _tmpCount[index];
 
-		box.append(
+		box.insertAdjacentHTML('beforeend',
 			'<div class="item" data-index="'+ idx +'">' +
 				'<div class="icon"></div>' +
 				'<div class="amount"><span class="count">' + (_tmpCount[index] || 1) + '</span></div>' +
-				'<span class="name">' + jQuery.escape(DB.getItemName(item)) + '</span>' +
+				'<span class="name">' + DOM.escapeHtml(DB.getItemName(item)) + '</span>' +
 			'</div>'
 		);
 
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + ( item.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName ) + '.bmp', function(data){
-			box.find('.item[data-index="'+ idx +'"] .icon').css('backgroundImage', 'url('+ data +')');
+			box.querySelector('.item[data-index="'+ idx +'"] .icon').style.backgroundImage = 'url(' + data + ')';
 		}.bind(this));
 	};
 
@@ -169,24 +171,24 @@ define(function(require)
 	{
 		// ZENY
 		if (item.ITID === 0) {
-			this.ui.find('.zeny.recv').text(prettifyZeny(item.count));
+			this.ui.querySelector('.zeny.recv').textContent = prettifyZeny(item.count);
 			return;
 		}
 
 		var it  = DB.getItemInfo( item.ITID );
 		var idx = _recv.push(item) - 1;
-		var box = this.ui.find('.box.recv');
+		var box = this.ui.querySelector('.box.recv');
 
-		box.append(
+		box.insertAdjacentHTML('beforeend',
 			'<div class="item" data-index="'+ idx +'">' +
 				'<div class="icon"></div>' +
 				'<div class="amount">'+ item.count + '</div>' +
-				'<span class="name">' + jQuery.escape(DB.getItemName(item)) + '</span>' +
+				'<span class="name">' + DOM.escapeHtml(DB.getItemName(item)) + '</span>' +
 			'</div>'
 		);
 
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + ( item.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName ) + '.bmp', function(data){
-			box.find('.item[data-index="'+ idx +'"] .icon').css('backgroundImage', 'url('+ data +')');
+			box.querySelector('.item[data-index="'+ idx +'"] .icon').style.backgroundImage = 'url(' + data + ')';
 		}.bind(this));
 	};
 
@@ -246,18 +248,18 @@ define(function(require)
 	 */
 	Trade.conclude = function conclude(element)
 	{
-		this.ui.find('.box.' + element).addClass('disabled');
+		this.ui.querySelector('.box.' + element).classList.add('disabled');
 
 		if (element === 'send') {
-			this.ui.find('.ok.disabled').show();
-			this.ui.find('.ok.enabled').hide();
-			this.ui.find('.zeny.send').addClass('disabled').attr('disabled', true);
+			this.ui.querySelector('.ok.disabled').style.display = '';
+			this.ui.querySelector('.ok.enabled').style.display = 'none';
+			this.ui.querySelector('.zeny.send').classList.add('disabled').setAttribute('disabled', true);
 		}
 
 		// Can conclude
-		if (this.ui.find('.box.recv.disabled').is(':visible') && this.ui.find('.box.send.disabled').is(':visible')) {
-			this.ui.find('.trade.enabled').show();
-			this.ui.find('.trade.disabled').hide();
+		if (DOM.isVisible(this.ui.querySelector('.box.recv.disabled')) && DOM.isVisible(this.ui.querySelector('.box.send.disabled'))) {
+			this.ui.querySelector('.trade.enabled').style.display = '';
+			this.ui.querySelector('.trade.disabled').style.display = 'none';
 		}
 	};
 
@@ -288,7 +290,7 @@ define(function(require)
 	function onConclude()
 	{
 		// Send zeny value before concluding
-		var zeny = parseInt(Trade.ui.find('.zeny.send').val(), 10) || 0;
+		var zeny = parseInt(Trade.ui.querySelector('.zeny.send').value, 10) || 0;
 		zeny     = Math.min( Math.max(0, zeny), Session.zeny);
 
 		onRequestAddItem( 0, zeny);
@@ -302,8 +304,8 @@ define(function(require)
 	function onTrade()
 	{
 		Trade.onTradeSubmit();
-		this.ui.find('.trade.enabled').hide();
-		this.ui.find('.trade.disabled').show();
+		this.ui.querySelector('.trade.enabled').style.display = 'none';
+		this.ui.querySelector('.trade.disabled').style.display = '';
 	}
 
 
@@ -316,7 +318,7 @@ define(function(require)
 
 		try {
 			data = JSON.parse(
-				event.originalEvent.dataTransfer.getData('Text')
+				event.dataTransfer.getData('Text')
 			);
 		}
 		catch(e) {}
@@ -365,23 +367,23 @@ define(function(require)
 			return;
 		}
 
-		var $e      = jQuery(this);
-		var pos     = $e.parent().position();
-		var overlay = Trade.ui.find('.overlay');
+		var pos     = DOM.getPosition(this.parentNode);
+		var overlay = Trade.ui.querySelector('.overlay');
+		var selfPos = DOM.getPosition(this);
 
-		pos.left += $e.position().left;
-		pos.top  += $e.position().top;
+		pos.left += selfPos.left;
+		pos.top  += selfPos.top;
 
 		// Display box
-		overlay.show();
-		overlay.css({top: pos.top+5, left:pos.left+30});
-		overlay.text(DB.getItemName(item));
+		overlay.style.display = '';
+		DOM.setCss(overlay, {top: pos.top+5, left:pos.left+30});
+		overlay.textContent = DB.getItemName(item);
 
 		if (item.IsIdentified) {
-			overlay.removeClass('grey');
+			overlay.classList.remove('grey');
 		}
 		else {
-			overlay.addClass('grey');
+			overlay.classList.add('grey');
 		}
 	}
 
@@ -391,7 +393,7 @@ define(function(require)
 	 */
 	function onItemOut()
 	{
-		Trade.ui.find('.overlay').hide();
+		Trade.ui.querySelector('.overlay').style.display = 'none';
 	}
 
 

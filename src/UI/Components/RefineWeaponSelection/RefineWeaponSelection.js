@@ -15,7 +15,7 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
-	var jQuery      = require('Utils/jquery');
+	var DOM         = require('Utils/DOM');
 	var DB          = require('DB/DBManager');
 	var SkillInfo   = require('DB/Skills/SkillInfo');
 	var Client      = require('Core/Client');
@@ -33,35 +33,47 @@ define(function(require)
 	var RefineWeaponSelection = new UIComponent( 'RefineWeaponSelection', htmlText, cssText );
 
 
+	function qs(selector)
+	{
+		return DOM.qs(RefineWeaponSelection.ui, selector);
+	}
+
+
 	/**
 	 * Initialize UI
 	 */
 	RefineWeaponSelection.init = function init()
 	{
 		// Show at center.
-		this.ui.css({
-			top:  (Renderer.height- 200)/2,
-			left: (Renderer.width - 200)/2
+		DOM.setCss(this.ui, {
+			top:  (Renderer.height- 200)/2 + 'px',
+			left: (Renderer.width - 200)/2 + 'px'
 		});
 
-		this.list  = this.ui.find('.list:first');
+		this.list  = qs('.list');
 		this.index = 0;
 
-		this.draggable(this.ui.find('.head'));
+		this.draggable(qs('.head'));
 
 		// Click Events
-		this.ui.find('.ok').click( this.selectIndex.bind(this) );
-		this.ui.find('.cancel').click(function(){
+		qs('.ok').addEventListener('click', this.selectIndex.bind(this));
+		qs('.cancel').addEventListener('click', function(){
 			this.index = -1;
 			this.selectIndex();
-		}.bind(this) );
+		}.bind(this));
 
 		// Bind events
-		this.ui
-			.on('dblclick', '.item', this.selectIndex.bind(this))
-			.on('mousedown', '.item', function(){
-				RefineWeaponSelection.setIndex( Math.floor(this.getAttribute('data-index')) );
-			});
+		this.ui.addEventListener('dblclick', function(event) {
+			if (event.target.closest('.item')) {
+				RefineWeaponSelection.selectIndex();
+			}
+		});
+		this.ui.addEventListener('mousedown', function(event) {
+			var item = event.target.closest('.item');
+			if (item) {
+				RefineWeaponSelection.setIndex(Math.floor(item.getAttribute('data-index')));
+			}
+		});
 	};
 
 
@@ -75,7 +87,7 @@ define(function(require)
 		var i, count;
 		var item, it, file, name, refine;
 
-		RefineWeaponSelection.list.empty();
+		DOM.empty(RefineWeaponSelection.list);
 		RefineWeaponSelection.ItemList = [];
 
 		for (i = 0, count = list.length; i < count; ++i) {
@@ -104,17 +116,18 @@ define(function(require)
 	 */
 	function addElement( url, index, name)
 	{
-		RefineWeaponSelection.list.append(
+		RefineWeaponSelection.list.insertAdjacentHTML('beforeend',
 			'<div class="item" data-index="'+ index +'">' +
 				'<div class="icon"></div>' +
-				'<span class="name">' + jQuery.escape(name) + '</span>' +
+				'<span class="name">' + DOM.sanitizeHtml(name) + '</span>' +
 			'</div>'
 		);
 
 		Client.loadFile( url, function(data){
-			RefineWeaponSelection.list
-				.find('div[data-index='+ index +'] .icon')
-				.css('backgroundImage', 'url('+ data +')');
+			var icon = RefineWeaponSelection.list.querySelector('div[data-index="'+ index +'"] .icon');
+			if (icon) {
+				icon.style.backgroundImage = 'url('+ data +')';
+			}
 		});
 	}
 
@@ -126,8 +139,14 @@ define(function(require)
 	 */
 	RefineWeaponSelection.setIndex = function setIndex( id )
 	{
-		this.list.find('div[data-index='+ this.index +']').css('backgroundColor', 'transparent');
-		this.list.find('div[data-index='+ id         +']').css('backgroundColor', '#cde0ff');
+		var prev = this.list.querySelector('div[data-index="'+ this.index +'"]');
+		var next = this.list.querySelector('div[data-index="'+ id +'"]');
+		if (prev) {
+			prev.style.backgroundColor = 'transparent';
+		}
+		if (next) {
+			next.style.backgroundColor = '#cde0ff';
+		}
 		this.index = id;
 	};
 
@@ -170,7 +189,7 @@ define(function(require)
 	 */
 	RefineWeaponSelection.setTitle = function setTitle( title )
 	{
-		this.ui.find('.head .text').text( title );
+		DOM.setFormattedText(qs('.head .text'), title, DB.getItemInfo.bind(DB));
 	};
 
 

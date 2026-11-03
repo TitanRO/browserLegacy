@@ -18,7 +18,6 @@ define(function(require)
 	 * Dependencies
 	 */
 	var DB                 = require('DB/DBManager');
-	var jQuery             = require('Utils/jquery');
 	var Network          = require('Network/NetworkManager');
 	var PACKET           = require('Network/PacketStructure');
 	var Client             = require('Core/Client');
@@ -33,6 +32,7 @@ define(function(require)
 	var htmlText           = require('text!./VendingShop.html');
 	var cssText            = require('text!./VendingShop.css');
 	var getModule          = require;
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -85,25 +85,24 @@ define(function(require)
 	VendingShop.init = function Init()
 	{
 		// Bind buttons
-		this.ui.find('.btn.close').click(function(){
+		this.ui.querySelector('.btn.close').addEventListener('click', function(){
 			VendingShop.onSubmit();
 		});
 		// on drop item
-		this.ui
-			.on('drop',     onDrop)
-			.on('dragover', stopPropagation)
-
+		this.ui.addEventListener('drop', onDrop);
+		this.ui.addEventListener('dragover', stopPropagation);
 		// Items event
-			.find('.container .content')
-				.on('mousewheel DOMMouseScroll', onScroll)
-				.on('mouseover',   '.item', onItemOver)
-				.on('mouseout',    '.item', onItemOut)
-				.on('dragstart',   '.item', onItemDragStart)
-				.on('dragend',     '.item', onItemDragEnd)
-				.on('contextmenu', '.item', onItemInfo)
-				.on('dblclick',    '.item', onItemUsed);
+		var _vsContent = this.ui.querySelector('.container .content');
+		_vsContent.addEventListener('mousewheel', onScroll);
+		_vsContent.addEventListener('DOMMouseScroll', onScroll);
+		DOM.addDelegatedEvent(_vsContent, 'mouseover', '.item', onItemOver);
+		DOM.addDelegatedEvent(_vsContent, 'mouseout', '.item', onItemOut);
+		DOM.addDelegatedEvent(_vsContent, 'dragstart', '.item', onItemDragStart);
+		DOM.addDelegatedEvent(_vsContent, 'dragend', '.item', onItemDragEnd);
+		DOM.addDelegatedEvent(_vsContent, 'contextmenu', '.item', onItemInfo);
+		DOM.addDelegatedEvent(_vsContent, 'dblclick', '.item', onItemUsed);
 
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 	};
 
 
@@ -114,15 +113,15 @@ define(function(require)
 	{
 		this.resize( _preferences.width, _preferences.height );
 
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 
-		_realSize = _preferences.reduce ? 0 : this.ui.height();
+		_realSize = _preferences.reduce ? 0 : this.ui.offsetHeight;
 		let messageText = DB.getMessage(226);
 		let titleShop = Vending._shopname.length > 25 ? Vending._shopname.substring(0,25)+"..." : Vending._shopname
-		this.ui.find('.text.shopname').text(messageText+" : "+titleShop);
+		this.ui.querySelector('.text.shopname').textContent = messageText+" : "+titleShop;
 	};
 
 	/**
@@ -141,19 +140,19 @@ define(function(require)
 	VendingShop.onRemove = function OnRemove()
 	{
 
-		this.ui.find('.container .content').empty();
+		this.ui.querySelector('.container .content').innerHTML = '';
 		this.list.length = 0;
-		jQuery('.ItemInfo').remove();
+		ItemInfo.remove();
 
 		// Save preferences
 		_preferences.reduce = !!_realSize;
-		_preferences.y      =  parseInt(this.ui.css('top'), 10);
-		_preferences.x      =  parseInt(this.ui.css('left'), 10);
-		_preferences.width  =  Math.floor( (this.ui.width()  - (23 + 16 + 16 - 30)) / 32 );
-		_preferences.height =  Math.floor( (this.ui.height() - (31 + 19 - 30     )) / 32 );
+		_preferences.y      =  parseInt(this.ui.style.top, 10);
+		_preferences.x      =  parseInt(this.ui.style.left, 10);
+		_preferences.width  =  Math.floor( (this.ui.offsetWidth  - (23 + 16 + 16 - 30)) / 32 );
+		_preferences.height =  Math.floor( (this.ui.offsetHeight - (31 + 19 - 30     )) / 32 );
 		_preferences.save();
 
-		this.ui.hide();
+		this.ui.style.display = 'none';
 
 	};
 
@@ -169,12 +168,11 @@ define(function(require)
 		width  = Math.min( Math.max(width,  6), 9);
 		height = Math.min( Math.max(height, 2), 6);
 
-		this.ui.find('.container .content').css({
-			width:  width  * 32 + 13, // 13 = scrollbar
-			height: height * 32
-		});
+		var content = this.ui.querySelector('.container .content');
+		content.style.width = (width * 32 + 13) + 'px'; // 13 = scrollbar
+		content.style.height = (height * 32) + 'px';
 
-		this.ui.css({
+		DOM.setCss(this.ui, {
 			width:  16 + 16 + width  * 32,
 			height: 31 + 19      + height * 32
 		});
@@ -237,7 +235,7 @@ define(function(require)
 			}
 		}
 
-		this.ui.show();
+		this.ui.style.display = '';
 	};
 
 
@@ -252,11 +250,11 @@ define(function(require)
 
 		if (object) {
 			object.count += item.count;
-			this.ui.find('.item[data-index="'+ item.index +'"] .count').text( object.count );
+			this.ui.querySelector('.item[data-index="'+ item.index +'"] .count').textContent =  object.count ;
 			return;
 		}
 
-		object = jQuery.extend({}, item);
+		object = Object.assign({}, item);
 		if (this.addItemSub(object)) {
 			this.list.push(object);
 		}
@@ -271,24 +269,24 @@ define(function(require)
 	VendingShop.addItemSub = function AddItemSub( item )
 	{
 			var it      = DB.getItemInfo( item.ITID );
-			var content = this.ui.find('.container .content');
+			var content = this.ui.querySelector('.container .content');
 
-			content.append(
+			content.insertAdjacentHTML('beforeend',
 				'<div class="item" data-index="'+ item.index +'" draggable="true">' +
 					'<div class="icon"></div>' +
 					'<div class="amount"><span class="count">' + (item.count || 1) + '</span></div>' +
 				'</div>'
 			);
 
-			if (content.height() < content[0].scrollHeight) {
-				this.ui.find('.hide').hide();
+			if (content.offsetHeight < content.scrollHeight) {
+				this.ui.querySelector('.hide').style.display = 'none';
 			}
 			else {
-				this.ui.find('.hide').show();
+				this.ui.querySelector('.hide').style.display = '';
 			}
 
 			Client.loadFile( DB.INTERFACE_PATH + 'item/' + ( item.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName ) + '.bmp', function(data){
-				content.find('.item[data-index="'+ item.index +'"] .icon').css('backgroundImage', 'url('+ data +')');
+				content.querySelector('.item[data-index="'+ item.index +'"] .icon').style.backgroundImage = 'url('+ data +')';
 			});
 		return true;
 	};
@@ -316,13 +314,13 @@ define(function(require)
 			item.count -= count;
 
 			if (item.count > 0) {
-				this.ui.find('.item[data-index="'+ item.index +'"] .count').text( item.count );
+				this.ui.querySelector('.item[data-index="'+ item.index +'"] .count').textContent =  item.count ;
 				return item;
 			}
 		}
 
 		this.list.splice( this.list.indexOf(item), 1 );
-		this.ui.find('.item[data-index="'+ item.index +'"]').remove();
+		this.ui.querySelector('.item[data-index="'+ item.index +'"]').remove();
 
 		ctr = 0;
 		for(i=0; i < this.list.length; i++)
@@ -338,9 +336,9 @@ define(function(require)
 			this.onSubmit();
 		}
 /*
-		var content = this.ui.find('.container .content');
-		if (content.height() === content[0].scrollHeight) {
-			this.ui.find('.hide').show();
+		var content = this.ui.querySelector('.container .content');
+		if (content.offsetHeight === content.scrollHeight) {
+			this.ui.querySelector('.hide').style.display = '';
 		}
 */
 		return item;
@@ -365,17 +363,17 @@ define(function(require)
 
 		// Update quantity
 		if (item.count > 0) {
-			this.ui.find('.item[data-index="'+ item.index +'"] .count').text( item.count );
+			this.ui.querySelector('.item[data-index="'+ item.index +'"] .count').textContent =  item.count ;
 			return;
 		}
 
 		// no quantity, remove
 		this.list.splice( this.list.indexOf(item), 1 );
-		this.ui.find('.item[data-index="'+ item.index +'"]').remove();
+		this.ui.querySelector('.item[data-index="'+ item.index +'"]').remove();
 
-		var content = this.ui.find('.container .content');
-		if (content.height() === content[0].scrollHeight) {
-			this.ui.find('.hide').show();
+		var content = this.ui.querySelector('.container .content');
+		if (content.offsetHeight === content.scrollHeight) {
+			this.ui.querySelector('.hide').style.display = '';
 		}
 	};
 	
@@ -433,14 +431,14 @@ define(function(require)
 		var ui = VendingShop.ui;
 
 		if (_realSize) {
-			ui.find('.panel').show();
-			ui.height(_realSize);
+			ui.querySelector('.panel').style.display = '';
+			ui.style.height = _realSize + "px";
 			_realSize = 0;
 		}
 		else {
-			_realSize = ui.height();
-			ui.height(17);
-			ui.find('.panel').hide();
+			_realSize = ui.offsetHeight;
+			ui.style.height = 17 + "px";
+			ui.querySelector('.panel').style.display = 'none';
 		}
 	}
 
@@ -450,7 +448,7 @@ define(function(require)
 	 */
 	function requestFilter()
 	{
-		VendingShop.ui.find('.container .content').empty();
+		VendingShop.ui.querySelector('.container .content').innerHTML = '';
 
 		var list = VendingShop.list;
 		var i, count;
@@ -480,14 +478,14 @@ define(function(require)
 	{
 		var delta;
 
-		if (event.originalEvent.wheelDelta) {
-			delta = event.originalEvent.wheelDelta / 120 ;
+		if (event.wheelDelta) {
+			delta = event.wheelDelta / 120 ;
 			if (window.opera) {
 				delta = -delta;
 			}
 		}
-		else if (event.originalEvent.detail) {
-			delta = -event.originalEvent.detail;
+		else if (event.detail) {
+			delta = -event.detail;
 		}
 
 		this.scrollTop = Math.floor(this.scrollTop/32) * 32 - (delta * 32);
@@ -509,19 +507,19 @@ define(function(require)
 		}
 
 		// Get back data
-		var pos     = jQuery(this).position();
-		var overlay = VendingShop.ui.find('.overlay');
+		var pos     = DOM.getPosition(this);
+		var overlay = VendingShop.ui.querySelector('.overlay');
 
 		// Display box
-		overlay.show();
-		overlay.css({top: pos.top, left:pos.left+35});
-		overlay.text(DB.getItemName(item) + ' ' + prettyZeny(item.price, false) + ' ' + DB.getMessage(2328));
+		overlay.style.display = '';
+		overlay.style.top = pos.top; overlay.style.left = pos.left+35;
+		overlay.textContent = DB.getItemName(item) + ' ' + prettyZeny(item.price, false) + ' ' + DB.getMessage(2328);
 
 		if (item.IsIdentified) {
-			overlay.removeClass('grey');
+			overlay.classList.remove('grey');
 		}
 		else if(_type === VendingShop.Type.VENDING_LIST) {
-			overlay.addClass('grey');
+			overlay.classList.add('grey');
 		}
 	}
 
@@ -531,7 +529,7 @@ define(function(require)
 	 */
 	function onItemOut()
 	{
-		VendingShop.ui.find('.overlay').hide();
+		VendingShop.ui.querySelector('.overlay').style.display = 'none';
 	}
 
 

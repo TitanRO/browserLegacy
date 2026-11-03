@@ -47,8 +47,8 @@ define(function()
 		_previous = previous;
 		_next     = next;
 
-		_previous.removeClass('on');
-		_next.removeClass('on');
+		_previous.classList.remove('on');
+		_next.classList.remove('on');
 	}
 
 
@@ -62,10 +62,10 @@ define(function()
 		_history.length = (++_index);
 		_history.push( link );
 
-		_next.removeClass('on');
+		_next.classList.remove('on');
 
 		if (_history.length > 1) {
-			_previous.addClass('on');
+			_previous.classList.add('on');
 		}
 	}
 
@@ -81,9 +81,9 @@ define(function()
 			return null;
 		}
 
-		_previous.addClass('on');
+		_previous.classList.add('on');
 		if (_index + 1 >= _history.length) {
-			_next.removeClass('on');
+			_next.classList.remove('on');
 		}
 
 		return _history[++_index];
@@ -101,9 +101,9 @@ define(function()
 			return null;
 		}
 
-		_next.addClass('on');
+		_next.classList.add('on');
 		if (_index - 2 < 0) {
-			_previous.removeClass('on');
+			_previous.classList.remove('on');
 		}
 
 		return _history[ --_index ];

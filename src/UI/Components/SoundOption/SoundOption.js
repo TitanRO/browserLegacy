@@ -23,6 +23,7 @@ define(function(require)
 	var UIComponent   = require('UI/UIComponent');
 	var htmlText      = require('text!./SoundOption.html');
 	var cssText       = require('text!./SoundOption.css');
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -45,16 +46,16 @@ define(function(require)
 	 */
 	SoundOption.init = function init()
 	{
-		this.ui.find('.base').mousedown(stopPropagation);
-		this.ui.find('.close').click(onClose);
+		this.ui.querySelector('.base').addEventListener('mousedown', stopPropagation);
+		this.ui.querySelector('.close').addEventListener('click', onClose);
 
-		this.ui.find('.sound').change(onSoundVolumeUpdate);
-		this.ui.find('.bgm').change(onBGMVolumeUpdate);
+		this.ui.querySelector('.sound').addEventListener('change', onSoundVolumeUpdate);
+		this.ui.querySelector('.bgm').addEventListener('change', onBGMVolumeUpdate);
 
-		this.ui.find('.sound_state').change(onToggleSound);
-		this.ui.find('.bgm_state').change(onToggleBGM);
+		this.ui.querySelector('.sound_state').addEventListener('change', onToggleSound);
+		this.ui.querySelector('.bgm_state').addEventListener('change', onToggleBGM);
 
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 	};
 
 
@@ -65,15 +66,15 @@ define(function(require)
 	 */
 	SoundOption.onAppend = function onAppend()
 	{
-		this.ui.css({
+		DOM.setCss(this.ui, {
 			top:     _preferences.y,
 			left:    _preferences.x
 		});
 
-		this.ui.find('.sound').val(AudioSettings.Sound.volume * 100);
-		this.ui.find('.bgm').val( AudioSettings.BGM.volume * 100);
-		this.ui.find('.sound_state')[0].checked = AudioSettings.Sound.play;
-		this.ui.find('.bgm_state')[0].checked   = AudioSettings.BGM.play;
+		this.ui.querySelector('.sound').value = AudioSettings.Sound.volume * 100;
+		this.ui.querySelector('.bgm').value =  AudioSettings.BGM.volume * 100;
+		this.ui.querySelector('.sound_state').checked = AudioSettings.Sound.play;
+		this.ui.querySelector('.bgm_state').checked   = AudioSettings.BGM.play;
 	};
 
 
@@ -82,8 +83,8 @@ define(function(require)
 	 */
 	SoundOption.onRemove = function onRemove()
 	{
-		_preferences.x    = parseInt(this.ui.css('left'), 10);
-		_preferences.y    = parseInt(this.ui.css('top'), 10);
+		_preferences.x    = parseInt(this.ui.style.left, 10);
+		_preferences.y    = parseInt(this.ui.style.top, 10);
 		_preferences.save();
 	};
 

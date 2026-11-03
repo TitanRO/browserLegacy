@@ -16,7 +16,6 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
-	var jQuery         = require('Utils/jquery');
 	var UIManager      = require('UI/UIManager');
 	var UIComponent    = require('UI/UIComponent');
 	var Client         = require('Core/Client');
@@ -74,20 +73,16 @@ define(function(require)
 	SlotMachine.init = function init()
 	{
 		// Initialize UI.
-		this.ui = jQuery('<canvas/>')
-			.attr({
-				width:  270,
-				height: 260,
-				id:     'SlotMachine'
-			})
-			.css({
-				zIndex:   500,
-				position: 'absolute',
-				top:      (Renderer.height / 2) - 130,
-				left:     (Renderer.width  / 2) - 135
-			});
+		this.ui = document.createElement('canvas');
+		this.ui.width = 270;
+		this.ui.height = 260;
+		this.ui.id = 'SlotMachine';
+		this.ui.style.zIndex = '500';
+		this.ui.style.position = 'absolute';
+		this.ui.style.top = ((Renderer.height / 2) - 130) + 'px';
+		this.ui.style.left = ((Renderer.width / 2) - 135) + 'px';
 
-		_ctx  = this.ui[0].getContext('2d');
+		_ctx  = this.ui.getContext('2d');
 
 
 		// Loading sprite, start animation
@@ -97,14 +92,14 @@ define(function(require)
 			_type   = 0;
 			_start  = Renderer.tick;
 
-			if (this.ui[0].parentNode) {
+			if (this.ui.parentNode) {
 				Renderer.render(rendering);
 			}
 		}.bind(this));
 
 
 		// Don't propagate to map scene
-		this.ui.mousedown(function(event) {
+		this.ui.addEventListener('mousedown', function(event) {
 			if (_type === 0) {
 				SlotMachine.onTry();
 				event.stopImmediatePropagation();

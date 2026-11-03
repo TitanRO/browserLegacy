@@ -15,7 +15,6 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
-	var jQuery      = require('Utils/jquery');
 	var KEYS        = require('Controls/KeyEventHandler');
 	var Renderer    = require('Renderer/Renderer');
 	var UIManager   = require('UI/UIManager');
@@ -24,6 +23,7 @@ define(function(require)
 	var Navigation  = require('UI/Components/Navigation/Navigation');
 	var htmlText    = require('text!./NpcBox.html');
 	var cssText     = require('text!./NpcBox.css');
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -43,6 +43,10 @@ define(function(require)
 	 * @var {integer} NPC GID
 	 */
 	var _ownerID = 0;
+
+	Object.defineProperty(NpcBox, 'ownerID', {
+		get: function() { return _ownerID; }
+	});
 
 
 	/**
@@ -102,24 +106,24 @@ define(function(require)
 	 */
 	NpcBox.init = function init()
 	{
-		this.ui.css({
+		DOM.setCss(this.ui, {
 			top: Math.max(100, Renderer.height/2 - 200),
 			left: Math.max( Renderer.width/3, 20)
 		});
 
 		// Bind mouse
-		this.ui.find('.next').click( NpcBox.next.bind(this) );
-		this.ui.find('.close').click( NpcBox.close.bind(this) );
+		this.ui.querySelector('.next').addEventListener('click',  NpcBox.next.bind(this) );
+		this.ui.querySelector('.close').addEventListener('click',  NpcBox.close.bind(this) );
 
 		// Content do not drag window (official)
 		// Will also fix the problem about the scrollbar
-		this.ui.find('.content').mousedown(function(event){
+		this.ui.querySelector('.content').addEventListener('mousedown', function(event){
 			event.stopImmediatePropagation();
 		});
 
 		// Add click handler for item links
-		this.ui.on('click', '.item-link', function(event) {
-			var itemId = parseInt(jQuery(this).data('item-id'), 10);
+		DOM.addDelegatedEvent(this.ui, 'click', '.item-link', function(event) {
+			var itemId = parseInt(this.getAttribute('data-item-id'), 10);
 			if (!itemId) {
 				return;
 			}
@@ -137,24 +141,24 @@ define(function(require)
 		});
 
 		// Add click handler for navi links
-		this.ui.on('click', '.navi-link', function(event) {
-			var naviInfo = jQuery(this).data('navi-info');
-			var displayName = jQuery(this).data('navi-name');
+		DOM.addDelegatedEvent(this.ui, 'click', '.navi-link', function(event) {
+			var naviInfo = this.getAttribute('data-navi-info');
+			var displayName = this.getAttribute('data-navi-name');
 
 			if (!naviInfo) {
 				return;
 			}
 
 			// If the Navigation window is already showing this location, toggle it off
-			if (Navigation.uid === naviInfo && Navigation.ui.is(':visible')) {
+			if (Navigation.uid === naviInfo && DOM.isVisible(Navigation.ui)) {
 				Navigation.hide();
 				return;
 			}
 
 			// Show the Navigation window and set the info
-			Navigation.show();
 			Navigation.uid = naviInfo;
 			Navigation.setNaviInfo(naviInfo, displayName);
+			Navigation.show();
 		});
 
 		this.draggable();
@@ -166,9 +170,9 @@ define(function(require)
 	 */
 	NpcBox.onRemove = function onRemove()
 	{
-		this.ui.find('.next').hide();
-		this.ui.find('.close').hide();
-		this.ui.find('.content').text('');
+		DOM.hide(this.ui.querySelector('.next'));
+		DOM.hide(this.ui.querySelector('.close'));
+		this.ui.querySelector('.content').textContent = '';
 
 		_needCleanUp = false;
 		_ownerID     = 0;
@@ -189,18 +193,18 @@ define(function(require)
 		switch (event.which) {
 			case KEYS.SPACE:	// Same as Enter
 			case KEYS.ENTER:
-				if (this.ui.find('.next').is(':visible')) {
+				if (DOM.isVisible(this.ui.querySelector('.next'))) {
 					this.next();
 					break;
 				}
-				else if (this.ui.find('.close').is(':visible')) {
+				else if (DOM.isVisible(this.ui.querySelector('.close'))) {
 					this.close();
 					break;
 				}
 				return true;
 
 			case KEYS.ESCAPE:
-				if (this.ui.find('.close').is(':visible')) {
+				if (DOM.isVisible(this.ui.querySelector('.close'))) {
 					this.close();
 					break;
 				}
@@ -223,15 +227,17 @@ define(function(require)
 	 */
 	NpcBox.setText = function SetText( text, gid )
 	{
-		var content = this.ui.find('.content');
+		var content = this.ui.querySelector('.content');
 		_ownerID    = gid;
 
 		if (_needCleanUp) {
 			_needCleanUp = false;
-			content.text('');
+			content.textContent = '';
 		}
 
-		content.append( jQuery('<div/>').html(processText(text)) );
+		var div = document.createElement('div');
+		div.innerHTML = processText(text);
+		content.appendChild(div);
 	};
 
 
@@ -243,7 +249,7 @@ define(function(require)
 	NpcBox.addNext = function addNext( gid )
 	{
 		_ownerID = gid;
-		this.ui.find('.next').show();
+		DOM.show(this.ui.querySelector('.next'));
 	};
 
 
@@ -255,7 +261,7 @@ define(function(require)
 	NpcBox.addClose = function addClose( gid )
 	{
 		_ownerID = gid;
-		this.ui.find('.close').show();
+		DOM.show(this.ui.querySelector('.close'));
 	};
 
 
@@ -265,7 +271,7 @@ define(function(require)
 	NpcBox.next = function Next()
 	{
 		_needCleanUp = true;
-		this.ui.find('.next').hide();
+		DOM.hide(this.ui.querySelector('.next'));
 		this.onNextPressed( _ownerID );
 	};
 
@@ -276,7 +282,7 @@ define(function(require)
 	NpcBox.close = function Close()
 	{
 		_needCleanUp = true;
-		this.ui.find('.close').hide();
+		DOM.hide(this.ui.querySelector('.close'));
 		this.onClosePressed( _ownerID );
 	};
 

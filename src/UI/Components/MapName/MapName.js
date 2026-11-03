@@ -23,6 +23,7 @@ define(function(require)
 	var cssText            = require('text!./MapName.css');
 	var Client             = require('Core/Client');
 	var Events             = require('Core/Events');
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -62,7 +63,7 @@ define(function(require)
 	{
 		if (_mapinfo && _mapinfo.notifyEnter && _newMap) {
 			// Apply preferences
-			this.ui.css({
+			DOM.setCss(this.ui, {
 				opacity: 1
 			});
 			
@@ -75,7 +76,7 @@ define(function(require)
 			function fade(){
 				fadeProgress += fadeCycle;
 				if(fadeProgress < fadeTime){
-					MapName.ui.css('opacity', MapName.ui.css('opacity')*1 - (100/(fadeTime/fadeCycle)/100));
+					MapName.ui.style.opacity = (parseFloat(MapName.ui.style.opacity || 1)*1 - (100/(fadeTime/fadeCycle)/100));
 					fadeTimeout = setTimeout(function(){ fade(); }, fadeCycle);
 				}
 			}
@@ -113,24 +114,24 @@ define(function(require)
 		*/
 		if ( _mapinfo && _mapinfo.backgroundBmp ) {
 			Client.loadFile( DB.INTERFACE_PATH + "display_mapname/"+_mapinfo.backgroundBmp+".png", function(dataURI) {
-				MapName.ui.find('.mapbg').css('backgroundImage', 'url(' + dataURI + ')');
+				MapName.ui.querySelector('.mapbg').style.backgroundImage = 'url(' + dataURI + ')';
 			});
 		} else {
-			MapName.ui.find('.mapbg').css('backgroundImage', 'none');
+			MapName.ui.querySelector('.mapbg').style.backgroundImage = 'none';
 		}
 		
-		var mapsubtitle = MapName.ui.find('.mapsubtitle');
+		var mapsubtitle = MapName.ui.querySelector('.mapsubtitle');
 		if( _mapinfo && _mapinfo.signName && _mapinfo.signName.subTitle ) {
-			mapsubtitle.text(_mapinfo.signName.subTitle);
+			mapsubtitle.textContent = _mapinfo.signName.subTitle;
 		} else {
-			mapsubtitle.empty();
+			mapsubtitle.textContent = '';
 		}
 		
-		var maptitle = MapName.ui.find('.maptitle');
+		var maptitle = MapName.ui.querySelector('.maptitle');
 		if( _mapinfo && _mapinfo.signName && _mapinfo.signName.mainTitle ) {
-			maptitle.text(_mapinfo.signName.mainTitle);
+			maptitle.textContent = _mapinfo.signName.mainTitle;
 		} else {
-			maptitle.empty();
+			maptitle.textContent = '';
 		}
 	};
 
@@ -139,13 +140,13 @@ define(function(require)
 	 */
 	MapName.onRemove = function OnRemove()
 	{
-		var maptitle = MapName.ui.find('.maptitle');
-		var mapsubtitle = MapName.ui.find('.mapsubtitle');
+		var maptitle = MapName.ui.querySelector('.maptitle');
+		var mapsubtitle = MapName.ui.querySelector('.mapsubtitle');
 
 		// Clean up
-		MapName.ui.find('.mapbg').css('backgroundImage', 'none');
-		mapsubtitle.empty();
-		maptitle.empty();
+		MapName.ui.querySelector('.mapbg').style.backgroundImage = 'none';
+		mapsubtitle.textContent = '';
+		maptitle.textContent = '';
 	};
 
 	/**

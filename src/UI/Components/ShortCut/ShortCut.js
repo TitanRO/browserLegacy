@@ -18,7 +18,6 @@ define(function(require)
 	var DB                   = require('DB/DBManager');
 	var ItemType             = require('DB/Items/ItemType');
 	var SkillInfo            = require('DB/Skills/SkillInfo');
-	var jQuery               = require('Utils/jquery');
 	var Client               = require('Core/Client');
 	var Preferences          = require('Core/Preferences');
 	var Renderer             = require('Renderer/Renderer');
@@ -38,6 +37,7 @@ define(function(require)
 
 	var htmlText             = require('text!./ShortCut.html');
 	var cssText              = require('text!./ShortCut.css');
+	var DOM             = require('Utils/DOM');
 	/**
 	 * Create Component
 	 */
@@ -75,22 +75,22 @@ define(function(require)
 	 */
 	ShortCut.init = function init()
 	{	
-		this.ui.find('.resize').mousedown(onResize);
-		this.ui.find('.close').mousedown(stopPropagation).click(onClose);
+		this.ui.querySelector('.resize').addEventListener('mousedown', onResize);
+		var _shortCutClose = this.ui.querySelector('.close');
+		_shortCutClose.addEventListener('mousedown', stopPropagation);
+		_shortCutClose.addEventListener('click', onClose);
 
-		this.ui
-			// Dropping to the shortcut
-			.on('drop',     '.container', onDrop)
-			.on('dragover', '.container', stopPropagation)
-
-			// Icons
-			.on('dragstart',   '.icon', onDragStart)
-			.on('dragend',     '.icon', onDragEnd)
-			.on('dblclick',    '.icon', onUseShortCut)
-			.on('contextmenu', '.icon', onElementInfo)
-			.on('mousedown',   '.icon', function(event){
-				event.stopImmediatePropagation();
-			});
+		// Dropping to the shortcut
+		DOM.addDelegatedEvent(this.ui, 'drop', '.container', onDrop);
+		DOM.addDelegatedEvent(this.ui, 'dragover', '.container', stopPropagation);
+		// Icons
+		DOM.addDelegatedEvent(this.ui, 'dragstart', '.icon', onDragStart);
+		DOM.addDelegatedEvent(this.ui, 'dragend', '.icon', onDragEnd);
+		DOM.addDelegatedEvent(this.ui, 'dblclick', '.icon', onUseShortCut);
+		DOM.addDelegatedEvent(this.ui, 'contextmenu', '.icon', onElementInfo);
+		DOM.addDelegatedEvent(this.ui, 'mousedown', '.icon', function(event){
+			event.stopImmediatePropagation();
+		});
 
 		this.draggable();
 
@@ -107,9 +107,9 @@ define(function(require)
 	ShortCut.onAppend = function onAppend()
 	{
 		// Apply preferences
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width()),
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth),
 			height: 34 * _preferences.size
 		});
 		this.magnet.TOP = _preferences.magnet_top;
@@ -127,9 +127,9 @@ define(function(require)
 	ShortCut.onRemove = function onRemove()
 	{
 		// Save preferences
-		_preferences.y      = parseInt(this.ui.css('top'), 10);
-		_preferences.x      = parseInt(this.ui.css('left'), 10);
-		_preferences.size   = Math.floor( parseInt(this.ui.css('height'),10) / 34 );
+		_preferences.y      = parseInt(this.ui.style.top, 10);
+		_preferences.x      = parseInt(this.ui.style.left, 10);
+		_preferences.size   = Math.floor( parseInt(this.ui.style.height, 10) / 34 );
 		_preferences.magnet_top = this.magnet.TOP;
 		_preferences.magnet_bottom = this.magnet.BOTTOM;
 		_preferences.magnet_left = this.magnet.LEFT;
@@ -145,7 +145,9 @@ define(function(require)
 	ShortCut.clean = function clean()
 	{
 		_list.length = 0;
-		this.ui.find('.container').empty();
+		this.ui.querySelectorAll('.container').forEach(function(el) {
+			el.innerHTML = '';
+		});
 	};
 
 
@@ -164,7 +166,7 @@ define(function(require)
 			case 'EXTEND':
 				_preferences.size = (_preferences.size + 1) % (_rowCount + 1);
 				_preferences.save();
-				this.ui.css('height', _preferences.size * 34 );
+				this.ui.style.height = _preferences.size * 34 ;
 				break;
 		}
 	};
@@ -180,7 +182,9 @@ define(function(require)
 		var i, count;
 		var skill;
 
-		this.ui.find('.container').empty();
+		this.ui.querySelectorAll('.container').forEach(function(el) {
+			el.innerHTML = '';
+		});
 		_list.length = list.length;
 		_rowCount    = Math.min( 4, Math.floor(list.length / 9) );
 
@@ -257,7 +261,7 @@ define(function(require)
 	function onResize( event )
 	{
 		var ui = ShortCut.ui;
-		var top = ui.position().top;
+		var top = DOM.getPosition(ui).top;
 		var lastHeight = 0;
 		var _Interval;
 
@@ -272,7 +276,7 @@ define(function(require)
 				return;
 			}
 
-			ui.css('height', h * 34);
+			ui.style.height = h * 34;
 			_preferences.size = h;
 			_preferences.save();
 			lastHeight = h;
@@ -282,12 +286,13 @@ define(function(require)
 		_Interval = setInterval( resizing, 30);
 
 		// Stop resizing on left click
-		jQuery(window).on('mouseup.resize', function(event){
+		var _onResizeEnd = function(event){
 			if (event.which === 1) {
 				clearInterval(_Interval);
-				jQuery(window).off('mouseup.resize');
+				window.removeEventListener('mouseup', _onResizeEnd);
 			}
-		});
+		};
+		window.addEventListener('mouseup', _onResizeEnd);
 
 		return stopPropagation(event);
 	}
@@ -301,10 +306,22 @@ define(function(require)
 	 * @param {number} ID
 	 * @param {number} count or level
 	 */
+	function getContainer( index )
+	{
+		return ShortCut.ui.querySelectorAll('.container')[index] || null;
+	}
+
+
 	function addElement( index, isSkill, ID, count )
 	{
 		var file, name;
-		var ui = ShortCut.ui.find('.container:eq(' + index + ')').empty();
+		var ui = getContainer(index);
+
+		if (!ui) {
+			return;
+		}
+
+		ui.innerHTML = '';
 
 		if (!_list[index]) {
 			_list[index] = {};
@@ -353,17 +370,17 @@ define(function(require)
 		}
 
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + file + '.bmp', function(url){
-			ui.html(
+			ui.innerHTML = 
 				'<div draggable="true" class="icon">' +
 					'<div class="img"></div>' +
 					'<div class="amount"></div>' +
 					'<span class="name"></span>' +
 				'</div>'
-			);
+			;
 
-			ui.find('.img').css('backgroundImage', 'url('+ url +')');
-			ui.find('.amount').text(count);
-			ui.find('.name').text(name);
+			ui.querySelector('.img').style.backgroundImage = 'url('+ url +')';
+			ui.querySelector('.amount').textContent = count;
+			ui.querySelector('.name').textContent = name;
 
 		});
 
@@ -380,14 +397,18 @@ define(function(require)
 			//do nothing, the new delay would end sooner.
 		} else {
 			_list[index].Delay = Renderer.tick + delay;
-			var ui = ShortCut.ui.find('.container:eq(' + index + ')');
+			var ui = getContainer(index);
+
+			if (!ui) {
+				return;
+			}
 
 			Client.loadFile( DB.INTERFACE_PATH + 'item/\xb0\xed\xbe\xe7\xc0\xcc\xb9\xdf\xb8\xd3\xb8\xae\xc7\xc9.bmp', function(url){
-				ui.find('.img').css('filter', 'grayscale(66%)');
-				ui.find('.img').html(
+				ui.querySelector('.img').style.filter = 'grayscale(66%)';
+				ui.querySelector('.img').innerHTML = 
 					'<img class="delay" src="'+url+'" width="24" height="24"></img>'
-				);
-				ui.find('.delay').css('display', 'block');
+				;
+				ui.querySelector('.delay').style.display = 'block';
 			});
 
 			if(_list[index].Timeout){
@@ -396,8 +417,8 @@ define(function(require)
 
 			_list[index].Timeout = setTimeout(
 				function(){
-					ui.find('.delay').css('display', 'none');
-					ui.find('.img').css('filter', 'grayscale(0%)');
+					ui.querySelector('.delay').style.display = 'none';
+					ui.querySelector('.img').style.filter = 'grayscale(0%)';
 				}
 				, delay
 			);
@@ -450,7 +471,10 @@ define(function(require)
 
 		for (i = row * 9, count = Math.min(_list.length, row * 9 + 9); i < count; ++i) {
 			if (_list[i] && _list[i].isSkill == isSkill && _list[i].ID === ID && (!isSkill || _list[i].count == amount)) {
-				ShortCut.ui.find('.container:eq(' + i + ')').empty();
+				var slot = getContainer(i);
+				if (slot) {
+					slot.innerHTML = '';
+				}
 				_list[i].isSkill = 0;
 				_list[i].ID      = 0;
 				_list[i].count   = 0;
@@ -475,7 +499,7 @@ define(function(require)
 		event.stopImmediatePropagation();
 
 		try {
-			data    = JSON.parse(event.originalEvent.dataTransfer.getData('Text'));
+			data    = JSON.parse(event.dataTransfer.getData('Text'));
 			element = data.data;
 		}
 		catch(e) {
@@ -538,8 +562,8 @@ define(function(require)
 		img     = new Image();
 		img.src = this.firstChild.style.backgroundImage.match(/\(([^\)]+)/)[1].replace(/"/g, '');
 
-		event.originalEvent.dataTransfer.setDragImage( img, 12, 12 );
-		event.originalEvent.dataTransfer.setData('Text',
+		event.dataTransfer.setDragImage( img, 12, 12 );
+		event.dataTransfer.setData('Text',
 			JSON.stringify( window._OBJ_DRAG_ = {
 				type: _list[index].isSkill ? 'skill' : 'item',
 				from: 'ShortCut',
@@ -642,7 +666,7 @@ define(function(require)
 	 */
 	function onClose()
 	{
-		ShortCut.ui.css('height', 0);
+		ShortCut.ui.style.height = 0;
 		_preferences.size = 0;
 		_preferences.save();
 	}

@@ -16,6 +16,7 @@ define(function(require)
      * Dependencies
      */
     var DB                 = require('DB/DBManager');
+    var DOM                = require('Utils/DOM');
     var MonsterTable       = require('DB/Monsters/MonsterTable');
     var Preferences        = require('Core/Preferences');
     var Client             = require('Core/Client');
@@ -35,6 +36,26 @@ define(function(require)
      * Create Chararacter Selection namespace
      */
     var CharSelectV3 = new UIComponent( 'CharSelectV3', htmlText, cssText );
+
+
+    function qs(selector)
+    {
+        return DOM.qs(CharSelectV3.ui, selector);
+    }
+
+
+    function qsa(selector)
+    {
+        return DOM.qsa(CharSelectV3.ui, selector);
+    }
+
+
+    function setText(el, value)
+    {
+        if (el) {
+            el.textContent = value;
+        }
+    }
 
 
     /**
@@ -98,42 +119,83 @@ define(function(require)
     {
         var ui = this.ui;
 
-        ui.css({
-            top:  (Renderer.height-358)/2,
-            left: (Renderer.width-576)/2
+        DOM.setCss(ui, {
+            top:  (Renderer.height - 358) / 2 + 'px',
+            left: (Renderer.width - 576) / 2 + 'px'
         });
 
-        // Bind buttons
-        ui.find('.ok'    ).click(connect);
-        ui.find('.cancel').click(cancel);
-        ui.find('.make'  ).click(create);
-        ui.find('.delete').click(reserve);
-        ui.find('.canceldelete').click(removedelete);
-        ui.find('.finaldelete').click(suppress);
+        var okBtn = qs('.ok');
+        var cancelBtn = qs('.cancel');
+        var makeBtn = qs('.make');
+        var deleteBtn = qs('.delete');
+        var cancelDeleteBtn = qs('.canceldelete');
+        var finalDeleteBtn = qs('.finaldelete');
+        var arrowLeft = qs('.arrow.left');
+        var arrowRight = qs('.arrow.right');
 
-        ui.find('.arrow.left' ).mousedown(genericArrowDown(-1));
-        ui.find('.arrow.right').mousedown(genericArrowDown(+1));
+        if (okBtn) {
+            okBtn.addEventListener('click', connect);
+        }
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', cancel);
+        }
+        if (makeBtn) {
+            makeBtn.addEventListener('click', create);
+        }
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', reserve);
+        }
+        if (cancelDeleteBtn) {
+            cancelDeleteBtn.addEventListener('click', removedelete);
+        }
+        if (finalDeleteBtn) {
+            finalDeleteBtn.addEventListener('click', suppress);
+        }
+        if (arrowLeft) {
+            arrowLeft.addEventListener('mousedown', genericArrowDown(-1));
+        }
+        if (arrowRight) {
+            arrowRight.addEventListener('mousedown', genericArrowDown(+1));
+        }
 
-        // Bind canvas
-        ui.find('.slot1').mousedown(genericCanvasDown(0));
-        ui.find('.slot2').mousedown(genericCanvasDown(1));
-        ui.find('.slot3').mousedown(genericCanvasDown(2));
+        var slot1 = qs('.slot1');
+        var slot2 = qs('.slot2');
+        var slot3 = qs('.slot3');
 
-        ui.find('.make1').mousedown(function (e){ genericCanvasDown(0)(e);  create(); });
-        ui.find('.make2').mousedown(function (e){ genericCanvasDown(1)(e);  create(); });
-        ui.find('.make3').mousedown(function (e){ genericCanvasDown(2)(e);  create(); });
+        if (slot1) {
+            slot1.addEventListener('mousedown', genericCanvasDown(0));
+        }
+        if (slot2) {
+            slot2.addEventListener('mousedown', genericCanvasDown(1));
+        }
+        if (slot3) {
+            slot3.addEventListener('mousedown', genericCanvasDown(2));
+        }
 
-        ui.find('canvas').
-        dblclick(function(){
-            if (_slots[_index]) {
-                connect();
-            }
-            else {
-                create();
-            }
-        }).
-        each(function(){
-            _ctx.push( this.getContext('2d') );
+        var make1 = qs('.make1');
+        var make2 = qs('.make2');
+        var make3 = qs('.make3');
+
+        if (make1) {
+            make1.addEventListener('mousedown', function(e) { genericCanvasDown(0)(e); create(); });
+        }
+        if (make2) {
+            make2.addEventListener('mousedown', function(e) { genericCanvasDown(1)(e); create(); });
+        }
+        if (make3) {
+            make3.addEventListener('mousedown', function(e) { genericCanvasDown(2)(e); create(); });
+        }
+
+        qsa('canvas').forEach(function(canvas) {
+            canvas.addEventListener('dblclick', function() {
+                if (_slots[_index]) {
+                    connect();
+                }
+                else {
+                    create();
+                }
+            });
+            _ctx.push(canvas.getContext('2d'));
         });
 
         this.draggable();
@@ -147,13 +209,10 @@ define(function(require)
     {
         _index = _preferences.index;
 
-        this.ui.find('.slotinfo .number').text( _list.length + ' / ' + _maxSlots );
-        this.ui.find('.pageinfo .count').text( _maxSlots / 3 );
+        setText(qs('.slotinfo .number'), _list.length + ' / ' + _maxSlots);
 
-        // Update values
         moveCursorTo(_index);
 
-        // Start rendering
         Renderer.render(render);
     };
 
@@ -165,7 +224,10 @@ define(function(require)
     {
         _preferences.index = _index;
         _preferences.save();
-		this.ui.find('.timedelete').hide().text('');
+        qsa('.timedelete').forEach(function(el) {
+            DOM.hide(el);
+            setText(el, '');
+        });
         Renderer.stop();
     };
 
@@ -238,29 +300,30 @@ define(function(require)
             }
         }
 
-        this.ui.find('.slotinfo .number').text( _list.length + ' / ' + _maxSlots );
+        setText(qs('.slotinfo .number'), _list.length + ' / ' + _maxSlots);
 
         moveCursorTo( _index );
     };
 
 
     function drawBall(btnList, index, sel) {
-        btnList.append('<button class="btn_pageinfo' + index + '" data-background="select_character/page_ball_empty.bmp" data-hover="select_character/page_ball_empty.bmp" data-down="select_character/page_ball_fill.bmp"></button><img width="8px" />');
+        btnList.insertAdjacentHTML('beforeend', '<button class="btn_pageinfo' + index + '" data-background="select_character/page_ball_empty.bmp" data-hover="select_character/page_ball_empty.bmp" data-down="select_character/page_ball_fill.bmp"></button><img width="8px" />');
+        var btn = DOM.qs(btnList, '.btn_pageinfo' + index);
         if (!sel) {
             Client.loadFile(DB.INTERFACE_PATH + 'select_character/page_ball_empty.bmp', function (data) {
-                btnList.find('.btn_pageinfo' + index).css('backgroundImage', 'url("' + data + '")');
+                DOM.setCss(btn, 'backgroundImage', 'url("' + data + '")');
             });
         }
         else {
             Client.loadFile(DB.INTERFACE_PATH + 'select_character/page_ball_fill.bmp', function (data) {
-                btnList.find('.btn_pageinfo' + index).css('backgroundImage', 'url("' + data + '")');
+                DOM.setCss(btn, 'backgroundImage', 'url("' + data + '")');
             });
         }
 
-        btnList.find('.btn_pageinfo' + index).css('border', '0');
-        btnList.find('.btn_pageinfo' + index).css('width', '8px');
-        btnList.find('.btn_pageinfo' + index).css('height', '8px');
-        btnList.find('.btn_pageinfo' + index).css('background-color', 'transparent');
+        DOM.setCss(btn, 'border', '0');
+        DOM.setCss(btn, 'width', '8px');
+        DOM.setCss(btn, 'height', '8px');
+        DOM.setCss(btn, 'backgroundColor', 'transparent');
     }
 
 
@@ -299,7 +362,7 @@ define(function(require)
 
 				// Refresh UI
 				moveCursorTo( _index );
-				this.ui.find('.slotinfo .number').text( _list.length + ' / ' + _maxSlots );
+				setText(qs('.slotinfo .number'), _list.length + ' / ' + _maxSlots);
 				return;
 
 			default: // Others error ?
@@ -351,12 +414,12 @@ define(function(require)
 		
 		if (_slots[ character.CharNum ].DeleteDate && Math.floor(_index/3) == Math.floor(character.CharNum/3) ) {
 			const slotNum = (character.CharNum + _maxSlots) % _maxSlots + 1;
-			const countdown = this.ui.find('.timedelete.slot' + slotNum);  // Adjusted selector
+			const countdown = qs('.timedelete.slot' + slotNum);
 			const entity = _entitySlots[ character.CharNum ];
 			if (countdown) {
-				countdown.attr('data-datetime', _slots[character.CharNum].DeleteDate);
-				countdown.text(formatDatetime(_slots[character.CharNum].DeleteDate));
-				countdown.show();
+				countdown.setAttribute('data-datetime', _slots[character.CharNum].DeleteDate);
+				setText(countdown, formatDatetime(_slots[character.CharNum].DeleteDate));
+				DOM.show(countdown);
 			}
 			entity.setAction({
 				action: entity.ACTION.SIT,
@@ -530,17 +593,18 @@ define(function(require)
     {
 		const entity = _entitySlots[index];
 		let action;
-        // Add the timer
-        const countdown = CharSelectV3.ui.find('.timedelete.slot' + (index % 3 + 1));
+        const countdown = qs('.timedelete.slot' + (index % 3 + 1));
         if (countdown) {
-			countdown.attr('data-datetime', timer);
-			countdown.text(formatDatetime(timer));
-			countdown.show();
+			countdown.setAttribute('data-datetime', timer);
+			setText(countdown, formatDatetime(timer));
+			DOM.show(countdown);
 			if(Math.floor(Date.now() / 1000) > timer){
-				countdown.removeClass('waitdelete').addClass('candelete');
+				countdown.classList.remove('waitdelete');
+				countdown.classList.add('candelete');
 				action = entity.ACTION.DIE;
 			} else {
-				countdown.removeClass('candelete').addClass('waitdelete');
+				countdown.classList.remove('candelete');
+				countdown.classList.add('waitdelete');
 				action = entity.ACTION.SIT;
 			}
         }
@@ -549,12 +613,12 @@ define(function(require)
         entity.action = action;
 
         // Adjust the buttons
-        CharSelectV3.ui.find('.delete').hide();
-        CharSelectV3.ui.find('.canceldelete').show();
+        DOM.hide(qs('.delete'));
+        DOM.show(qs('.canceldelete'));
 		if(Math.floor(Date.now() / 1000) > timer){
-			CharSelectV3.ui.find('.finaldelete').show();
+			DOM.show(qs('.finaldelete'));
 		} else {
-			CharSelectV3.ui.find('.finaldelete').hide();
+			DOM.hide(qs('.finaldelete'));
 		}
     }
 
@@ -574,15 +638,17 @@ define(function(require)
             render();
 
             // Remove the timer
-            const countdown = CharSelectV3.ui.find('.timedelete.slot' + (_index % 3 + 1));  // Adjusted selector
-            countdown.attr('data-datetime', 0);
-			countdown.text(formatDatetime(""));
-			countdown.hide();
+            const countdown = qs('.timedelete.slot' + (_index % 3 + 1));
+            if (countdown) {
+                countdown.setAttribute('data-datetime', 0);
+                setText(countdown, formatDatetime(""));
+                DOM.hide(countdown);
+            }
 
             // Adjust the buttons
-            CharSelectV3.ui.find('.canceldelete').hide();
-            CharSelectV3.ui.find('.finaldelete').hide();
-            CharSelectV3.ui.find('.delete').show();
+            DOM.hide(qs('.canceldelete'));
+            DOM.hide(qs('.finaldelete'));
+            DOM.show(qs('.delete'));
 
             // Send request to the server
             CharSelectV3.onCancelDeleteRequest(_slots[_index].GID);
@@ -623,10 +689,16 @@ define(function(require)
      */
     function moveCursorTo( index )
     {
-        var ui = CharSelectV3.ui;
-        var $charinfo = ui.find('.charinfo');
+        var charinfo = qs('.charinfo');
+        var boxSelect = qs('.box_select');
+        var makeBtn = qs('.make');
+        var deleteBtn = qs('.delete');
+        var cancelDeleteBtn = qs('.canceldelete');
+        var finalDeleteBtn = qs('.finaldelete');
+        var okBtn = qs('.ok');
+        var pageBtn = qs('.pageinfo .pagebtn');
+        var pageinfo = qs('.pageinfo');
 
-        // Set the last entity to idle
         var entity = _entitySlots[_index];
 		var info = _slots[_index];
 		var action;
@@ -645,105 +717,111 @@ define(function(require)
             });
         }
 
-        // Move
         _index = (index + _maxSlots) % _maxSlots;
-        ui.find('.box_select').
-        removeClass('slot1 slot2 slot3').
-        addClass('slot' + (_index % 3 + 1));
 
-        // Set page
-        // clear pageinfo
-        ui.find('.pageinfo .pagebtn').text('');
+        if (boxSelect) {
+            boxSelect.classList.remove('slot1', 'slot2', 'slot3');
+            boxSelect.classList.add('slot' + (_index % 3 + 1));
+        }
 
-        // draw pageinfo button
+        setText(pageBtn, '');
+
         for (var i = 1; i <= (_maxSlots / 3); i++) {
             if ((Math.floor(_index / 3) + 1) === i) {
-                drawBall(ui.find('.pageinfo .pagebtn'), i, true);
+                drawBall(pageBtn, i, true);
             }
             else {
-                drawBall(ui.find('.pageinfo .pagebtn'), i, false);
+                drawBall(pageBtn, i, false);
             }
         }
-        // pageinfo position center
-        ui.find('.pageinfo').css('left', 576 / 2 - ((_maxSlots / 3) * 8))
 
-        // show make add button
+        DOM.setCss(pageinfo, 'left', 576 / 2 - ((_maxSlots / 3) * 8));
+
         var mix = ((index+1) % 3) === 0 ? (index+1) - 3 : ((index+1) - ((index+1) % 3));
         mix = (mix >= _maxSlots ? 0 : mix);
-        for (var i = 1; i <= 3; i++) {
-            ui.find('.make' + i).hide();
-            if (!_entitySlots[mix + (i -1)]) {
-                ui.find('.make' + i).show();
+        for (var j = 1; j <= 3; j++) {
+            DOM.hide(qs('.make' + j));
+            if (!_entitySlots[mix + (j - 1)]) {
+                DOM.show(qs('.make' + j));
             }
         }
 		
 		// Update page deltimes
-		for(let i = 0; i<3; i++){
-			let tmpIndex = _index-(_index%3)+i;
+		for(let k = 0; k<3; k++){
+			let tmpIndex = _index-(_index%3)+k;
 			info = _slots[tmpIndex];
 			entity = _entitySlots[tmpIndex];
-			const countdown = CharSelectV3.ui.find('.timedelete.slot' + (tmpIndex % 3 + 1));
+			const countdown = qs('.timedelete.slot' + (tmpIndex % 3 + 1));
 			
 			if(info && entity){
 				if(info.DeleteDate) {
-					countdown.attr('data-datetime', info.DeleteDate);
-					countdown.text(formatDatetime(info.DeleteDate));
-					countdown.show();
-					if(Math.floor(Date.now() / 1000) > info.DeleteDate){
-						countdown.removeClass('waitdelete').addClass('candelete');
-					} else {
-						countdown.removeClass('candelete').addClass('waitdelete');
+					if (countdown) {
+						countdown.setAttribute('data-datetime', info.DeleteDate);
+						setText(countdown, formatDatetime(info.DeleteDate));
+						DOM.show(countdown);
+						if(Math.floor(Date.now() / 1000) > info.DeleteDate){
+							countdown.classList.remove('waitdelete');
+							countdown.classList.add('candelete');
+						} else {
+							countdown.classList.remove('candelete');
+							countdown.classList.add('waitdelete');
+						}
 					}
 					entity.action = entity.ACTION.SIT;
 				} else {
-					countdown.attr('data-datetime', 0);
-					countdown.text(formatDatetime(''));
-					countdown.hide();
+					if (countdown) {
+						countdown.setAttribute('data-datetime', 0);
+						setText(countdown, formatDatetime(''));
+						DOM.hide(countdown);
+					}
 					entity.action = entity.ACTION.IDLE;
 				}
 			} else {
-				countdown.attr('data-datetime', 0);
-				countdown.text(formatDatetime(''));
-				countdown.hide();
+				if (countdown) {
+					countdown.setAttribute('data-datetime', 0);
+					setText(countdown, formatDatetime(''));
+					DOM.hide(countdown);
+				}
 			}
 		}
 
-        // Not found, just clean up.
         entity = _entitySlots[_index];
         if (!entity) {
-            $charinfo.find('div').empty();
-            ui.find('.make').show();
-            ui.find('.delete').hide();
-            ui.find('.canceldelete').hide();
-            ui.find('.finaldelete').hide();
-            ui.find('.ok').hide();
+            if (charinfo) {
+                DOM.qsa(charinfo, 'div').forEach(function(div) {
+                    DOM.empty(div);
+                });
+            }
+            DOM.show(makeBtn);
+            DOM.hide(deleteBtn);
+            DOM.hide(cancelDeleteBtn);
+            DOM.hide(finalDeleteBtn);
+            DOM.hide(okBtn);
             return;
         }
 
         info = _slots[_index];
-        // Bind new value
         if (info.DeleteDate) {
-            ui.find('.delete').hide();
-            ui.find('.canceldelete').show();
+            DOM.hide(deleteBtn);
+            DOM.show(cancelDeleteBtn);
 			if(Math.floor(Date.now() / 1000) > info.DeleteDate){
-				ui.find('.finaldelete').show();
+				DOM.show(finalDeleteBtn);
 				action = entity.ACTION.DIE;
 			} else {
-				ui.find('.finaldelete').hide();
+				DOM.hide(finalDeleteBtn);
 				action = entity.ACTION.SIT;
 			}
-            ui.find('.make').hide();
-            ui.find('.ok').show();
+            DOM.hide(makeBtn);
+            DOM.show(okBtn);
         } else {
-			ui.find('.delete').show();
-			ui.find('.canceldelete').hide();
-			ui.find('.finaldelete').hide();
-            ui.find('.make').hide();
-            ui.find('.ok').show();
+			DOM.show(deleteBtn);
+			DOM.hide(cancelDeleteBtn);
+			DOM.hide(finalDeleteBtn);
+            DOM.hide(makeBtn);
+            DOM.show(okBtn);
 			action = entity.ACTION.READYFIGHT;
         }
 		
-        // Animate the character
         entity.setAction({
             action: action,
             frame:  0,
@@ -751,22 +829,21 @@ define(function(require)
             repeat: true
         });
 
-        var info = _slots[_index];
-        $charinfo.find('.name').text( info.name );
-        $charinfo.find('.job').text( MonsterTable[info.job] || '' );
-        $charinfo.find('.lvl').text( info.level );
-        $charinfo.find('.exp').text( info.exp );
-        $charinfo.find('.hp').text( info.hp );
-        $charinfo.find('.sp').text( info.sp );
+        setText(DOM.qs(charinfo, '.name'), info.name);
+        setText(DOM.qs(charinfo, '.job'), MonsterTable[info.job] || '');
+        setText(DOM.qs(charinfo, '.lvl'), info.level);
+        setText(DOM.qs(charinfo, '.exp'), info.exp);
+        setText(DOM.qs(charinfo, '.hp'), info.hp);
+        setText(DOM.qs(charinfo, '.sp'), info.sp);
 
         //TODO: Check win_select.bmp size to insert it if needed ?
-        $charinfo.find('.map').text( DB.getMapName(info.lastMap, '') || '' );
-        $charinfo.find('.str').text( info.Str );
-        $charinfo.find('.agi').text( info.Agi );
-        $charinfo.find('.vit').text( info.Vit );
-        $charinfo.find('.int').text( info.Int );
-        $charinfo.find('.dex').text( info.Dex );
-        $charinfo.find('.luk').text( info.Luk );
+        setText(DOM.qs(charinfo, '.map'), DB.getMapName(info.lastMap, '') || '');
+        setText(DOM.qs(charinfo, '.str'), info.Str);
+        setText(DOM.qs(charinfo, '.agi'), info.Agi);
+        setText(DOM.qs(charinfo, '.vit'), info.Vit);
+        setText(DOM.qs(charinfo, '.int'), info.Int);
+        setText(DOM.qs(charinfo, '.dex'), info.Dex);
+        setText(DOM.qs(charinfo, '.luk'), info.Luk);
     }
 
 

@@ -11,6 +11,7 @@ define(function(require)
 {
 	'use strict';
 
+	var DOM       = require('Utils/DOM');
 
 	/**
 	 * Dependencies
@@ -20,7 +21,6 @@ define(function(require)
 	var Network            = require('Network/NetworkManager');
 	var PACKET             = require('Network/PacketStructure');
 	var ItemType           = require('DB/Items/ItemType');
-	var jQuery             = require('Utils/jquery');
 	var Client             = require('Core/Client');
 	var Session            = require('Engine/SessionStorage');
 	var Renderer           = require('Renderer/Renderer');
@@ -60,16 +60,17 @@ define(function(require)
 	 */
 	SwitchEquip.init = function init()
 	{
-		_swapctx.push(this.ui.find('canvas')[0].getContext('2d'));
-		_swapctx.push(this.ui.find('canvas')[1].getContext('2d'));
+		var _canvases = this.ui.querySelectorAll('canvas');
+		_swapctx.push(_canvases[0].getContext('2d'));
+		_swapctx.push(_canvases[1].getContext('2d'));
 	
 		// drag, drop items
-		this.ui.on('dragover', onDragOver);
-		this.ui.on('dragleave', onDragLeave);
-		this.ui.on('drop', onDrop);
+		this.ui.addEventListener('dragover', onDragOver);
+		this.ui.addEventListener('dragleave', onDragLeave);
+		this.ui.addEventListener('drop', onDrop);
 
-		this.ui.find('.closeswap').click(function(){SwitchEquip.toggle();});
-		this.ui.find('.onswap').click(function(){SwitchEquip.RequestSwitch();});
+		this.ui.querySelector('.closeswap').addEventListener('click', function(){SwitchEquip.toggle();});
+		this.ui.querySelector('.onswap').addEventListener('click', function(){SwitchEquip.RequestSwitch();});
 
 		// Set the active tab based on Equipment UI's current tab
 		var Equipment = require('UI/Components/Equipment/Equipment');
@@ -79,11 +80,11 @@ define(function(require)
 		SwitchEquip.showSwapTab(currentEquipTabId);
 
 		// Bind items
-		this.ui.find('.swapcontent')
-			.on('contextmenu', '.item',  onSwitchEquipInfo)
-			.on('dblclick',    '.item',  onSwitchEquipUnEquip)
-			.on('mouseover',   'button', onSwitchEquipOver)
-			.on('mouseout',    'button', onSwitchEquipOut);
+		var _swapContent = this.ui.querySelector('.swapcontent');
+		DOM.addDelegatedEvent(_swapContent, 'contextmenu', '.item', onSwitchEquipInfo);
+		DOM.addDelegatedEvent(_swapContent, 'dblclick', '.item', onSwitchEquipUnEquip);
+		DOM.addDelegatedEvent(_swapContent, 'mouseover', 'button', onSwitchEquipOver);
+		DOM.addDelegatedEvent(_swapContent, 'mouseout', 'button', onSwitchEquipOut);
 	};
 
 
@@ -121,7 +122,7 @@ define(function(require)
 		// Set the active tab and content div based on EquipmentV2's current tab
 		SwitchEquip.showSwapTab(currentEquipTabId);
 
-		if (this.ui.find('canvas').is(':visible')) {
+		if (DOM.isVisible(this.ui.querySelector('canvas'))) {
 			Renderer.render(swaprender);
 		}
 	};
@@ -137,7 +138,7 @@ define(function(require)
 
 		// Clean equipments
 		SwitchEquip._list = {};
-		this.ui.find('.col1, .col3, .ammo').empty();
+		this.ui.querySelector('.col1, .col3, .ammo').innerHTML = '';
 	};
 
 
@@ -150,7 +151,7 @@ define(function(require)
 	{
 		switch (key.cmd) {
 			case 'TOGGLE':
-				this.toggle();
+				DOM.toggleDisplay(this.ui);
 				break;
 		}
 	};
@@ -162,9 +163,9 @@ define(function(require)
  	*/
 	SwitchEquip.toggle = function toggle()
 	{
-		this.ui.toggle();
+		DOM.toggleDisplay(this.ui);
 
-		if (this.ui.is(':visible')) {
+		if (DOM.isVisible(this.ui)) {
 			Renderer.render(swaprender);
 			this.focus();
 		}
@@ -196,18 +197,18 @@ define(function(require)
 			return string;
 		}
 
-		this.ui.find(getSelectorFromLocation(location)).html(
+		this.ui.querySelector(getSelectorFromLocation(location)).innerHTML =
 			'<div class="item" data-index="'+ item.index +'">' +
 				'<button></button>' +
-				'<span class="itemName">' + add3Dots(jQuery.escape(DB.getItemName(item)), 19) + '</span>' +
+				'<span class="itemName">' + add3Dots(DOM.escapeHtml(DB.getItemName(item)), 19) + '</span>' +
 			'</div>'
-		);
+		;
 
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + it.identifiedResourceName + '.bmp', function(data){
-			var button = this.ui.find('.item[data-index="'+ item.index +'"] button');
-        	button.css('backgroundImage', 'url('+ data +')');
+			var button = this.ui.querySelector('.item[data-index="'+ item.index +'"] button');
+        	button.style.backgroundImage = 'url('+ data +')';
 			if (!inSwitchList) {
-				button.css('filter', 'grayscale(100%)');
+				button.style.filter = 'grayscale(100%)';
 			}
 		}.bind(this));
 	};
@@ -225,7 +226,7 @@ define(function(require)
 		var item     = SwitchEquip._list[ index ];
 		item.equipped = 0;
 
-		this.ui.find( selector ).empty();
+		this.ui.querySelector( selector ).innerHTML = '';
     	delete SwitchEquip._list[index];
 	};
 
@@ -357,10 +358,10 @@ define(function(require)
 				if ((item.type === ItemType.WEAPON || item.type === ItemType.ARMOR) &&
 				    item.IsIdentified && !item.IsDamaged) {
 					selector = getSelectorFromLocation( 'location' in item ? item.location : item.WearLocation);
-					ui       = SwitchEquip.ui.find(selector);
+					ui       = SwitchEquip.ui.querySelector(selector);
 
 					Client.loadFile( DB.INTERFACE_PATH + 'basic_interface/item_invert.bmp', function(data){
-						ui.css('backgroundImage', 'url('+ data + ')');
+						ui.style.backgroundImage = 'url('+ data + ')';
 					});
 				}
 			}
@@ -376,7 +377,7 @@ define(function(require)
 	 */
 	function onDragLeave( event )
 	{
-		SwitchEquip.ui.find('td').css('backgroundImage', 'none');
+		SwitchEquip.ui.querySelector('td').style.backgroundImage = 'none';
 		event.stopImmediatePropagation();
 		return false;
 	};
@@ -391,7 +392,7 @@ define(function(require)
 
 		try {
 			data = JSON.parse(
-				event.originalEvent.dataTransfer.getData('Text')
+				event.dataTransfer.getData('Text')
 			);
 		}
 		catch(e) {}
@@ -402,7 +403,7 @@ define(function(require)
 
 			if ((item.type === ItemType.WEAPON || item.type === ItemType.ARMOR || item.type === ItemType.AMMO) &&
 			    item.IsIdentified && !item.IsDamaged) {
-			    SwitchEquip.ui.find('td').css('backgroundImage','none');
+			    SwitchEquip.ui.querySelector('td').style.backgroundImage = 'none';
 				SwitchEquip.onAddSwitchEquip( item.index, 'location' in item ? item.location : item.WearState );
 			}
 		}
@@ -447,7 +448,7 @@ define(function(require)
 	{
 		var index = parseInt(this.getAttribute('data-index'), 10);
 		SwitchEquip.onRemoveSwitchEquip( index );
-		SwitchEquip.ui.find('.switchoverlay').hide();
+		SwitchEquip.ui.querySelector('.switchoverlay').style.display = 'none';
 	};
 
 
@@ -464,8 +465,8 @@ define(function(require)
 		}
 
 		// Get back data
-		var overlay = SwitchEquip.ui.find('.switchoverlay');
-		var pos     = jQuery(this).position();
+		var overlay = SwitchEquip.ui.querySelector('.switchoverlay');
+		var pos     = DOM.getPosition(this);
 
 		// Possible jquery error
 		if (!pos.top && !pos.left) {
@@ -473,9 +474,9 @@ define(function(require)
 		}
 
 		// Display box
-		overlay.show();
-		overlay.css({top: pos.top-22, left:pos.left-22});
-		overlay.text(DB.getItemName(item));
+		overlay.style.display = '';
+		overlay.style.top = pos.top-22; overlay.style.left = pos.left-22;
+		overlay.textContent = DB.getItemName(item);
 	};
 
 
@@ -484,7 +485,7 @@ define(function(require)
 	 */
 	function onSwitchEquipOut()
 	{
-		SwitchEquip.ui.find('.switchoverlay').hide();
+		SwitchEquip.ui.querySelector('.switchoverlay').style.display = 'none';
 	};
 
 
@@ -495,7 +496,7 @@ define(function(require)
 		for (var index in SwitchEquip._list) {
 			var item = SwitchEquip._list[index];
 			if(item.slot && [0x00FF, 0x00FE, 0xFF00].includes(item.slot.card1)){
-				SwitchEquip.ui.find('.item[data-index="'+ index +'"] .itemName').text( jQuery.escape(DB.getItemName(item)) );
+				SwitchEquip.ui.querySelector('.item[data-index="'+ index +'"] .itemName').textContent =  DOM.escapeHtml(DB.getItemName(item) );
 			}
 		}
 	};

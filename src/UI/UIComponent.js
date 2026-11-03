@@ -13,8 +13,7 @@ define(function( require )
 
 
 	// Load dependencies
-	var CommonCSS = require('text!./Common.css');
-	var jQuery    = require('Utils/jquery');
+	var DOM       = require('Utils/DOM');
 	var Cursor    = require('./CursorManager');
 	var DB        = require('DB/DBManager');
 	var Client    = require('Core/Client');
@@ -24,6 +23,93 @@ define(function( require )
 	var Targa     = require('Loaders/Targa');
 	var Renderer  = require('Renderer/Renderer');
 	var getModule = require;
+
+
+	var CommonCSS = require('text!./Common.css');
+
+
+	/**
+	 * @var {Element} global style element
+	 */
+	var _style = document.querySelector('style');
+	if (!_style) {
+		_style = DOM.createElement('<style type="text/css"></style>');
+		document.head.appendChild(_style);
+	}
+	_style.textContent += CommonCSS;
+
+
+	var _keyDownHandlers = [];
+	var _keyDownInitialized = false;
+
+
+	function initKeyDownDispatcher()
+	{
+		if (_keyDownInitialized) {
+			return;
+		}
+
+		_keyDownInitialized = true;
+		window.addEventListener('keydown', function(event) {
+			var stopped = false;
+			var origStop = event.stopImmediatePropagation;
+
+			event.stopImmediatePropagation = function() {
+				stopped = true;
+				origStop.call(event);
+			};
+
+			for (var i = 0; i < _keyDownHandlers.length; i++) {
+				_keyDownHandlers[i].handler(event);
+				if (stopped) {
+					break;
+				}
+			}
+		});
+	}
+
+
+	function toElement(el)
+	{
+		if (!el) {
+			return null;
+		}
+
+		if (el.nodeType === 1) {
+			return el;
+		}
+
+		if (el[0] && el[0].nodeType === 1) {
+			return el[0];
+		}
+
+		if (typeof el === 'string') {
+			return document.querySelector(el);
+		}
+
+		return el;
+	}
+
+
+	function walkElements(root, callback)
+	{
+		callback.call(root, root);
+		root.querySelectorAll('*').forEach(function(el) {
+			callback.call(el, el);
+		});
+	}
+
+
+	function setStyle(element, props)
+	{
+		var key;
+
+		for (key in props) {
+			if (Object.prototype.hasOwnProperty.call(props, key)) {
+				element.style[key] = props[key];
+			}
+		}
+	}
 
 
 	/**
@@ -43,18 +129,8 @@ define(function( require )
 			BOTTOM: false,
 			LEFT: false,
 			RIGHT: false
-		}
+		};
 	}
-
-
-	/**
-	 * @var {jQueryElement} <style>
-	 */
-	var _style = jQuery('style:first');
-	if (!_style.length) {
-		_style = jQuery('<style type="text/css"></style>').appendTo('head');
-	}
-	_style.append(CommonCSS);
 
 
 	/**
@@ -91,6 +167,46 @@ define(function( require )
 	UIComponent.prototype.needFocus = true;
 
 
+	UIComponent._registerKeyDown = function _registerKeyDown(component, handler)
+	{
+		initKeyDownDispatcher();
+		UIComponent._unregisterKeyDown(component);
+		_keyDownHandlers.push({ component: component, handler: handler });
+	};
+
+
+	UIComponent._unregisterKeyDown = function _unregisterKeyDown(component)
+	{
+		_keyDownHandlers = _keyDownHandlers.filter(function(entry) {
+			return entry.component !== component;
+		});
+	};
+
+
+	/**
+	 * Move a component's keydown handler to the front of the dispatch queue.
+	 *
+	 * @param {UIComponent} component
+	 */
+	UIComponent.prioritizeKeyDown = function prioritizeKeyDown(component)
+	{
+		var idx = -1;
+		var i;
+
+		for (i = 0; i < _keyDownHandlers.length; i++) {
+			if (_keyDownHandlers[i].component === component) {
+				idx = i;
+				break;
+			}
+		}
+
+		if (idx > 0) {
+			var entry = _keyDownHandlers.splice(idx, 1)[0];
+			_keyDownHandlers.unshift(entry);
+		}
+	};
+
+
 	/**
 	 * Prepare the component to be used
 	 */
@@ -101,22 +217,26 @@ define(function( require )
 		}
 
 		if (this._htmlText) {
-			this.ui = jQuery(this._htmlText);
-			this.ui.css('zIndex', 50);
+			this.ui = DOM.createElement(this._htmlText);
+			this.ui.style.zIndex = '50';
 		}
 
 		// Add style to view
 		if (this._cssText) {
 			// Avoid adding css each time the same component is created
-			if (_style.text().indexOf('\n\n/** ' + this.name + ' **/\n') === -1) {
-				_style.append('\n\n/** ' + this.name + ' **/\n' + this._cssText);
+			var marker = '\n\n/** ' + this.name + ' **/\n';
+			if (_style.textContent.indexOf(marker) === -1) {
+				_style.textContent += marker + this._cssText;
 			}
-			jQuery('body').append(this.ui);
+			// Some components (e.g. StatusIcons) create this.ui in init() instead of from htmlText
+			if (this.ui) {
+				document.body.appendChild(this.ui);
+			}
 		}
 
 		// Prepare html
 		if (this._htmlText) {
-			this.ui.each( this.parseHTML ).find('*').each( this.parseHTML );
+			walkElements(this.ui, this.parseHTML);
 		}
 
 		// Initialize
@@ -129,10 +249,10 @@ define(function( require )
 		// when mouseenter can be triggered multiples time
 		if (this.mouseMode === UIComponent.MouseMode.STOP) {
 			var _intersect, _enter = 0;
-			var element = this.__mouseStopBlock || this.ui;
+			var element = toElement(this.__mouseStopBlock) || this.ui;
 
 			// stop intersection
-			element.mouseenter(function(){
+			element.addEventListener('mouseenter', function(){
 				if (_enter === 0) {
 					_intersect = Mouse.intersect;
 					_enter++;
@@ -145,7 +265,7 @@ define(function( require )
 			});
 
 			// restore previous state
-			element.mouseleave(function(){
+			element.addEventListener('mouseleave', function(){
 				if (_enter > 0) {
 					_enter--;
 
@@ -160,7 +280,7 @@ define(function( require )
 
 			// Custom fix for firefox, mouseleave isn't trigger when element is
 			// removed from body, test case: http://jsfiddle.net/7h4sj/
-			element.on('x_remove', function(){
+			element.addEventListener('x_remove', function(){
 				if (_enter > 0) {
 					_enter = 0;
 					if(_intersect) {
@@ -171,20 +291,20 @@ define(function( require )
 			});
 
 			// Focus the UI on mousedown
-			element.mousedown(this.focus.bind(this));
+			element.addEventListener('mousedown', this.focus.bind(this));
 		}
 
 		if (this.mouseMode !== UIComponent.MouseMode.CROSS) {
-			var element = this.__mouseStopBlock || this.ui;
+			var touchElement = toElement(this.__mouseStopBlock) || this.ui;
 			// Do not cross
-			element.on('touchstart', function(event){
+			touchElement.addEventListener('touchstart', function(event){
 				event.stopImmediatePropagation();
 			});
 		}
 
 
-		if (this._htmlText) {
-			this.ui.detach();
+		if (this._htmlText && this.ui.parentNode) {
+			this.ui.parentNode.removeChild(this.ui);
 		}
 
 		this.__loaded = true;
@@ -198,17 +318,17 @@ define(function( require )
 	{
 		this.__active = false;
 
-		if (this.__loaded && this.ui.parent().length) {
+		if (this.__loaded && this.ui && this.ui.parentNode) {
 			if (this.onRemove) {
 				this.onRemove();
 			}
 
 			if (this.onKeyDown) {
-				jQuery(window).off('keydown.' + this.name);
+				UIComponent._unregisterKeyDown(this);
 			}
 
-			this.ui.trigger('x_remove');
-			this.ui.detach();
+			this.ui.dispatchEvent(new CustomEvent('x_remove'));
+			this.ui.parentNode.removeChild(this.ui);
 
 			if (this.mouseMode === UIComponent.MouseMode.FREEZE) {
 				Mouse.intersect = true;
@@ -221,7 +341,7 @@ define(function( require )
 	/**
 	* Add the component to HTML
 	*
-	* @param {string|jQueryElement} [target] - Target element to append the UI to. If not provided, appends to body.
+	* @param {string|Element} [target] - Target element to append the UI to. If not provided, appends to body.
 	*/
 	UIComponent.prototype.append = function append(target)
 	{
@@ -231,29 +351,36 @@ define(function( require )
 			this.prepare();
 
 			if (this.__active) {
-				this.append();
+				this.append(target);
 			}
 
 			return;
 		}
 
-		// Determine the target element
-		var $target;
+		var targetEl;
+
 		if (target) {
-			$target = jQuery(target);
-			if (!$target.length) {
+			targetEl = toElement(target);
+			if (!targetEl) {
 				console.error("Error: Unable to find target element for appending UI.");
 				return;
 			}
 		} else {
-			$target = jQuery('body');
+			targetEl = document.body;
 		}
-	
-		// Append UI content to the target element
-		this.ui.appendTo($target);
+
+		if (!this.ui) {
+			console.error('Error: Component UI element not created for ' + this.name + '.');
+			return;
+		}
+
+		targetEl.appendChild(this.ui);
 
 		if (this.onKeyDown) {
-			jQuery(window).off('keydown.' + this.name).on('keydown.' + this.name, this.onKeyDown.bind(this));
+			if (!this._boundKeyDown) {
+				this._boundKeyDown = this.onKeyDown.bind(this);
+			}
+			UIComponent._registerKeyDown(this, this._boundKeyDown);
 		}
 
 		if (this.mouseMode === UIComponent.MouseMode.FREEZE) {
@@ -266,38 +393,9 @@ define(function( require )
 			this.onAppend();
 		}
 
-		//Fix position after append (screen changed since last time and it loads invalid positions)
+		// Fix position after append (screen changed since last save)
 		if (this.ui) {
-			var x, y, width, height, WIDTH, HEIGHT;
-			x      = this.ui.offset().left;
-			y      = this.ui.offset().top;
-			width  = this.ui.width();
-			height = this.ui.height();
-			WIDTH  = Renderer.width;
-			HEIGHT = Renderer.height;
-
-
-			if (y + height > HEIGHT) {
-				this.ui.css('top', HEIGHT - Math.min(height, HEIGHT));
-			}
-
-			if (x + width > WIDTH) {
-				this.ui.css('left', WIDTH - Math.min(width, WIDTH));
-			}
-
-			//Magnet
-			if(this.magnet.TOP){
-				//nothing to do
-			}
-			if(this.magnet.BOTTOM){
-				this.ui.css('top', HEIGHT - height);
-			}
-			if(this.magnet.LEFT){
-				//nothing to do
-			}
-			if(this.magnet.RIGHT){
-				this.ui.css('left', WIDTH - width);
-			}
+			DOM.clampWindowPosition(this.ui, Renderer.width, Renderer.height, this.magnet);
 		}
 
 		this.focus();
@@ -320,8 +418,8 @@ define(function( require )
 
 		// Store components zIndex in a list
 		for (name in components) {
-			if (this !== components[name] && components[name].__active && components[name].needFocus) {
-				zIndex = parseInt(components[name].ui.css('zIndex'), 10);
+			if (this !== components[name] && components[name].__active && components[name].needFocus && components[name].ui) {
+				zIndex = parseInt(components[name].ui.style.zIndex, 10);
 				list[zIndex-50] = zIndex;
 			}
 		}
@@ -337,14 +435,14 @@ define(function( require )
 
 		// Apply new zIndex to list
 		for (name in components) {
-			if (this !== components[name] && components[name].__active && components[name].needFocus) {
-				zIndex = parseInt(components[name].ui.css('zIndex'), 10);
-				components[name].ui.css('zIndex', list[zIndex-50]);
+			if (this !== components[name] && components[name].__active && components[name].needFocus && components[name].ui) {
+				zIndex = parseInt(components[name].ui.style.zIndex, 10);
+				components[name].ui.style.zIndex = String(list[zIndex-50]);
 			}
 		}
 
 		// Push our zIndex at top
-		this.ui.css('zIndex', list.length + 50 - j);
+		this.ui.style.zIndex = String(list.length + 50 - j);
 	};
 
 	
@@ -362,13 +460,13 @@ define(function( require )
 
 		// Store components zIndex in a list
 		for (name in components) {
-			if (this !== components[name] && components[name].__active) {
-				zIndex = parseInt(components[name].ui.css('zIndex'), 10);
+			if (this !== components[name] && components[name].__active && components[name].ui) {
+				zIndex = parseInt(components[name].ui.style.zIndex, 10);
 				list.push(zIndex);
 			}
 		}
-		let lastZIndex = Math.max(...list);
-		this.ui.css('zIndex', lastZIndex + 1);
+		var lastZIndex = Math.max.apply(null, list);
+		this.ui.style.zIndex = String(lastZIndex + 1);
 	};
 
 	/**
@@ -403,9 +501,10 @@ define(function( require )
 		switch (type.toLowerCase()) {
 			case 'keydown':
 				if (this.onKeyDown) {
-					jQuery(window)
-						.off('keydown.' + this.name)
-						.on( 'keydown.' + this.name, this.onKeyDown.bind(this) );
+					if (!this._boundKeyDown) {
+						this._boundKeyDown = this.onKeyDown.bind(this);
+					}
+					UIComponent._registerKeyDown(this, this._boundKeyDown);
 				}
 				break;
 		}
@@ -421,7 +520,7 @@ define(function( require )
 	{
 		switch (type.toLowerCase()) {
 			case 'keydown':
-				jQuery(window).off('keydown.' + this.name);
+				UIComponent._unregisterKeyDown(this);
 				break;
 		}
 	};
@@ -433,19 +532,37 @@ define(function( require )
 	UIComponent.prototype.draggable = function draggable( element )
 	{
 		var container = this.ui;
-
 		var component = this;
+		var dragTimer = null;
 
 		// Global variable
 		if (!element) {
 			element = this.ui;
 		}
+		else {
+			element = toElement(element);
+		}
+
+		function onMouseUp(event) {
+			if (event.type === 'touchend' || event.which === 1) {
+				DOM.animateOpacity(container, 1.0, 500);
+				if (dragTimer !== null) {
+					Events.clearTimeout(dragTimer);
+					dragTimer = null;
+				}
+				window.removeEventListener('mouseup', onMouseUp);
+				window.removeEventListener('touchend', onMouseUp);
+			}
+		}
 
 		// Drag drop stuff
-		element.on('mousedown touchstart', function(event) {
+		element.addEventListener('mousedown', onDragStart);
+		element.addEventListener('touchstart', onDragStart);
+
+		function onDragStart(event) {
 			if (event.type === 'touchstart') {
-				Mouse.screen.x = event.originalEvent.touches[0].pageX;
-				Mouse.screen.y = event.originalEvent.touches[0].pageY;
+				Mouse.screen.x = event.touches[0].pageX;
+				Mouse.screen.y = event.touches[0].pageY;
 			}
 
 			// Only on left click
@@ -453,30 +570,25 @@ define(function( require )
 				return;
 			}
 
-			var x, y, width, height, drag;
-			x      = container.position().left - Mouse.screen.x;
-			y      = container.position().top  - Mouse.screen.y;
-			width  = container.width();
-			height = container.height();
+			var x, y, width, height;
+			var pos = DOM.getPosition(container);
+			x      = pos.left - Mouse.screen.x;
+			y      = pos.top  - Mouse.screen.y;
+			width  = container.offsetWidth;
+			height = container.offsetHeight;
 
-			// Start the loop
-			container.stop();
-			drag = Events.setTimeout( dragging, 15);
+			if (dragTimer !== null) {
+				Events.clearTimeout(dragTimer);
+			}
+			dragTimer = Events.setTimeout(dragging, 15);
 
-			// Stop the drag (need to focus on window to avoid possible errors...)
-			jQuery(window).on('mouseup.dragdrop touchend.dragdrop', function(event){
-				if (event.type === 'touchend' || event.which === 1 || event.isTrigger) {
-					container.stop().animate({ opacity:1.0 }, 500 );
-					Events.clearTimeout(drag);
-					jQuery(window).off('mouseup.dragdrop touchend.dragdrop');
-				}
-			});
+			window.addEventListener('mouseup', onMouseUp);
+			window.addEventListener('touchend', onMouseUp);
 
-			// Process dragging
 			function dragging() {
 				var x_      = Mouse.screen.x + x;
 				var y_      = Mouse.screen.y + y;
-				var opacity = parseFloat(container.css('opacity')||1) - 0.02;
+				var opacity = parseFloat(container.style.opacity || 1) - 0.02;
 
 				if(component.magnet){
 					component.magnet.TOP = false;
@@ -513,12 +625,28 @@ define(function( require )
 					}
 				}
 
-				container.css({ top: y_, left: x_, opacity: Math.max(opacity,0.7) });
-				drag = Events.setTimeout( dragging, 15);
+				setStyle(container, { top: y_ + 'px', left: x_ + 'px', opacity: String(Math.max(opacity, 0.7)) });
+				dragTimer = Events.setTimeout(dragging, 15);
 			}
-		});
+		}
 
 		return this;
+	};
+
+
+	/**
+	 * Apply parseHTML to a DOM subtree (root + descendants).
+	 * parseHTML uses the element as `this`; do not use parseHTML.bind(component).
+	 *
+	 * @param {Element} root
+	 */
+	UIComponent.prototype.parseElementTree = function parseElementTree(root)
+	{
+		if (!root) {
+			return;
+		}
+
+		walkElements(root, this.parseHTML);
 	};
 
 
@@ -527,12 +655,12 @@ define(function( require )
 	 */
 	UIComponent.prototype.parseHTML = function parseHTML()
 	{
-		var $node      = jQuery(this);
-		var background = $node.data('background');
-		var preload    = $node.data('preload');
-		var hover      = $node.data('hover');
-		var down       = $node.data('down');
-		var msgId      = $node.data('text');
+		var node       = this;
+		var background = node.dataset.background;
+		var preload    = node.dataset.preload;
+		var hover      = node.dataset.hover;
+		var down       = node.dataset.down;
+		var msgId      = node.dataset.text;
 
 		var preloads, i, count;
 
@@ -541,7 +669,7 @@ define(function( require )
 
 		// text
 		if (msgId && DB.getMessage(msgId, '')) {
-			$node.text( DB.getMessage(msgId, '') );
+			DOM.setFormattedText(node, DB.getMessage(msgId, ''), DB.getItemInfo.bind(DB));
 		}
 
 		// Default background
@@ -558,7 +686,7 @@ define(function( require )
 						console.error( e.message );
 					}
 				}
-				$node.css('backgroundImage', 'url(' + bg_uri + ')');
+				node.style.backgroundImage = 'url(' + bg_uri + ')';
 			});
 		}
 
@@ -566,20 +694,20 @@ define(function( require )
 		if (hover) {
 			Client.loadFile( DB.INTERFACE_PATH + hover, function(dataURI){
 				hover_uri = dataURI;
-				$node.mouseover(function(){ this.style.backgroundImage = 'url(' + hover_uri + ')'; });
-				$node.mouseout( function(){ this.style.backgroundImage = bg_uri ? 'url(' + bg_uri    + ')' : ''; });
+				node.addEventListener('mouseover', function(){ this.style.backgroundImage = 'url(' + hover_uri + ')'; });
+				node.addEventListener('mouseout', function(){ this.style.backgroundImage = bg_uri ? 'url(' + bg_uri + ')' : ''; });
 			});
 		}
 
 		// On mouse down
 		if (down) {
 			Client.loadFile( DB.INTERFACE_PATH + down, function(dataURI){
-				$node.mousedown(function(event){ this.style.backgroundImage = 'url(' + dataURI + ')'; event.stopImmediatePropagation(); });
-				$node.mouseup(  function()     { this.style.backgroundImage = 'url(' + (hover_uri||bg_uri) + ')'; });
+				node.addEventListener('mousedown', function(event){ this.style.backgroundImage = 'url(' + dataURI + ')'; event.stopImmediatePropagation(); });
+				node.addEventListener('mouseup', function(){ this.style.backgroundImage = 'url(' + (hover_uri||bg_uri) + ')'; });
 			});
 
 			if (!hover) {
-				$node.mouseout( function(){ this.style.backgroundImage = bg_uri ? 'url(' + bg_uri    + ')' : ''; });
+				node.addEventListener('mouseout', function(){ this.style.backgroundImage = bg_uri ? 'url(' + bg_uri + ')' : ''; });
 			}
 		}
 
@@ -587,7 +715,7 @@ define(function( require )
 		if (preload) {
 			preloads = preload.split(';');
 			for (i = 0, count = preloads.length; i < count; ++i) {
-				preloads[i] = DB.INTERFACE_PATH + jQuery.trim(preloads[i]);
+				preloads[i] = DB.INTERFACE_PATH + String(preloads[i]).trim();
 			}
 			Client.loadFiles( preloads );
 		}

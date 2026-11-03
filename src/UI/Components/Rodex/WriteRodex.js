@@ -17,7 +17,6 @@ define(function (require) {
 	var ChatBox = require('UI/Components/ChatBox/ChatBox');
 	var Session = require('Engine/SessionStorage');
 	var MonsterTable = require('DB/Monsters/MonsterTable');
-	var jQuery = require('Utils/jquery');
 	var Preferences = require('Core/Preferences');
 	var Renderer = require('Renderer/Renderer');
 	var ItemInfo = require('UI/Components/ItemInfo/ItemInfo');
@@ -28,6 +27,7 @@ define(function (require) {
 	var cssText = require('text!./WriteRodex.css');
 	var InputBox = require('UI/Components/InputBox/InputBox');
 	var getModule = require;
+	var DOM = require('Utils/DOM');
 
 	/**
 	 * Create Component
@@ -50,18 +50,18 @@ define(function (require) {
 	 */
 	WriteRodex.onAppend = function onAppend() {
 		// Bind buttons
-		WriteRodex.ui.find('.right .close').on('click', onClickClose);
-		WriteRodex.ui.find('.send').on('click', onClickSend);
-		WriteRodex.ui.find('.value').on('input', WriteRodex.updateTax);
+		WriteRodex.ui.querySelector('.right .close').addEventListener('click', onClickClose);
+		WriteRodex.ui.querySelector('.send').addEventListener('click', onClickSend);
+		WriteRodex.ui.querySelector('.value').addEventListener('input', WriteRodex.updateTax);
 
-		WriteRodex.ui.css({
-			top: Math.min(Math.max(0, parseInt(getModule('UI/Components/Rodex/Rodex').ui.css('top'), 10)) - 20, Renderer.height - WriteRodex.ui.height()),
-			left: Math.min(Math.max(0, parseInt(getModule('UI/Components/Rodex/Rodex').ui.css('left'), 10)) + 330, Renderer.width - WriteRodex.ui.width())
+		DOM.setCss(WriteRodex.ui, {
+			top: Math.min(Math.max(0, parseInt(getModule('UI/Components/Rodex/Rodex').ui.style.top, 10) || 0) - 20, Renderer.height - WriteRodex.ui.offsetHeight),
+			left: Math.min(Math.max(0, parseInt(getModule('UI/Components/Rodex/Rodex').ui.style.left, 10) || 0) + 330, Renderer.width - WriteRodex.ui.offsetWidth)
 		});
 
-		WriteRodex.draggable(WriteRodex.ui.find('.titlebar'));
+		WriteRodex.draggable(WriteRodex.ui.querySelector('.titlebar'));
 
-		WriteRodex.ui.find('.items .item-list')
+		WriteRodex.ui.querySelector('.items .item-list')
 
 	};
 
@@ -71,50 +71,53 @@ define(function (require) {
 		WriteRodex.CharID = 0;
 		WriteRodex.list = [];
 		WriteRodex.tax = 0;
-		WriteRodex.ui.find('.name').prop("type", "text");
-		WriteRodex.ui.find('.name').val(pkt.receiveName);
-		WriteRodex.ui.find('.validate-name').show();
-		WriteRodex.ui.find('.baloon').hide();
-		WriteRodex.ui.find('.title-text').val(DB.getMessage(3575));
-		WriteRodex.ui.find('.content-text').val('');
-		WriteRodex.ui.find('.character-zeny').html(prettifyZeny(Session.zeny) + ' Zeny');
-		WriteRodex.ui.find('.validate-name').on('click', onClickValidateName);
-		WriteRodex.ui.find('.weigth-text').html('0  2000');
-		WriteRodex.ui.find('.tax-text').html('0');
-		WriteRodex.ui.find('.value').val('').attr('max', Session.zeny);
-		WriteRodex.ui.find('.item-list').html('');
-		WriteRodex.ui.find('.items').on('drop', onDrop)
-			.on('dragover', stopPropagation)
-		WriteRodex.ui.show();
+		WriteRodex.ui.querySelector('.name').type = "text";
+		WriteRodex.ui.querySelector('.name').value = pkt.receiveName;
+		WriteRodex.ui.querySelector('.validate-name').style.display = '';
+		WriteRodex.ui.querySelector('.baloon').style.display = 'none';
+		WriteRodex.ui.querySelector('.title-text').value = DB.getMessage(3575);
+		WriteRodex.ui.querySelector('.content-text').value = '';
+		WriteRodex.ui.querySelector('.character-zeny').innerHTML = prettifyZeny(Session.zeny) + ' Zeny';
+		WriteRodex.ui.querySelector('.validate-name').addEventListener('click', onClickValidateName);
+		WriteRodex.ui.querySelector('.weigth-text').innerHTML = '0  2000';
+		WriteRodex.ui.querySelector('.tax-text').innerHTML = '0';
+		var _valueEl = WriteRodex.ui.querySelector('.value');
+		_valueEl.value = '';
+		_valueEl.setAttribute('max', Session.zeny);
+		WriteRodex.ui.querySelector('.item-list').innerHTML = '';
+		var _rodexItems = WriteRodex.ui.querySelector('.items');
+		_rodexItems.addEventListener('drop', onDrop);
+		_rodexItems.addEventListener('dragover', stopPropagation);
+		WriteRodex.ui.style.display = '';
 		WriteRodex.ui.focus();
 
 	}
 
 	WriteRodex.characterInfo = function characterInfo(pkt) {
 		let text = 'Lv' + pkt.level + '<br>' + MonsterTable[pkt.Job] + '<br>' + pkt.CharID;
-		WriteRodex.ui.find('.validate-name').hide();
-		WriteRodex.ui.find('.baloon').html(text).show();
-		WriteRodex.ui.find('.name').prop("type", "none");
-		WriteRodex.receiver = (pkt.name !== undefined) ? pkt.name : WriteRodex.ui.find('.name').val();
+		WriteRodex.ui.querySelector('.validate-name').style.display = 'none';
+		WriteRodex.ui.querySelector('.baloon').innerHTML = text.style.display = '';
+		WriteRodex.ui.querySelector('.name').type = "none";
+		WriteRodex.receiver = (pkt.name !== undefined) ? pkt.name : WriteRodex.ui.querySelector('.name').value;
 		WriteRodex.CharID = pkt.CharID;
 	}
 
 	function onClickClose(e) {
 		e.stopImmediatePropagation();
 		WriteRodex.receiver = null;
-		WriteRodex.ui.find('.name').val('');
-		WriteRodex.ui.find('.title-text').val('');
-		WriteRodex.ui.find('.content-text').val('');
-		WriteRodex.ui.find('.value').val('');
-		WriteRodex.ui.find('.item-list').html('');
-		WriteRodex.ui.find('.weigth-text').html('0  2000');
-		WriteRodex.ui.find('.tax-text').html('0');
-		WriteRodex.ui.find('.number').val('');
+		WriteRodex.ui.querySelector('.name').value = '';
+		WriteRodex.ui.querySelector('.title-text').value = '';
+		WriteRodex.ui.querySelector('.content-text').value = '';
+		WriteRodex.ui.querySelector('.value').value = '';
+		WriteRodex.ui.querySelector('.item-list').innerHTML = '';
+		WriteRodex.ui.querySelector('.weigth-text').innerHTML = '0  2000';
+		WriteRodex.ui.querySelector('.tax-text').innerHTML = '0';
+		WriteRodex.ui.querySelector('.number').value = '';
 		WriteRodex.requestCancelWriteRodex();
 		WriteRodex.list = [];
 		WriteRodex.CharID = 0;
 		WriteRodex.tax = 0;
-		WriteRodex.ui.hide();
+		WriteRodex.ui.style.display = 'none';
 	}
 
 	function onClickSend(e) {
@@ -125,7 +128,7 @@ define(function (require) {
 		}
 		let receiver = WriteRodex.receiver;
 		let sender = Session.Character.name;
-		let zeny = parseInt(WriteRodex.ui.find('.value').val(), 10);
+		let zeny = parseInt(WriteRodex.ui.querySelector('.value').value, 10);
 		zeny = (isNaN(zeny)) ? 0 : zeny;
 		zeny = (zeny < 0) ? 0 : zeny;
 
@@ -134,8 +137,8 @@ define(function (require) {
 			return;
 		}
 
-		let title = WriteRodex.ui.find('.title-text').val().replace(/^(\$|\%)/, '').replace(/\t/g, '').substring(0, 23) + String.fromCharCode(0);
-		let body = WriteRodex.ui.find('.content-text').val().replace(/^(\$|\%)/, '').replace(/\t/g, '').substring(0, 499) + String.fromCharCode(0);
+		let title = WriteRodex.ui.querySelector('.title-text').value.replace(/^(\$|\%)/, '').replace(/\t/g, '').substring(0, 23) + String.fromCharCode(0);
+		let body = WriteRodex.ui.querySelector('.content-text').value.replace(/^(\$|\%)/, '').replace(/\t/g, '').substring(0, 499) + String.fromCharCode(0);
 		let Titlelength = title.length;
 		let Bodylength = body.length;
 		let CharID = WriteRodex.CharID;
@@ -168,17 +171,17 @@ define(function (require) {
 
 		if (object) {
 			object.count += item.count;
-			this.ui.find('.item[data-index="' + item.index + '"] .count').text(object.count);
+			this.ui.querySelector('.item[data-index="' + item.index + '"] .count').textContent = object.count;
 			return;
 		}
 
-		object = jQuery.extend({}, item);
+		object = Object.assign({}, item);
 		WriteRodex.list.push(object);
 
 		var it = DB.getItemInfo(item.ITID);
-		var content = this.ui.find('.items .item-list');
+		var content = this.ui.querySelector('.items .item-list');
 
-		content.append(
+		content.insertAdjacentHTML('beforeend',
 			'<div class="item" data-index="' + item.index + '" draggable="true">' +
 			'<div class="icon"></div>' +
 			'<div class="amount"><span class="count">' + (item.count || 1) + '</span></div>' +
@@ -186,16 +189,15 @@ define(function (require) {
 		);
 
 		Client.loadFile(DB.INTERFACE_PATH + 'item/' + (item.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName) + '.bmp', function (data) {
-			content.find('.item[data-index="' + item.index + '"] .icon').css('backgroundImage', 'url(' + data + ')');
+			content.querySelector('.item[data-index="' + item.index + '"] .icon').style.backgroundImage = 'url(' + data + ')';
 		});
 
-		let item_div = content.find('.item[data-index="' + item.index + '"]');
-		item_div
-			.on('mouseover', onItemOver)
-			.on('mouseout', onItemOut)
-			.on('dragstart', onItemDragStart)
-			.on('dragend', onItemDragEnd)
-			.on('contextmenu', onItemInfo)
+		let item_div = content.querySelector('.item[data-index="' + item.index + '"]');
+		item_div.addEventListener('mouseover', onItemOver);
+		item_div.addEventListener('mouseout', onItemOut);
+		item_div.addEventListener('dragstart', onItemDragStart);
+		item_div.addEventListener('dragend', onItemDragEnd);
+		item_div.addEventListener('contextmenu', onItemInfo);
 
 		WriteRodex.updateWeight(item.weight);
 		WriteRodex.updateTax();
@@ -220,42 +222,43 @@ define(function (require) {
 			item.count -= count;
 
 			if (item.count > 0) {
-				WriteRodex.ui.find('.item[data-index="' + item.index + '"] .count').text(item.count);
+				WriteRodex.ui.querySelector('.item[data-index="' + item.index + '"] .count').textContent = item.count;
 				return;
 			}
 		}
 
 		WriteRodex.list.splice(WriteRodex.list.indexOf(item), 1);
-		WriteRodex.ui.find('.item[data-index="' + item.index + '"]').remove();
+		var _removeEl = WriteRodex.ui.querySelector('.item[data-index="' + item.index + '"]');
+		if (_removeEl && _removeEl.parentNode) _removeEl.parentNode.removeChild(_removeEl);
 		WriteRodex.updateWeight(weight);
 		WriteRodex.updateTax();
 	};
 
 	WriteRodex.updateWeight = function updateWeight(weight) {
-		WriteRodex.ui.find('.weigth-text').html(weight + '  2000');
+		WriteRodex.ui.querySelector('.weigth-text').innerHTML = weight + '  2000';
 	}
 
 	WriteRodex.updateTax = function updateTax() {
 		let total_items = WriteRodex.list.length;
 		let tax = total_items * 2500;
-		let zeny = parseInt(WriteRodex.ui.find('.value').val(), 10);
+		let zeny = parseInt(WriteRodex.ui.querySelector('.value').value, 10);
 		zeny = (isNaN(zeny)) ? 0 : zeny;
 		zeny = (zeny < 0) ? 0 : zeny;
 		tax += parseInt(zeny * 0.02); // 2% tax
-		WriteRodex.ui.find('.tax-text').html(tax);
+		WriteRodex.ui.querySelector('.tax-text').innerHTML = tax;
 		WriteRodex.tax = tax;
 
 		if ((tax + zeny) > Session.zeny) {
-			WriteRodex.ui.find('.tax-text').addClass('red');
-			WriteRodex.ui.find('.value').addClass('red');
+			WriteRodex.ui.querySelector('.tax-text').classList.add('red');
+			WriteRodex.ui.querySelector('.value').classList.add('red');
 		} else {
-			WriteRodex.ui.find('.tax-text').removeClass('red');
-			WriteRodex.ui.find('.value').removeClass('red');
+			WriteRodex.ui.querySelector('.tax-text').classList.remove('red');
+			WriteRodex.ui.querySelector('.value').classList.remove('red');
 		}
 	}
 
 	WriteRodex.close = function close() {
-		WriteRodex.ui.hide();
+		WriteRodex.ui.style.display = 'none';
 	}
 
 	function prettifyZeny(value) {
@@ -276,7 +279,7 @@ define(function (require) {
 
 	function onClickValidateName(e) {
 		e.stopImmediatePropagation();
-		let name = WriteRodex.ui.find('.name').val();
+		let name = WriteRodex.ui.querySelector('.name').value;
 		WriteRodex.validateName(name.replace(/^(\$|\%)/, '').replace(/\t/g, ''));
 	}
 
@@ -290,7 +293,7 @@ define(function (require) {
 		event.stopImmediatePropagation();
 
 		try {
-			data = JSON.parse(event.originalEvent.dataTransfer.getData('Text'));
+			data = JSON.parse(event.dataTransfer.getData('Text'));
 			item = data.data;
 		}
 		catch (e) {
@@ -349,20 +352,20 @@ define(function (require) {
 			return;
 		}
 
-		// Get back data
-		var pos = jQuery(this).position();
-		var overlay = WriteRodex.ui.find('.overlay');
+		var rect   = this.getBoundingClientRect();
+		var uiRect = WriteRodex.ui.getBoundingClientRect();
+		var overlay = WriteRodex.ui.querySelector('.overlay');
 
 		// Display box
-		overlay.show();
-		overlay.css({ top: pos.top, left: pos.left + 35 });
-		overlay.text(DB.getItemName(item) + ' ' + (item.count || 1) + ' ea');
+		overlay.style.display = '';
+		DOM.setCss(overlay, { top: (rect.top - uiRect.top) + 'px', left: (rect.left - uiRect.left + 35) + 'px' });
+		overlay.textContent = DB.getItemName(item) + ' ' + (item.count || 1) + ' ea';
 
 		if (item.IsIdentified) {
-			overlay.removeClass('grey');
+			overlay.classList.remove('grey');
 		}
 		else {
-			overlay.addClass('grey');
+			overlay.classList.add('grey');
 		}
 	}
 
@@ -371,7 +374,7 @@ define(function (require) {
 	 * Hide the item name
 	 */
 	function onItemOut() {
-		WriteRodex.ui.find('.overlay').hide();
+		WriteRodex.ui.querySelector('.overlay').style.display = 'none';
 	}
 
 
@@ -391,8 +394,8 @@ define(function (require) {
 		var url = this.firstChild.style.backgroundImage.match(/\(([^\)]+)/)[1];
 		img.src = url.replace(/^\"/, '').replace(/\"$/, '');
 
-		event.originalEvent.dataTransfer.setDragImage(img, 12, 12);
-		event.originalEvent.dataTransfer.setData('Text',
+		event.dataTransfer.setDragImage(img, 12, 12);
+		event.dataTransfer.setData('Text',
 			JSON.stringify(window._OBJ_DRAG_ = {
 				type: 'item',
 				from: 'WriteRodex',

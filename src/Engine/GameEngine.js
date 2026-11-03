@@ -15,7 +15,6 @@ define(function( require )
 
 
 	// Load dependencies
-	var jQuery      = require('Utils/jquery');
 	var Queue       = require('Utils/Queue');
 	var Sound       = require('Audio/SoundManager');
 	var BGM         = require('Audio/BGM');
@@ -299,34 +298,38 @@ define(function( require )
 			var parser = new DOMParser();
 			var doc = parser.parseFromString(xml, 'application/xml');
 
-			var connections      = jQuery(doc).find('clientinfo connection');
-			var stop             = connections.length - 1;
-			var list             = [];
+			var connections = doc.querySelectorAll('clientinfo connection');
+			var stop        = connections.length - 1;
+			var list        = [];
 
 			if (!connections.length) {
 				callback();
 			}
 
-			connections.each(function(index, element){
-				var connection = jQuery(element);
+			function getNodeText(parent, selector)
+			{
+				var node = parent.querySelector(selector);
+				return node ? node.textContent : '';
+			}
 
-				list.push( connection.find('display:first').text() );
+			Array.prototype.forEach.call(connections, function(element, index){
+				list.push(getNodeText(element, 'display'));
 				_servers.push({
-					display:    connection.find('display:first').text(),
-					desc:       connection.find('desc:first').text(),
-					address:    connection.find('address:first').text(),
-					port:       connection.find('port:first').text(),
-					version:    connection.find('version:first').text(),
-					langtype:   connection.find('langtype:first').text(),
-					packetver:  connection.find('packetver:first').text(),
-					registrationweb: connection.find('registrationweb:first').text(),
-					renewal:    ['true', '1', 1, true].includes(connection.find('renewal:first').text().toLowerCase()),
+					display:    getNodeText(element, 'display'),
+					desc:       getNodeText(element, 'desc'),
+					address:    getNodeText(element, 'address'),
+					port:       getNodeText(element, 'port'),
+					version:    getNodeText(element, 'version'),
+					langtype:   getNodeText(element, 'langtype'),
+					packetver:  getNodeText(element, 'packetver'),
+					registrationweb: getNodeText(element, 'registrationweb'),
+					renewal:    ['true', '1', 1, true].includes(getNodeText(element, 'renewal').toLowerCase()),
 					adminList:  (function(){
-						var list   = [];
-						connection.find('yellow admin, aid admin').each(function(){
-							list.push(parseInt(this.textContent,10));
+						var adminList = [];
+						element.querySelectorAll('yellow admin, aid admin').forEach(function(node){
+							adminList.push(parseInt(node.textContent, 10));
 						});
-						return list;
+						return adminList;
 					})()
 				});
 

@@ -13,7 +13,6 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
-	var jQuery             = require('Utils/jquery');
 	var DB                 = require('DB/DBManager');
 	var ItemType           = require('DB/Items/ItemType');
 	var Network            = require('Network/NetworkManager');
@@ -30,6 +29,7 @@ define(function(require)
 	var PACKET        	   = require('Network/PacketStructure');
 	var PACKETVER   	   = require('Network/PacketVerManager');
 	var getModule     	   = require;
+	var DOM                = require('Utils/DOM');
 
 
 	/**
@@ -77,12 +77,11 @@ define(function(require)
 	LaphineUpg.onAppend = function onAppend()
 	{
 		// Seems like "EscapeWindow" is execute first, push it before.
-		var events = jQuery._data( window, 'events').keydown;
-		events.unshift( events.pop() );
+		// (jQuery._data removed - UIComponent handles keydown priority)
 
-		LaphineUpg.ui.find('.some_notifs').hide();
-		LaphineUpg.ui.find('.make_enabled').hide();
-		LaphineUpg.ui.find('.make_disabled').show();
+		LaphineUpg.ui.querySelector('.some_notifs').style.display = 'none';
+		LaphineUpg.ui.querySelector('.make_enabled').style.display = 'none';
+		LaphineUpg.ui.querySelector('.make_disabled').style.display = '';
 	};
 
 
@@ -92,10 +91,10 @@ define(function(require)
 	LaphineUpg.onRemove = function onRemove()
 	{
 		LaphineUpg.submittedIndex = 0;
-		LaphineUpg.ui.find('.submit_button_enabled').show();
-        LaphineUpg.ui.find('.submit_button_disabled').hide();
-        LaphineUpg.ui.find('.submitted_mat_list').empty();
-		LaphineUpg.ui.find('.some_notifs').hide();
+		LaphineUpg.ui.querySelector('.submit_button_enabled').style.display = '';
+        LaphineUpg.ui.querySelector('.submit_button_disabled').style.display = 'none';
+        LaphineUpg.ui.querySelector('.submitted_mat_list').innerHTML = '';
+		LaphineUpg.ui.querySelector('.some_notifs').style.display = 'none';
 		clearLaphineUpgUIState();
 	};
 
@@ -122,28 +121,40 @@ define(function(require)
 		var ui = this.ui;
 
 		// UI initializations
-		ui.find('.submit_button_disabled').hide();
-		ui.find('.some_notifs').hide();
-		ui.css({ top: 200, left:480 });
-		this.draggable(ui.find('.titlebar'));
+		ui.querySelector('.submit_button_disabled').style.display = 'none';
+		ui.querySelector('.some_notifs').style.display = 'none';
+		DOM.setCss(ui, { top: 200, left:480 });
+		this.draggable(ui.querySelector('.titlebar'));
 
 		// Functions bind
-		ui.find('.close, .cancel').click(onRequestLaphineUpgClose);
-		ui.find('.available_mat_list, .left_panel')
-			.on('dragover', stopPropagation)
-			.on('dragstart',   '.item', onItemDragStart)
-			.on('dragend',     '.item', onItemDragEnd);
-		ui.find('.submit_button_enabled').click(onSubmitItem);
-		ui.find('.available_mat_list')
-			.on('click', '.item', onItemSelect)
-			.on('drop', onRemoveSubmitDrop)
-		ui.find('.left_panel')
-			.on('drop', onSubmitItemDrop);
-		ui.find('.make_enabled').click(onRequestLaphineUpg);
-		ui.find('.available_mat_list, .submitted_mat_list')
-			.on('mouseover',   '.item', onItemOver)
-			.on('mouseout',    '.item', onItemOut)
-			.on('contextmenu', '.item', onItemInfo);
+		var _luCloseBtn = ui.querySelector('.close, .cancel');
+		if (_luCloseBtn) _luCloseBtn.addEventListener('click', onRequestLaphineUpgClose);
+		var _luAvailList = ui.querySelector('.available_mat_list');
+		var _luLeftPanel = ui.querySelector('.left_panel');
+		if (_luAvailList) {
+			_luAvailList.addEventListener('dragover', stopPropagation);
+			DOM.addDelegatedEvent(_luAvailList, 'dragstart', '.item', onItemDragStart);
+			DOM.addDelegatedEvent(_luAvailList, 'dragend', '.item', onItemDragEnd);
+		}
+		if (_luLeftPanel) {
+			_luLeftPanel.addEventListener('dragover', stopPropagation);
+			DOM.addDelegatedEvent(_luLeftPanel, 'dragstart', '.item', onItemDragStart);
+			DOM.addDelegatedEvent(_luLeftPanel, 'dragend', '.item', onItemDragEnd);
+		}
+		ui.querySelector('.submit_button_enabled').addEventListener('click', onSubmitItem);
+		if (_luAvailList) {
+			DOM.addDelegatedEvent(_luAvailList, 'click', '.item', onItemSelect);
+			_luAvailList.addEventListener('drop', onRemoveSubmitDrop);
+		}
+		if (_luLeftPanel) _luLeftPanel.addEventListener('drop', onSubmitItemDrop);
+		ui.querySelector('.make_enabled').addEventListener('click', onRequestLaphineUpg);
+		var _luSubmittedList = ui.querySelector('.submitted_mat_list');
+		[_luAvailList, _luSubmittedList].forEach(function(el) {
+			if (!el) return;
+			DOM.addDelegatedEvent(el, 'mouseover', '.item', onItemOver);
+			DOM.addDelegatedEvent(el, 'mouseout', '.item', onItemOut);
+			DOM.addDelegatedEvent(el, 'contextmenu', '.item', onItemInfo);
+		});
 
 
 		// Setting chatbox scrollbar
@@ -161,7 +172,7 @@ define(function(require)
 			DB.INTERFACE_PATH + 'lapine/scrollbar_thumb_press_mid.bmp',
 			DB.INTERFACE_PATH + 'lapine/scrollbar_thumb_press_top.bmp'
 		], function (bgBottom, bgMid, bgTop, thumbOutBottom, thumbOutMid, thumbOutTop, thumbOverBottom, thumbOverMid, thumbOverTop, thumbPressBottom, thumbPressMid, thumbPressTop) {
-			jQuery('style:first').append([
+			(document.querySelector('style') || document.head.appendChild(document.createElement('style'))).textContent += [
 				'#LaphineUpg .available_mat_list::-webkit-scrollbar { width: 8px; height: 0px; }',
 				'#LaphineUpg .available_mat_list::-webkit-scrollbar-corner { display: none; }',
 				'#LaphineUpg .available_mat_list::-webkit-scrollbar-button:vertical:increment { background: url(' + bgBottom + ') center center no-repeat, url(' + bgMid + ') top no-repeat; height: 15px; width: 7px; background-color: transparent; }',
@@ -171,7 +182,7 @@ define(function(require)
 				'#LaphineUpg .available_mat_list::-webkit-scrollbar-thumb:vertical:hover { background: url(' + thumbOverTop + ') top no-repeat, url(' + thumbOverMid + ') center repeat-y, url(' + thumbOverBottom + ') bottom no-repeat !important; border-radius: 100px; }',
 				'#LaphineUpg .available_mat_list::-webkit-scrollbar-thumb:vertical:active { background: url(' + thumbPressTop + ') top no-repeat, url(' + thumbPressMid + ') center repeat-y, url(' + thumbPressBottom + ') bottom no-repeat !important; border-radius: 100px; }',
 				'#LaphineUpg .available_mat_list::-webkit-scrollbar-thumb:vertical{ -webkit-border-image: none; }'
-			].join('\n'));
+			].join('\n');
 		});
 	};
 
@@ -222,8 +233,8 @@ define(function(require)
 		}
 
 		var ui = LaphineUpg.ui;
-		ui.find('.item_text').text(DB.getItemName(item));
-		ui.find('.mat_info_list').text(LaphineUpgUIState.needSourceString);
+		ui.querySelector('.item_text').textContent = DB.getItemName(item);
+		ui.querySelector('.mat_info_list').textContent = LaphineUpgUIState.needSourceString;
 	};
 
 
@@ -251,8 +262,8 @@ define(function(require)
  	* Populates the list of available materials.
  	*/
 	function populateAvailableUpgMatList() {
-		let availableMatList = LaphineUpg.ui.find('.available_mat_list');
-		availableMatList.empty(); // Clear the list before populating
+		let availableMatList = LaphineUpg.ui.querySelector('.available_mat_list');
+		availableMatList.innerHTML = ''; // Clear the list before populating
 	
 		LaphineUpgUIState.targetItems.forEach(targetItem => {
 			let matchingItems = GetInventoryItemsById(targetItem.id);
@@ -301,24 +312,25 @@ define(function(require)
  	*/
 	function onAddMaterialItem( item, target_iconname)
 	{
-		let availableMatList = LaphineUpg.ui.find('.available_mat_list');
+		let availableMatList = LaphineUpg.ui.querySelector('.available_mat_list');
 
 		// Add item details
-		let newItem = jQuery('<div class="item" data-index="' + item.index + '" draggable="true">' +
+		var _tmp1 = document.createElement('div');
+		_tmp1.innerHTML = '<div class="item" data-index="' + item.index + '" draggable="true">' +
 			'<div class="icon"></div>' +
 			'<div class="name">'+DB.getItemName(item, {showItemGrade: false, showItemSlots:false})+'</div>' +
-			'</div>'
-		);
+			'</div>';
+		let newItem = _tmp1.firstChild;
 
-		newItem.dblclick(onSubmitItem); // Add double-click event listener to submit item
-		availableMatList.append(newItem);
+		newItem.addEventListener('dblclick', onSubmitItem); // Add double-click event listener to submit item
+		availableMatList.appendChild(newItem);
 
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + target_iconname + '.bmp', function(data){
-			availableMatList.find('.item[data-index="'+ item.index +'"] .icon').css('backgroundImage', 'url('+ data +')');
+			availableMatList.querySelector('.item[data-index="'+ item.index +'"] .icon').style.backgroundImage = 'url('+ data +')';
 		});
 
 		Client.loadFile( DB.INTERFACE_PATH + 'lapine/list_selected_item.bmp', function(data){
-			availableMatList.find('.item[data-index="'+ item.index +'"] .name').css('backgroundImage', 'url('+ data +')');
+			availableMatList.querySelector('.item[data-index="'+ item.index +'"] .name').style.backgroundImage = 'url('+ data +')';
 		});
 	};
 
@@ -368,8 +380,8 @@ define(function(require)
 		}
 
 		var ui = LaphineUpg.ui;
-		ui.find('.name').removeClass('selected');
-		ui.find('.item[data-index="' + item.index + '"] .name').addClass('selected');
+		ui.querySelector('.name').classList.remove('selected');
+		ui.querySelector('.item[data-index="' + item.index + '"] .name').classList.add('selected');
 	};
 
 
@@ -380,12 +392,12 @@ define(function(require)
 	{
 
         // Check if there's a currently selected item in the .name class
-		let selectedItem = LaphineUpg.ui.find('.item .name.selected');
+		let selectedItem = LaphineUpg.ui.querySelector('.item .name.selected');
 		let idx;
 		var ui = LaphineUpg.ui;
 
-		if (selectedItem.length > 0) {
-			idx = parseInt(selectedItem.closest('.item').data('index'), 10);
+		if (selectedItem) {
+			idx = parseInt(selectedItem.closest('.item').getAttribute('data-index'), 10);
 		} else {
 			idx = parseInt(this.getAttribute('data-index'), 10);
 		}
@@ -403,7 +415,7 @@ define(function(require)
 		}
 	
 		// Check if any item already exists in the .submitted_mat_list .item elements
-		if (ui.find('.submitted_mat_list .item').length > 0) {
+		if (ui.querySelector('.submitted_mat_list .item') > 0) {
 			return false; // An item already exists in the submitted list
 		}	
 
@@ -425,28 +437,29 @@ define(function(require)
 	function onUpdateSubmitList(item)
 	{
 		let it   = DB.getItemInfo( item.ITID );
-        let submittedMatList = LaphineUpg.ui.find('.submitted_mat_list');
+        let submittedMatList = LaphineUpg.ui.querySelector('.submitted_mat_list');
 
-		let newItem = jQuery('<div class="item" data-index="' + item.index + '" draggable="true">' +
+		var _tmp2 = document.createElement('div');
+		_tmp2.innerHTML = '<div class="item" data-index="' + item.index + '" draggable="true">' +
 			'<div class="icon"></div>' +
-			'</div>'
-		);
+			'</div>';
+		let newItem = _tmp2.firstChild;
 
-		newItem.dblclick(onItemRemove); // Add double-click event listener to remove item
-		submittedMatList.append(newItem);
+		newItem.addEventListener('dblclick', onItemRemove); // Add double-click event listener to remove item
+		submittedMatList.appendChild(newItem);
 
 		Client.loadFile(DB.INTERFACE_PATH + 'item/' + ( item.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName ) + '.bmp', function (data) {
-			submittedMatList.find('.item[data-index="' + item.index + '"] .icon').css('backgroundImage', 'url(' + data + ')');
+			submittedMatList.querySelector('.item[data-index="' + item.index + '"] .icon').style.backgroundImage = 'url(' + data + ')';
 		});
 
 		// Add the item index
 		LaphineUpg.submittedIndex = item.index;
 
 		var ui = LaphineUpg.ui;
-		ui.find('.submit_button_enabled').show();
-		ui.find('.submit_button_disabled').hide();
-		ui.find('.make_disabled').hide();
-		ui.find('.make_enabled').show();
+		ui.querySelector('.submit_button_enabled').style.display = '';
+		ui.querySelector('.submit_button_disabled').style.display = 'none';
+		ui.querySelector('.make_disabled').style.display = 'none';
+		ui.querySelector('.make_enabled').style.display = '';
 
 
 		// Check submitted Item
@@ -498,17 +511,17 @@ define(function(require)
 
 			// If element is not provided, find the corresponding DOM element
 			if (!element) {
-				element = LaphineUpg.ui.find(`.item[data-index="${item.index}"]`);
+				element = LaphineUpg.ui.querySelector(`.item[data-index="${item.index}"]`);
 			}
 
 	    	// Remove the item from the DOM
-	    	jQuery(element).remove();
+	    	if (element && element.parentNode) { element.parentNode.removeChild(element); }
 
 			var ui = LaphineUpg.ui;
-	    	ui.find('.submit_button_enabled').show();
-	    	ui.find('.submit_button_disabled').hide();
-			ui.find('.make_disabled').show();
-			ui.find('.make_enabled').hide();
+	    	ui.querySelector('.submit_button_enabled').style.display = '';
+	    	ui.querySelector('.submit_button_disabled').style.display = 'none';
+			ui.querySelector('.make_disabled').style.display = '';
+			ui.querySelector('.make_enabled').style.display = 'none';
 
 			// Update the available materials list
 			updateAvailableMatList(item.ITID, item.index, false);
@@ -520,17 +533,17 @@ define(function(require)
  	* Handles the changes in UI when submitting and removing item from submitted list.
  	*/
 	function updateAvailableMatList(itemId, itemIndex, remove) {
-		let availableMatList = LaphineUpg.ui.find('.available_mat_list');
+		let availableMatList = LaphineUpg.ui.querySelector('.available_mat_list');
 		let itemExists = false;
 
-		availableMatList.find('.item').each(function() {
-			let idx = parseInt(jQuery(this).attr('data-index'), 10);
+		availableMatList.querySelectorAll('.item').forEach(function() {
+			let idx = parseInt(this.getAttribute('data-index'), 10);
 			let item = Inventory.getUI().getItemByIndex(idx);
 	
 			if (item.ITID === itemId && idx === itemIndex) {
 				itemExists = true;
 				if (remove) {
-					jQuery(this).remove();
+					this.remove();
 				}
 			}
 		});
@@ -562,8 +575,8 @@ define(function(require)
 	function showMessage(message)
 	{
 		var ui = LaphineUpg.ui;
-		ui.find('.info_msg').empty().text(message);
-		ui.find('.some_notifs').show();
+		ui.querySelector('.info_msg').innerHTML = ''.textContent = message;
+		ui.querySelector('.some_notifs').style.display = '';
 	};
 
 
@@ -586,8 +599,8 @@ define(function(require)
 	    Network.sendPacket(pkt);
 
 		var ui = LaphineUpg.ui;
-		ui.find('.make_enabled').hide();
-		ui.find('.make_disabled').show();
+		ui.querySelector('.make_enabled').style.display = 'none';
+		ui.querySelector('.make_disabled').style.display = '';
 	};
 
 
@@ -604,31 +617,30 @@ define(function(require)
 		}
 
 		// Get back data
-		var pos     = jQuery(this);
-		var overlay = LaphineUpg.ui.find('.overlay');
+		var overlay = LaphineUpg.ui.querySelector('.overlay');
 
 		// Determine the immediate parent container explicitly based on the context
-		var parentContainer = jQuery(this).closest('.available_mat_list, .submitted_mat_list');
-		var itemPos = pos.position();
-		var containerPos = parentContainer.position();
-	
+		var parentContainer = this.closest('.available_mat_list, .submitted_mat_list');
+		var itemRect = this.getBoundingClientRect();
+		var containerRect = parentContainer ? parentContainer.getBoundingClientRect() : {top: 0, left: 0};
+
 		// Calculate the desired position of the overlay relative to the container
-		var top = itemPos.top - overlay.outerHeight() + 25;
-		var left = itemPos.left;
+		var top = (itemRect.top - containerRect.top) - overlay.offsetHeight + 25;
+		var left = itemRect.left - containerRect.left;
 
 		// Display box
-		overlay.show();
-		overlay.css({
-			top: top + containerPos.top, // Adjust position relative to the container
-			left: left + containerPos.left
+		overlay.style.display = '';
+		DOM.setCss(overlay, {
+			top: (top + containerRect.top - LaphineUpg.ui.getBoundingClientRect().top) + 'px',
+			left: (left + containerRect.left - LaphineUpg.ui.getBoundingClientRect().left) + 'px'
 		});
-		overlay.text(DB.getItemName(item, {showItemGrade: false, showItemSlots:false}));
+		overlay.textContent = DB.getItemName(item, {showItemGrade: false, showItemSlots:false});
 
 		if (item.IsIdentified) {
-			overlay.removeClass('grey');
+			overlay.classList.remove('grey');
 		}
 		else {
-			overlay.addClass('grey');
+			overlay.classList.add('grey');
 		}
 	};
 
@@ -639,7 +651,7 @@ define(function(require)
 	function onItemOut()
 	{
 		var ui = LaphineUpg.ui;
-		ui.find('.overlay').hide();
+		ui.querySelector('.overlay').style.display = 'none';
 	};
 
 
@@ -670,8 +682,8 @@ define(function(require)
 		var url = this.querySelector('.icon').style.backgroundImage.match(/\((.*?)\)/)[1].replace(/('|")/g,'');
 		img.src   = url.replace(/^\"/, '').replace(/\"$/, '');
 
-		event.originalEvent.dataTransfer.setDragImage( img, 12, 12 );
-		event.originalEvent.dataTransfer.setData('Text',
+		event.dataTransfer.setDragImage( img, 12, 12 );
+		event.dataTransfer.setData('Text',
 			JSON.stringify( window._OBJ_DRAG_ = {
 				type: 'item',
 				from: 'LaphineUpg',
@@ -705,7 +717,7 @@ define(function(require)
 		event.stopImmediatePropagation();
 
 		try {
-			data = JSON.parse(event.originalEvent.dataTransfer.getData('Text'));
+			data = JSON.parse(event.dataTransfer.getData('Text'));
 			item = data.data;
 		}
 		catch(e) {
@@ -718,11 +730,11 @@ define(function(require)
 		}
 		
 		// Check if there's a currently selected item in the .name class
-		let selectedItem = LaphineUpg.ui.find('.item .name.selected');
+		let selectedItem = LaphineUpg.ui.querySelector('.item .name.selected');
 		let idx;
 
-		if (selectedItem.length > 0) {
-			idx = parseInt(selectedItem.closest('.item').data('index'), 10);
+		if (selectedItem) {
+			idx = parseInt(selectedItem.closest('.item').getAttribute('data-index'), 10);
 		} else {
 			idx = parseInt(this.getAttribute('data-index'), 10);
 		}
@@ -738,7 +750,7 @@ define(function(require)
 		}
 	
 		// Check if any item already exists in the .submitted_mat_list .item elements
-		if (ui.find('.submitted_mat_list .item').length > 0) {
+		if (ui.querySelector('.submitted_mat_list .item') > 0) {
 			return false; // An item already exists in the submitted list
 		}	
 
@@ -765,7 +777,7 @@ define(function(require)
 		event.stopImmediatePropagation();
 
 		try {
-			data = JSON.parse(event.originalEvent.dataTransfer.getData('Text'));
+			data = JSON.parse(event.dataTransfer.getData('Text'));
 			item = data.data;
 		}
 		catch(e) {
@@ -782,10 +794,10 @@ define(function(require)
 		}
 
 		// Locate the DOM element based on the item's index
-		let element = LaphineUpg.ui.find(`.item[data-index="${item.index}"]`);
+		let element = LaphineUpg.ui.querySelector(`.item[data-index="${item.index}"]`);
 
 		if (item) {
-			onRemoveItemSubmitList(item, element.get(0)); // Pass the DOM element to the function
+			onRemoveItemSubmitList(item, element);
 		}
 	};
 

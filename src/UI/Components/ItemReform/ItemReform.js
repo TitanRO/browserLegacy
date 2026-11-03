@@ -13,7 +13,6 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
-	var jQuery             = require('Utils/jquery');
 	var DB                 = require('DB/DBManager');
 	var EffectConst        = require('DB/Effects/EffectConst');
 	var ItemType           = require('DB/Items/ItemType');
@@ -34,6 +33,7 @@ define(function(require)
 	var PACKET        	   = require('Network/PacketStructure');
 	var PACKETVER   	   = require('Network/PacketVerManager');
 	var getModule     	   = require;
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -72,12 +72,11 @@ define(function(require)
 	ItemReform.onAppend = function onAppend()
 	{
 		// Seems like "EscapeWindow" is execute first, push it before.
-		var events = jQuery._data( window, 'events').keydown;
-		events.unshift( events.pop() );
+		// (jQuery._data removed - UIComponent handles keydown priority)
 
-		ItemReform.ui.find('.information_details').hide();
-		ItemReform.ui.find('.reform_enabled').hide();
-		ItemReform.ui.find('.reform_disabled').show();
+		ItemReform.ui.querySelector('.information_details').style.display = 'none';
+		ItemReform.ui.querySelector('.reform_enabled').style.display = 'none';
+		ItemReform.ui.querySelector('.reform_disabled').style.display = '';
 	};
 
 
@@ -88,16 +87,16 @@ define(function(require)
 	{
 		ReformInfo = {};
 		SelectedReformInfo = {};
-		ItemReform.ui.find('.available_material_list').empty();
-		ItemReform.ui.find('.material_list').empty();
-		ItemReform.ui.find('.result_item_text').empty();
-		ItemReform.ui.find('.base_item').empty();
-		ItemReform.ui.find('.result_item').empty();
-		ItemReform.ui.find('.info_msg').empty();
-		ItemReform.ui.find('.information_details').hide();
-		ItemReform.ui.find('.reform_enabled').hide();
-		ItemReform.ui.find('.reform_disabled').show();
-		ItemReform.ui.find('.some_notifs').hide();
+		ItemReform.ui.querySelector('.available_material_list').innerHTML = '';
+		ItemReform.ui.querySelector('.material_list').innerHTML = '';
+		ItemReform.ui.querySelector('.result_item_text').innerHTML = '';
+		ItemReform.ui.querySelector('.base_item').innerHTML = '';
+		ItemReform.ui.querySelector('.result_item').innerHTML = '';
+		ItemReform.ui.querySelector('.info_msg').innerHTML = '';
+		ItemReform.ui.querySelector('.information_details').style.display = 'none';
+		ItemReform.ui.querySelector('.reform_enabled').style.display = 'none';
+		ItemReform.ui.querySelector('.reform_disabled').style.display = '';
+		ItemReform.ui.querySelector('.some_notifs').style.display = 'none';
 		resetReformUIState();
 
 	};
@@ -117,24 +116,24 @@ define(function(require)
 	ItemReform.init = function init()
 	{
 		// UI initializations
-		this.ui.css({ top: 200, left:480 });
-		this.draggable(this.ui.find('.titlebar'));
+		DOM.setCss(this.ui, { top: 200, left:480 });
+		this.draggable(this.ui.querySelector('.titlebar'));
 
 		// Functions bind
-		this.ui.find('.close, .cancel').click(onRequestReformClose);
-		this.ui.find('.available_material_list')
-			.on('click', '.item', onMaterialSelect)
-			.on('mouseover', '.item', onHoverContainer)
-			.on('mouseout', '.item', onHoverOutContainer);
-		this.ui.find('.information_details')
-			.on('mouseover', onHoverDetails)
-			.on('mouseout', onHoverOutDetails);
-		this.ui.find('.reform_enabled').click(onRequestItemReform);
-		this.ui.find('.panel')
-			.on('contextmenu', '.item', onItemInfo);
-		this.ui.find('.panel .left_panel')
-			.on('mouseover', '.item', onItemOver)
-			.on('mouseout', '.item', onItemOut)
+		var _irCloseBtn = this.ui.querySelector('.close, .cancel');
+		if (_irCloseBtn) _irCloseBtn.addEventListener('click', onRequestReformClose);
+		var _irAvailList = this.ui.querySelector('.available_material_list');
+		DOM.addDelegatedEvent(_irAvailList, 'click', '.item', onMaterialSelect);
+		DOM.addDelegatedEvent(_irAvailList, 'mouseover', '.item', onHoverContainer);
+		DOM.addDelegatedEvent(_irAvailList, 'mouseout', '.item', onHoverOutContainer);
+		var _irInfoDetails = this.ui.querySelector('.information_details');
+		_irInfoDetails.addEventListener('mouseover', onHoverDetails);
+		_irInfoDetails.addEventListener('mouseout', onHoverOutDetails);
+		this.ui.querySelector('.reform_enabled').addEventListener('click', onRequestItemReform);
+		DOM.addDelegatedEvent(this.ui.querySelector('.panel'), 'contextmenu', '.item', onItemInfo);
+		var _irLeftPanel = this.ui.querySelector('.panel .left_panel');
+		DOM.addDelegatedEvent(_irLeftPanel, 'mouseover', '.item', onItemOver);
+		DOM.addDelegatedEvent(_irLeftPanel, 'mouseout', '.item', onItemOut);
 
 	};
 
@@ -185,7 +184,7 @@ define(function(require)
 				ReformInfo = DB.getAllReformInfos(reformids);
 				checkReformCriteria(); // Call to check the criteria
 				ItemReform.append();
-				ItemReform.ui.find('.item_text').text(DB.getItemName(item));
+				ItemReform.ui.querySelector('.item_text').textContent = DB.getItemName(item);
 			} else {
 				console.warn("Item with ID", pkt.itemId, "not found in Reform List.");
 			}
@@ -198,8 +197,8 @@ define(function(require)
 	 */
 	function checkReformCriteria() {
 
-		let availableMatList = ItemReform.ui.find('.available_material_list');
-		availableMatList.empty(); // Clear the list before populating
+		let availableMatList = ItemReform.ui.querySelector('.available_material_list');
+		availableMatList.innerHTML = ''; // Clear the list before populating
 
 		let availableMats = 0;
 	    // Iterate through each reform entry in ReformInfo
@@ -266,25 +265,26 @@ define(function(require)
  	*/
 	function onAddMaterialItem(item)
 	{
-		let availableMatList = ItemReform.ui.find('.available_material_list');
+		let availableMatList = ItemReform.ui.querySelector('.available_material_list');
 
 		let it = DB.getItemInfo(item.ITID);
 		// Add item details
-		let newItem = jQuery('<div class="item" data-index="'+item.index+'">' +
-			'<div class="item_container" "data-index="'+item.index+'">' +
+		var _tmpNI = document.createElement('div');
+		_tmpNI.innerHTML = '<div class="item" data-index="'+item.index+'">' +
+			'<div class="item_container" data-index="'+item.index+'">' +
 			'<div class="icon"></div>' +
 			'<div class="name">'+DB.getItemName(item, { showItemGrade: false, showItemOptions: false })+'</div>' +
-			'</div></div>'
-		);
+			'</div></div>';
+		let newItem = _tmpNI.firstChild;
 
-		availableMatList.append(newItem);
+		availableMatList.appendChild(newItem);
 
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + it.identifiedResourceName + '.bmp', function(data){
-			availableMatList.find('.item[data-index="'+ item.index +'"] .icon').css('backgroundImage', 'url('+ data +')');
+			availableMatList.querySelector('.item[data-index="'+ item.index +'"] .icon').style.backgroundImage = 'url('+ data +')';
 		});
 
 		Client.loadFile( DB.INTERFACE_PATH + 'itemreform/btn_reform_item.bmp', function(data){
-			availableMatList.find('.item[data-index="'+ item.index +'"]').css('backgroundImage', 'url('+ data +')');
+			availableMatList.querySelector('.item[data-index="'+ item.index +'"]').style.backgroundImage = 'url('+ data +')';
 		});
 
 	};
@@ -314,22 +314,23 @@ define(function(require)
 		// Update UI
 		UpdatePossibleReformUI(item, SelectedReformInfo);
 
-		let availableMatList = ItemReform.ui.find('.available_material_list');
+		let availableMatList = ItemReform.ui.querySelector('.available_material_list');
 
-		availableMatList.find('.item').removeClass('selected').each(function() {
-    	    var resetIdx = parseInt(this.getAttribute('data-index'), 10);
+		Array.from(availableMatList.querySelectorAll('.item')).forEach(function(el) {
+    	    el.classList.remove('selected');
+    	    var resetIdx = parseInt(el.getAttribute('data-index'), 10);
     	    var resetItem = Inventory.getUI().getItemByIndex(resetIdx);
     	    if (resetItem) {
     	        Client.loadFile(DB.INTERFACE_PATH + 'itemreform/btn_reform_item.bmp', function(data) {
-    	            availableMatList.find('.item[data-index="'+ resetItem.index +'"]').css('backgroundImage', 'url('+ data +')');
+    	            availableMatList.querySelector('.item[data-index="'+ resetItem.index +'"]').style.backgroundImage = 'url('+ data +')';
     	        });
     	    }
     	});
 
     	// Add 'selected' class to the clicked item and change its background
-    	jQuery(this).addClass('selected');
+    	this.classList.add('selected');
     	Client.loadFile(DB.INTERFACE_PATH + 'itemreform/btn_reform_item_press.bmp', function(data) {
-    	    availableMatList.find('.item[data-index="'+ item.index +'"]').css('backgroundImage', 'url('+ data +')');
+    	    availableMatList.querySelector('.item[data-index="'+ item.index +'"]').style.backgroundImage = 'url('+ data +')';
     	});
 
 		showMessage(DB.getMessage(3855));
@@ -341,7 +342,7 @@ define(function(require)
 	 */
 	function onHoverContainer()
 	{
-		if (jQuery(this).hasClass('selected')) {
+		if (this.classList.contains('selected')) {
        		return false;
     	}
 
@@ -352,10 +353,10 @@ define(function(require)
 			return false;
 		}
 
-		let availableMatList = ItemReform.ui.find('.available_material_list');
+		let availableMatList = ItemReform.ui.querySelector('.available_material_list');
 
 		Client.loadFile( DB.INTERFACE_PATH + 'itemreform/btn_reform_item_over.bmp', function(data){
-			availableMatList.find('.item[data-index="'+ item.index +'"]').css('backgroundImage', 'url('+ data +')');
+			availableMatList.querySelector('.item[data-index="'+ item.index +'"]').style.backgroundImage = 'url('+ data +')';
 		});
 	};
 
@@ -365,7 +366,7 @@ define(function(require)
 	 */
 	function onHoverOutContainer()
 	{
-		if (jQuery(this).hasClass('selected')) {
+		if (this.classList.contains('selected')) {
        		return false;
     	}
 
@@ -376,10 +377,10 @@ define(function(require)
 			return false;
 		}
 
-		let availableMatList = ItemReform.ui.find('.available_material_list');
+		let availableMatList = ItemReform.ui.querySelector('.available_material_list');
 
 		Client.loadFile( DB.INTERFACE_PATH + 'itemreform/btn_reform_item.bmp', function(data){
-			availableMatList.find('.item[data-index="'+ item.index +'"]').css('backgroundImage', 'url('+ data +')');
+			availableMatList.querySelector('.item[data-index="'+ item.index +'"]').style.backgroundImage = 'url('+ data +')';
 		});
 	};
 
@@ -393,7 +394,7 @@ define(function(require)
 	function UpdatePossibleReformUI(item, info)
 	{
 		// Show Reform Info Details
-		ItemReform.ui.find('.information_details').show();
+		ItemReform.ui.querySelector('.information_details').style.display = '';
 
 		// Determine the result item first
 		let resultItem = { ...item };  // Shallow copy of the item
@@ -413,39 +414,39 @@ define(function(require)
 		// Update UI
 		// Result Item
 		let result_it = DB.getItemInfo(resultItem.ITID);
-		let resultItemDiv = ItemReform.ui.find('.result_item');
+		let resultItemDiv = ItemReform.ui.querySelector('.result_item');
 
-		let result_item_view = jQuery('<div class="item resultitem" data-index="'+resultItem.ITID+'">' +
-			'<div class="icon"></div>' +
-			'</div>'
-		);
-		resultItemDiv.empty().append(result_item_view);
+		var _tmpR = document.createElement('div');
+		_tmpR.innerHTML = '<div class="item resultitem" data-index="'+resultItem.ITID+'"><div class="icon"></div></div>';
+		let result_item_view = _tmpR.firstChild;
+		resultItemDiv.innerHTML = '';
+		resultItemDiv.appendChild(result_item_view);
 
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + result_it.identifiedResourceName + '.bmp', function(data){
-			resultItemDiv.find('.item[data-index="'+ resultItem.ITID +'"] .icon').css('backgroundImage', 'url('+ data +')');
+			resultItemDiv.querySelector('.item[data-index="'+ resultItem.ITID +'"] .icon').style.backgroundImage = 'url('+ data +')';
 		});
 
 		// Base Item
 		let it = DB.getItemInfo(item.ITID);
-		let baseItemDiv = ItemReform.ui.find('.base_item');
+		let baseItemDiv = ItemReform.ui.querySelector('.base_item');
 
-		let base_item_view = jQuery('<div class="item "data-index="'+item.index+'">' +
-			'<div class="icon"></div>' +
-			'</div>'
-		);
-		baseItemDiv.empty().append(base_item_view);
+		var _tmpB = document.createElement('div');
+		_tmpB.innerHTML = '<div class="item" data-index="'+item.index+'"><div class="icon"></div></div>';
+		let base_item_view = _tmpB.firstChild;
+		baseItemDiv.innerHTML = '';
+		baseItemDiv.appendChild(base_item_view);
 
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + it.identifiedResourceName + '.bmp', function(data){
-			baseItemDiv.find('.item[data-index="'+ item.index +'"] .icon').css('backgroundImage', 'url('+ data +')');
+			baseItemDiv.querySelector('.item[data-index="'+ item.index +'"] .icon').style.backgroundImage = 'url('+ data +')';
 		});
 
-		ItemReform.ui.find('.result_item_text').empty().text(DB.getItemName(resultItem, {showItemOptions: false}))
+		var _rtext = ItemReform.ui.querySelector('.result_item_text'); _rtext.innerHTML = ''; _rtext.textContent = DB.getItemName(resultItem, {showItemOptions: false});
 
 		// Populate Material List
-		let materialDiv = ItemReform.ui.find('.material_list');
+		let materialDiv = ItemReform.ui.querySelector('.material_list');
 
 		// Clear the existing items if needed
-		materialDiv.empty();
+		materialDiv.innerHTML = '';
 
 		// Sort the materials in ascending order based on MaterialItemID
 		let sortedMaterials = info.Materials.slice().sort((a, b) => a.MaterialItemID - b.MaterialItemID);
@@ -473,22 +474,24 @@ define(function(require)
 			let itemClass = (inventory_mat_count >= material.Amount) ? '' : 'red';
 
 			// Create a new div for each material
-			let newMat = jQuery('<div class="item dummy" data-index="'+ material.MaterialItemID + '">' +
+			var _tmpM = document.createElement('div');
+			_tmpM.innerHTML = '<div class="item dummy" data-index="'+ material.MaterialItemID + '">' +
 				'<div class="icon"></div>' +
 				'<div class="count ' + itemClass + '">' + inventory_mat_count + ' / ' + material.Amount + '</div>' +
-			'</div>');
-	
+			'</div>';
+			var newMat = _tmpM.firstChild;
+
 			// Append the new material div to the material list
-			materialDiv.append(newMat);
+			materialDiv.appendChild(newMat);
 
 			Client.loadFile( DB.INTERFACE_PATH + 'item/' + mat_it.identifiedResourceName + '.bmp', function(data){
-				materialDiv.find('.item[data-index="'+ material.MaterialItemID +'"] .icon').css('backgroundImage', 'url('+ data +')');
+				materialDiv.querySelector('.item[data-index="'+ material.MaterialItemID +'"] .icon').style.backgroundImage = 'url('+ data +')';
 			});
 		});
 
 		if (withenoughMat >= limitedMaterials.length) {
-			ItemReform.ui.find('.reform_disabled').hide();
-			ItemReform.ui.find('.reform_enabled').show();
+			ItemReform.ui.querySelector('.reform_disabled').style.display = 'none';
+			ItemReform.ui.querySelector('.reform_enabled').style.display = '';
 		}
 	};
 
@@ -507,29 +510,28 @@ define(function(require)
 			NpcBox.append();
 			NpcBox.setText(infoText, 0);
 
-			NpcBox.ui.css('height', '150px');
-			NpcBox.ui.find('.border').css('height', '139px')
-			var infoDetails = ItemReform.ui.find('.information_details');
-			var offset = infoDetails.offset();
-    		var height = infoDetails.outerHeight();
+			NpcBox.ui.style.height = '150px';
+			NpcBox.ui.querySelector('.border').style.height = '139px'
+			var infoDetails = ItemReform.ui.querySelector('.information_details');
+			var height = infoDetails.offsetHeight;
 
 			// Initial position update
 			function updateNpcBoxPosition(e) {
-				NpcBox.ui.css({
-					top: e.pageY + 10, // 10 pixels below the mouse cursor
-					left: e.pageX
+				DOM.setCss(NpcBox.ui, {
+					top: (e.pageY + 10) + 'px',
+					left: e.pageX + 'px'
 				});
 			}
 	
 			// Add NpcBox to body so it can follow cursor correctly
-			jQuery('body').append(NpcBox.ui);
+			document.body.appendChild(NpcBox.ui);
 	
 			// Update position on mouse move
-			jQuery(document).on('mousemove', updateNpcBoxPosition);
+			document.addEventListener('mousemove', updateNpcBoxPosition);
 	
 			// Remove the event listener on mouse out
-			jQuery(event.currentTarget).on('mouseout', function() {
-				jQuery(document).off('mousemove', updateNpcBoxPosition);
+			event.currentTarget.addEventListener('mouseout', function() {
+				document.removeEventListener('mousemove', updateNpcBoxPosition);
 				onHoverOutDetails();
 			});
 		}
@@ -542,7 +544,7 @@ define(function(require)
 	function onHoverOutDetails()
 	{
 		if (SelectedReformInfo) {
-			if (NpcBox.ui.is(':visible')) {
+			if (DOM.isVisible(NpcBox.ui)) {
 				NpcBox.remove();
 			}
 		}
@@ -611,8 +613,8 @@ define(function(require)
  	*/
 	function showMessage(message)
 	{
-		ItemReform.ui.find('.info_msg').empty().text(message);
-		ItemReform.ui.find('.some_notifs').show();
+		ItemReform.ui.querySelector('.info_msg').textContent = message;
+		ItemReform.ui.querySelector('.some_notifs').style.display = '';
 	};
 
 
@@ -649,27 +651,27 @@ define(function(require)
     	}
 
 		// Get back data
-		var overlay = ItemReform.ui.find('.overlay');
+		var overlay = ItemReform.ui.querySelector('.overlay');
 
 		// Display box
-		overlay.show();
-		overlay.text(DB.getItemName(item, {showItemOptions: false}));
+		overlay.style.display = '';
+		overlay.textContent = DB.getItemName(item, {showItemOptions: false});
 
 		if (item.IsIdentified) {
-			overlay.removeClass('grey');
+			overlay.classList.remove('grey');
 		}
 		else {
-			overlay.addClass('grey');
+			overlay.classList.add('grey');
 		}
 
 		// Get the offset of the UI container
-		var uiOffset = ItemReform.ui.offset();
+		var uiRect = ItemReform.ui.getBoundingClientRect();
 
 		// Update overlay position based on mouse coordinates and UI offset
 		function updateOverlayPosition(e) {
-			overlay.css({
-				top: (e.pageY - uiOffset.top + 10) + 'px', // Adjust for UI offset
-				left: (e.pageX - uiOffset.left + 10) + 'px' // Adjust for UI offset
+			DOM.setCss(overlay, {
+				top: (e.pageY - uiRect.top + 10) + 'px',
+				left: (e.pageX - uiRect.left + 10) + 'px'
 			});
 		}
 	
@@ -677,11 +679,11 @@ define(function(require)
 		updateOverlayPosition(event);
 	
 		// Update position on mouse move
-		jQuery(document).on('mousemove', updateOverlayPosition);
+		document.addEventListener('mousemove', updateOverlayPosition);
 	
 		// Remove the event listener on mouse out
-		jQuery(event.currentTarget).on('mouseout', function() {
-			jQuery(document).off('mousemove', updateOverlayPosition);
+		event.currentTarget.addEventListener('mouseout', function() {
+			document.removeEventListener('mousemove', updateOverlayPosition);
 			onItemOut();
 		});
 	};
@@ -692,7 +694,7 @@ define(function(require)
 	 */
 	function onItemOut()
 	{
-		ItemReform.ui.find('.overlay').hide();
+		ItemReform.ui.querySelector('.overlay').style.display = 'none';
 	};
 
 

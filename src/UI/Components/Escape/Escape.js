@@ -24,6 +24,7 @@ define(function(require)
 	var ShortCutOption     = require('UI/Components/ShortCutOption/ShortCutOption');
 	var htmlText           = require('text!./Escape.html');
 	var cssText            = require('text!./Escape.css');
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -37,29 +38,29 @@ define(function(require)
 	 */
 	Escape.init = function init()
 	{
-		this.ui.css({
-			top: (Renderer.height-this.ui.height()) * 0.75,
-			left:(Renderer.width -this.ui.width())  * 0.5
+		DOM.setCss(this.ui, {
+			top: (Renderer.height-this.ui.offsetHeight) * 0.75,
+			left:(Renderer.width -this.ui.offsetWidth)  * 0.5
 		});
 		this.draggable();
 
-		this.ui.find('.node').mousedown(function(event){
+		this.ui.querySelector('.node').addEventListener('mousedown', function(event){
 			event.stopImmediatePropagation();
 			return false;
 		});
 
 		// Only used in specific case
-		this.ui.find('button').show();
-		this.ui.find('.resurection, .savepoint').hide();
+		this.ui.querySelector('button').style.display = '';
+		this.ui.querySelector('.resurection, .savepoint').style.display = 'none';
 
-		this.ui.find('.sound').click(onToggleSoundUI);
-		this.ui.find('.graphics').click(onToggleGraphicUI);
-		this.ui.find('.resurection').click(function(){ Escape.onResurectionRequest(); });
-		this.ui.find('.savepoint').click(function(){ Escape.onReturnSavePointRequest(); });
-		this.ui.find('.charselect').click(function(){ Escape.onCharSelectionRequest(); });
-		this.ui.find('.hotkey').click(onToggleShortcutUI);
-		this.ui.find('.exit').click(function(){ Escape.onExitRequest(); });
-		this.ui.find('.cancel').click(function(){ Escape.ui.hide(); });
+		this.ui.querySelector('.sound').addEventListener('click', onToggleSoundUI);
+		this.ui.querySelector('.graphics').addEventListener('click', onToggleGraphicUI);
+		this.ui.querySelector('.resurection').addEventListener('click', function(){ Escape.onResurectionRequest(); });
+		this.ui.querySelector('.savepoint').addEventListener('click', function(){ Escape.onReturnSavePointRequest(); });
+		this.ui.querySelector('.charselect').addEventListener('click', function(){ Escape.onCharSelectionRequest(); });
+		this.ui.querySelector('.hotkey').addEventListener('click', onToggleShortcutUI);
+		this.ui.querySelector('.exit').addEventListener('click', function(){ Escape.onExitRequest(); });
+		this.ui.querySelector('.cancel').addEventListener('click', function(){ Escape.ui.style.display = 'none'; });
 	};
 
 
@@ -69,7 +70,7 @@ define(function(require)
 	 */
 	Escape.onAppend = function onAppend()
 	{
-		this.ui.hide();
+		DOM.hide(this.ui);
 	};
 
 
@@ -78,9 +79,22 @@ define(function(require)
 	 */
 	Escape.onRemove = function onRemove()
 	{
-		this.ui.hide();
-		this.ui.find('.resurection, .savepoint').hide();
-		this.ui.find('.graphics, .sound, .hotkey').show();
+		DOM.hide(this.ui);
+		this.ui.querySelector('.resurection, .savepoint').style.display = 'none';
+		this.ui.querySelector('.graphics, .sound, .hotkey').style.display = '';
+	};
+
+
+	/**
+	 * Show/Hide UI
+	 */
+	Escape.toggle = function toggle()
+	{
+		DOM.toggleDisplay(this.ui);
+
+		if (DOM.isVisible(this.ui)) {
+			this.focus();
+		}
 	};
 
 
@@ -93,9 +107,9 @@ define(function(require)
 	Escape.onKeyDown = function onKeyDown( event )
 	{
 		if (event.which === KEYS.ESCAPE) {
-			this.ui.toggle();
+			DOM.toggleDisplay(this.ui);
 
-			if (this.ui.is(':visible')) {
+			if (DOM.isVisible(this.ui)) {
 				this.focus();
 			}
 
@@ -112,7 +126,7 @@ define(function(require)
 	 */
 	function onToggleSoundUI()
 	{
-		if (!SoundOption.ui || !SoundOption.ui[0].parentNode) {
+		if (!SoundOption.ui || !SoundOption.ui.parentNode) {
 			SoundOption.append();
 		}
 		else {
@@ -126,7 +140,7 @@ define(function(require)
 	 */
 	function onToggleGraphicUI()
 	{
-		if (!GraphicsOption.ui || !GraphicsOption.ui[0].parentNode) {
+		if (!GraphicsOption.ui || !GraphicsOption.ui.parentNode) {
 			GraphicsOption.append();
 		}
 		else {
@@ -139,7 +153,7 @@ define(function(require)
 	 */
 	function onToggleShortcutUI()
 	{
-		if (!ShortCutOption.ui || !ShortCutOption.ui[0].parentNode) {
+		if (!ShortCutOption.ui || !ShortCutOption.ui.parentNode) {
 			ShortCutOption.append();
 		}
 		else {

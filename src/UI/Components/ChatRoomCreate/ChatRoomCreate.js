@@ -15,7 +15,6 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
-	var jQuery      = require('Utils/jquery');
 	var DB          = require('DB/DBManager');
 	var KEYS        = require('Controls/KeyEventHandler');
 	var Renderer    = require('Renderer/Renderer');
@@ -24,6 +23,7 @@ define(function(require)
 	var UIComponent = require('UI/UIComponent');
 	var htmlText    = require('text!./ChatRoomCreate.html');
 	var cssText     = require('text!./ChatRoomCreate.css');
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -74,18 +74,21 @@ define(function(require)
 	ChatRoomCreate.init = function init()
 	{
 		// Bindings
-		this.ui.find('.close, .cancel').mousedown(stopPropagation).click(this.hide.bind(this));
-		this.ui.find('.ok').on('click', parseChatSetup.bind(this) );
-		this.ui.find('.setup').submit(function() {
+		DOM.addDelegatedEvent(this.ui, 'mousedown', '.close, .cancel', stopPropagation);
+		DOM.addDelegatedEvent(this.ui, 'click', '.close, .cancel', this.hide.bind(this));
+		this.ui.querySelector('.ok').addEventListener('click', parseChatSetup.bind(this) );
+		this.ui.querySelector('.setup').addEventListener('submit', function() {
 			return false;
 		});
 
-		this.ui.find('input, select').mousedown(function(event){
-			event.stopImmediatePropagation();
+		this.ui.querySelectorAll('input, select').forEach(function(el){
+			el.addEventListener('mousedown', function(event){
+				event.stopImmediatePropagation();
+			});
 		});
 
-		this.draggable(this.ui.find('.titlebar'));
-		this.ui.hide();
+		this.draggable(this.ui.querySelector('.titlebar'));
+		this.ui.style.display = 'none';
 	};
 
 
@@ -95,17 +98,15 @@ define(function(require)
 	ChatRoomCreate.onAppend = function OnAppend()
 	{
 		if (!_preferences.show) {
-			this.ui.hide();
+			this.ui.style.display = 'none';
 		}
 
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 
-		// Escape key order
-		var events = jQuery._data( window, 'events').keydown;
-		events.unshift( events.pop() );
+		// Note: jQuery._data keydown reordering removed (not possible with native events)
 	};
 
 
@@ -114,9 +115,9 @@ define(function(require)
 	 */
 	ChatRoomCreate.onRemove = function OnRemove()
 	{
-		_preferences.show   =  this.ui.is(':visible');
-		_preferences.y      =  parseInt(this.ui.css('top'), 10);
-		_preferences.x      =  parseInt(this.ui.css('left'), 10);
+		_preferences.show   =  DOM.isVisible(this.ui);
+		_preferences.y      =  parseInt(this.ui.style.top, 10);
+		_preferences.x      =  parseInt(this.ui.style.left, 10);
 		_preferences.save();
 	};
 
@@ -126,8 +127,8 @@ define(function(require)
 	 */
 	ChatRoomCreate.show = function showSetup()
 	{
-		this.ui.show();
-		this.ui.find('.title').focus();
+		this.ui.style.display = '';
+		this.ui.querySelector('.title').focus();
 
 		_preferences.show = true;
 	};
@@ -138,8 +139,8 @@ define(function(require)
 	 */
 	ChatRoomCreate.hide = function hideSetup()
 	{
-		this.ui.hide();
-		this.ui.find('.setup')[0].reset();
+		this.ui.style.display = 'none';
+		this.ui.querySelector('.setup').reset();
 
 		_preferences.show = false;
 	};
@@ -153,14 +154,14 @@ define(function(require)
 	 */
 	ChatRoomCreate.onKeyDown = function onKeyDown( event )
 	{
-		if (this.ui.is(':visible')) {
+		if (DOM.isVisible(this.ui)) {
 			if (event.which === KEYS.ENTER) {
 				parseChatSetup.call(this);
 				event.stopImmediatePropagation();
 				return false;
 			}
 			else if (event.which === KEYS.ESCAPE) {
-				this.hide();
+				this.ui.style.display = 'none';
 				event.stopImmediatePropagation();
 				return false;
 			}
@@ -186,8 +187,8 @@ define(function(require)
 
 	ChatRoomCreate.toggle = function toggle()
 	{
-		this.ui.toggle();
-		if (this.ui.is(':visible')) {
+		DOM.toggleDisplay(this.ui);
+		if (DOM.isVisible(this.ui)) {
 			this.focus();
 		}
 	};
@@ -207,10 +208,10 @@ define(function(require)
 	 */
 	function parseChatSetup()
 	{
-		this.title    = this.ui.find('input[name=title]').val();
-		this.limit    = parseInt( this.ui.find('select[name=limit]').val(), 10);
-		this.type     = parseInt( this.ui.find('input[name=public]:checked').val(), 10);
-		this.password = this.ui.find('input[name=password]').val();
+		this.title    = this.ui.querySelector('input[name=title]').value;
+		this.limit    = parseInt( this.ui.querySelector('select[name=limit]').value, 10);
+		this.type     = parseInt( this.ui.querySelector('input[name=public]:checked').value, 10);
+		this.password = this.ui.querySelector('input[name=password]').value;
 
 		if (this.title.length < 1) {
 			var overlay       = document.createElement('div');
@@ -221,15 +222,13 @@ define(function(require)
 				document.body.removeChild(overlay);
 			}, true);
 
-			popup.ui.css({
-				top:  parseInt(this.ui.css('top'), 10) - 120,
-				left: parseInt(this.ui.css('left'), 10)
-			});
+			popup.ui.style.top = (parseInt(this.ui.style.top, 10) - 120) + 'px';
+			popup.ui.style.left = parseInt(this.ui.style.left, 10) + 'px';
 			return;
 		}
 
 		this.requestRoom();
-		this.hide();
+		this.ui.style.display = 'none';
 	}
 
 

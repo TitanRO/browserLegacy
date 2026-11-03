@@ -596,7 +596,7 @@ define(function( require )
         if (pkt) {
 			var baselimit = 100;	// Base Limit
 			var newlimit = baselimit + pkt.type;
-			Inventory.getUI().ui.find('.mcnt').text(newlimit);
+			Inventory.getUI().ui.querySelector('.mcnt').textContent = newlimit;
 		}
     }
 

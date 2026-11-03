@@ -13,7 +13,6 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
-	var jQuery             = require('Utils/jquery');
 	var DB                 = require('DB/DBManager');
 	var ItemType           = require('DB/Items/ItemType');
 	var Network            = require('Network/NetworkManager');
@@ -30,6 +29,7 @@ define(function(require)
 	var PACKET        	   = require('Network/PacketStructure');
 	var PACKETVER   	   = require('Network/PacketVerManager');
 	var getModule     	   = require;
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -76,12 +76,11 @@ define(function(require)
 	LaphineSys.onAppend = function onAppend()
 	{
 		// Seems like "EscapeWindow" is execute first, push it before.
-		var events = jQuery._data( window, 'events').keydown;
-		events.unshift( events.pop() );
+		// (jQuery._data removed - UIComponent handles keydown priority)
 
-		LaphineSys.ui.find('.some_notifs').hide();
-		LaphineSys.ui.find('.make_enabled').hide();
-		LaphineSys.ui.find('.make_disabled').show();
+		LaphineSys.ui.querySelector('.some_notifs').style.display = 'none';
+		LaphineSys.ui.querySelector('.make_enabled').style.display = 'none';
+		LaphineSys.ui.querySelector('.make_disabled').style.display = '';
 	};
 
 
@@ -91,11 +90,11 @@ define(function(require)
 	LaphineSys.onRemove = function onRemove()
 	{
 		LaphineSys.submittedItems.length = 0;
-		LaphineSys.ui.find('.submit_button_enabled').show();
-        LaphineSys.ui.find('.submit_button_disabled').hide();
-        LaphineSys.ui.find('.submitted_mat_list').empty();
-		LaphineSys.ui.find('.mat_count_submitted').text('0');
-		LaphineSys.ui.find('.some_notifs').hide();
+		LaphineSys.ui.querySelector('.submit_button_enabled').style.display = '';
+        LaphineSys.ui.querySelector('.submit_button_disabled').style.display = 'none';
+        LaphineSys.ui.querySelector('.submitted_mat_list').innerHTML = '';
+		LaphineSys.ui.querySelector('.mat_count_submitted').textContent = '0';
+		LaphineSys.ui.querySelector('.some_notifs').style.display = 'none';
 	};
 
 
@@ -105,29 +104,41 @@ define(function(require)
 	LaphineSys.init = function init()
 	{
 		// UI initializations
-		this.ui.find('.mat_count_submitted').text('0');
-		this.ui.find('.submit_button_disabled').hide();
-		this.ui.find('.some_notifs').hide();
-		this.ui.css({ top: 200, left:480 });
-		this.draggable(this.ui.find('.titlebar'));
+		this.ui.querySelector('.mat_count_submitted').textContent = '0';
+		this.ui.querySelector('.submit_button_disabled').style.display = 'none';
+		this.ui.querySelector('.some_notifs').style.display = 'none';
+		DOM.setCss(this.ui, { top: 200, left:480 });
+		this.draggable(this.ui.querySelector('.titlebar'));
 
 		// Functions bind
-		this.ui.find('.close, .cancel').click(onRequestLaphineClose);
-		this.ui.find('.available_mat_list, .left_panel')
-			.on('dragover', stopPropagation)
-			.on('dragstart',   '.item', onItemDragStart)
-			.on('dragend',     '.item', onItemDragEnd);
-		this.ui.find('.submit_button_enabled').click(onSubmitItem);
-		this.ui.find('.available_mat_list')
-			.on('click', '.item', onItemSelect)
-			.on('drop', onRemoveSubmitDrop)
-		this.ui.find('.left_panel')
-			.on('drop', onSubmitItemDrop);
-		this.ui.find('.make_enabled').click(onRequestSynthesis);
-		this.ui.find('.available_mat_list, .submitted_mat_list')
-			.on('mouseover',   '.item', onItemOver)
-			.on('mouseout',    '.item', onItemOut)
-			.on('contextmenu', '.item', onItemInfo);
+		var _lsCloseBtn = this.ui.querySelector('.close, .cancel');
+		if (_lsCloseBtn) _lsCloseBtn.addEventListener('click', onRequestLaphineClose);
+		var _lsAvailList = this.ui.querySelector('.available_mat_list');
+		var _lsLeftPanel = this.ui.querySelector('.left_panel');
+		if (_lsAvailList) {
+			_lsAvailList.addEventListener('dragover', stopPropagation);
+			DOM.addDelegatedEvent(_lsAvailList, 'dragstart', '.item', onItemDragStart);
+			DOM.addDelegatedEvent(_lsAvailList, 'dragend', '.item', onItemDragEnd);
+		}
+		if (_lsLeftPanel) {
+			_lsLeftPanel.addEventListener('dragover', stopPropagation);
+			DOM.addDelegatedEvent(_lsLeftPanel, 'dragstart', '.item', onItemDragStart);
+			DOM.addDelegatedEvent(_lsLeftPanel, 'dragend', '.item', onItemDragEnd);
+		}
+		this.ui.querySelector('.submit_button_enabled').addEventListener('click', onSubmitItem);
+		if (_lsAvailList) {
+			DOM.addDelegatedEvent(_lsAvailList, 'click', '.item', onItemSelect);
+			_lsAvailList.addEventListener('drop', onRemoveSubmitDrop);
+		}
+		if (_lsLeftPanel) _lsLeftPanel.addEventListener('drop', onSubmitItemDrop);
+		this.ui.querySelector('.make_enabled').addEventListener('click', onRequestSynthesis);
+		var _lsSubmittedList = this.ui.querySelector('.submitted_mat_list');
+		[_lsAvailList, _lsSubmittedList].forEach(function(el) {
+			if (!el) return;
+			DOM.addDelegatedEvent(el, 'mouseover', '.item', onItemOver);
+			DOM.addDelegatedEvent(el, 'mouseout', '.item', onItemOut);
+			DOM.addDelegatedEvent(el, 'contextmenu', '.item', onItemInfo);
+		});
 
 		// Setting chatbox scrollbar
 		Client.loadFiles([
@@ -144,7 +155,7 @@ define(function(require)
 			DB.INTERFACE_PATH + 'lapine/scrollbar_thumb_press_mid.bmp',
 			DB.INTERFACE_PATH + 'lapine/scrollbar_thumb_press_top.bmp'
 		], function (bgBottom, bgMid, bgTop, thumbOutBottom, thumbOutMid, thumbOutTop, thumbOverBottom, thumbOverMid, thumbOverTop, thumbPressBottom, thumbPressMid, thumbPressTop) {
-			jQuery('style:first').append([
+			(document.querySelector('style') || document.head.appendChild(document.createElement('style'))).textContent += [
 				'#LaphineSys .available_mat_list::-webkit-scrollbar { width: 8px; height: 0px; }',
 				'#LaphineSys .available_mat_list::-webkit-scrollbar-corner { display: none; }',
 				'#LaphineSys .available_mat_list::-webkit-scrollbar-button:vertical:increment { background: url(' + bgBottom + ') center center no-repeat, url(' + bgMid + ') top no-repeat; height: 15px; width: 7px; background-color: transparent; }',
@@ -154,7 +165,7 @@ define(function(require)
 				'#LaphineSys .available_mat_list::-webkit-scrollbar-thumb:vertical:hover { background: url(' + thumbOverTop + ') top no-repeat, url(' + thumbOverMid + ') center repeat-y, url(' + thumbOverBottom + ') bottom no-repeat !important; border-radius: 100px; }',
 				'#LaphineSys .available_mat_list::-webkit-scrollbar-thumb:vertical:active { background: url(' + thumbPressTop + ') top no-repeat, url(' + thumbPressMid + ') center repeat-y, url(' + thumbPressBottom + ') bottom no-repeat !important; border-radius: 100px; }',
 				'#LaphineSys .available_mat_list::-webkit-scrollbar-thumb:vertical{ -webkit-border-image: none; }'
-			].join('\n'));
+			].join('\n');
 		});
 	};
 
@@ -202,9 +213,9 @@ define(function(require)
 			return false;
 		}
 
-		LaphineSys.ui.find('.item_text').text(DB.getItemName(item));
-		LaphineSys.ui.find('.mat_info_list').text(LaphineUIState.needSourceString);
-		LaphineSys.ui.find('.mat_count_needed').text(LaphineUIState.needCount);
+		LaphineSys.ui.querySelector('.item_text').textContent = DB.getItemName(item);
+		LaphineSys.ui.querySelector('.mat_info_list').textContent = LaphineUIState.needSourceString;
+		LaphineSys.ui.querySelector('.mat_count_needed').textContent = LaphineUIState.needCount;
 	};
 
 
@@ -232,8 +243,8 @@ define(function(require)
  	* Populates the list of available materials.
  	*/
 	function populateAvailableMatList() {
-		let availableMatList = LaphineSys.ui.find('.available_mat_list');
-		availableMatList.empty(); // Clear the list before populating
+		let availableMatList = LaphineSys.ui.querySelector('.available_mat_list');
+		availableMatList.innerHTML = ''; // Clear the list before populating
 	
 		LaphineUIState.sourceItems.forEach(sourceItem => {
 			let matchingItems = GetInventoryItemsById(sourceItem.id);
@@ -250,7 +261,7 @@ define(function(require)
  	*/
 	function onAddMaterialItem( item, inventory_count, source_needcount, source_iconname)
 	{
-		let availableMatList = LaphineSys.ui.find('.available_mat_list');
+		let availableMatList = LaphineSys.ui.querySelector('.available_mat_list');
 
 		// Determine if the item is selectable based on item type and corresponding criteria
 		let isSelectable;
@@ -265,22 +276,23 @@ define(function(require)
         let itemClass = isSelectable ? '' : 'unselectable';
 
 		// Add item details
-		let newItem = jQuery('<div class="item ' + itemClass + '" data-index="'+item.index+'" '+ draggableAttr + '>' +
+		var _tmp1 = document.createElement('div');
+		_tmp1.innerHTML = '<div class="item ' + itemClass + '" data-index="'+item.index+'" '+ draggableAttr + '>' +
 			'<div class="icon"></div>' +
 			'<div class="amount">'+inventory_count+'</div>' +
 			'<div class="name">'+DB.getItemName(item)+'</div>' +
-			'</div>'
-		);
+			'</div>';
+		var newItem = _tmp1.firstChild;
 
-		newItem.dblclick(onSubmitItem); // Add double-click event listener to submit item
-		availableMatList.append(newItem);
+		newItem.addEventListener('dblclick', onSubmitItem); // Add double-click event listener to submit item
+		availableMatList.appendChild(newItem);
 
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + source_iconname + '.bmp', function(data){
-			availableMatList.find('.item[data-index="'+ item.index +'"] .icon').css('backgroundImage', 'url('+ data +')');
+			availableMatList.querySelector('.item[data-index="'+ item.index +'"] .icon').style.backgroundImage = 'url('+ data +')';
 		});
 
 		Client.loadFile( DB.INTERFACE_PATH + 'lapine/list_selected_item.bmp', function(data){
-			availableMatList.find('.item[data-index="'+ item.index +'"] .name').css('backgroundImage', 'url('+ data +')');
+			availableMatList.querySelector('.item[data-index="'+ item.index +'"] .name').style.backgroundImage = 'url('+ data +')';
 		});
 	};
 
@@ -323,7 +335,7 @@ define(function(require)
 	function onItemSelect()
 	{
 		// Check if the clicked item has the class 'unselectable'
-		if (jQuery(this).hasClass('unselectable')) {
+		if (this.classList.contains('unselectable')) {
 			return false; // Exit the function early
 		}
 
@@ -335,8 +347,8 @@ define(function(require)
 			return false;
 		}
 	
-		LaphineSys.ui.find('.name').removeClass('selected');
-		LaphineSys.ui.find('.item[data-index="' + item.index + '"] .name').addClass('selected');
+		LaphineSys.ui.querySelector('.name').classList.remove('selected');
+		LaphineSys.ui.querySelector('.item[data-index="' + item.index + '"] .name').classList.add('selected');
 	};
 
 
@@ -346,19 +358,19 @@ define(function(require)
 	function onSubmitItem()
 	{
 
-		let submittedCount = parseInt(LaphineSys.ui.find('.mat_count_submitted').text(), 10);
-		let neededCount = parseInt(LaphineSys.ui.find('.mat_count_needed').text(), 10);
+		let submittedCount = parseInt(LaphineSys.ui.querySelector('.mat_count_submitted').textContent, 10);
+		let neededCount = parseInt(LaphineSys.ui.querySelector('.mat_count_needed').textContent, 10);
 
 		if (submittedCount >= neededCount) {
 			return false;
 		}
 
         // Check if there's a currently selected item in the .name class
-		let selectedItem = LaphineSys.ui.find('.item .name.selected');
+		let selectedItem = LaphineSys.ui.querySelector('.item .name.selected');
 		let idx;
 
-		if (selectedItem.length > 0) {
-			idx = parseInt(selectedItem.closest('.item').data('index'), 10);
+		if (selectedItem) {
+			idx = parseInt(selectedItem.closest('.item').getAttribute('data-index'), 10);
 		} else {
 			idx = parseInt(this.getAttribute('data-index'), 10);
 		}
@@ -382,7 +394,7 @@ define(function(require)
 		}
 
 		// Check if the clicked item has the class 'unselectable'
-		if (jQuery(this).hasClass('unselectable')) {
+		if (this.classList.contains('unselectable')) {
 			let message;
 			if (item.type === ItemType.WEAPON || item.type === ItemType.ARMOR) {
 				if (item.RefiningLevel > LaphineUIState.needRefineMax) {
@@ -408,29 +420,30 @@ define(function(require)
 	function onUpdateSubmitList(item)
 	{
 		let it   = DB.getItemInfo( item.ITID );
-        let submittedMatList = LaphineSys.ui.find('.submitted_mat_list');
+        let submittedMatList = LaphineSys.ui.querySelector('.submitted_mat_list');
 		
 		let sourceItem = LaphineUIState.sourceItems.find(si => si.id === item.ITID);
 
 		// Determine the count based on item type
 		let itemCount = (item.type === ItemType.WEAPON || item.type === ItemType.ARMOR) ? 1 : sourceItem.count;
 
-		let newItem = jQuery('<div class="item" data-index="' + item.index + '" draggable="true">' +
+		var _tmp2 = document.createElement('div');
+		_tmp2.innerHTML = '<div class="item" data-index="' + item.index + '" draggable="true">' +
 			'<div class="shadow"></div>'+
 			'<div class="icon"></div>' +
 			'<div class="amount">'+sourceItem.count+'</div>' +
-			'</div>'
-		);
+			'</div>';
+		let newItem = _tmp2.firstChild;
 
-		newItem.dblclick(onItemRemove); // Add double-click event listener to remove item
-		submittedMatList.append(newItem);
+		newItem.addEventListener('dblclick', onItemRemove); // Add double-click event listener to remove item
+		submittedMatList.appendChild(newItem);
 
 		Client.loadFile(DB.INTERFACE_PATH + 'lapine/shadow_item_off.bmp', function (data) {
-			submittedMatList.find('.item[data-index="' + item.index + '"] .shadow').css('backgroundImage', 'url(' + data + ')');
+			submittedMatList.querySelector('.item[data-index="' + item.index + '"] .shadow').style.backgroundImage = 'url(' + data + ')';
 		});
 
 		Client.loadFile(DB.INTERFACE_PATH + 'item/' + ( item.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName ) + '.bmp', function (data) {
-			submittedMatList.find('.item[data-index="' + item.index + '"] .icon').css('backgroundImage', 'url(' + data + ')');
+			submittedMatList.querySelector('.item[data-index="' + item.index + '"] .icon').style.backgroundImage = 'url(' + data + ')';
 		});
 
 		// Add the item index and count to the submitted items list
@@ -440,16 +453,16 @@ define(function(require)
 		});
 
 		// Update the count of submitted items
-		let submittedCount = parseInt(LaphineSys.ui.find('.mat_count_submitted').text(), 10) + 1;
-		LaphineSys.ui.find('.mat_count_submitted').text(submittedCount);
+		let submittedCount = parseInt(LaphineSys.ui.querySelector('.mat_count_submitted').textContent, 10) + 1;
+		LaphineSys.ui.querySelector('.mat_count_submitted').textContent = submittedCount;
 
 		// Check if the needed count is reached
-		let neededCount = parseInt(LaphineSys.ui.find('.mat_count_needed').text(), 10);
+		let neededCount = parseInt(LaphineSys.ui.querySelector('.mat_count_needed').textContent, 10);
 		if (submittedCount >= neededCount) {
-			LaphineSys.ui.find('.submit_button_enabled').hide();
-			LaphineSys.ui.find('.submit_button_disabled').show();
-			LaphineSys.ui.find('.make_disabled').hide();
-			LaphineSys.ui.find('.make_enabled').show();
+			LaphineSys.ui.querySelector('.submit_button_enabled').style.display = 'none';
+			LaphineSys.ui.querySelector('.submit_button_disabled').style.display = '';
+			LaphineSys.ui.querySelector('.make_disabled').style.display = 'none';
+			LaphineSys.ui.querySelector('.make_enabled').style.display = '';
 		}
 
 		// Adjust the layout of the submitted materials list
@@ -464,13 +477,13 @@ define(function(require)
  	* Adjusts the layout of the submitted materials list.
  	*/
 	function adjustSubmittedMatList() {
-		let submittedMatList = LaphineSys.ui.find('.submitted_mat_list');
-    	let items = submittedMatList.find('.item');
+		let submittedMatList = LaphineSys.ui.querySelector('.submitted_mat_list');
+    	let items = submittedMatList.querySelector('.item');
     	let numItems = items.length;
     	let numRows = Math.ceil(numItems / 5);
 
     	// Adjust the top position based on the number of rows
-    	submittedMatList.css('top', 145 - (numRows - 1) * 28); // Adjust the top position based on the number of rows
+    	submittedMatList.style.top = 145 - (numRows - 1 * 28); // Adjust the top position based on the number of rows
 	};
 
 
@@ -496,21 +509,21 @@ define(function(require)
 
 			// If element is not provided, find the corresponding DOM element
 			if (!element) {
-				element = LaphineSys.ui.find(`.item[data-index="${item.index}"]`);
+				element = LaphineSys.ui.querySelector(`.item[data-index="${item.index}"]`);
 			}
 
 	    	// Remove the item from the DOM
-	    	jQuery(element).remove();
+	    	if (element && element.parentNode) { element.parentNode.removeChild(element); }
 
 	    	// Update the count of submitted items
-	    	let submittedCount = parseInt(LaphineSys.ui.find('.mat_count_submitted').text(), 10) - 1;
-	    	LaphineSys.ui.find('.mat_count_submitted').text(submittedCount);
+	    	let submittedCount = parseInt(LaphineSys.ui.querySelector('.mat_count_submitted').textContent, 10) - 1;
+	    	LaphineSys.ui.querySelector('.mat_count_submitted').textContent = submittedCount;
 
 	    	// Show the enabled submit button if the needed count is not reached
-	    	let neededCount = parseInt(LaphineSys.ui.find('.mat_count_needed').text(), 10);
+	    	let neededCount = parseInt(LaphineSys.ui.querySelector('.mat_count_needed').textContent, 10);
 	    	if (submittedCount < neededCount) {
-	    	    LaphineSys.ui.find('.submit_button_enabled').show();
-	    	    LaphineSys.ui.find('.submit_button_disabled').hide();
+	    	    LaphineSys.ui.querySelector('.submit_button_enabled').style.display = '';
+	    	    LaphineSys.ui.querySelector('.submit_button_disabled').style.display = 'none';
 	    	}
 
 	    	// Adjust the layout of the submitted materials list
@@ -526,31 +539,31 @@ define(function(require)
  	* Handles the changes in UI when submitting and removing item from submitted list.
  	*/
 	function updateAvailableMatList(itemId, itemIndex, countChange, increase) {
-		let availableMatList = LaphineSys.ui.find('.available_mat_list');
+		let availableMatList = LaphineSys.ui.querySelector('.available_mat_list');
 		let itemExists = false;
 		let selectedItem = null;
 
-		availableMatList.find('.item').each(function() {
-			let idx = parseInt(jQuery(this).attr('data-index'), 10);
+		Array.from(availableMatList.querySelectorAll('.item')).forEach(function() {
+			let idx = parseInt(this.getAttribute('data-index'), 10);
 			let item = Inventory.getUI().getItemByIndex(idx);
-	
+
 			if (item.ITID === itemId && idx === itemIndex) {
 				itemExists = true;
-				selectedItem = jQuery(this);
+				selectedItem = this;
 				let tempCount = (item.type === ItemType.WEAPON || item.type === ItemType.ARMOR) ? 1 : item.count;
 				if (increase) {
-					jQuery(this).removeClass('unselectable');
-					jQuery(this).find('.amount').text(tempCount);
-					jQuery(this).attr('draggable', 'true'); // Set draggable to true
+					this.classList.remove('unselectable');
+					this.querySelector('.amount').textContent = tempCount;
+					this.setAttribute('draggable', 'true'); // Set draggable to true
 				} else {
 					tempCount -= countChange;
 					if (tempCount <= 0) {
-						jQuery(this).remove();
+						this.remove();
 					} else {
-						jQuery(this).addClass('unselectable');
-						jQuery(this).find('.name').removeClass('selected');
-						jQuery(this).find('.amount').text(tempCount);
-						jQuery(this).attr('draggable', 'false'); // Set draggable to false
+						this.classList.add('unselectable');
+						this.querySelector('.name').classList.remove('selected');
+						this.querySelector('.amount').textContent = tempCount;
+						this.setAttribute('draggable', 'false'); // Set draggable to false
 					}
 				}
 			}
@@ -576,8 +589,8 @@ define(function(require)
  	*/
 	function showMessage(message)
 	{
-		LaphineSys.ui.find('.info_msg').empty().text(message);
-		LaphineSys.ui.find('.some_notifs').show();
+		LaphineSys.ui.querySelector('.info_msg').textContent = message;
+		LaphineSys.ui.querySelector('.some_notifs').style.display = '';
 	};
 
 
@@ -624,31 +637,30 @@ define(function(require)
 		}
 
 		// Get back data
-		var pos     = jQuery(this);
-		var overlay = LaphineSys.ui.find('.overlay');
+		var overlay = LaphineSys.ui.querySelector('.overlay');
 
 		// Determine the immediate parent container explicitly based on the context
-		var parentContainer = jQuery(this).closest('.available_mat_list, .submitted_mat_list');
-		var itemPos = pos.position();
-		var containerPos = parentContainer.position();
-	
+		var parentContainer = this.closest('.available_mat_list, .submitted_mat_list');
+		var itemRect = this.getBoundingClientRect();
+		var containerRect = parentContainer ? parentContainer.getBoundingClientRect() : {top: 0, left: 0};
+
 		// Calculate the desired position of the overlay relative to the container
-		var top = itemPos.top - overlay.outerHeight() + 25;
-		var left = itemPos.left;
+		var top = (itemRect.top - containerRect.top) - overlay.offsetHeight + 25;
+		var left = itemRect.left - containerRect.left;
 
 		// Display box
-		overlay.show();
-		overlay.css({
-			top: top + containerPos.top, // Adjust position relative to the container
-			left: left + containerPos.left
+		overlay.style.display = '';
+		DOM.setCss(overlay, {
+			top: (top + containerRect.top - LaphineSys.ui.getBoundingClientRect().top) + 'px',
+			left: (left + containerRect.left - LaphineSys.ui.getBoundingClientRect().left) + 'px'
 		});
-		overlay.text(DB.getItemName(item));
+		overlay.textContent = DB.getItemName(item);
 
 		if (item.IsIdentified) {
-			overlay.removeClass('grey');
+			overlay.classList.remove('grey');
 		}
 		else {
-			overlay.addClass('grey');
+			overlay.classList.add('grey');
 		}
 	};
 
@@ -658,7 +670,7 @@ define(function(require)
 	 */
 	function onItemOut()
 	{
-		LaphineSys.ui.find('.overlay').hide();
+		LaphineSys.ui.querySelector('.overlay').style.display = 'none';
 	};
 
 
@@ -689,8 +701,8 @@ define(function(require)
 		var url = this.querySelector('.icon').style.backgroundImage.match(/\((.*?)\)/)[1].replace(/('|")/g,'');
 		img.src   = url.replace(/^\"/, '').replace(/\"$/, '');
 
-		event.originalEvent.dataTransfer.setDragImage( img, 12, 12 );
-		event.originalEvent.dataTransfer.setData('Text',
+		event.dataTransfer.setDragImage( img, 12, 12 );
+		event.dataTransfer.setData('Text',
 			JSON.stringify( window._OBJ_DRAG_ = {
 				type: 'item',
 				from: 'LaphineSys',
@@ -723,7 +735,7 @@ define(function(require)
 		event.stopImmediatePropagation();
 
 		try {
-			data = JSON.parse(event.originalEvent.dataTransfer.getData('Text'));
+			data = JSON.parse(event.dataTransfer.getData('Text'));
 			item = data.data;
 		}
 		catch(e) {
@@ -735,8 +747,8 @@ define(function(require)
 			return false;
 		}
 		
-		let submittedCount = parseInt(LaphineSys.ui.find('.mat_count_submitted').text(), 10);
-		let neededCount = parseInt(LaphineSys.ui.find('.mat_count_needed').text(), 10);
+		let submittedCount = parseInt(LaphineSys.ui.querySelector('.mat_count_submitted').textContent, 10);
+		let neededCount = parseInt(LaphineSys.ui.querySelector('.mat_count_needed').textContent, 10);
 
 		if (submittedCount >= neededCount) {
 			return false;
@@ -754,7 +766,7 @@ define(function(require)
 		}
 
 		// Check if the clicked item has the class 'unselectable'
-		if (jQuery(this).hasClass('unselectable')) {
+		if (this.classList.contains('unselectable')) {
 			let message;
 			if (item.type === ItemType.WEAPON || item.type === ItemType.ARMOR) {
 				if (item.RefiningLevel > LaphineUIState.needRefineMax) {
@@ -788,7 +800,7 @@ define(function(require)
 		event.stopImmediatePropagation();
 
 		try {
-			data = JSON.parse(event.originalEvent.dataTransfer.getData('Text'));
+			data = JSON.parse(event.dataTransfer.getData('Text'));
 			item = data.data;
 		}
 		catch(e) {
@@ -805,10 +817,10 @@ define(function(require)
 		}
 
 		// Locate the DOM element based on the item's index
-		let element = LaphineSys.ui.find(`.item[data-index="${item.index}"]`);
+		let element = LaphineSys.ui.querySelector(`.item[data-index="${item.index}"]`);
 
 		if (item) {
-			onRemoveItemSubmitList(item, element.get(0)); // Pass the DOM element to the function
+			onRemoveItemSubmitList(item, element);
 		}
 	};
 

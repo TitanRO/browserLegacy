@@ -17,6 +17,7 @@ define(function (require) {
 	var Preferences = require('Core/Preferences');
 	var UIManager = require('UI/UIManager');
 	var UIComponent = require('UI/UIComponent');
+	var DOM = require('Utils/DOM');
 	var htmlText = require('text!./QuestWindow.html');
 	var cssText = require('text!./QuestWindow.css');
 
@@ -45,7 +46,7 @@ define(function (require) {
 	 */
 	QuestWindow.init = function init() {
 		// Avoid drag drop problems
-		this.ui.find('.base').mousedown(function (event) {
+		this.ui.addEventListener('mousedown', function (event) {
 			event.stopImmediatePropagation();
 			return false;
 		});
@@ -59,7 +60,7 @@ define(function (require) {
 	 */
 	QuestWindow.onAppend = function onAppend() {
 		if (!_preferences.showwindow) {
-			this.ui.hide();
+			DOM.hide(this.ui);
 		}
 	};
 
@@ -68,7 +69,7 @@ define(function (require) {
 	 * Clean up UI
 	 */
 	QuestWindow.clean = function clean() {
-		QuestWindow.ui.hide();
+		QuestWindow.ui.style.display = 'none';
 		this.ui.focus();
 	};
 
@@ -99,7 +100,7 @@ define(function (require) {
 	}
 
 	QuestWindow.ClearQuestList = function ClearQuestList() {
-		QuestWindow.ui.find('.quest-window-ul').html('');
+		QuestWindow.ui.querySelector('.quest-window-ul').innerHTML = '';
 	}
 
 	QuestWindow.addQuestToUI = function addQuestToUI(quest) {
@@ -110,7 +111,9 @@ define(function (require) {
 		for (let huntID in quest.hunt_list) {
 			list += '<li>' + quest.hunt_list[huntID].mobName + ' ( ' + quest.hunt_list[huntID].huntCount + ' / ' + quest.hunt_list[huntID].maxCount + ' )</li>';
 		}
-		QuestWindow.ui.find('.quest-window-ul').append('<li class="quest-window-li"> <div class="quest-window-li-title">' + title + '</div> <div class="quest-window-li-summary">' + summary + '</div> <div class="quest-window-li-monster"><ul>' + list + '</ul></div> </li>');
+		QuestWindow.ui.querySelector('.quest-window-ul').insertAdjacentHTML('beforeend',
+			'<li class="quest-window-li"> <div class="quest-window-li-title">' + title + '</div> <div class="quest-window-li-summary">' + summary + '</div> <div class="quest-window-li-monster"><ul>' + list + '</ul></div> </li>'
+		);
 	}
 
 	/**

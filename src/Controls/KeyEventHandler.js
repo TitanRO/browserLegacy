@@ -8,7 +8,7 @@
  * @author Vincent Thibault
  */
 
-define( ['Utils/jquery'], function( jQuery )
+define(function()
 {
 	'use strict';
 
@@ -217,19 +217,24 @@ define( ['Utils/jquery'], function( jQuery )
 	});
 
 
+	function updateModifierKeys(event)
+	{
+		KEYS.SHIFT = !!event.shiftKey;
+		KEYS.CTRL  = !!event.ctrlKey;
+		KEYS.ALT   = !!event.altKey;
+	}
+
+
 	/**
 	 * Keys CTRL/ALT/SHIFT Manager
 	 */
-	jQuery(window).bind('keydown keyup', function( event ) {
-		KEYS.SHIFT = !! event.shiftKey;
-		KEYS.CTRL  = !! event.ctrlKey;
-		KEYS.ALT   = !! event.altKey;
-	});
+	window.addEventListener('keydown', updateModifierKeys);
+	window.addEventListener('keyup', updateModifierKeys);
 
 	/**
 	 * Reset keys state when window got focused
 	 */
-	jQuery(window).on('focus', function( event ) {
+	window.addEventListener('focus', function() {
 		KEYS.SHIFT = false;
 		KEYS.CTRL  = false;
 		KEYS.ALT   = false;

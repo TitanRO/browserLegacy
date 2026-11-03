@@ -8,6 +8,10 @@
 		"tools": "live-server . --open=./applications/tools",
 		"nw": "nw .",
 		"build": "node ./applications/tools/builder-web.js",
+		"check:migration": "node ./scripts/check-migration.js",
+		"test:smoke": "node --test ./scripts/smoke-winlogin.test.js ./scripts/smoke-mapui.test.js",
+		"check": "npm run check:migration && npm run test:smoke",
+		"validate": "npm run check && npm run build -- -O -T -H",
 		"build:online": "npm run build -- -O",
 		"build:mapviewer": "npm run build -- -V",
 		"build:grfviewer": "npm run build -- -G",
@@ -25,6 +29,7 @@
 	"author": "Vincent Thibault",
 	"license": "GNU GPL V3",
 	"devDependencies": {
+		"jsdom": "^26.1.0",
 		"live-server": "^1.2.2",
 		"nw": "^0.99.0-sdk",
 		"nwjs-builder-phoenix": "^1.15.0",

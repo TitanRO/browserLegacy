@@ -23,6 +23,7 @@ define(function( require )
 	var Session     = require('Engine/SessionStorage');
 	var Friends     = require('Engine/MapEngine/Friends');
 	var PACKETVER   = require('Network/PacketVerManager');
+	var DOM         = require('Utils/DOM');
 	var PACKET      = require('Network/PacketStructure');
 	var Network     = require('Network/NetworkManager');
 	var Cursor      = require('UI/CursorManager');
@@ -85,7 +86,7 @@ define(function( require )
 			case Entity.TYPE_NPC:
 			case Entity.TYPE_NPC2:
 				//check if already talk to NPC
-				if (!NpcBox.ui || !NpcBox.ui.is(':visible')) {
+				if (!NpcBox.__active || !NpcBox.ui || !DOM.isVisible(NpcBox.ui)) {
 					Cursor.setType( Cursor.ACTION.TALK, true );
 				}
 				break;
@@ -196,7 +197,7 @@ define(function( require )
 			case Entity.TYPE_NPC:
 			case Entity.TYPE_NPC2:
 				//check if already talk to NPC
-				if (!NpcBox.ui || !NpcBox.ui.is(':visible')) {
+				if (!NpcBox.__active || !NpcBox.ui || !DOM.isVisible(NpcBox.ui)) {
 					pkt      = new PACKET.CZ.CONTACTNPC();
 					pkt.NAID = this.GID;
 					pkt.type = 1; // 1 for NPC in Aegis
@@ -349,7 +350,7 @@ define(function( require )
 					ContextMenu.remove();
 					ContextMenu.append();
 					ContextMenu.addElement( 'View Status', function(){
-						getModule('UI/Components/HomunInformations/HomunInformations').ui.toggle();
+						DOM.toggleDisplay(getModule('UI/Components/HomunInformations/HomunInformations').ui);
 					});
 					ContextMenu.addElement( 'Feed', function(){
 						getModule('UI/Components/HomunInformations/HomunInformations').reqHomunFeed();
@@ -371,7 +372,7 @@ define(function( require )
 					ContextMenu.remove();
 					ContextMenu.append();
 					ContextMenu.addElement( 'View Status', function(){
-						getModule('UI/Components/MercenaryInformations/MercenaryInformations').ui.toggle();
+						DOM.toggleDisplay(getModule('UI/Components/MercenaryInformations/MercenaryInformations').ui);
 					});
 					if (localStorage.getItem('MER_AGGRESSIVE') == 0) {
 						ContextMenu.addElement( 'Assist', function(){

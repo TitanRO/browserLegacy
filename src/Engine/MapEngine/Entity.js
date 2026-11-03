@@ -47,6 +47,7 @@ define(function (require) {
 	var ChatBox = require('UI/Components/ChatBox/ChatBox');
 	var ChatRoom = require('UI/Components/ChatRoom/ChatRoom');
 	var Escape = require('UI/Components/Escape/Escape');
+	var DOM = require('Utils/DOM');
 	var HomunInformations = require('UI/Components/HomunInformations/HomunInformations');
 	var MercenaryInformations = require('UI/Components/MercenaryInformations/MercenaryInformations');
 	var Inventory = require('UI/Components/Inventory/Inventory');
@@ -359,12 +360,14 @@ define(function (require) {
 
 		// Show escape menu
 		if (pkt.GID === Session.Entity.GID && pkt.type === 1) {
-			Escape.ui.show();
-			Escape.ui.find('.savepoint').show();
+			DOM.show(Escape.ui);
+			DOM.show(Escape.ui.querySelector('.savepoint'));
 			if (haveSiegfriedItem()) {
-				Escape.ui.find('.resurection').show();
+				DOM.show(Escape.ui.querySelector('.resurection'));
 			}
-			Escape.ui.find('.graphics, .sound, .hotkey').hide();
+			Escape.ui.querySelectorAll('.graphics, .sound, .hotkey').forEach(function(el) {
+				DOM.hide(el);
+			});
 		}
 	}
 
@@ -498,9 +501,13 @@ define(function (require) {
 
 		// If it's our main character update Escape ui
 		if (entity === Session.Entity) {
-			Escape.ui.hide();
-			Escape.ui.find('.resurection, .savepoint').hide();
-			Escape.ui.find('.graphics, .sound, .hotkey').show();
+			DOM.hide(Escape.ui);
+			Escape.ui.querySelectorAll('.resurection, .savepoint').forEach(function(el) {
+				DOM.hide(el);
+			});
+			Escape.ui.querySelectorAll('.graphics, .sound, .hotkey').forEach(function(el) {
+				DOM.show(el);
+			});
 		}
 	}
 

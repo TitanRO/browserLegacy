@@ -405,7 +405,7 @@ define(function( require )
 			}
 
 			NpcMenu.setMenu(mapNames.join(':') + ':Cancel', pkt.SKID);
-			NpcMenu.ui.find('.title').text(DB.getMessage(213));
+			NpcMenu.ui.querySelector('.title').textContent = DB.getMessage(213);
 		};
 
 		NpcMenu.append();

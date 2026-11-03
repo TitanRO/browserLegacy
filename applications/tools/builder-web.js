@@ -102,7 +102,6 @@ function compile(appName, isMinify) {
         baseUrl: 'src',
         paths: {
             text: 'Vendors/text.require',
-            jquery: 'Vendors/jquery-1.9.1',
         },
         useStrict: true,
         optimize: "none",

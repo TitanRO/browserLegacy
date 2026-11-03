@@ -13,7 +13,7 @@ define(function( require )
 
 
 	// Load dependencies
-	var jQuery        = require('Utils/jquery');
+	var DOM           = require('Utils/DOM');
 	var DB            = require('DB/DBManager');
 	var UIManager     = require('UI/UIManager');
 	var Cursor        = require('UI/CursorManager');
@@ -22,7 +22,6 @@ define(function( require )
 	var ChatBox       = require('UI/Components/ChatBox/ChatBox');
 	var Equipment     = require('UI/Components/Equipment/Equipment');
 	var Inventory     = require('UI/Components/Inventory/Inventory');
-	var ShortCut      = require('UI/Components/ShortCut/ShortCut');
 	var SkillTargetSelection      = require('UI/Components/SkillTargetSelection/SkillTargetSelection');
 	var Mouse         = require('Controls/MouseEventHandler');
 	var Mobile        = require('Core/Mobile');
@@ -81,15 +80,16 @@ define(function( require )
 		Mobile.onTouchStart = onMouseDown.bind(this);
 		Mobile.onTouchEnd   = onMouseUp.bind(this);
 
-		// Attach events
-		jQuery( Renderer.canvas )
-			.on('mousewheel DOMMouseScroll', onMouseWheel)
-			.on('dragover',                  onDragOver )
-			.on('drop',                      onDrop.bind(this));
+		var canvas = Renderer.canvas;
 
-		jQuery(window)
-			.on('mousedown.map',   onMouseDown.bind(this))
-			.on('mouseup.map',     onMouseUp.bind(this));
+		// Attach events
+		canvas.addEventListener('wheel', onMouseWheel);
+		canvas.addEventListener('DOMMouseScroll', onMouseWheel);
+		canvas.addEventListener('dragover', onDragOver);
+		canvas.addEventListener('drop', onDrop.bind(this));
+
+		window.addEventListener('mousedown', onMouseDown.bind(this));
+		window.addEventListener('mouseup', onMouseUp.bind(this));
 	};
 
 
@@ -243,7 +243,7 @@ define(function( require )
 	function onMouseWheel( event )
 	{
 		if(Mouse.state === Mouse.MOUSE_STATE.USESKILL){
-			if(event.originalEvent.wheelDelta > 0){
+			if(event.wheelDelta > 0 || event.deltaY < 0){
 				SkillTargetSelection.setSkillLevelDelta(1);
 			}else{
 				SkillTargetSelection.setSkillLevelDelta(-1);
@@ -253,14 +253,17 @@ define(function( require )
 		// Zooming on the scene
 		// Cross browser delta
 		var delta;
-		if (event.originalEvent.wheelDelta) {
-			delta = event.originalEvent.wheelDelta / 120 ;
+		if (event.wheelDelta) {
+			delta = event.wheelDelta / 120 ;
 			if (window.opera) {
 				delta = -delta;
 			}
 		}
-		else if (event.originalEvent.detail) {
-			delta = -event.originalEvent.detail;
+		else if (event.detail) {
+			delta = -event.detail;
+		}
+		else if (typeof event.deltaY === 'number') {
+			delta = -event.deltaY / 100;
 		}
 
 		Camera.setZoom(delta);
@@ -274,6 +277,7 @@ define(function( require )
 	function onDragOver(event)
 	{
 		event.stopImmediatePropagation();
+		event.preventDefault();
 		return false;
 	}
 
@@ -288,7 +292,7 @@ define(function( require )
 
 		try {
 			data = JSON.parse(
-				event.originalEvent.dataTransfer.getData('Text')
+				event.dataTransfer.getData('Text')
 			);
 		}
 		catch(e) {}
@@ -303,7 +307,12 @@ define(function( require )
 		// triggered when dragging an object).
 		// ondragleave event is not relyable to do it (not working as intended)
 		if (data.from) {
-			UIManager.getComponent(data.from).ui.trigger('mouseleave');
+			var component = UIManager.getComponent(data.from);
+			var ui = component && component.ui;
+			if (ui) {
+				var element = ui[0] || ui;
+				element.dispatchEvent(new Event('mouseleave', { bubbles: true }));
+			}
 		}
 
 		// Just support items ?
@@ -312,7 +321,8 @@ define(function( require )
 		}
 
 		// Can't drop an item on map if Equipment window is open
-		if (Equipment.getUI().ui.is(':visible')) {
+		var equipmentUi = Equipment.getUI().ui;
+		if (DOM.isVisible(equipmentUi[0] || equipmentUi)) {
 			ChatBox.addText(
 				DB.getMessage(189),
 				ChatBox.TYPE.ERROR,

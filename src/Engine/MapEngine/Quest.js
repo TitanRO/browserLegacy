@@ -17,8 +17,8 @@ define(function (require) {
 	var Network = require('Network/NetworkManager');
 	var PACKETVER = require('Network/PacketVerManager');
 	var PACKET = require('Network/PacketStructure');
-	var jQuery = require('Utils/jquery');
-	
+	var DOM = require('Utils/DOM');
+
 	// Version Dependent UIs
 	var Quest = require('UI/Components/Quest/Quest');
 
@@ -143,9 +143,9 @@ define(function (require) {
 					var quest_info = DB.getQuestInfo(local_hunt.questID)
 					let local_quest = {
 						questID: local_hunt.questID,
-						title: (quest_info.Title ? jQuery.escape(quest_info.Title) : ""),
-						summary: (quest_info.Summary ? jQuery.escape(quest_info.Summary) : ""),
-						description: (quest_info.Description ? jQuery.escape(quest_info.Description) : ""),
+						title: (quest_info.Title ? DOM.sanitizeHtml(quest_info.Title) : ""),
+						summary: (quest_info.Summary ? DOM.sanitizeHtml(quest_info.Summary) : ""),
+						description: (quest_info.Description ? DOM.sanitizeHtml(quest_info.Description) : ""),
 						icon: (quest_info.IconName ? quest_info.IconName : "ico_nq.bmp"),
 						npc_spr: quest_info.NpcSpr || null,
 						npc_navi: quest_info.NpcNavi || null,

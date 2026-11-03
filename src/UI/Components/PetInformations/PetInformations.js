@@ -24,6 +24,7 @@ define(function(require)
 	var htmlText             = require('text!./PetInformations.html');
 	var cssText              = require('text!./PetInformations.css');
 	var PACKETVER            = require('Network/PacketVerManager');
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -51,30 +52,30 @@ define(function(require)
 	 */
 	PetInformations.init = function init()
 	{
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 
-		this.ui.find('.base').mousedown(stopPropagation);
-		this.ui.find('.close').click(onClose);
-		this.ui.find('.modify').click(onChangeName);
-		this.ui.find('.command').change(onCommandSelected);
-		this.ui.find('.pet_auto_feed').mousedown(petToggleAutoFeed);
+		this.ui.querySelector('.base').addEventListener('mousedown', stopPropagation);
+		this.ui.querySelector('.close').addEventListener('click', onClose);
+		this.ui.querySelector('.modify').addEventListener('click', onChangeName);
+		this.ui.querySelector('.command').addEventListener('change', onCommandSelected);
+		this.ui.querySelector('.pet_auto_feed').addEventListener('mousedown', petToggleAutoFeed);
 
 		if (!_preferences.show) {
-			this.ui.hide();
+			DOM.hide(this.ui);
 		}
 
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 	};
 
 	PetInformations.onAppend = function onAppend() {
 		Client.loadFile( DB.INTERFACE_PATH + 'checkbox_' + (petAutoFeeding ? '1' : '0') + '.bmp', function(data){
-			PetInformations.ui.find('.pet_auto_feed').css('backgroundImage', 'url(' + data + ')');
+			PetInformations.ui.querySelector('.pet_auto_feed').style.backgroundImage = 'url(' + data + ')';
 		});
 		if(PACKETVER.value < 20141008)
-			PetInformations.ui.find('.feeding').hide();
+			PetInformations.ui.querySelector('.feeding').style.display = 'none';
 
     }
 
@@ -84,9 +85,9 @@ define(function(require)
 	PetInformations.onRemove = function onRemove()
 	{
 		// Save preferences
-		_preferences.show   =  this.ui.is(':visible');
-		_preferences.y      =  parseInt(this.ui.css('top'), 10);
-		_preferences.x      =  parseInt(this.ui.css('left'), 10);
+		_preferences.show   =  DOM.isVisible(this.ui);
+		_preferences.y      =  parseInt(this.ui.style.top, 10);
+		_preferences.x      =  parseInt(this.ui.style.left, 10);
 		_preferences.save();
 	};
 
@@ -105,8 +106,8 @@ define(function(require)
 
 		switch (key.cmd) {
 			case 'TOGGLE':
-				this.ui.toggle();
-				if (this.ui.is(':visible')) {
+				DOM.toggleDisplay(this.ui);
+				if (DOM.isVisible(this.ui)) {
 					this.focus();
 				}
 				break;
@@ -121,23 +122,23 @@ define(function(require)
 	 */
 	PetInformations.setInformations = function setInformations(info)
 	{
-		this.ui.find('.name').val(info.szName);
-		this.ui.find('.level').text(info.nLevel);
+		this.ui.querySelector('.name').value = info.szName;
+		this.ui.querySelector('.level').textContent = info.nLevel;
 
 		this.setHunger(info.nFullness);
 		this.setIntimacy(info.nRelationship);
 
-		this.ui.find('.accessory').text(DB.getMessage(info.ITID ? 598 : 600));
+		this.ui.querySelector('.accessory').textContent = DB.getMessage(info.ITID ? 598 : 600);
 
 		Client.loadFile( DB.getPetIllustPath(info.job), function(data){
-			this.ui.find('.content').css('backgroundImage', 'url('+ data +')');
+			this.ui.querySelector('.content').style.backgroundImage = 'url('+ data +')';
 		}.bind(this));
 
 		if (!info.bModified) {
-			this.ui.find('.name, .modify').removeClass('disabled').attr('disabled', false);
+			this.ui.querySelector('.name, .modify').classList.remove('disabled').setAttribute('disabled', false);
 		}
 		else {
-			this.ui.find('.name, .modify').addClass('disabled').attr('disabled', true);
+			this.ui.querySelector('.name, .modify').classList.add('disabled').setAttribute('disabled', true);
 		}
 	};
 
@@ -149,13 +150,13 @@ define(function(require)
 	 */
 	PetInformations.setIntimacy = function setIntimacy(val)
 	{
-		this.ui.find('.intimacy').text(DB.getMessage(
+		this.ui.querySelector('.intimacy').textContent = DB.getMessage(
 			val < 100 ? 672 :
 			val < 250 ? 673 :
 			val < 600 ? 669 :
 			val < 900 ? 674 :
 			675
-		));
+		);
 	};
 
 	PetInformations.setFeedConfig = function setFeedConfig(flag)
@@ -165,7 +166,7 @@ define(function(require)
 		 // server sent this info before of pet
 		if(PetInformations.ui) {
 			Client.loadFile( DB.INTERFACE_PATH + 'checkbox_' + (petAutoFeeding ? '1' : '0') + '.bmp', function(data){
-				PetInformations.ui.find('.pet_auto_feed').css('backgroundImage', 'url(' + data + ')');
+				PetInformations.ui.querySelector('.pet_auto_feed').style.backgroundImage = 'url(' + data + ')';
 			});
 		}
 	}
@@ -177,13 +178,13 @@ define(function(require)
 	 */
 	PetInformations.setHunger = function setHunger(val)
 	{
-		this.ui.find('.hunger').text(DB.getMessage(
+		this.ui.querySelector('.hunger').textContent = DB.getMessage(
 			val < 10 ? 667 :
 			val < 25 ? 668 :
 			val < 75 ? 669 :
 			val < 90 ? 670 :
 			671
-		));
+		);
 	};
 
 
@@ -230,8 +231,8 @@ define(function(require)
 	 */
 	function onChangeName()
 	{
-		var input = PetInformations.ui.find('.name');
-		PetInformations.reqNameEdit( input.val() );
+		var input = PetInformations.ui.querySelector('.name');
+		PetInformations.reqNameEdit( input.value );
 	}
 
 
@@ -240,7 +241,7 @@ define(function(require)
 	 */
 	function onClose()
 	{
-		PetInformations.ui.hide();
+		PetInformations.ui.style.display = 'none';
 	}
 
 

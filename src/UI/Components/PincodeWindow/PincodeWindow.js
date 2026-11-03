@@ -15,6 +15,7 @@ define(function(require)
     /**
      * Dependencies
      */
+    var DOM                = require('Utils/DOM');
     var DB                 = require('DB/DBManager');
     var Configs            = require('Core/Configs');
     var PACKETVER          = require('Network/PacketVerManager');
@@ -92,69 +93,59 @@ define(function(require)
     PincodeWindow.init = function init() {
         var ui = this.ui;
 
-        this.ui.css({
+        DOM.setCss(this.ui, {
             top: (Renderer.height - 358) / 2,
             left: (Renderer.width - 576) / 2
         });
 
         // Disable pass fields.
-        ui.find('.pass').prop('disabled', true);
-        ui.find('.newpass').prop('disabled', true);
-        ui.find('.checkpass').prop('disabled', true);
+        ui.querySelector('.pass').disabled = true;
+        ui.querySelector('.newpass').disabled = true;
+        ui.querySelector('.checkpass').disabled = true;
 
         // This exit button was never used.
-        ui.find('.btn2.unused').hide();
+        ui.querySelector('.btn2.unused').style.display = 'none';
 
         // Hide, disable, and fix the location of the verify button.
-        ui.find('.btn2.verify').prop('disabled', true);
-        ui.find('.btn2.verify').hide();
+        ui.querySelector('.btn2.verify').disabled = true;
+        ui.querySelector('.btn2.verify').style.display = 'none';
 
         // Enable and show the change and ok buttons.
-        ui.find('.btn2.change').prop('disabled', false);
-        ui.find('.btn2.ok').prop('disabled', false);
-        ui.find('.btn2.ok').show();
+        ui.querySelector('.btn2.change').disabled = false;
+        ui.querySelector('.btn2.ok').disabled = false;
+        ui.querySelector('.btn2.ok').style.display = '';
 
-        // Unbind all buttons.
-        ui.find('.btn2.cancel').off('click');
-        ui.find('.btn2.ok').off('click');
-        ui.find('.btn.num1').off('click');
-        ui.find('.btn.num2').off('click');
-        ui.find('.btn.num3').off('click');
-        ui.find('.btn.num4').off('click');
-        ui.find('.btn.num5').off('click');
-        ui.find('.btn.num6').off('click');
-        ui.find('.btn.num7').off('click');
-        ui.find('.btn.num8').off('click');
-        ui.find('.btn.num9').off('click');
-        ui.find('.btn.num0').off('click');
-        ui.find('.btn2.change').off('click');
-        ui.find('.btn2.verify').off('click');
-        ui.find('.numReset').off('click');
+        if (PincodeWindow._eventController) {
+            PincodeWindow._eventController.abort();
+        }
+        PincodeWindow._eventController = new AbortController();
+        var signal = PincodeWindow._eventController.signal;
 
         // Bind buttons
-        ui.find('.btn2.cancel').click(cancel);
-        ui.find('.btn2.ok').click(success);
-        ui.find('.btn.num1').click( function(){ keyNum('1'); } );
-        ui.find('.btn.num2').click( function(){ keyNum('2'); } );
-        ui.find('.btn.num3').click( function(){ keyNum('3'); } );
-        ui.find('.btn.num4').click( function(){ keyNum('4'); } );
-        ui.find('.btn.num5').click( function(){ keyNum('5'); } );
-        ui.find('.btn.num6').click( function(){ keyNum('6'); } );
-        ui.find('.btn.num7').click( function(){ keyNum('7'); } );
-        ui.find('.btn.num8').click( function(){ keyNum('8'); } );
-        ui.find('.btn.num9').click( function(){ keyNum('9'); } );
-        ui.find('.btn.num0').click( function(){ keyNum('0'); } );
-        ui.find('.btn2.change').click(PincodeWindow.userChangePin);
-        ui.find('.numReset').click(PincodeWindow.clearPin);
+        ui.querySelector('.btn2.cancel').addEventListener('click', cancel, { signal: signal });
+        ui.querySelector('.btn2.ok').addEventListener('click', success, { signal: signal });
+        ui.querySelector('.btn.num1').addEventListener('click',  function(){ keyNum('1'); }, { signal: signal });
+        ui.querySelector('.btn.num2').addEventListener('click',  function(){ keyNum('2'); }, { signal: signal });
+        ui.querySelector('.btn.num3').addEventListener('click',  function(){ keyNum('3'); }, { signal: signal });
+        ui.querySelector('.btn.num4').addEventListener('click',  function(){ keyNum('4'); }, { signal: signal });
+        ui.querySelector('.btn.num5').addEventListener('click',  function(){ keyNum('5'); }, { signal: signal });
+        ui.querySelector('.btn.num6').addEventListener('click',  function(){ keyNum('6'); }, { signal: signal });
+        ui.querySelector('.btn.num7').addEventListener('click',  function(){ keyNum('7'); }, { signal: signal });
+        ui.querySelector('.btn.num8').addEventListener('click',  function(){ keyNum('8'); }, { signal: signal });
+        ui.querySelector('.btn.num9').addEventListener('click',  function(){ keyNum('9'); }, { signal: signal });
+        ui.querySelector('.btn.num0').addEventListener('click',  function(){ keyNum('0'); }, { signal: signal });
+        ui.querySelector('.btn2.change').addEventListener('click', PincodeWindow.userChangePin, { signal: signal });
+        ui.querySelector('.numReset').addEventListener('click', PincodeWindow.clearPin, { signal: signal });
 
         // Randomize position of num buttons.
         if (PincodeWindow._keypad !== undefined) {
             for (var x = 0; x < 10; x++) {
-                var btn = ui.find((".btn.num" + x));
+                var btn = ui.querySelector((".btn.num" + x));
 
                 // Check for set original location.
-                var original_x = btn.offset().left;
-                var original_y = btn.offset().top;
+                var originalPos = DOM.getOffset(btn);
+                var original_x = originalPos.left;
+                var original_y = originalPos.top;
                 if (btn.__original_x_pos > 0 && btn.__original_y_pos > 0) {
                    original_x = btn.__original_x_pos;
                    original_y = btn.__original_y_pos;
@@ -170,10 +161,11 @@ define(function(require)
                 for (var keypad_loc = 0; keypad_loc < 10; keypad_loc++) {
                     if (PincodeWindow._keypad[keypad_loc] == x) {
                         if (keypad_loc != x) {
-                            var target = ui.find((".btn.num" + keypad_loc));
+                            var target = ui.querySelector((".btn.num" + keypad_loc));
 
-                            target_x = target.offset().left;
-                            target_y = target.offset().top;
+                            var targetPos = DOM.getOffset(target);
+                            target_x = targetPos.left;
+                            target_y = targetPos.top;
                             if (target.__original_x_pos > 0 && target.__original_y_pos > 0) {
                                 target_x = target.__original_x_pos;
                                 target_y = target.__original_y_pos;
@@ -184,7 +176,7 @@ define(function(require)
                             }
 
                             // Set new location.
-                            target.offset({left:original_x,top:original_y});
+                            DOM.setCss(target, { left: original_x, top: original_y });
                         } else {
                             // Same button.
                             target_x = original_x;
@@ -195,22 +187,16 @@ define(function(require)
                 }
 
                 // Set new location.
-                btn.offset({left:target_x,top:target_y});
+                DOM.setCss(btn, { left: target_x, top: target_y });
             }
         }
 
-        // Deactivate stopPropagation.
-        ui.find('.titlebar .base').off('mousedown');
-        ui.find('.btn2.cancel').off('mousedown');
-        ui.find('.btn2.ok').off('mousedown');
+        ui.querySelector('.titlebar .base').addEventListener('mousedown', stopPropagation, { signal: signal });
 
-        // Don't activate drag drop when clicking on buttons
-        ui.find('.titlebar .base').mousedown(stopPropagation);
+        ui.querySelector('.btn2.cancel').addEventListener('mousedown', stopPropagation, { signal: signal });
+        ui.querySelector('.btn2.ok').addEventListener('mousedown', stopPropagation, { signal: signal });
 
-        ui.find('.btn2.cancel').mousedown(stopPropagation);
-        ui.find('.btn2.ok').mousedown(stopPropagation);
-
-        this.draggable(ui.find('.titlebar'));
+        this.draggable(ui.querySelector('.titlebar'));
 
 	PincodeWindow.resetPins();
 
@@ -250,19 +236,19 @@ define(function(require)
         if (PincodeWindow.ui !== undefined) {
             switch (selection) {
                 case 1:
-                    PincodeWindow.ui.find('.pass').css({'background-color': '#D3D3D3'});
-                    PincodeWindow.ui.find('.checkpass').css({'background-color': '#D3D3D3'});
-                    PincodeWindow.ui.find('.newpass').css({'background-color': '#87CEFA'});
+                    PincodeWindow.ui.querySelector('.pass').style.backgroundColor = '#D3D3D3';
+                    PincodeWindow.ui.querySelector('.checkpass').style.backgroundColor = '#D3D3D3';
+                    PincodeWindow.ui.querySelector('.newpass').style.backgroundColor = '#87CEFA';
                     break;
                 default:
-                    PincodeWindow.ui.find('.newpass').css({'background-color': '#D3D3D3'});
-                    PincodeWindow.ui.find('.checkpass').css({'background-color': '#D3D3D3'});
-                    PincodeWindow.ui.find('.pass').css({'background-color': '#87CEFA'});
+                    PincodeWindow.ui.querySelector('.newpass').style.backgroundColor = '#D3D3D3';
+                    PincodeWindow.ui.querySelector('.checkpass').style.backgroundColor = '#D3D3D3';
+                    PincodeWindow.ui.querySelector('.pass').style.backgroundColor = '#87CEFA';
                     break;
                 case 2:
-                    PincodeWindow.ui.find('.newpass').css({'background-color': '#D3D3D3'});
-                    PincodeWindow.ui.find('.pass').css({'background-color': '#D3D3D3'});
-                    PincodeWindow.ui.find('.checkpass').css({'background-color': '#87CEFA'});
+                    PincodeWindow.ui.querySelector('.newpass').style.backgroundColor = '#D3D3D3';
+                    PincodeWindow.ui.querySelector('.pass').style.backgroundColor = '#D3D3D3';
+                    PincodeWindow.ui.querySelector('.checkpass').style.backgroundColor = '#87CEFA';
                     break;
             }
         }
@@ -301,13 +287,12 @@ define(function(require)
                      UIManager.showMessageBox( DB.getMessage( 1887 ), 'ok' );
                 }
             } else {
-                PincodeWindow.ui.find('.btn2.ok').prop('disabled', true);
-                PincodeWindow.ui.find('.btn2.ok').hide();
-                PincodeWindow.ui.find('.btn2.change').prop('disabled', true);
-                PincodeWindow.ui.find('.btn2.verify').prop('disabled', false);
-                PincodeWindow.ui.find('.btn2.verify').off('click');
-                PincodeWindow.ui.find('.btn2.verify').click(function(){ PincodeWindow.onParentPincodeResetReq() });
-                PincodeWindow.ui.find('.btn2.verify').show();
+                PincodeWindow.ui.querySelector('.btn2.ok').disabled = true;
+                PincodeWindow.ui.querySelector('.btn2.ok').style.display = 'none';
+                PincodeWindow.ui.querySelector('.btn2.change').disabled = true;
+                PincodeWindow.ui.querySelector('.btn2.verify').disabled = false;
+                PincodeWindow.ui.querySelector('.btn2.verify').addEventListener('click', function(){ PincodeWindow.onParentPincodeResetReq(); }, { once: true });
+                PincodeWindow.ui.querySelector('.btn2.verify').style.display = '';
                 PincodeWindow.selectInput(0);
                 PincodeWindow.clearPin();
                 PincodeWindow._resetstate = 2;
@@ -344,13 +329,12 @@ define(function(require)
                      PincodeWindow._resetstate = 2;
                  } else {
                      // This gets called from the change btn.
-                     PincodeWindow.ui.find('.btn2.ok').prop('disabled', true);
-                     PincodeWindow.ui.find('.btn2.ok').hide();
-                     PincodeWindow.ui.find('.btn2.change').prop('disabled', true);
-                     PincodeWindow.ui.find('.btn2.verify').prop('disabled', false);
-                     PincodeWindow.ui.find('.btn2.verify').off('click');
-                     PincodeWindow.ui.find('.btn2.verify').click(function(){ PincodeWindow.userChangePin() });
-                     PincodeWindow.ui.find('.btn2.verify').show();
+                     PincodeWindow.ui.querySelector('.btn2.ok').disabled = true;
+                     PincodeWindow.ui.querySelector('.btn2.ok').style.display = 'none';
+                     PincodeWindow.ui.querySelector('.btn2.change').disabled = true;
+                     PincodeWindow.ui.querySelector('.btn2.verify').disabled = false;
+                     PincodeWindow.ui.querySelector('.btn2.verify').addEventListener('click', function(){ PincodeWindow.userChangePin(); }, { once: true });
+                     PincodeWindow.ui.querySelector('.btn2.verify').style.display = '';
                      PincodeWindow.selectInput(0);
                      PincodeWindow.resetPins();
                      PincodeWindow._resetstate = 1;
@@ -504,7 +488,7 @@ define(function(require)
             str += "*";
         }
 
-        PincodeWindow.ui.find(((PincodeWindow.sel_input === 1) ? '.newpass' : ((PincodeWindow.sel_input === 2) ? '.checkpass': '.pass'))).val(str);
+        PincodeWindow.ui.querySelector(((PincodeWindow.sel_input === 1) ? '.newpass' : ((PincodeWindow.sel_input === 2) ? '.checkpass': '.pass'))).value = str;
     }
 
     /**

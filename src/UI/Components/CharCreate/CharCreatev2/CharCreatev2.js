@@ -15,6 +15,7 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
+	var DOM                = require('Utils/DOM');
 	var Renderer           = require('Renderer/Renderer');
 	var KEYS               = require('Controls/KeyEventHandler');
 	var Entity             = require('Renderer/Entity/Entity');
@@ -30,6 +31,18 @@ define(function(require)
 	 * Create Chararacter Selection namespace
 	 */
 	var CharCreatev2 = new UIComponent( 'CharCreatev2', htmlText, cssText );
+
+
+	function qs(selector)
+	{
+		return DOM.qs(CharCreatev2.ui, selector);
+	}
+
+
+	function qsa(selector)
+	{
+		return DOM.qsa(CharCreatev2.ui, selector);
+	}
 
 
 	/**
@@ -54,29 +67,31 @@ define(function(require)
 	 */
 	CharCreatev2.init = function init()
 	{
-		_chargen.ctx = this.ui.find('.content canvas')[0].getContext('2d');
+		_chargen.ctx = qs('.content canvas').getContext('2d');
 
 		// Setup GUI
-		this.ui.css({
-			top: (Renderer.height-286)/2,
-			left: (Renderer.width-150)/2
+		DOM.setCss(this.ui, {
+			top: (Renderer.height-286)/2 + 'px',
+			left: (Renderer.width-150)/2 + 'px'
 		});
 
 		this.draggable();
 
 		// Bind Events
-		this.ui.find('.content .styleleft' ).mousedown(updateCharacterGeneric('head', -1));
-		this.ui.find('.content .styleright').mousedown(updateCharacterGeneric('head', +1));
-		this.ui.find('.content .colorleft').mousedown(updateCharacterGeneric('headpalette', -1));
-		this.ui.find('.content .colorright').mousedown(updateCharacterGeneric('headpalette', +1));
+		qs('.content .styleleft').addEventListener('mousedown', updateCharacterGeneric('head', -1));
+		qs('.content .styleright').addEventListener('mousedown', updateCharacterGeneric('head', +1));
+		qs('.content .colorleft').addEventListener('mousedown', updateCharacterGeneric('headpalette', -1));
+		qs('.content .colorright').addEventListener('mousedown', updateCharacterGeneric('headpalette', +1));
 
-		this.ui.find('input').mousedown(function(event){
-			this.focus();
-			event.stopImmediatePropagation();
+		qsa('input').forEach(function(input) {
+			input.addEventListener('mousedown', function(event){
+				this.focus();
+				event.stopImmediatePropagation();
+			});
 		});
 
-		this.ui.find('.cancel').click(cancel);
-		this.ui.find('.make').click(create);
+		qs('.cancel').addEventListener('click', cancel);
+		qs('.make').addEventListener('click', create);
 	};
 
 
@@ -104,7 +119,11 @@ define(function(require)
 			action: 0
 		});
 
-		this.ui.find('input').val('').focus();
+		var input = qs('input');
+		if (input) {
+			input.value = '';
+			input.focus();
+		}
 
 		Renderer.render(render);
 	};
@@ -160,10 +179,10 @@ define(function(require)
 	 */
 	function create()
 	{
-		var ui = CharCreatev2.ui;
+		var nameInput = qs('input');
 
 		CharCreatev2.onCharCreationRequest(
-			ui.find('input').val(),
+			nameInput ? nameInput.value : '',
 			1,
 			1,
 			1,

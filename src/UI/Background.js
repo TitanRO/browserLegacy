@@ -16,7 +16,7 @@ define( function( require )
 	 * Load dependencies
 	 */
 	var DB     = require('DB/DBManager');
-	var jQuery = require('Utils/jquery');
+	var DOM    = require('Utils/DOM');
 	var Client = require('Core/Client');
 	var devicePixelRatio = window.devicePixelRatio || 1;
 
@@ -28,23 +28,31 @@ define( function( require )
 
 
 	/**
-	 * @var {jQuery object} Background canvas element
+	 * @var {HTMLCanvasElement} Background canvas element
 	 */
-	var _canvas = jQuery('<canvas/>')
-		.css({ position: 'absolute', top: 0, left: 0, zIndex:5 });
+	var _canvas = document.createElement('canvas');
+	_canvas.style.position = 'absolute';
+	_canvas.style.top = '0';
+	_canvas.style.left = '0';
+	_canvas.style.zIndex = '5';
 
 
 	/**
 	 * @var {CanvasRenderingContext2D} Background context
 	 */
-	var _ctx = _canvas[0].getContext('2d');
+	var _ctx = _canvas.getContext('2d');
 
 
 	/**
-	 * @var {jQuery} Background overlay (used for transition)
+	 * @var {HTMLDivElement} Background overlay (used for transition)
 	 */
-	var _overlay = jQuery('<div/>')
-		.css({ position: 'absolute', top: 0, left: 0, zIndex:1000, backgroundColor:'black', opacity:0 });
+	var _overlay = document.createElement('div');
+	_overlay.style.position = 'absolute';
+	_overlay.style.top = '0';
+	_overlay.style.left = '0';
+	_overlay.style.zIndex = '1000';
+	_overlay.style.backgroundColor = 'black';
+	_overlay.style.opacity = '0';
 
 
 	/**
@@ -76,7 +84,7 @@ define( function( require )
 		var i;
 
 		_progress = 0;
-		_canvas.css('zIndex', 0 );
+		_canvas.style.zIndex = '0';
 
 		render();
 
@@ -98,12 +106,10 @@ define( function( require )
 	 */
 	Background.resize = function resize( width, height )
 	{
-		//let widthDpr = width * devicePixelRatio;
-		//let heightDpr = height * devicePixelRatio;
-
-		_canvas[0].width   = width;
-		_canvas[0].height  = height;
-		_overlay.css({ width:width, height:height });
+		_canvas.width   = width;
+		_canvas.height  = height;
+		_overlay.style.width = width + 'px';
+		_overlay.style.height = height + 'px';
 
 		_ctx.fillStyle = 'black';
 		_ctx.fillRect( 0, 0, width, height );
@@ -120,7 +126,7 @@ define( function( require )
 	 */
 	Background.setImage = function setImage( filename, callback )
 	{
-		var exist = !!_canvas[0].parentNode;
+		var exist = !!_canvas.parentNode;
 		_progress = -1;
 
 		render();
@@ -145,7 +151,7 @@ define( function( require )
 		// Add transition only if the background isn't here
 		if (!exist) {
 			transition(function(){
-				_canvas.appendTo('body');
+				document.body.appendChild(_canvas);
 				if (callback) {
 					callback();
 				}
@@ -164,7 +170,7 @@ define( function( require )
 		var index = Math.floor( Math.random() * _loading.length );
 
 		Background.setImage( _loading[index] || 'loading01.jpg', function() {
-			_canvas.css('zIndex', 999 );
+			_canvas.style.zIndex = '999';
 			Background.setPercent(0.0);
 
 			if (callback) {
@@ -182,7 +188,7 @@ define( function( require )
 	Background.remove = function remove( callback )
 	{
 		transition(function(){
-			_canvas.css('zIndex', 0 );
+			_canvas.style.zIndex = '0';
 			_canvas.remove();
 
 			if (callback) {
@@ -205,8 +211,8 @@ define( function( require )
 
 		width         = 240 * devicePixelRatio;
 		height        = 15 * devicePixelRatio;
-		x             = Math.floor( ( _canvas[0].width - width ) * 0.5 );
-		y             = Math.floor( _canvas[0].height * 0.75 );
+		x             = Math.floor( ( _canvas.width - width ) * 0.5 );
+		y             = Math.floor( _canvas.height * 0.75 );
 
 		// Draw Rectangle border
 		_ctx.fillStyle = 'rgb(0,255,255)';
@@ -222,7 +228,7 @@ define( function( require )
 
 		// Draw percent
 		_ctx.fillStyle = 'rgb(255,255,0)';
-		_ctx.fillText( percent + '%' ,  Math.floor( ( _canvas[0].width - _ctx.measureText( percent + '%' ).width ) * 0.5 ), y + 11  );
+		_ctx.fillText( percent + '%' ,  Math.floor( ( _canvas.width - _ctx.measureText( percent + '%' ).width ) * 0.5 ), y + 11  );
 	};
 
 
@@ -232,11 +238,11 @@ define( function( require )
 	function render()
 	{
 		if (_image.complete && _image.width) {
-			_ctx.drawImage( _image, 0, 0, _canvas[0].width, _canvas[0].height );
+			_ctx.drawImage( _image, 0, 0, _canvas.width, _canvas.height );
 		}
 		else {
 			_ctx.fillStyle='#000';
-			_ctx.fillRect( 0, 0, _canvas[0].width, _canvas[0].height );
+			_ctx.fillRect( 0, 0, _canvas.width, _canvas.height );
 		}
 
 		if (_progress > -1) {
@@ -252,19 +258,17 @@ define( function( require )
 	 */
 	function transition( callback )
 	{
-		_overlay
-			.stop()
-			.css( 'opacity', 0.01 )
-			.appendTo('body')
-			.animate({ opacity: 1.0 }, 500, function(){
-				callback();
+		_overlay.style.transition = '';
+		_overlay.style.opacity = '0.01';
+		document.body.appendChild(_overlay);
 
-				_overlay
-					.stop()
-					.animate({ opacity: 0.01 }, 500, function(){
-						_overlay.remove();
-					});
+		DOM.animateOpacity(_overlay, 1.0, 500, function() {
+			callback();
+
+			DOM.animateOpacity(_overlay, 0.01, 500, function() {
+				_overlay.remove();
 			});
+		});
 	}
 
 

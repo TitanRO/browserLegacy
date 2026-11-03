@@ -16,7 +16,6 @@ define(function(require)
 	 * Dependencies
 	 */
 	var Client        = require('Core/Client');
-	var jQuery        = require('Utils/jquery');
 	var html2canvas   = require('Utils/html2canvas');
 	var KEYS          = require('Controls/KeyEventHandler');
 	var ChatBox       = require('UI/Components/ChatBox/ChatBox');
@@ -25,11 +24,12 @@ define(function(require)
 	/**
 	 * Key Listener
 	 */
-	jQuery(window).keydown(function( event )
+	window.addEventListener('keydown', function( event )
 	{
 		if (KEYS.ALT && event.which === KEYS.P) {
 			ScreenShot.take();
 			event.stopImmediatePropagation();
+			event.preventDefault();
 			return false;
 		}
 

@@ -15,7 +15,6 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
-	var jQuery      = require('Utils/jquery');
 	var DB          = require('DB/DBManager');
 	var SkillInfo   = require('DB/Skills/SkillInfo');
 	var Client      = require('Core/Client');
@@ -25,6 +24,7 @@ define(function(require)
 	var Inventory   = require('UI/Components/Inventory/Inventory');
 	var htmlText    = require('text!./ItemSelection.html');
 	var cssText     = require('text!./ItemSelection.css');
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -39,29 +39,28 @@ define(function(require)
 	ItemSelection.init = function init()
 	{
 		// Show at center.
-		this.ui.css({
+		DOM.setCss(this.ui, {
 			top:  (Renderer.height- 200)/2,
 			left: (Renderer.width - 200)/2
 		});
 
-		this.list  = this.ui.find('.list:first');
+		this.list  = this.ui.querySelector('.list');
 		this.index = 0;
 
-		this.draggable(this.ui.find('.head'));
+		this.draggable(this.ui.querySelector('.head'));
 
 		// Click Events
-		this.ui.find('.ok').click( this.selectIndex.bind(this) );
-		this.ui.find('.cancel').click(function(){
+		this.ui.querySelector('.ok').addEventListener('click',  this.selectIndex.bind(this) );
+		this.ui.querySelector('.cancel').addEventListener('click', function(){
 			this.index = -1;
 			this.selectIndex();
 		}.bind(this) );
 
 		// Bind events
-		this.ui
-			.on('dblclick', '.item', this.selectIndex.bind(this))
-			.on('mousedown', '.item', function(){
-				ItemSelection.setIndex( Math.floor(this.getAttribute('data-index')) );
-			});
+		DOM.addDelegatedEvent(this.ui, 'dblclick', '.item', this.selectIndex.bind(this));
+		DOM.addDelegatedEvent(this.ui, 'mousedown', '.item', function(){
+			ItemSelection.setIndex( Math.floor(this.getAttribute('data-index')) );
+		});
 	};
 
 
@@ -75,7 +74,7 @@ define(function(require)
 		var i, count;
 		var item, it, file, name;
 
-		ItemSelection.list.empty();
+		ItemSelection.list.innerHTML = '';
 
 		for (i = 0, count = list.length; i < count; ++i) {
 			if (isSkill) {
@@ -113,17 +112,17 @@ define(function(require)
 	 */
 	function addElement( url, index, name)
 	{
-		ItemSelection.list.append(
+		ItemSelection.list.insertAdjacentHTML('beforeend',
 			'<div class="item" data-index="'+ index +'">' +
 				'<div class="icon"></div>' +
-				'<span class="name">' + jQuery.escape(name) + '</span>' +
+				'<span class="name">' + DOM.escapeHtml(name) + '</span>' +
 			'</div>'
 		);
 
 		Client.loadFile( url, function(data){
 			ItemSelection.list
-				.find('div[data-index='+ index +'] .icon')
-				.css('backgroundImage', 'url('+ data +')');
+				.querySelector('div[data-index="'+ index +'"] .icon')
+				.style.backgroundImage = 'url('+ data +')';
 		});
 	}
 
@@ -135,8 +134,8 @@ define(function(require)
 	 */
 	ItemSelection.setIndex = function setIndex( id )
 	{
-		this.list.find('div[data-index='+ this.index +']').css('backgroundColor', 'transparent');
-		this.list.find('div[data-index='+ id         +']').css('backgroundColor', '#cde0ff');
+		this.list.querySelector('div[data-index="'+ this.index +'"]').style.backgroundColor = 'transparent';
+		this.list.querySelector('div[data-index="'+ id +'"]').style.backgroundColor = '#cde0ff';
 		this.index = id;
 	};
 
@@ -168,7 +167,7 @@ define(function(require)
 	 */
 	ItemSelection.setTitle = function setTitle( title )
 	{
-		this.ui.find('.head .text').text( title );
+		this.ui.querySelector('.head .text').textContent =  title ;
 	};
 
 

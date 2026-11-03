@@ -14,7 +14,6 @@ define(function (require) {
 	 * Dependencies
 	 */
 	var DB = require('DB/DBManager');
-	var jQuery = require('Utils/jquery');
 	var Client = require('Core/Client');
 	var Preferences = require('Core/Preferences');
 	var Renderer = require('Renderer/Renderer');
@@ -24,6 +23,7 @@ define(function (require) {
 
 	var htmlText = require('text!./Rodex.html');
 	var cssText = require('text!./Rodex.css');
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -82,29 +82,29 @@ define(function (require) {
 	 */
 	Rodex.onAppend = function OnAppend() {
 		// Apply preferences
-		this.ui.css({
-			top: Math.min(Math.max(0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min(Math.max(0, _preferences.x), Renderer.width - this.ui.width())
+		DOM.setCss(this.ui, {
+			top: Math.min(Math.max(0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min(Math.max(0, _preferences.x), Renderer.width - this.ui.offsetWidth)
 		});
 
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 
-		this.ui.find('.close').on('click', onClickClose);
-		this.ui.find('.refresh').on('click', onClickRefresh);
-		this.ui.find('.write').on('click', onClickWriteMail);
-		this.ui.find('.delete-all').on('click', onClickDeleteAll);
-		this.ui.find('.retrieve-all').on('click', onClickRetrieveAll);
-		this.ui.find('.previous-page').on('click', onClickPreviousPage);
-		this.ui.find('.next-page').on('click', onClickNexPage);
-		this.ui.find('.nav-item').on('click', onClickTab);
-		this.ui.find('.search-title').on('click', onClickSearchTitle);
-		this.ui.find('.search-sender').on('click', onClickSearchSender);
-		this.ui.find('.search').val('');
-		this.ui.find('.search-btn').on('click', onClickSearchButton);
+		this.ui.querySelector('.close').addEventListener('click', onClickClose);
+		this.ui.querySelector('.refresh').addEventListener('click', onClickRefresh);
+		this.ui.querySelector('.write').addEventListener('click', onClickWriteMail);
+		this.ui.querySelector('.delete-all').addEventListener('click', onClickDeleteAll);
+		this.ui.querySelector('.retrieve-all').addEventListener('click', onClickRetrieveAll);
+		this.ui.querySelector('.previous-page').addEventListener('click', onClickPreviousPage);
+		this.ui.querySelector('.next-page').addEventListener('click', onClickNexPage);
+		this.ui.querySelector('.nav-item').addEventListener('click', onClickTab);
+		this.ui.querySelector('.search-title').addEventListener('click', onClickSearchTitle);
+		this.ui.querySelector('.search-sender').addEventListener('click', onClickSearchSender);
+		this.ui.querySelector('.search').value = '';
+		this.ui.querySelector('.search-btn').addEventListener('click', onClickSearchButton);
 
 		Rodex.openType = 0;
-		Rodex.ui.find('.nav-item.active').removeClass('active');
-		Rodex.ui.find('#tab_0').addClass('active');
+		Rodex.ui.querySelectorAll('.nav-item.active').forEach(function(el) { el.classList.remove('active'); });
+		Rodex.ui.querySelector('#tab_0').classList.add('active');
 		Rodex.searchType = 1;
 		Rodex.page = 0;
 	};
@@ -115,9 +115,9 @@ define(function (require) {
 	Rodex.onRemove = function OnRemove() {
 		this.list.length = 0;
 		// Save preferences
-		_preferences.show = this.ui.is(':visible');
-		_preferences.y = parseInt(this.ui.css('top'), 10);
-		_preferences.x = parseInt(this.ui.css('left'), 10);
+		_preferences.show = DOM.isVisible(this.ui);
+		_preferences.y = parseInt(this.ui.style.top, 10);
+		_preferences.x = parseInt(this.ui.style.left, 10);
 		_preferences.save();
 
 		Rodex.openType = 0;
@@ -134,13 +134,13 @@ define(function (require) {
 		Rodex.isEnd = pkt.isEnd;
 		Rodex.openType = (typeof pkt.openType !== 'undefined') ? pkt.openType : 0;
 		Rodex.createRodexList();
-		Rodex.ui.show();
+		Rodex.ui.style.display = '';
 		Rodex.ui.focus();
 	};
 
 	Rodex.createRodexList = function createRodexList(tabID = 0, search = false, term = "") {
-		var content = Rodex.ui.find('.mail-list');
-		content.html('');
+		var content = Rodex.ui.querySelector('.mail-list');
+		content.innerHTML = '';
 		let mail_list = [];
 		if (search) {
 			Rodex.page = 0;
@@ -181,12 +181,14 @@ define(function (require) {
 				<div class="expire-days">` + remaining_days + ` days</div>
 			</li>
 			`;
-			content.append(mail_html);
-			Rodex.ui.find("#mail_" + mailID).on('click', onClickReadMail);
-			Rodex.ui.find("#sender_" + mailID).on('click', onClickReplyMail);
+			content.insertAdjacentHTML('beforeend', mail_html);
+			var _mailEl = Rodex.ui.querySelector("#mail_" + mailID);
+			if (_mailEl) _mailEl.addEventListener('click', onClickReadMail);
+			var _senderEl = Rodex.ui.querySelector("#sender_" + mailID);
+			if (_senderEl) _senderEl.addEventListener('click', onClickReplyMail);
 			total++;
 		}
-		content.each(this.parseHTML).find('*').each(this.parseHTML);
+		this.parseElementTree(content);
 	}
 
 	Rodex.getMailsByTabID = function getMailsByTabID(tabID) {
@@ -202,7 +204,7 @@ define(function (require) {
 	}
 
 	Rodex.getMailByID = function getMailByID(mailID) {
-		return Rodex.list.find(mail => mail.MailID == mailID);
+		return Rodex.list.querySelector(mail => mail.MailID == mailID);
 	}
 
 	Rodex.getAll = function getAll() {
@@ -229,22 +231,23 @@ define(function (require) {
 	}
 
 	Rodex.updateDeletedMailContent = function updateDeletedMailContent(openType, MailID) {
-		Rodex.ui.find("#mail_" + MailID).html(DB.getMessage(2907));
-		Rodex.ui.find("#mail_" + MailID).addClass('deleted')
-		Rodex.ui.find("#sender_" + MailID).html('');
+		var _mailDelEl = Rodex.ui.querySelector("#mail_" + MailID);
+		if (_mailDelEl) { _mailDelEl.innerHTML = DB.getMessage(2907); _mailDelEl.classList.add('deleted'); }
+		var _senderDelEl = Rodex.ui.querySelector("#sender_" + MailID);
+		if (_senderDelEl) _senderDelEl.innerHTML = '';
 	}
 
 	/**
 	 * Show/Hide UI
 	 */
 	Rodex.toggle = function toggle() {
-		if (this.ui.is(':visible')) {
+		if (DOM.isVisible(this.ui)) {
 			Rodex.closeRodexBox();
-			Rodex.ui.hide();
+			Rodex.ui.style.display = 'none';
 		} else {
 			Rodex.openRodexBox();
 			Rodex.append();
-			Rodex.ui.show();
+			Rodex.ui.style.display = '';
 			Rodex.ui.focus();
 		}
 	};
@@ -254,10 +257,10 @@ define(function (require) {
 		Rodex.openType = 0;
 		Rodex.closeRodexBox();
 		// Save preferences
-		_preferences.y = parseInt(Rodex.ui.css('top'), 10);
-		_preferences.x = parseInt(Rodex.ui.css('left'), 10);
+		_preferences.y = parseInt(Rodex.ui.style.top, 10) || 0;
+		_preferences.x = parseInt(Rodex.ui.style.left, 10) || 0;
 		_preferences.save();
-		Rodex.ui.hide();
+		Rodex.ui.style.display = 'none';
 	}
 
 	function onClickRefresh(e) {
@@ -304,16 +307,16 @@ define(function (require) {
 	function onClickTab(e) {
 		e.stopImmediatePropagation();
 		Rodex.page = 0;
-		let element = jQuery(e.currentTarget);
-		let tid = element.attr('id');
+		let element = e.currentTarget;
+		let tid = element.getAttribute('id');
 		let id = tid.replace("tab_", "");
-		Rodex.ui.find('.nav-item.active').removeClass('active');
-		element.addClass('active');
+		Rodex.ui.querySelectorAll('.nav-item.active').forEach(function(el) { el.classList.remove('active'); });
+		element.classList.add('active');
 		if (id >= 0 && id <= 2) {
 			Rodex.openType = id;
 			Rodex.createRodexList(Rodex.openType);
 		} else {
-			Rodex.ui.find('.mail-list').html(''); // search tab
+			Rodex.ui.querySelector('.mail-list').innerHTML = ''; // search tab
 		}
 	}
 
@@ -321,10 +324,10 @@ define(function (require) {
 		e.stopImmediatePropagation();
 		Rodex.searchType = 1;
 		Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/rodexsystem/renewal/checkbox_search_off.bmp', function (data) {
-			Rodex.ui.find('.search-sender').css('backgroundImage', 'url(' + data + ')');
+			Rodex.ui.querySelector('.search-sender').style.backgroundImage = 'url(' + data + ')';
 		});
 		Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/rodexsystem/renewal/checkbox_search_on.bmp', function (data) {
-			Rodex.ui.find('.search-title').css('backgroundImage', 'url(' + data + ')');
+			Rodex.ui.querySelector('.search-title').style.backgroundImage = 'url(' + data + ')';
 		});
 	}
 
@@ -333,18 +336,18 @@ define(function (require) {
 		Rodex.searchType = 2;
 
 		Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/rodexsystem/renewal/checkbox_search_on.bmp', function (data) {
-			Rodex.ui.find('.search-sender').css('backgroundImage', 'url(' + data + ')');
+			Rodex.ui.querySelector('.search-sender').style.backgroundImage = 'url(' + data + ')';
 		});
 		Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/rodexsystem/renewal/checkbox_search_off.bmp', function (data) {
-			Rodex.ui.find('.search-title').css('backgroundImage', 'url(' + data + ')');
+			Rodex.ui.querySelector('.search-title').style.backgroundImage = 'url(' + data + ')';
 		});
 	}
 
 	function onClickSearchButton(e) {
 		e.stopImmediatePropagation();
-		let search = Rodex.ui.find('.search').val();
-		Rodex.ui.find('.nav-item.active').removeClass('active');
-		Rodex.ui.find('#tab_3').addClass('active');
+		let search = Rodex.ui.querySelector('.search').value;
+		Rodex.ui.querySelectorAll('.nav-item.active').forEach(function(el) { el.classList.remove('active'); });
+		Rodex.ui.querySelector('#tab_3').classList.add('active');
 		if (search.length > 2) {
 			Rodex.createRodexList(0, true, search);
 		}
@@ -352,17 +355,17 @@ define(function (require) {
 
 	function onClickReadMail(e) {
 		e.stopImmediatePropagation();
-		let element = jQuery(e.currentTarget);
-		let mid = element.attr('id');
-		let openType = element.attr('openType');
+		let element = e.currentTarget;
+		let mid = element.getAttribute('id');
+		let openType = element.getAttribute('openType');
 		let id = mid.replace("mail_", "");
 		Rodex.requestReadRodex(openType, id);
 	}
 
 	function onClickReplyMail(e) {
 		e.stopImmediatePropagation();
-		let element = jQuery(e.currentTarget);
-		let sender = element.attr('sender');
+		let element = e.currentTarget;
+		let sender = element.getAttribute('sender');
 		Rodex.requestOpenWriteRodex(sender);
 	}
 

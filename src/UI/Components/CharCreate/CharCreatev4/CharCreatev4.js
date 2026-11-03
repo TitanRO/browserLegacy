@@ -16,6 +16,7 @@ define(function(require)
 	 * Dependencies
 	 */
 	var DB           	   = require('DB/DBManager');
+	var DOM                = require('Utils/DOM');
 	var Renderer           = require('Renderer/Renderer');
 	var KEYS               = require('Controls/KeyEventHandler');
 	var Entity             = require('Renderer/Entity/Entity');
@@ -31,6 +32,24 @@ define(function(require)
 	 * Create Chararacter Selection namespace
 	 */
 	var CharCreatev4 = new UIComponent( 'CharCreatev4', htmlText, cssText );
+
+
+	function qs(selector)
+	{
+		return DOM.qs(CharCreatev4.ui, selector);
+	}
+
+
+	function qsa(selector)
+	{
+		return DOM.qsa(CharCreatev4.ui, selector);
+	}
+
+
+	function setFormattedText(el, value)
+	{
+		DOM.setFormattedText(el, value, DB.getItemInfo.bind(DB));
+	}
 
 
 	/**
@@ -86,14 +105,14 @@ define(function(require)
 	CharCreatev4.init = function init()
 	{
 
-		_chargen.ctx = this.ui.find('#human')[0].getContext('2d');
-		_doram.ctx = this.ui.find('#doram')[0].getContext('2d');
-		_model.ctx = this.ui.find('#style_model')[0].getContext('2d');
+		_chargen.ctx = qs('#human').getContext('2d');
+		_doram.ctx = qs('#doram').getContext('2d');
+		_model.ctx = qs('#style_model').getContext('2d');
 
 		// Setup GUI
-		this.ui.css({
-			top: (Renderer.height-342)/2,
-			left: (Renderer.width-576)/2
+		DOM.setCss(this.ui, {
+			top: (Renderer.height-342)/2 + 'px',
+			left: (Renderer.width-576)/2 + 'px'
 		});
 
 		this.draggable();
@@ -119,50 +138,41 @@ define(function(require)
 		});
 
 		// Bind Events
-		this.ui.find('.gender .male_button').mousedown(updateCharacterGeneric('gender', 1));
-		this.ui.find('.gender .female_button').mousedown(updateCharacterGeneric('gender', 0));
-		this.ui.find('#style .rot_left').mousedown(updateCharacterGeneric('direction', 0));
-		this.ui.find('#style .rot_right').mousedown(updateCharacterGeneric('direction', 1));
-		this.ui.find('.race').click(updateRace);
-		this.ui.on('click', '.hstyle_button', updateHStyle);
-		this.ui.on('click', '.hcolor_button', updateHColor);
+		qs('.gender .male_button').addEventListener('mousedown', updateCharacterGeneric('gender', 1));
+		qs('.gender .female_button').addEventListener('mousedown', updateCharacterGeneric('gender', 0));
+		qs('#style .rot_left').addEventListener('mousedown', updateCharacterGeneric('direction', 0));
+		qs('#style .rot_right').addEventListener('mousedown', updateCharacterGeneric('direction', 1));
+		qsa('.race').forEach(function(radio) {
+			radio.addEventListener('click', updateRace);
+		});
+		CharCreatev4.ui.addEventListener('click', function(event) {
+			if (event.target.closest('.hstyle_button')) {
+				updateHStyle(event);
+			}
+			if (event.target.closest('.hcolor_button')) {
+				updateHColor(event);
+			}
+		});
 
-		this.ui.find('#char_name').mousedown(function(event){
+		qs('#char_name').addEventListener('mousedown', function(event){
 			this.focus();
 			event.stopImmediatePropagation();
 		});
 
-		this.ui.find('.cancel').click(cancel);
-		this.ui.find('.return').click(cancel);
-		this.ui.find('.make').click(create);
+		qs('.cancel').addEventListener('click', cancel);
+		qs('.return').addEventListener('click', cancel);
+		qs('.make').addEventListener('click', create);
 
 		/* Msgstring Texts */
-		var title = this.ui.find('.title');
-		title.text( DB.getMessage( 3356 - 1) );
-
-		var human_title = this.ui.find('.human_title');
-		human_title.text( DB.getMessage( 3017 - 1) );
-
-		var human_desc = this.ui.find('.human_desc');
-		human_desc.text( DB.getMessage( 3021 - 1) );
-
-		var doram_title = this.ui.find('.doram_title');
-		doram_title.text( DB.getMessage( 3019 - 1) );
-
-		var doram_desc = this.ui.find('.doram_desc');
-		doram_desc.text( DB.getMessage( 3022 - 1) );
-
-		var hair_style = this.ui.find('.hair_style_title');
-		hair_style.text( DB.getMessage( 3347 - 1) );
-
-		var hair_color = this.ui.find('.hair_color_title');
-		hair_color.text( DB.getMessage( 3348 - 1) );
-
-		var return_msg = this.ui.find('.return');
-		return_msg.text( DB.getMessage( 3352 - 1) );
-
-		var create_msg = this.ui.find('.make');
-		create_msg.text( DB.getMessage( 3346 - 1) );
+		setFormattedText(qs('.title'), DB.getMessage( 3356 - 1) );
+		setFormattedText(qs('.human_title'), DB.getMessage( 3017 - 1) );
+		setFormattedText(qs('.human_desc'), DB.getMessage( 3021 - 1) );
+		setFormattedText(qs('.doram_title'), DB.getMessage( 3019 - 1) );
+		setFormattedText(qs('.doram_desc'), DB.getMessage( 3022 - 1) );
+		setFormattedText(qs('.hair_style_title'), DB.getMessage( 3347 - 1) );
+		setFormattedText(qs('.hair_color_title'), DB.getMessage( 3348 - 1) );
+		setFormattedText(qs('.return'), DB.getMessage( 3352 - 1) );
+		setFormattedText(qs('.make'), DB.getMessage( 3346 - 1) );
 	};
 
 	/**
@@ -208,7 +218,11 @@ define(function(require)
 			direction: 4
 		});
 
-		this.ui.find('#char_name').val('').focus();
+		var nameInput = qs('#char_name');
+		if (nameInput) {
+			nameInput.value = '';
+			nameInput.focus();
+		}
 
 		// Set default race and gender
 		_race = 'human';
@@ -249,12 +263,17 @@ define(function(require)
 	 * Update model hairstyle
 	 */
 	function updateHStyle (event) {
+		var target = event.target.closest('.hstyle_button');
+		if (!target) {
+			return;
+		}
+
 		var type = 'head';
-		var value = parseInt(CharCreatev4.ui.find(event.currentTarget).attr('for'));
+		var value = parseInt(target.getAttribute('for'), 10);
 
 		_prevhead = _model.entity.head;
 		Client.loadFile( DB.INTERFACE_PATH + "make_character_ver2/bt_hairstyle_normal.bmp", function(dataURI) {
-			CharCreatev4.ui.find('.style'+_prevhead).css('backgroundImage', 'url(' + dataURI + ')');
+			DOM.setCss(qs('.style'+_prevhead), 'backgroundImage', 'url(' + dataURI + ')');
 		});
 		
 		_curhead = value;
@@ -266,13 +285,18 @@ define(function(require)
 	 * Update model haircolor
 	 */
 	function updateHColor (event) {
+		var target = event.target.closest('.hcolor_button');
+		if (!target) {
+			return;
+		}
+
 		var type = 'headpalette';
-		var value = parseInt(CharCreatev4.ui.find(event.currentTarget).attr('for'));
+		var value = parseInt(target.getAttribute('for'), 10);
 
 		_prevcolor = _model.entity.headpalette;
 
 		Client.loadFile( DB.INTERFACE_PATH + "make_character_ver2/color0"+(parseInt(_prevcolor) + 1)+"_off.bmp", function(dataURI) {
-			CharCreatev4.ui.find('.cstyle0'+_prevcolor).css('backgroundImage', 'url(' + dataURI + ')');
+			DOM.setCss(qs('.cstyle0'+_prevcolor), 'backgroundImage', 'url(' + dataURI + ')');
 		});
 		
 		_curcolor = value;
@@ -284,26 +308,26 @@ define(function(require)
 	 * Update model race
 	 */
 	function updateRace (){
-		var select = CharCreatev4.ui.find('.race').filter(':checked');
+		var select = qs('.race:checked');
 		var type = 'race';
 		var value = 0;
 
-		if (select[0].id === "human_race") {
+		if (select && select.id === "human_race") {
 			Client.loadFile( DB.INTERFACE_PATH + "make_character_ver2/img_human_on.bmp", function(dataURI) {
-                CharCreatev4.ui.find('.human_label').css('backgroundImage', 'url(' + dataURI + ')');
+                DOM.setCss(qs('.human_label'), 'backgroundImage', 'url(' + dataURI + ')');
             });
 			Client.loadFile( DB.INTERFACE_PATH + "make_character_ver2/img_doram_off.bmp", function(dataURI) {
-                CharCreatev4.ui.find('.doram_label').css('backgroundImage', 'url(' + dataURI + ')');
+                DOM.setCss(qs('.doram_label'), 'backgroundImage', 'url(' + dataURI + ')');
             });
 			value = 0;
 		}
 		
-		if (select[0].id === "doram_race") {
+		if (select && select.id === "doram_race") {
 			Client.loadFile( DB.INTERFACE_PATH + "make_character_ver2/img_human_off.bmp", function(dataURI) {
-                CharCreatev4.ui.find('.human_label').css('backgroundImage', 'url(' + dataURI + ')');
+                DOM.setCss(qs('.human_label'), 'backgroundImage', 'url(' + dataURI + ')');
             });
 			Client.loadFile( DB.INTERFACE_PATH + "make_character_ver2/img_doram_on.bmp", function(dataURI) {
-                CharCreatev4.ui.find('.doram_label').css('backgroundImage', 'url(' + dataURI + ')');
+                DOM.setCss(qs('.doram_label'), 'backgroundImage', 'url(' + dataURI + ')');
             });
 			value = 4218;
 		}
@@ -311,7 +335,7 @@ define(function(require)
 		// In between changes of race, it needs to clear everything
 		for (var i = 1; i <= 24; i++) {
 			Client.loadFile( DB.INTERFACE_PATH + "make_character_ver2/bt_hairstyle_normal.bmp", function(dataURI) {
-				CharCreatev4.ui.find('.style'+i).css('backgroundImage', 'url(' + dataURI + ')');
+				DOM.setCss(qs('.style'+i), 'backgroundImage', 'url(' + dataURI + ')');
 			});
 		}
 
@@ -363,21 +387,26 @@ define(function(require)
 		}
 
 		Client.loadFile( DB.INTERFACE_PATH + "make_character_ver2/bt_male_off.bmp", function(dataURI) {
-	    	CharCreatev4.ui.find('#male_container').css('backgroundImage', 'url(' + dataURI + ')');
+	    	DOM.setCss(qs('#male_container'), 'backgroundImage', 'url(' + dataURI + ')');
 		});
 		Client.loadFile( DB.INTERFACE_PATH + "make_character_ver2/bt_female_off.bmp", function(dataURI) {
-	    	CharCreatev4.ui.find('#female_container').css('backgroundImage', 'url(' + dataURI + ')');
+	    	DOM.setCss(qs('#female_container'), 'backgroundImage', 'url(' + dataURI + ')');
 		});
 
 		Client.loadFile( DB.INTERFACE_PATH + "make_character_ver2/bt_"+_gender+"_on.bmp", function(dataURI) {
-	    	CharCreatev4.ui.find('#'+_gender+'_container').css('backgroundImage', 'url(' + dataURI + ')');
+	    	DOM.setCss(qs('#'+_gender+'_container'), 'backgroundImage', 'url(' + dataURI + ')');
 		});
 
 		// Hide everything first still
-		CharCreatev4.ui.find('.hair-style').css('display', "none");
+		qsa('.hair-style').forEach(function(el) {
+			el.style.display = 'none';
+		});
 
 		// Show the correct one
-		CharCreatev4.ui.find('#'+_race+'_'+_gender+'').css('display', "block");
+		var styleList = qs('#'+_race+'_'+_gender);
+		if (styleList) {
+			styleList.style.display = 'block';
+		}
 		
 	};
 
@@ -386,10 +415,10 @@ define(function(require)
 	 */
 	function create()
 	{
-		var ui = CharCreatev4.ui;
+		var nameInput = qs('#char_name');
 
 		CharCreatev4.onCharCreationRequest(
-			ui.find('#char_name').val(),
+			nameInput ? nameInput.value : '',
 			1,
 			1,
 			1,
@@ -412,15 +441,32 @@ define(function(require)
 		_curhead = 1;
 		_prevcolor = 0;
 		_curcolor = 0;
-		CharCreatev4.ui.find('#human_race').prop('checked', true);
-		CharCreatev4.ui.find('#male').prop('checked', true);
-		CharCreatev4.ui.find('.hstyle').prop('checked', false);
-		CharCreatev4.ui.find('#1_human_male').prop('checked', true);
-		CharCreatev4.ui.find('#0_color').prop('checked', true);
+
+		var humanRace = qs('#human_race');
+		var maleRadio = qs('#male');
+		if (humanRace) {
+			humanRace.checked = true;
+		}
+		if (maleRadio) {
+			maleRadio.checked = true;
+		}
+
+		qsa('.hstyle').forEach(function(el) {
+			el.checked = false;
+		});
+
+		var defaultStyle = qs('#1_human_male');
+		var defaultColor = qs('#0_color');
+		if (defaultStyle) {
+			defaultStyle.checked = true;
+		}
+		if (defaultColor) {
+			defaultColor.checked = true;
+		}
 
 		for (var i = 0; i <= 8; i++) {
 			Client.loadFile( DB.INTERFACE_PATH + "make_character_ver2/color0"+ (i+1) +"_off.bmp", function(dataURI) {
-				CharCreatev4.ui.find('.cstyle0'+i).css('backgroundImage', 'url(' + dataURI + ')');
+				DOM.setCss(qs('.cstyle0'+i), 'backgroundImage', 'url(' + dataURI + ')');
 			});
 		}
 		
@@ -527,25 +573,28 @@ define(function(require)
 	
 		// Need this to persist, rendering resets them?
 
-		CharCreatev4.ui.find('#char_name').focus();
+		var nameInput = qs('#char_name');
+		if (nameInput) {
+			nameInput.focus();
+		}
 
 		Client.loadFile( DB.INTERFACE_PATH + "make_character_ver2/img_"+_race+"_on.bmp", function(dataURI) {
-			CharCreatev4.ui.find('.'+_race+'_label').css('backgroundImage', 'url(' + dataURI + ')');
+			DOM.setCss(qs('.'+_race+'_label'), 'backgroundImage', 'url(' + dataURI + ')');
 		});
 
 		Client.loadFile( DB.INTERFACE_PATH + "make_character_ver2/bt_"+_gender+"_on.bmp", function(dataURI) {
-	    	CharCreatev4.ui.find('#'+_gender+'_container').css('backgroundImage', 'url(' + dataURI + ')');
+	    	DOM.setCss(qs('#'+_gender+'_container'), 'backgroundImage', 'url(' + dataURI + ')');
 		});
 
 		Client.loadFile( DB.INTERFACE_PATH + "make_character_ver2/color0"+(parseInt(_curcolor) + 1)+"_on.bmp", function(dataURI) {
-	    	CharCreatev4.ui.find('.cstyle0'+_curcolor).css('backgroundImage', 'url(' + dataURI + ')');
+	    	DOM.setCss(qs('.cstyle0'+_curcolor), 'backgroundImage', 'url(' + dataURI + ')');
 		});
 
 		Client.loadFile( DB.INTERFACE_PATH + "make_character_ver2/bt_hairstyle_normal.bmp", function(dataURI) {
-			CharCreatev4.ui.find('.style'+_prevhead).css('backgroundImage', 'url(' + dataURI + ')');
+			DOM.setCss(qs('.style'+_prevhead), 'backgroundImage', 'url(' + dataURI + ')');
 		});
 		Client.loadFile( DB.INTERFACE_PATH + "make_character_ver2/bt_hairstyle_select.bmp", function(dataURI) {
-			CharCreatev4.ui.find('.style'+_curhead).css('backgroundImage', 'url(' + dataURI + ')');
+			DOM.setCss(qs('.style'+_curhead), 'backgroundImage', 'url(' + dataURI + ')');
 		});
 	}
 

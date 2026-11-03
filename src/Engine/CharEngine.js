@@ -15,7 +15,7 @@ define(function( require )
 
 
 	// Load modules
-	var jQuery     = require('Utils/jquery');
+	var DOM        = require('Utils/DOM');
 	var DB         = require('DB/DBManager');
 	var Configs    = require('Core/Configs');
 	var Events     = require('Core/Events');
@@ -329,7 +329,7 @@ define(function( require )
 		function onCancel() {
 			InputBox.remove();
 			_ui_box.remove();
-			_overlay.detach();
+			_overlay.remove();
 			Events.clearTimeout(_TimeOut);
 			onDeleteAnswer({ ErrorCode: -2});
 		}
@@ -343,14 +343,15 @@ define(function( require )
 				InputBox.setType('mail', true);
 			}
 			InputBox.onSubmitRequest = onSubmit;
-			_ui_box.ui.css('zIndex', 50); // ui same zIndex bg
-			_overlay.css('zIndex', 51); // overlay same zIndex input
+			_ui_box.ui.style.zIndex = '50'; // ui same zIndex bg
+			_overlay.style.zIndex = '51'; // overlay same zIndex input
 			_ui_box.append(); // don't remove message box
 		}
 
 		// Display prompt message
 		_ui_box  = UIManager.showPromptBox( DB.getMessage(19), 'ok', 'cancel', onOk, onCancel);
-		_overlay = jQuery('<div/>').addClass('win_popup_overlay').appendTo('body');
+		_overlay = DOM.createElement('<div class="win_popup_overlay"></div>');
+		document.body.appendChild(_overlay);
 
 		// Submit the mail/birthdate
 		function onSubmit(input){
@@ -372,7 +373,7 @@ define(function( require )
 				_height = _canvas.height = 15;
 				_canvas.style.marginTop  = '10px';
 				_canvas.style.marginLeft = '20px';
-				_ui_box.ui.append(_canvas);
+				_ui_box.ui.appendChild(_canvas);
 
 				// Parameter
 				_time_end = Date.now() + 10000;
@@ -382,7 +383,7 @@ define(function( require )
 				render();
 			} else {	// No waiting time
 				_ui_box.remove();
-				_overlay.detach();
+				_overlay.remove();
 				deleteCharacter();
 				return;
 			}
@@ -397,13 +398,16 @@ define(function( require )
 			// Delete character
 			if (percent >= 100) {
 				_ui_box.remove();
-				_overlay.detach();
+				_overlay.remove();
 				deleteCharacter();
 				return;
 			}
 
 			// Update text
-			_ui_box.ui.find('.text').text( DB.getMessage(296).replace('%d', Math.round(10-percent/10) ) );
+			var textEl = _ui_box.ui.querySelector('.text');
+			if (textEl) {
+				DOM.setFormattedText(textEl, DB.getMessage(296).replace('%d', Math.round(10-percent/10)), DB.getItemInfo);
+			}
 
 			// Update progressbar
 			_ctx.clearRect(0, 0, _width, _height);

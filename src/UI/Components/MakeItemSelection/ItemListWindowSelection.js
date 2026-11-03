@@ -13,7 +13,6 @@
      /**
       * Dependencies
       */
-     var jQuery      = require('Utils/jquery');
      var DB          = require('DB/DBManager');
      var Preferences = require('Core/Preferences');     
      var ConvertItems= require('UI/Components/MakeItemSelection/ItemConvertSelection/ConvertItems');
@@ -26,6 +25,7 @@
      var Inventory   = require('UI/Components/Inventory/Inventory');
      var htmlText    = require('text!./ItemListWindowSelection.html');
      var cssText     = require('text!./ItemListWindowSelection.css');
+     var DOM         = require('Utils/DOM');
      var getModule   = require;
 
     
@@ -56,32 +56,32 @@
     ItemListWindowSelection.init = function init()
     {
         // Show at center.
-        this.ui.css({
+        DOM.setCss(this.ui, {
             top:  (Renderer.height- 200)/2,
             left: (Renderer.width - 655)/2
         });
 
         this.list  = [];
 
-        this.draggable(this.ui.find('.head'));
-        this.ui.find('.footer .extend').mousedown(onResize);
-        this.ui.find('.event_selectall').mousedown(onToggleSelectAmount);
+        this.draggable(this.ui.querySelector('.head'));
+        this.ui.querySelector('.footer .extend').addEventListener('mousedown', onResize);
+        this.ui.querySelector('.event_selectall').addEventListener('mousedown', onToggleSelectAmount);
 
 
         resizeHeight(_preferences.height);
              
-        this.ui
-        .on('drop',     onDrop)
-        .on('dragover', stopPropagation)
-			.find('.container .content')
-				.on('mousewheel DOMMouseScroll', onScroll)
-				.on('mouseover',   '.item',      onItemOver)
-				.on('mouseout',    '.item',      onItemOut)
-				.on('dragstart',   '.item',      onItemDragStart)
-				.on('dragend',     '.item',      onItemDragEnd)
-				.on('contextmenu', '.item',      onItemInfo);
+        this.ui.addEventListener('drop', onDrop);
+        this.ui.addEventListener('dragover', stopPropagation);
+        var _ilwContent = this.ui.querySelector('.container .content');
+        _ilwContent.addEventListener('mousewheel', onScroll);
+        _ilwContent.addEventListener('DOMMouseScroll', onScroll);
+        DOM.addDelegatedEvent(_ilwContent, 'mouseover', '.item', onItemOver);
+        DOM.addDelegatedEvent(_ilwContent, 'mouseout', '.item', onItemOut);
+        DOM.addDelegatedEvent(_ilwContent, 'dragstart', '.item', onItemDragStart);
+        DOM.addDelegatedEvent(_ilwContent, 'dragend', '.item', onItemDragEnd);
+        DOM.addDelegatedEvent(_ilwContent, 'contextmenu', '.item', onItemInfo);
 
-        this.draggable(this.ui.find('.titlebar'));
+        this.draggable(this.ui.querySelector('.titlebar'));
         
         this.setList(Inventory.getUI().list);
      };
@@ -104,7 +104,7 @@
       */
      ItemListWindowSelection.setList = function setList(listItems)
      {
-        this.ui.find('.container .content').empty();
+        this.ui.querySelector('.container .content').innerHTML = '';
         this.list = listItems;
         var i, count;
 
@@ -119,16 +119,16 @@
 
         var it   = DB.getItemInfo( item.ITID );
 
-        this.ui.find('.container .content').append(
+        this.ui.querySelector('.container .content').insertAdjacentHTML('beforeend',
             '<div class="item" data-index="' + item.index +'" draggable="true">' +
                 '<div class="icon"></div>' +
                 '<div class="amount">'+ (item.count ? '<span class="count">' + item.count + '</span>' + ' ' : '') + '</div>' +
-                '<span class="name">' + jQuery.escape(DB.getItemName(item)) + '</span>' +
+                '<span class="name">' + DOM.escapeHtml(DB.getItemName(item)) + '</span>' +
             '</div>'
         );
 
         Client.loadFile( DB.INTERFACE_PATH + 'item/' + ( item.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName ) + '.bmp', function(data){
-            this.ui.find('.item[data-index="'+ item.index +'"] .icon').css('backgroundImage', 'url('+ data +')');
+            this.ui.querySelector('.item[data-index="'+ item.index +'"] .icon').style.backgroundImage = 'url('+ data +')';
         }.bind(this));
     }
 
@@ -142,7 +142,7 @@
     {
         this.list.push(item);
         var i, count;
-		this.ui.find('.item').remove();
+		this.ui.querySelector('.item').remove();
 
         for (i = 0, count = this.list.length; i < count; ++i) {
             this.addItem(this.list[i]);
@@ -156,7 +156,7 @@
 	function onResize()
 	{
 		var ui         = ItemListWindowSelection.ui;
-		var top        = ui.position().top;
+		var top        = DOM.getPosition(ui).top;
 		var lastHeight = 0;
 		var _Interval;
 
@@ -180,12 +180,13 @@
 		_Interval = setInterval( resizing, 30);
 
 		// Stop resizing on left click
-		jQuery(window).on('mouseup.resize', function(event){
+		var _resizeHandler = function(event){
 			if (event.which === 1) {
 				clearInterval(_Interval);
-				jQuery(window).off('mouseup.resize');
+				window.removeEventListener('mouseup', _resizeHandler);
 			}
-		});
+		};
+		window.addEventListener('mouseup', _resizeHandler);
 	}
 
 
@@ -196,8 +197,8 @@
 	{
 		height = Math.min( Math.max(height, 8), 17);
 
-		ItemListWindowSelection.ui.find('.container .content').css('height', height * 32);
-		ItemListWindowSelection.ui.css('height', 31 + 19 + height * 32);
+		ItemListWindowSelection.ui.querySelector('.container .content').style.height = height * 32;
+		ItemListWindowSelection.ui.style.height = 31 + 19 + height * 32;
 	}
      
     
@@ -208,7 +209,7 @@
       */
      ItemListWindowSelection.setTitle = function setTitle( title )
      {
-         this.ui.find('.head .text').text( title );
+         this.ui.querySelector('.head .text').textContent =  title ;
      };
  
     /**
@@ -246,7 +247,7 @@
 			this.list[i].count -= count;
 
 			if (this.list[i].count > 0) {
-				this.ui.find('.item[data-index="'+ index +'"] .count').text(this.list[i].count);
+				this.ui.querySelector('.item[data-index="'+ index +'"] .count').textContent = this.list[i].count;
 				return this.list[i];
 			}
 		}
@@ -254,7 +255,7 @@
 		// Remove item
 		item = this.list[i];
 		this.list.splice( i, 1 );
-		this.ui.find('.item[data-index="'+ index +'"]').remove();
+		this.ui.querySelector('.item[data-index="'+ index +'"]').remove();
 
 		return item;
 	};
@@ -278,17 +279,17 @@
  
          // Update quantity
          if (item.count > 0) {
-             this.ui.find('.item[data-index="'+ item.index +'"] .count').text( item.count );
+             this.ui.querySelector('.item[data-index="'+ item.index +'"] .count').textContent =  item.count ;
              return;
          }
  
          // no quantity, remove
          this.list.splice( this.list.indexOf(item), 1 );
-         this.ui.find('.item[data-index="'+ item.index +'"]').remove();
+         this.ui.querySelector('.item[data-index="'+ item.index +'"]').remove();
  
-         var content = this.ui.find('.container .content');
-         if (content.height() === content[0].scrollHeight) {
-             this.ui.find('.hide').show();
+         var content = this.ui.querySelector('.container .content');
+         if (content.offsetHeight === content.scrollHeight) {
+             this.ui.querySelector('.hide').style.display = '';
          }
      };
 
@@ -324,7 +325,7 @@
 	 */
 	function onItemOut()
 	{
-		ItemListWindowSelection.ui.find('.overlay').hide();
+		ItemListWindowSelection.ui.querySelector('.overlay').style.display = 'none';
 	}
      
      /**
@@ -345,8 +346,8 @@
 		url     = url = url.replace(/^\"/, '').replace(/\"$/, ''); // Firefox bug
 		img.src = url;
 
-		event.originalEvent.dataTransfer.setDragImage( img, 12, 12 );
-		event.originalEvent.dataTransfer.setData('Text',
+		event.dataTransfer.setDragImage( img, 12, 12 );
+		event.dataTransfer.setData('Text',
 			JSON.stringify( window._OBJ_DRAG_ = {
 				type: 'item',
 				from: 'ItemListWindowSelection',
@@ -366,8 +367,8 @@
 		_preferences.select_all = !_preferences.select_all;
 
 		Client.loadFile(DB.INTERFACE_PATH + 'checkbox_' + (_preferences.select_all ? 1 : 0) + '.bmp', function(data) {
-			this.css('background-image', 'url(' + data + ')');
-		}.bind(ItemListWindowSelection.ui.find('.selectall')));
+			this.style.backgroundImage = 'url(' + data + ')';
+		}.bind(ItemListWindowSelection.ui.querySelector('.selectall')));
 	}
 
     /**
@@ -436,7 +437,7 @@
 
          try {
              data = JSON.parse(
-                 event.originalEvent.dataTransfer.getData('Text')
+                 event.dataTransfer.getData('Text')
              );
          }
          catch(e) {}
@@ -497,14 +498,14 @@
 	{
 		var delta;
 
-		if (event.originalEvent.wheelDelta) {
-			delta = event.originalEvent.wheelDelta / 120 ;
+		if (event.wheelDelta) {
+			delta = event.wheelDelta / 120 ;
 			if (window.opera) {
 				delta = -delta;
 			}
 		}
-		else if (event.originalEvent.detail) {
-			delta = -event.originalEvent.detail;
+		else if (event.detail) {
+			delta = -event.detail;
 		}
 
 		this.scrollTop = Math.floor(this.scrollTop/32) * 32 - (delta * 32);
@@ -527,19 +528,19 @@
 
 		// Get back data
 		var item    = ItemListWindowSelection.list[i];
-		var pos     = jQuery(this).position();
-		var overlay = ItemListWindowSelection.ui.find('.overlay');
+		var pos     = DOM.getPosition(this);
+		var overlay = ItemListWindowSelection.ui.querySelector('.overlay');
 
 		// Display box
-		overlay.show();
-		overlay.css({top: pos.top-10, left:pos.left+35});
-		overlay.text(DB.getItemName(item) + ' ' + ( item.count || 1 ) + ' ea');
+		overlay.style.display = '';
+		overlay.style.top = pos.top-10; overlay.style.left = pos.left+35;
+		overlay.textContent = DB.getItemName(item) + ' ' + ( item.count || 1 ) + ' ea';
 
 		if (item.IsIdentified) {
-			overlay.removeClass('grey');
+			overlay.classList.remove('grey');
 		}
 		else {
-			overlay.addClass('grey');
+			overlay.classList.add('grey');
 		}
 	}
     

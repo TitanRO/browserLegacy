@@ -18,6 +18,7 @@
      var UIComponent = require('UI/UIComponent');
      var htmlText    = require('text!./MakeModelMessage.html');
      var cssText     = require('text!./MakeModelMessage.css');
+     var DOM         = require('Utils/DOM');
      var getModule   = require;
 
      /**
@@ -31,15 +32,15 @@
     MakeModelMessage.init = function init()
     {
         // Show at center.
-        this.ui.css({
+        DOM.setCss(this.ui, {
             top:  (Renderer.height- 200)/2,
             left: (Renderer.width - 200)/2
         });
 
-        this.ui.find('.ok').on('click',onSendMaterial); 
-        this.ui.find('.cancel').on('click',onClose);
+        this.ui.querySelector('.ok').addEventListener('click', onSendMaterial); 
+        this.ui.querySelector('.cancel').addEventListener('click', onClose);
 
-        this.draggable(this.ui.find('.titlebar'));
+        this.draggable(this.ui.querySelector('.titlebar'));
     };
 
     function onSendMaterial(event){

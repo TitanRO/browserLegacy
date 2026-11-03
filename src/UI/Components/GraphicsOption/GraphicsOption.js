@@ -25,6 +25,7 @@ define(function(require)
 	var UIComponent      = require('UI/UIComponent');
 	var htmlText         = require('text!./GraphicsOption.html');
 	var cssText          = require('text!./GraphicsOption.css');
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -47,19 +48,19 @@ define(function(require)
 	 */
 	GraphicsOption.init = function Init()
 	{
-		this.ui.find('.base').mousedown(function(event) {
+		this.ui.querySelector('.base').addEventListener('mousedown', function(event) {
 			event.stopImmediatePropagation();
 			return false;
 		});
 
-		this.ui.find('.close').click(this.remove.bind(this));
-		this.ui.find('.details').change(onUpdateQualityDetails);
-		this.ui.find('.cursor-option').change(onToggleGameCursor);
-		this.ui.find('.screensize').change(onUpdateScreenSize);
-		this.ui.find('.fpslimit').change(onUpdateFPSLimit);
-		this.ui.find('.fps').change(onToggleFPSDisplay);
+		this.ui.querySelector('.close').addEventListener('click', this.remove.bind(this));
+		this.ui.querySelector('.details').addEventListener('change', onUpdateQualityDetails);
+		this.ui.querySelector('.cursor-option').addEventListener('change', onToggleGameCursor);
+		this.ui.querySelector('.screensize').addEventListener('change', onUpdateScreenSize);
+		this.ui.querySelector('.fpslimit').addEventListener('change', onUpdateFPSLimit);
+		this.ui.querySelector('.fps').addEventListener('change', onToggleFPSDisplay);
 
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 	};
 
 
@@ -69,16 +70,16 @@ define(function(require)
 	 */
 	GraphicsOption.onAppend = function OnAppend()
 	{
-		this.ui.css({
+		DOM.setCss(this.ui, {
 			top:  _preferences.y,
 			left: _preferences.x,
 		});
 
-		this.ui.find('.details').val(GraphicsSettings.quality);
-		this.ui.find('.screensize').val(GraphicsSettings.screensize);
-		this.ui.find('.cursor-option').attr('checked', GraphicsSettings.cursor);
-		this.ui.find('.fpslimit').val(GraphicsSettings.fpslimit);
-		this.ui.find('.fps').attr('checked', FPS.ui.is(':visible'));
+		this.ui.querySelector('.details').value = GraphicsSettings.quality;
+		this.ui.querySelector('.screensize').value = GraphicsSettings.screensize;
+		this.ui.querySelector('.cursor-option').setAttribute('checked', GraphicsSettings.cursor);
+		this.ui.querySelector('.fpslimit').value = GraphicsSettings.fpslimit;
+		this.ui.querySelector('.fps').setAttribute('checked', DOM.isVisible(FPS.ui));
 	};
 
 
@@ -87,8 +88,8 @@ define(function(require)
 	 */
 	GraphicsOption.onRemove = function OnRemove()
 	{
-		_preferences.x    = parseInt(this.ui.css('left'), 10);
-		_preferences.y    = parseInt(this.ui.css('top'), 10);
+		_preferences.x    = parseInt(this.ui.style.left, 10);
+		_preferences.y    = parseInt(this.ui.style.top, 10);
 		_preferences.save();
 	};
 

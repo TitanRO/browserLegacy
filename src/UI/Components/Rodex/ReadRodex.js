@@ -24,6 +24,7 @@
 	 var cssText            = require('text!./ReadRodex.css');
 	 var Rodex              = require('UI/Components/Rodex/Rodex');
 	 var getModule    		= require;
+	 var DOM                = require('Utils/DOM');
   
 	 /**
 	  * Create Component
@@ -46,14 +47,14 @@
 	ReadRodex.onAppend = function onAppend()
 	{
 		// Bind buttons
-		ReadRodex.ui.find('.right .close').on('click', onClickClose);
-		
-		ReadRodex.ui.css({
-			top:  Math.min( Math.max( 0, parseInt(getModule('UI/Components/Rodex/Rodex').ui.css('top'), 10)), Renderer.height - ReadRodex.ui.height()),
-			left: Math.min( Math.max( 0, parseInt(getModule('UI/Components/Rodex/Rodex').ui.css('left'), 10)) + 310, Renderer.width  - ReadRodex.ui.width())
+		ReadRodex.ui.querySelector('.right .close').addEventListener('click', onClickClose);
+
+		DOM.setCss(ReadRodex.ui, {
+			top:  Math.min( Math.max( 0, parseInt(getModule('UI/Components/Rodex/Rodex').ui.style.top, 10) || 0), Renderer.height - ReadRodex.ui.offsetHeight),
+			left: Math.min( Math.max( 0, parseInt(getModule('UI/Components/Rodex/Rodex').ui.style.left, 10) || 0) + 310, Renderer.width  - ReadRodex.ui.offsetWidth)
 		});
 
-		ReadRodex.draggable(ReadRodex.ui.find('.titlebar'));
+		ReadRodex.draggable(ReadRodex.ui.querySelector('.titlebar'));
 	};
 
 	/**
@@ -61,7 +62,7 @@
 	  */
 	ReadRodex.onRemove = function OnRemove()
 	{
-		 _preferences.show   =  this.ui.is(':visible');
+		 _preferences.show   =  DOM.isVisible(this.ui);
 		 _preferences.save();
 	}
 
@@ -71,40 +72,43 @@
 		ReadRodex.MailID = mail.MailID;
 		ReadRodex.openType = mail.openType;
 		ReadRodex.SenderName = mail.SenderName;
-		ReadRodex.ui.find('.name').html(mail.SenderName);
-		ReadRodex.ui.find('.title-text').html(mail.title);
-		ReadRodex.ui.find('.content-text').html(data.Textcontent);
-		ReadRodex.ui.find('.value').html(prettifyZeny(data.zeny));
-		this.ui.find('.get-content').on('click', onClickGetItems);
-		this.ui.find('.get-zeny').on('click', onClickGetZeny);
-		this.ui.find('.delete').on('click', onClickDelete);
-		this.ui.find('.reply').on('click', onClickReply);
-		let content = ReadRodex.ui.find('.item-list');
-		content.html('');
+		ReadRodex.ui.querySelector('.name').innerHTML = mail.SenderName;
+		ReadRodex.ui.querySelector('.title-text').innerHTML = mail.title;
+		ReadRodex.ui.querySelector('.content-text').innerHTML = data.Textcontent;
+		ReadRodex.ui.querySelector('.value').innerHTML = prettifyZeny(data.zeny);
+		this.ui.querySelector('.get-content').addEventListener('click', onClickGetItems);
+		this.ui.querySelector('.get-zeny').addEventListener('click', onClickGetZeny);
+		this.ui.querySelector('.delete').addEventListener('click', onClickDelete);
+		this.ui.querySelector('.reply').addEventListener('click', onClickReply);
+		let content = ReadRodex.ui.querySelector('.item-list');
+		content.innerHTML = '';
 		for(let i = 0; i < data.ItemList.length; i++) {
 			let item = data.ItemList[i];
 			let it      = DB.getItemInfo( item.ITID );
-			content.append(
-				'<div class="item" data-index="'+ i +'">' +
-					'<div class="icon"></div>' +				
-					'<div class="amount"><span class="count">' + (item.count || 1) + '</span></div>' +
-				'</div>'
-			);
-			Client.loadFile( DB.INTERFACE_PATH + 'item/' + it.identifiedResourceName + '.bmp', function(data){
-				content.find('.item[data-index="'+ i +'"] .icon').css('backgroundImage', 'url('+ data +')');
-			});
+			(function(idx){
+				content.insertAdjacentHTML('beforeend',
+					'<div class="item" data-index="'+ idx +'">' +
+						'<div class="icon"></div>' +
+						'<div class="amount"><span class="count">' + (item.count || 1) + '</span></div>' +
+					'</div>'
+				);
+				Client.loadFile( DB.INTERFACE_PATH + 'item/' + it.identifiedResourceName + '.bmp', function(data){
+					var iconEl = content.querySelector('.item[data-index="'+ idx +'"] .icon');
+					if (iconEl) iconEl.style.backgroundImage = 'url('+ data +')';
+				});
+			})(i);
 		}
 		if(data.ItemList.length > 0) {
-			this.ui.find('.get-content').show();
+			this.ui.querySelector('.get-content').style.display = '';
 		} else {
-			this.ui.find('.get-content').hide();
+			this.ui.querySelector('.get-content').style.display = 'none';
 		}
 		if(data.zeny > 0) {
-			this.ui.find('.get-zeny').show();
+			this.ui.querySelector('.get-zeny').style.display = '';
 		} else {
-			this.ui.find('.get-zeny').hide();
+			this.ui.querySelector('.get-zeny').style.display = 'none';
 		}
-		ReadRodex.ui.show();
+		ReadRodex.ui.style.display = '';
 		ReadRodex.ui.focus();
 
 	}
@@ -114,7 +118,7 @@
 		ReadRodex.MailID = 0;
 		ReadRodex.openType = 0;
 		ReadRodex.SenderName = ""
-		ReadRodex.ui.hide();
+		ReadRodex.ui.style.display = 'none';
 	}
 
 	function onClickGetItems(e) {
@@ -142,19 +146,19 @@
 	}
 
 	ReadRodex.clearItemList = function clearItemList() {
-		ReadRodex.ui.find('.item-list').html('');
+		ReadRodex.ui.querySelector('.item-list').innerHTML = '';
 
 	}
 
 	ReadRodex.clearZeny = function clearZeny() {
-		ReadRodex.ui.find('.value').html('');
+		ReadRodex.ui.querySelector('.value').innerHTML = '';
 	}
 
 	ReadRodex.close = function close() {
 		ReadRodex.MailID = 0;
 		ReadRodex.openType = 0;
 		ReadRodex.SenderName = ""
-		ReadRodex.ui.hide();
+		ReadRodex.ui.style.display = 'none';
 	}
 
 	 /**

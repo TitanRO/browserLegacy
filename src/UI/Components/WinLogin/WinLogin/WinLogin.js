@@ -71,14 +71,17 @@ define(function(require)
 		this.draggable();
 
 		// Save Elements
-		_inputUsername = ui.find('.user').mousedown(function(event){ this.focus(); this.value = ''; event.stopImmediatePropagation(); return false; });
-		_inputPassword = ui.find('.pass').mousedown(function(event){ this.focus(); this.value = ''; event.stopImmediatePropagation(); return false; });
-		_buttonSave    = ui.find('.save').mousedown(toggleSaveButton);
+		_inputUsername = ui.querySelector('.user');
+		_inputPassword = ui.querySelector('.pass');
+		_buttonSave    = ui.querySelector('.save');
+		_inputUsername.addEventListener('mousedown', function(event){ this.focus(); this.value = ''; event.stopImmediatePropagation(); return false; });
+		_inputPassword.addEventListener('mousedown', function(event){ this.focus(); this.value = ''; event.stopImmediatePropagation(); return false; });
+		_buttonSave.addEventListener('mousedown', toggleSaveButton);
 
 		// Connect / Exit
-		ui.find('.signup').click(signup);
-		ui.find('.connect').click(connect);
-		ui.find('.exit').click(exit);
+		ui.querySelector('.signup').addEventListener('click', signup);
+		ui.querySelector('.connect').addEventListener('click', connect);
+		ui.querySelector('.exit').addEventListener('click', exit);
 	};
 
 
@@ -88,12 +91,12 @@ define(function(require)
 	WinLogin.onAppend = function onAppend()
 	{
 		// Complete element
-		_inputUsername.val(_preferences.saveID ? _preferences.ID : '');
-		_inputPassword.val('');
+		_inputUsername.value = _preferences.saveID ? _preferences.ID : '';
+		_inputPassword.value = '';
 
 		// Display save button
 		Client.loadFile( DB.INTERFACE_PATH + 'login_interface/chk_save' + ( _preferences.saveID ? 'on' : 'off' ) + '.bmp', function(url) {
-			_buttonSave.css('backgroundImage', 'url(' + url + ')');
+			_buttonSave.style.backgroundImage = 'url(' + url + ')';
 		});
 
 		if (_preferences.ID.length) {
@@ -126,8 +129,9 @@ define(function(require)
 				return false;
 
 			case KEYS.TAB:
-				var button = document.activeElement === _inputUsername[0] ? _inputPassword : _inputUsername;
-				button.focus().select();
+				var button = document.activeElement === _inputUsername ? _inputPassword : _inputUsername;
+				button.focus();
+				button.select();
 				event.stopImmediatePropagation();
 				return false;
 		}
@@ -147,7 +151,7 @@ define(function(require)
 		_preferences.saveID = !_preferences.saveID;
 
 		Client.loadFile( DB.INTERFACE_PATH + 'login_interface/chk_save' + ( _preferences.saveID ? 'on' : 'off' ) + '.bmp', function(url) {
-			_buttonSave.css('backgroundImage', 'url(' + url + ')');
+			_buttonSave.style.backgroundImage = 'url(' + url + ')';
 		});
 
 		event.stopImmediatePropagation();
@@ -172,8 +176,8 @@ define(function(require)
 	 */
 	function connect()
 	{
-		var user = _inputUsername.val();
-		var pass = _inputPassword.val();
+		var user = _inputUsername.value;
+		var pass = _inputPassword.value;
 
 		// Store variable in localStorage
 		if (_preferences.saveID) {

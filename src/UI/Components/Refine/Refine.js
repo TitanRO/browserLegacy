@@ -18,7 +18,6 @@ define(function(require)
 	var Network            = require('Network/NetworkManager');
 	var PACKET             = require('Network/PacketStructure');
 	var PACKETVER   	   = require('Network/PacketVerManager');
-	var jQuery             = require('Utils/jquery');
 	var Client             = require('Core/Client');
 	var Session            = require('Engine/SessionStorage');
 	var UIManager          = require('UI/UIManager');
@@ -32,6 +31,7 @@ define(function(require)
 	var htmlText           = require('text!./Refine.html');
 	var cssText            = require('text!./Refine.css');
 	var getModule          = require;
+	var DOM             = require('Utils/DOM');
 
 	/**
 	 * Create Component
@@ -109,42 +109,47 @@ define(function(require)
 	 */
 	Refine.init = function init()
 	{
-		this.ui.css({ top: 200, left:300 });
-		this.ui.find('.titlebar .base').mousedown(stopPropagation);
-		this.ui.find('.titlebar .close').click(onRefineClose);
-		this.ui.find('.footer .cancel').click(onRefineClose);
+		DOM.setCss(this.ui, { top: 200, left:300 });
+		this.ui.querySelector('.titlebar .base').addEventListener('mousedown', stopPropagation);
+		this.ui.querySelector('.titlebar .close').addEventListener('click', onRefineClose);
+		this.ui.querySelector('.footer .cancel').addEventListener('click', onRefineClose);
 
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 	
 		// Update success div text
-		var successdiv = this.ui.find('.success');
+		var successdiv = this.ui.querySelector('.success');
 		var initialValue = 0;
 		var successtext = DB.getMessage(3724);
 		initialsuccess = successtext.replace('%d%', `<span class="number">${initialValue}</span>`);
-		successdiv.html(initialsuccess);
+		successdiv.innerHTML = initialsuccess;
 
 		// Some Functions
-		this.ui.find('.item_to_refine')
-			.on('drop', onItemDrop).on('dragover', stopPropagation)
-			.on('dragstart',   '.item', onItemDragStart)
-			.on('dragend',     '.item', onItemDragEnd);
-		this.ui.find('.materials').on('mouseover', '.item', onItemOver).on('mouseout', onItemOut);
-		this.ui.find('.materials').on('contextmenu', '.item', onItemInfo);
-		this.ui.find('.item_to_refine').on('contextmenu', '.item', onItemInfo);
-		this.ui.find('.refine_cont').on('mouseover', onItemOver).on('mouseout', onItemOut);
-		this.ui.find('.panel .item_to_refine').on('dblclick', '.item', function() { 
+		var _itemToRefine = this.ui.querySelector('.item_to_refine');
+		_itemToRefine.addEventListener('drop', onItemDrop);
+		_itemToRefine.addEventListener('dragover', stopPropagation);
+		DOM.addDelegatedEvent(_itemToRefine, 'dragstart', '.item', onItemDragStart);
+		DOM.addDelegatedEvent(_itemToRefine, 'dragend', '.item', onItemDragEnd);
+		var _refineMaterials = this.ui.querySelector('.materials');
+		DOM.addDelegatedEvent(_refineMaterials, 'mouseover', '.item', onItemOver);
+		_refineMaterials.addEventListener('mouseout', onItemOut);
+		DOM.addDelegatedEvent(_refineMaterials, 'contextmenu', '.item', onItemInfo);
+		DOM.addDelegatedEvent(this.ui.querySelector('.item_to_refine'), 'contextmenu', '.item', onItemInfo);
+		var _refineCont = this.ui.querySelector('.refine_cont');
+		_refineCont.addEventListener('mouseover', onItemOver);
+		_refineCont.addEventListener('mouseout', onItemOut);
+		DOM.addDelegatedEvent(this.ui.querySelector('.panel .item_to_refine'), 'dblclick', '.item', function() { 
 			if (refine_ongoing === 0) {
 				onRemoveItem(true);
 			}
 		});
-		this.ui.find('.refine_enabled').click(onRequestRefine);
-		this.ui.find('.success_refine_cont_enabled').click(onRequestRefine);
-		this.ui.find('.fail_refine_cont_enabled').click(onRequestRefine);
-		this.ui.find('.back_button').click(onCancelContRefine);
+		this.ui.querySelector('.refine_enabled').addEventListener('click', onRequestRefine);
+		this.ui.querySelector('.success_refine_cont_enabled').addEventListener('click', onRequestRefine);
+		this.ui.querySelector('.fail_refine_cont_enabled').addEventListener('click', onRequestRefine);
+		this.ui.querySelector('.back_button').addEventListener('click', onCancelContRefine);
 
 		// Hide buttons
-		this.ui.find('.refine_enabled').hide();
-		this.ui.find('.some_notifs').hide();
+		this.ui.querySelector('.refine_enabled').style.display = 'none';
+		this.ui.querySelector('.some_notifs').style.display = 'none';
 		onHideContRefineButtons();
 	};
 
@@ -155,7 +160,7 @@ define(function(require)
 	Refine.onAppend = function onAppend()
 	{
 		Refine.hammer = 0;
-		Refine.ui.find('.refine_button').show();
+		Refine.ui.querySelector('.refine_button').style.display = '';
 
 		// Clear any existing timeout
 		clearTimeout(Refine.imageLoopTimeout);
@@ -227,21 +232,19 @@ define(function(require)
 
 		Refine.append();
 		
-		var isInventoryOpen = Inventory.getUI().ui ? Inventory.getUI().ui.is(':visible') : false;
+		var isInventoryOpen = Inventory.getUI().ui ? DOM.isVisible(Inventory.getUI().ui) : false;
 		
 		if (!isInventoryOpen) {
 			Inventory.getUI().toggle();
 		}
 
-		var RefineInfoPos = Refine.ui.offset();
-		var RefineWidth = Refine.ui.outerWidth();
-		var RefineHeight = Refine.ui.outerHeight() - Inventory.getUI().ui.outerHeight();
+		var RefineInfoPos = DOM.getOffset(Refine.ui);
+		var RefineWidth = Refine.ui.offsetWidth;
+		var RefineHeight = Refine.ui.offsetHeight - Inventory.getUI().ui.offsetHeight;
 
-		Inventory.getUI().ui.css({
-			position: 'absolute',
-			top: RefineInfoPos.top ? RefineInfoPos.top + RefineHeight : 200,
-			left: RefineInfoPos.left ?  RefineInfoPos.left + RefineWidth : 300
-		});
+		Inventory.getUI().ui.style.position = 'absolute';
+		Inventory.getUI().ui.style.top = (RefineInfoPos.top ? RefineInfoPos.top + RefineHeight : 200) + 'px';
+		Inventory.getUI().ui.style.left = (RefineInfoPos.left ? RefineInfoPos.left + RefineWidth : 300) + 'px';
 
 		return false;
 	};
@@ -280,7 +283,7 @@ define(function(require)
 	
 		function showImages() {
 			Client.loadFile(DB.INTERFACE_PATH + 'refining_renewal/' + imageArray[currentImageIndex], function (data) {
-				Refine.ui.find('.image-container').css('backgroundImage', 'url(' + data + ')');
+				Refine.ui.querySelector('.image-container').style.backgroundImage = 'url(' + data + ')';
 				currentImageIndex++;
 	
 				if (currentImageIndex >= imageArray.length) {
@@ -315,7 +318,7 @@ define(function(require)
 		event.stopImmediatePropagation();
 
 		try {
-			data = JSON.parse(event.originalEvent.dataTransfer.getData('Text'));
+			data = JSON.parse(event.dataTransfer.getData('Text'));
 			item = data.data;
 		}
 		catch(e) {
@@ -359,8 +362,8 @@ define(function(require)
 
 		if (pkt && pkt.MaterialInfo.length > 0) {
 			// Check if there is already an item in refine UI
-			var existingItem = Refine.ui.find('.item_to_refine .item');
-			if (existingItem.length > 0) {
+			var existingItem = Refine.ui.querySelector('.item_to_refine .item');
+			if (existingItem) {
 				// Remove existing item from refine UI
 				onRemoveItem(false);
 			}
@@ -382,26 +385,26 @@ define(function(require)
 			}
 
 			var it      = DB.getItemInfo( item.ITID );
-			var content = Refine.ui.find('.item_to_refine');
+			var content = Refine.ui.querySelector('.item_to_refine');
 
-			content.append('<div class="item" data-index="'+ item.index +'" draggable="true">' +
+			content.insertAdjacentHTML('beforeend', '<div class="item" data-index="'+ item.index +'" draggable="true">' +
 						'<div class="icon"></div>' +
 						'<div class="grade"></div>' +
 						'</div>'
 			);
 
 			Client.loadFile( DB.INTERFACE_PATH + 'item/' + ( item.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName ) + '.bmp', function(data){
-				content.find('.item[data-index="'+ item.index +'"] .icon').css('backgroundImage', 'url('+ data +')');
+				content.querySelector('.item[data-index="'+ item.index +'"] .icon').style.backgroundImage = 'url('+ data +')';
 			});
 
 			if (item.enchantgrade) {
 				Client.loadFile(DB.INTERFACE_PATH + 'grade_enchant/grade_icon' + item.enchantgrade + '.bmp', function(data){
-					content.find('.item[data-index="'+ item.index +'"] .grade').css('backgroundImage', 'url('+ data +')');
+					content.querySelector('.item[data-index="'+ item.index +'"] .grade').style.backgroundImage = 'url('+ data +')';
 				});
 			}
 
-			var itemname = Refine.ui.find('.item_to_refine_name');
-			itemname.text(DB.getItemName(item));
+			var itemname = Refine.ui.querySelector('.item_to_refine_name');
+			itemname.textContent = DB.getItemName(item);
 
 			// Select previously selected material if available
 			if (Refine.hammer >= 1 && refine_item_mat) {
@@ -452,8 +455,8 @@ define(function(require)
 	function onPopulateMaterials()
 	{
 		// Clear any existing materials
-        Refine.ui.find('.materials .mat_overlay .material').empty();
-        Refine.ui.find('.bsb_overlay .bsb').empty();
+        Refine.ui.querySelector('.materials .mat_overlay .material').innerHTML = '';
+        Refine.ui.querySelector('.bsb_overlay .bsb').innerHTML = '';
 
 		// Update materials
         for (var i = 0; i < refiningMaterials.length; i++) {
@@ -461,32 +464,32 @@ define(function(require)
                 var material = refiningMaterials[i];
                 var it = DB.getItemInfo(material.itemId);
 				var item = Inventory.getUI().getItemById(material.itemId);
-                var materialDiv = Refine.ui.find('.material_' + i);
+                var materialDiv = Refine.ui.querySelector('.material_' + i);
 
 				// Clear previous items
-				materialDiv.empty();
+				materialDiv.innerHTML = '';
 
-                materialDiv.append('<div class="item" data-index="'+ material.itemId +'" draggable="false">' +
+                materialDiv.insertAdjacentHTML('beforeend', '<div class="item" data-index="'+ material.itemId +'" draggable="false">' +
                     '<div class="icon"></div>'+
 					'<div class="mat_count"></div>'+
 					'</div>'
                 );
 
                 Client.loadFile(DB.INTERFACE_PATH + 'item/' + (it.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName) + '.bmp', function(data) {
-                    materialDiv.find('.item[data-index="'+ material.itemId +'"] .icon').css('backgroundImage', 'url('+ data +')');
+                    materialDiv.querySelector('.item[data-index="'+ material.itemId +'"] .icon').style.backgroundImage = 'url('+ data +')';
                 });
 
 				var count = item ? item.count : 0;
-                var countmsg = materialDiv.find('.item[data-index="'+ material.itemId +'"] .mat_count');
+                var countmsg = materialDiv.querySelector('.item[data-index="'+ material.itemId +'"] .mat_count');
                 // Wrap the count in a span if it's 0
         		if (count === 0) {
-        		    countmsg.html('<span style="color: #ce1029;">' + count + '</span>/1');
+        		    countmsg.innerHTML = '<span style="color: #ce1029;">' + count + '</span>/1';
         		} else {
-        		    countmsg.text(count + '/1');
+        		    countmsg.textContent = count + '/1';
         		}
 
 				// Material Selection upon clicking
-				materialDiv.find('.icon').click(function () {
+				materialDiv.querySelector('.icon').addEventListener('click', function () {
 					var itemId = material.itemId;
     				var item = Inventory.getUI().getItemById(itemId);
 					var count = item ? item.count : 0;
@@ -503,77 +506,88 @@ define(function(require)
     				    }
     				}
 
-					Refine.ui.find('.mat_overlay').removeClass('selected'); // Remove selected class from all overlays
-					materialDiv.closest('.mat_overlay').addClass('selected'); // Add selected class to the parent overlay
+					Refine.ui.querySelector('.mat_overlay').classList.remove('selected'); // Remove selected class from all overlays
+					materialDiv.closest('.mat_overlay').classList.add('selected'); // Add selected class to the parent overlay
 				
 					// Clone the material and append it to the selected_mat
-					var clonedMaterial = materialDiv.find('.item').clone();
-					clonedMaterial.find('.mat_count').remove(); // Remove mat_count from the clone
+					var clonedMaterial = materialDiv.querySelector('.item').cloneNode(true);
+					var matCount = clonedMaterial.querySelector('.mat_count');
+					if (matCount) {
+						matCount.remove();
+					}
 
-					Refine.ui.find('.selected_mat').empty().append(clonedMaterial);
+					var selectedMat = Refine.ui.querySelector('.selected_mat');
+					selectedMat.innerHTML = '';
+					selectedMat.appendChild(clonedMaterial);
 
 					// Enable refine button
-					Refine.ui.find('.refine_enabled').show();
+					Refine.ui.querySelector('.refine_enabled').style.display = '';
 
 					// Update success and refining_zeny
-					Refine.ui.find('.success .number').text(material.chance);
-					Refine.ui.find('.chance_rate').text(DB.getMessage(3285).replace('%d%', material.chance));
-					Refine.ui.find('.refine_zeny').text(material.zeny);
-					Refine.ui.find('.refine_zeny_cont').text(material.zeny);
+					Refine.ui.querySelector('.success .number').textContent = material.chance;
+					Refine.ui.querySelector('.chance_rate').textContent = DB.getMessage(3285).replace('%d%', material.chance);
+					Refine.ui.querySelector('.refine_zeny').textContent = material.zeny;
+					Refine.ui.querySelector('.refine_zeny_cont').textContent = material.zeny;
 				
 					// Set the refine_item_mat value to the selected material itemId
 					refine_item_mat = material.itemId;
 					refine_fee = material.zeny
 
-					Refine.ui.find('.refine_cont').addClass('item').attr('data-index', material.itemId);
+					Refine.ui.querySelector('.refine_cont').classList.add('item').setAttribute('data-index', material.itemId);
 				});
             })(i); // IIFE to capture the current value of i
         }
 
         // Update blacksmith blessing if applicable
         if (blacksmithBlessing) {
-            var bsbDiv = Refine.ui.find('.bsb_overlay .bsb');
+            var bsbDiv = Refine.ui.querySelector('.bsb_overlay .bsb');
             var bsbItem = DB.getItemInfo(BSB_ITID);
             var item = Inventory.getUI().getItemById(BSB_ITID);
-			bsbDiv.append('<div class="item" data-index="'+ BSB_ITID +'" draggable="false">' +
+			bsbDiv.insertAdjacentHTML('beforeend', '<div class="item" data-index="'+ BSB_ITID +'" draggable="false">' +
                 '<div class="icon"></div>'+
-				'<div class="mat_count"></div>'
+				'<div class="mat_count"></div>' +
+				'</div>'
             );
 
             Client.loadFile(DB.INTERFACE_PATH + 'item/' + (bsbItem.IsIdentified ? bsbItem.identifiedResourceName : bsbItem.unidentifiedResourceName) + '.bmp', function(data) {
-                bsbDiv.find('.item[data-index="'+ BSB_ITID +'"] .icon').css('backgroundImage', 'url('+ data +')');
+                bsbDiv.querySelector('.item[data-index="'+ BSB_ITID +'"] .icon').style.backgroundImage = 'url('+ data +')';
             });
 
             var bsbcount = item ? item.count : 0;
-            var bsbcountmsg = bsbDiv.find('.item[data-index="'+ BSB_ITID +'"] .mat_count');
+            var bsbcountmsg = bsbDiv.querySelector('.item[data-index="'+ BSB_ITID +'"] .mat_count');
             // Wrap the count in a span if it's 0
         	if (bsbcount === 0) {
-        	    bsbcountmsg.html('<span style="color: #ce1029;">' + bsbcount + '</span>/' + blacksmithBlessing);
+        	    bsbcountmsg.innerHTML = '<span style="color: #ce1029;">' + bsbcount + '</span>/' + blacksmithBlessing;
         	} else {
-        	    bsbcountmsg.text(bsbcount + '/' + blacksmithBlessing);
+        	    bsbcountmsg.textContent = bsbcount + '/' + blacksmithBlessing;
         	}
 
 			// Add select functionality
-			bsbDiv.find('.icon').click(function () {
+			bsbDiv.querySelector('.icon').addEventListener('click', function () {
 				var item = Inventory.getUI().getItemById(BSB_ITID);
 				var bsbcount = item ? item.count : 0;
 
 				if (bsbcount >= blacksmithBlessing) {
 					var bsbOverlay = bsbDiv.closest('.bsb_overlay');
 		
-					if (bsbOverlay.hasClass('selected')) {
-						bsbOverlay.removeClass('selected');
-						Refine.ui.find('.bsb_selected').empty();
-						Refine.ui.find('.some_notifs').hide();
+					if (bsbOverlay.classList.contains('selected')) {
+						bsbOverlay.classList.remove('selected');
+						Refine.ui.querySelector('.bsb_selected').innerHTML = '';
+						Refine.ui.querySelector('.some_notifs').style.display = 'none';
 					} else {
-						Refine.ui.find('.bsb_overlay').removeClass('selected'); // Remove selected class from all overlays
-						bsbOverlay.addClass('selected'); // Add selected class to the parent overlay
+						Refine.ui.querySelector('.bsb_overlay').classList.remove('selected'); // Remove selected class from all overlays
+						bsbOverlay.classList.add('selected'); // Add selected class to the parent overlay
 		
 						// Clone the blacksmith blessing and append it to the selected_mat
-						var clonedBSB = bsbDiv.find('.item').clone();
-						clonedBSB.find('.mat_count').remove(); // Remove mat_count from the clone
+						var clonedBSB = bsbDiv.querySelector('.item').cloneNode(true);
+						var bsbMatCount = clonedBSB.querySelector('.mat_count');
+						if (bsbMatCount) {
+							bsbMatCount.remove();
+						}
 		
-						Refine.ui.find('.bsb_selected').empty().append(clonedBSB);
+						var selectedBsb = Refine.ui.querySelector('.bsb_selected');
+						selectedBsb.innerHTML = '';
+						selectedBsb.appendChild(clonedBSB);
 
 						// BSB will be used
 						refine_bsb = blacksmithBlessing;
@@ -632,14 +646,14 @@ define(function(require)
     	    refine_can_cont = 0;
     	}
 
-		Refine.ui.find('.chance_rate').text(DB.getMessage(3285).replace('%d%', material.chance));
-		Refine.ui.find('.refine_zeny_cont').text(material.zeny);
+		Refine.ui.querySelector('.chance_rate').textContent = DB.getMessage(3285).replace('%d%', material.chance);
+		Refine.ui.querySelector('.refine_zeny_cont').textContent = material.zeny;
 
 		if (refine_can_cont && !refine_new_mats && !refine_item_broken) {
 			refine_result_div = refine_result ? 'fail_refine_cont_enabled' : 'success_refine_cont_enabled';
 		} else {
 			refine_result_div = refine_result ? 'fail_refine_cont_disabled' : 'success_refine_cont_disabled';
-			Refine.ui.find('.refine_cont').removeClass('item').removeAttr('data-index');
+			Refine.ui.querySelector('.refine_cont').classList.remove('item').removeAttr('data-index');
 		}
 	};
 
@@ -657,34 +671,34 @@ define(function(require)
 		}
 
 		// Get the position relative to the .item element
-		var pos = jQuery(this).offset();
-		var overlay = Refine.ui.find('.overlay');
+		var pos = DOM.getOffset(this);
+		var overlay = Refine.ui.querySelector('.overlay');
 	
 		// Determine the immediate parent container explicitly based on the context
-		var parentContainer = jQuery(this).closest('.materials, .refine_cont');
-		var containerOffset = parentContainer.offset();
+		var parentContainer = this.closest('.materials, .refine_cont');
+		var containerOffset = DOM.getOffset(parentContainer);
 	
 		// Calculate the desired position of the overlay relative to the container
 		var top, left;
-		if (parentContainer.hasClass('materials')) {
+		if (parentContainer.classList.contains('materials')) {
 			top = pos.top - containerOffset.top + 30;
-			left = pos.left - containerOffset.left + jQuery(this).outerWidth() - 39 ;
-		} else if (parentContainer.hasClass('refine_cont')) {
+			left = pos.left - containerOffset.left + this.offsetWidth - 39 ;
+		} else if (parentContainer.classList.contains('refine_cont')) {
 			top = pos.top - containerOffset.top + 242;
-			left = pos.left - containerOffset.left + jQuery(this).outerWidth() + 41;
+			left = pos.left - containerOffset.left + this.offsetWidth + 41;
 		}
 	
 		// Display box
-		overlay.show();
+		overlay.style.display = '';
 		// Adjust the position of the overlay to be on top of the item within the container
-		overlay.css({ top: top, left: left });
-		overlay.text(it.identifiedDisplayName);
+		overlay.style.top = top; overlay.style.left = left;
+		overlay.textContent = it.identifiedDisplayName;
 
 		if (item.IsIdentified) {
-			overlay.removeClass('grey');
+			overlay.classList.remove('grey');
 		}
 		else {
-			overlay.addClass('grey');
+			overlay.classList.add('grey');
 		}
 	};
 
@@ -694,7 +708,7 @@ define(function(require)
 	 */
 	function onItemOut()
 	{
-		Refine.ui.find('.overlay').hide();
+		Refine.ui.querySelector('.overlay').style.display = 'none';
 	};
 
 
@@ -708,20 +722,20 @@ define(function(require)
     	blacksmithBlessing = 0;
 
     	// Clear .item_to_refine and .item_to_refine_name
-    	Refine.ui.find('.item_to_refine').empty();
-    	Refine.ui.find('.item_to_refine_name').text('');
+    	Refine.ui.querySelector('.item_to_refine').innerHTML = '';
+    	Refine.ui.querySelector('.item_to_refine_name').textContent = '';
 
     	// Update .success .number.text to 0
-    	Refine.ui.find('.success .number').text('0');
-    	Refine.ui.find('.refine_zeny').empty();
+    	Refine.ui.querySelector('.success .number').textContent = '0';
+    	Refine.ui.querySelector('.refine_zeny').innerHTML = '';
 
     	// Clear selected materials
-    	Refine.ui.find('.selected_mat').empty();
-    	Refine.ui.find('.bsb_selected').empty();
-    	Refine.ui.find('.materials .item').empty();
-    	Refine.ui.find('.bsb .item').empty();
-    	Refine.ui.find('.mat_overlay').removeClass('selected');
-    	Refine.ui.find('.bsb_overlay').removeClass('selected');
+    	Refine.ui.querySelector('.selected_mat').innerHTML = '';
+    	Refine.ui.querySelector('.bsb_selected').innerHTML = '';
+    	Refine.ui.querySelector('.materials .item').innerHTML = '';
+    	Refine.ui.querySelector('.bsb .item').innerHTML = '';
+    	Refine.ui.querySelector('.mat_overlay').classList.remove('selected');
+    	Refine.ui.querySelector('.bsb_overlay').classList.remove('selected');
 
 		if (backtowait === true) {
 			// Clear current animation first
@@ -738,9 +752,9 @@ define(function(require)
     		controlPhase('waiting', true, 250);
 
 			// UI changes
-			Refine.ui.find('.some_notifs').hide();
-			Refine.ui.find('.refine_button').show();
-			Refine.ui.find('.success').empty().html(initialsuccess);
+			Refine.ui.querySelector('.some_notifs').style.display = 'none';
+			Refine.ui.querySelector('.refine_button').style.display = '';
+			Refine.ui.querySelector('.success').innerHTML = initialsuccess;
 
 			onHideContRefineButtons();
 			clearRefineStates();
@@ -753,21 +767,21 @@ define(function(require)
 	 */
 	function clearMaterials()
 	{
-		Refine.ui.find('.success').empty().hide();
-		Refine.ui.find('.refine_zeny').empty();
+		Refine.ui.querySelector('.success').innerHTML = ''.style.display = 'none';
+		Refine.ui.querySelector('.refine_zeny').innerHTML = '';
 
-		Refine.ui.find('.materials .item').hide();
-		Refine.ui.find('.bsb .item').hide();
+		Refine.ui.querySelector('.materials .item').style.display = 'none';
+		Refine.ui.querySelector('.bsb .item').style.display = 'none';
 
 		// Needs to reselect
-		Refine.ui.find('.selected_mat').empty();
-		Refine.ui.find('.bsb_selected').empty();
+		Refine.ui.querySelector('.selected_mat').innerHTML = '';
+		Refine.ui.querySelector('.bsb_selected').innerHTML = '';
 
-		Refine.ui.find('.mat_overlay').removeClass('selected');
-		Refine.ui.find('.bsb_overlay').removeClass('selected');
+		Refine.ui.querySelector('.mat_overlay').classList.remove('selected');
+		Refine.ui.querySelector('.bsb_overlay').classList.remove('selected');
 
 		// Disable refine_button
-		Refine.ui.find('.refine_button').hide();
+		Refine.ui.querySelector('.refine_button').style.display = 'none';
 	};
 
 
@@ -799,15 +813,15 @@ define(function(require)
 		}
 
 		// Ensure .info_msg has no class of .red and .blue
-    	Refine.ui.find('.info_msg').removeClass('red blue');
+    	Refine.ui.querySelector('.info_msg').classList.remove('red blue');
 
-	    Refine.ui.find('.info_msg').text(message).addClass(messageClass);
-		Refine.ui.find('.some_notifs').show();
+	    Refine.ui.querySelector('.info_msg').textContent = message.classList.add(messageClass);
+		Refine.ui.querySelector('.some_notifs').style.display = '';
 
 	    if (timeout > 0) {
 	        Refine.messageTimeOut = setTimeout(function() {
-	            Refine.ui.find('.info_msg').removeClass(messageClass);
-	            Refine.ui.find('.some_notifs').hide();
+	            Refine.ui.querySelector('.info_msg').classList.remove(messageClass);
+	            Refine.ui.querySelector('.some_notifs').style.display = 'none';
 	        }, timeout * 1000); // Convert seconds to milliseconds
 	    }
 	};
@@ -842,11 +856,11 @@ define(function(require)
 		Refine.hammer++;
 
 		// Hide the previous refine button first
-		Refine.ui.find('.refine_button').hide();
+		Refine.ui.querySelector('.refine_button').style.display = 'none';
 		
 		// Hack: Hide it here for the surprise
-		Refine.ui.find('.item_to_refine_name').hide();
-		Refine.ui.find('.success').hide();
+		Refine.ui.querySelector('.item_to_refine_name').style.display = 'none';
+		Refine.ui.querySelector('.success').style.display = 'none';
 
 		refine_ongoing = 1;
 
@@ -869,8 +883,8 @@ define(function(require)
 		if (pkt) {
 
 			// Hide some UIs
-			Refine.ui.find('.back_button').hide();
-			Refine.ui.find('.refine_cont').hide();
+			Refine.ui.querySelector('.back_button').style.display = 'none';
+			Refine.ui.querySelector('.refine_cont').style.display = 'none';
 
 			var item = Inventory.getUI().removeItem(pkt.itemIndex, 1);
 			if (item) {
@@ -992,8 +1006,9 @@ define(function(require)
 
 		switch (result) {
 			case 'success':
-				Refine.ui.find('.back_success').show();
-				Refine.ui.find('.success').text(DB.getMessage(2971)).show();
+				Refine.ui.querySelector('.back_success').style.display = '';
+				Refine.ui.querySelector('.success').textContent = DB.getMessage(2971);
+				Refine.ui.querySelector('.success').style.display = '';
 				ChatBox.addText(DB.getMessage(498),	// Upgrade success!!
 					ChatBox.TYPE.BLUE,
 					ChatBox.FILTER.PUBLIC_LOG
@@ -1001,8 +1016,9 @@ define(function(require)
 				break;
 			case 'fail':
 				onCheckItemBroken();
-				Refine.ui.find('.back_fail').show();
-				Refine.ui.find('.success').text(DB.getMessage(2972)).show();
+				Refine.ui.querySelector('.back_fail').style.display = '';
+				Refine.ui.querySelector('.success').textContent = DB.getMessage(2972);
+				Refine.ui.querySelector('.success').style.display = '';
 				ChatBox.addText(DB.getMessage(499),	// Upgrade failed!!
 					ChatBox.TYPE.BLUE,
 					ChatBox.FILTER.PUBLIC_LOG
@@ -1010,8 +1026,9 @@ define(function(require)
 				break;
 			case 'downgrade':
 				onCheckItemBroken();
-				Refine.ui.find('.back_fail').show();
-				Refine.ui.find('.success').text(DB.getMessage(2972)).show();
+				Refine.ui.querySelector('.back_fail').style.display = '';
+				Refine.ui.querySelector('.success').textContent = DB.getMessage(2972);
+				Refine.ui.querySelector('.success').style.display = '';
 				ChatBox.addText(DB.getMessage(1537), // Is now refining the value lowered
 					ChatBox.TYPE.BLUE,
 					ChatBox.FILTER.PUBLIC_LOG
@@ -1021,15 +1038,15 @@ define(function(require)
 				break;
 		}
 
-		Refine.ui.find('.refine_text_cont').show();
+		Refine.ui.querySelector('.refine_text_cont').style.display = '';
 		
 		if (refine_result_div) {
-            Refine.ui.find('.' + refine_result_div).show();
+            Refine.ui.querySelector('.' + refine_result_div).style.display = '';
         }
 
 		if (refine_can_cont && !refine_new_mats && !refine_item_broken) {
-			Refine.ui.find('.chance_rate').show();
-			Refine.ui.find('.refine_zeny_cont').show();
+			Refine.ui.querySelector('.chance_rate').style.display = '';
+			Refine.ui.querySelector('.refine_zeny_cont').style.display = '';
 		}
 
 		if (refine_no_mats) {
@@ -1043,11 +1060,11 @@ define(function(require)
 		}
 
 		// Show again the hidden UIs that has been updated
-		Refine.ui.find('.back_button').show();
-		Refine.ui.find('.refine_cont').show();
+		Refine.ui.querySelector('.back_button').style.display = '';
+		Refine.ui.querySelector('.refine_cont').style.display = '';
 
 		// Hack: Show it here for the surprise
-		Refine.ui.find('.item_to_refine_name').show();
+		Refine.ui.querySelector('.item_to_refine_name').style.display = '';
 
 		refine_ongoing = 0;
 	};
@@ -1058,17 +1075,17 @@ define(function(require)
 	 */
 	function onHideContRefineButtons()
 	{
-		Refine.ui.find('.back_button').hide();
-		Refine.ui.find('.refine_cont').hide();
-		Refine.ui.find('.back_success').hide();
-		Refine.ui.find('.back_fail').hide();
-		Refine.ui.find('.success_refine_cont_enabled').hide();
-		Refine.ui.find('.success_refine_cont_disabled').hide();
-		Refine.ui.find('.fail_refine_cont_enabled').hide();
-		Refine.ui.find('.fail_refine_cont_disabled').hide();
-		Refine.ui.find('.refine_text_cont').hide();
-		Refine.ui.find('.chance_rate').hide();
-		Refine.ui.find('.refine_zeny_cont').hide();
+		Refine.ui.querySelector('.back_button').style.display = 'none';
+		Refine.ui.querySelector('.refine_cont').style.display = 'none';
+		Refine.ui.querySelector('.back_success').style.display = 'none';
+		Refine.ui.querySelector('.back_fail').style.display = 'none';
+		Refine.ui.querySelector('.success_refine_cont_enabled').style.display = 'none';
+		Refine.ui.querySelector('.success_refine_cont_disabled').style.display = 'none';
+		Refine.ui.querySelector('.fail_refine_cont_enabled').style.display = 'none';
+		Refine.ui.querySelector('.fail_refine_cont_disabled').style.display = 'none';
+		Refine.ui.querySelector('.refine_text_cont').style.display = 'none';
+		Refine.ui.querySelector('.chance_rate').style.display = 'none';
+		Refine.ui.querySelector('.refine_zeny_cont').style.display = 'none';
 	};
 
 
@@ -1080,7 +1097,7 @@ define(function(require)
     	var refineditem = Inventory.getUI().getItemByIndex(refine_item_index);
     	if (!refineditem) {
     	    refine_result_div = 'fail_refine_cont_disabled';
-    	    Refine.ui.find('.item_to_refine_name').text(DB.getMessage(3246));
+    	    Refine.ui.querySelector('.item_to_refine_name').textContent = DB.getMessage(3246);
     	    refine_item_broken = 1;
 			return true;
     	} else {
@@ -1107,8 +1124,8 @@ define(function(require)
 			onRemoveItem(true);
 		}
 
-		Refine.ui.find('.refine_button').show();
-		Refine.ui.find('.success').empty().html(initialsuccess);
+		Refine.ui.querySelector('.refine_button').style.display = '';
+		Refine.ui.querySelector('.success').innerHTML = initialsuccess;
 	};
 
 
@@ -1166,7 +1183,7 @@ define(function(require)
 	 */
 	Refine.isRefineOpen = function isRefineOpen()
 	{
-		if (Refine.ui && Refine.ui.is(':visible')) {
+		if (Refine.ui && DOM.isVisible(Refine.ui)) {
 			return true;
 		} else {
 			return false;
@@ -1178,7 +1195,7 @@ define(function(require)
 	 * Start dragging an item
 	 */
 	function onItemDragStart(event) {
-        event.originalEvent.dataTransfer.setData('text', event.target.id);
+        event.dataTransfer.setData('text', event.target.id);
     };
 
 
@@ -1190,9 +1207,9 @@ define(function(require)
 			return;
 		}
 
-    	var rect = Refine.ui[0].getBoundingClientRect();
-    	var mouseX = event.clientX || event.originalEvent.clientX;
-    	var mouseY = event.clientY || event.originalEvent.clientY;
+    	var rect = Refine.ui.getBoundingClientRect();
+    	var mouseX = event.clientX || event.clientX;
+    	var mouseY = event.clientY || event.clientY;
 
     	if (mouseX < rect.left || mouseX > rect.right || mouseY < rect.top || mouseY > rect.bottom) {
     	    onRemoveItem(true);

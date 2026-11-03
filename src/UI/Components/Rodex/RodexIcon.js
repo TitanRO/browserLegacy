@@ -16,6 +16,7 @@
 	  */
 	 var UIManager          = require('UI/UIManager');
 	 var UIComponent        = require('UI/UIComponent');
+	 var DOM                = require('Utils/DOM');
 	 var htmlText           = require('text!./RodexIcon.html');
 	 var cssText            = require('text!./RodexIcon.css');
 	 var Rodex              = require('UI/Components/Rodex/Rodex');
@@ -30,15 +31,15 @@
 	  */
 	 RodexIcon.onAppend = function OnAppend()
 	 {
-		let icon = this.ui.find('.rodex-icon');
-		icon.on('click', onClickRodexIcon);
+		let icon = this.ui.querySelector('.rodex-icon');
+		icon.addEventListener('click', onClickRodexIcon);
 		icon.focus();
 	 };
 
 	 RodexIcon.toggle = function toggle()
 	 {
-		this.ui.toggle();
-		if (this.ui.is(':visible')) {
+		DOM.toggleDisplay(this.ui);
+		if (DOM.isVisible(this.ui)) {
 			this.focus();
 		}
 	 };
@@ -46,7 +47,7 @@
 	 function onClickRodexIcon() {
 		Rodex.openRodexBox();
 		Rodex.append();
-		Rodex.ui.show();
+		Rodex.ui.style.display = '';
 		Rodex.ui.focus();
 	 }
 

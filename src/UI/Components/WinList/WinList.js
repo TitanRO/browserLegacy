@@ -15,13 +15,13 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
-	var jQuery      = require('Utils/jquery');
 	var Renderer    = require('Renderer/Renderer');
 	var KEYS        = require('Controls/KeyEventHandler');
 	var UIManager   = require('UI/UIManager');
 	var UIComponent = require('UI/UIComponent');
 	var htmlText    = require('text!./WinList.html');
 	var cssText     = require('text!./WinList.css');
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -36,19 +36,19 @@ define(function(require)
 	WinList.init = function init()
 	{
 		// Show at center.
-		this.ui.css({
+		DOM.setCss(this.ui, {
 			top: (Renderer.height - 280)/1.5,
 			left: (Renderer.width - 280)/2
 		});
 		this.draggable();
 
-		this.ui_list = this.ui.find('.list:first');
+		this.ui_list = this.ui.querySelector('.list');
 		this.list    = null;
 		this.index   = 0;
 
 		// Click Events
-		this.ui.find('.ok').click( this.selectIndex.bind(this) );
-		this.ui.find('.cancel').click( this.exit.bind(this) );
+		this.ui.querySelector('.ok').addEventListener('click',  this.selectIndex.bind(this) );
+		this.ui.querySelector('.cancel').addEventListener('click',  this.exit.bind(this) );
 	};
 
 
@@ -62,23 +62,22 @@ define(function(require)
 		var i, count;
 
 		this.list = list;
-		this.ui_list.empty();
+		this.ui_list.innerHTML = '';
 
 		function onSelectListIndex(event) {
-			WinList.setIndex( jQuery(this).data('id') );
+			WinList.setIndex( this.getAttribute('data-id') );
 			event.stopImmediatePropagation();
 			return false;
 		}
 
 		for (i = 0, count = list.length; i < count; ++i) {
-			this.ui_list.append(
-				jQuery('<div/>').
-					addClass('menu_node').
-					text(list[i]).
-					data('id', i).
-					mousedown(onSelectListIndex).
-					dblclick(this.selectIndex.bind(this))
-			);
+			var node = document.createElement('div');
+			node.classList.add('menu_node');
+			node.textContent = list[i];
+			node.dataset.id = String(i);
+			node.addEventListener('mousedown', onSelectListIndex);
+			node.addEventListener('dblclick', this.selectIndex.bind(this));
+			this.ui_list.appendChild(node);
 		}
 
 		this.setIndex( 0 );
@@ -109,8 +108,8 @@ define(function(require)
 	WinList.setIndex = function setIndex( id )
 	{
 		if (id > -1 && id < this.list.length) {
-			this.ui_list.find('div:eq('+ this.index +')').css('backgroundColor', 'transparent');
-			this.ui_list.find('div:eq('+ id +')').css('backgroundColor', '#cde0ff');
+			this.ui_list.querySelectorAll('div')[this.index].style.backgroundColor = 'transparent';
+			this.ui_list.querySelectorAll('div')[id].style.backgroundColor = '#cde0ff';
 			this.index = id;
 		}
 	};
@@ -148,7 +147,7 @@ define(function(require)
 	 */
 	WinList.onRemove = function onRemove()
 	{
-		this.ui_list.empty();
+		this.ui_list.innerHTML = '';
 		this.list  = null;
 		this.index = 0;
 	};

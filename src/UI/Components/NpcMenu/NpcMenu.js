@@ -15,13 +15,13 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
-	var jQuery             = require('Utils/jquery');
 	var KEYS               = require('Controls/KeyEventHandler');
 	var Renderer           = require('Renderer/Renderer');
 	var UIManager          = require('UI/UIManager');
 	var UIComponent        = require('UI/UIComponent');
 	var htmlText           = require('text!./NpcMenu.html');
 	var cssText            = require('text!./NpcMenu.css');
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -47,10 +47,10 @@ define(function(require)
 	 */
 	NpcMenu.init = function init()
 	{
-		this.ui.find('.ok').click(validate.bind(this));
-		this.ui.find('.cancel').click(cancel.bind(this));
+		this.ui.querySelector('.ok').addEventListener('click', validate.bind(this));
+		this.ui.querySelector('.cancel').addEventListener('click', cancel.bind(this));
 
-		this.ui.css({
+		DOM.setCss(this.ui, {
 			top: Math.max(376, Renderer.height/2 + 76 ),
 			left: Math.max( Renderer.width/3, 20)
 		});
@@ -58,24 +58,25 @@ define(function(require)
 		this.draggable();
 
 		var self = this;
-		this.ui.find('.content')
+		var _content = this.ui.querySelector('.content');
 
-			// Scroll feature should block at each line
-			.on('mousewheel DOMMouseScroll', onScroll)
+		// Scroll feature should block at each line
+		_content.addEventListener('mousewheel', onScroll);
+		_content.addEventListener('DOMMouseScroll', onScroll);
 
-			// Manage indexes
-			.on('mousedown', 'div', function(event) {
-				selectIndex.call(self, jQuery(this));
-			})
+		// Manage indexes
+		DOM.addDelegatedEvent(_content, 'mousedown', 'div', function(event) {
+			selectIndex.call(self, this);
+		});
 
-			// Select index
-			.on('dblclick',  'div', validate.bind(this))
+		// Select index
+		DOM.addDelegatedEvent(_content, 'dblclick', 'div', validate.bind(this));
 
-			// Stop drag drop
-			.mousedown(function(event) {
-				event.stopImmediatePropagation();
-				return false;
-			});
+		// Stop drag drop
+		_content.addEventListener('mousedown', function(event) {
+			event.stopImmediatePropagation();
+			return false;
+		});
 	};
 
 
@@ -84,7 +85,7 @@ define(function(require)
 	 */
 	NpcMenu.onRemove = function onRemove()
 	{
-		this.ui.find('.content').empty();
+		this.ui.querySelector('.content').innerHTML = '';
 	};
 
 
@@ -108,13 +109,15 @@ define(function(require)
 				break;
 
 			case KEYS.UP:
-				count  = this.ui.find('.content div').length;
+				count  = this.ui.querySelectorAll('.content div').length;
 				_index = Math.max( _index - 1, 0 );
 
-				this.ui.find('.content div').removeClass('selected');
-				this.ui.find('.content div:eq('+ _index +')').addClass('selected');
+				this.ui.querySelectorAll('.content div').forEach(function(el) {
+					el.classList.remove('selected');
+				});
+				this.ui.querySelectorAll('.content div')[_index].classList.add('selected');
 
-				content = this.ui.find('.content')[0];
+				content = this.ui.querySelector('.content');
 				top     = _index * 20;
 
 				if (top < content.scrollTop) {
@@ -123,13 +126,15 @@ define(function(require)
 				break;
 
 			case KEYS.DOWN:
-				count  = this.ui.find('.content div').length;
+				count  = this.ui.querySelectorAll('.content div').length;
 				_index = Math.min( _index + 1, count -1 );
 
-				this.ui.find('.content div').removeClass('selected');
-				this.ui.find('.content div:eq('+ _index +')').addClass('selected');
+				this.ui.querySelectorAll('.content div').forEach(function(el) {
+					el.classList.remove('selected');
+				});
+				this.ui.querySelectorAll('.content div')[_index].classList.add('selected');
 
-				content = this.ui.find('.content')[0];
+				content = this.ui.querySelector('.content');
 				top     = _index * 20;
 
 				if (top >= content.scrollTop + 80) {
@@ -157,25 +162,27 @@ define(function(require)
 		var content, list;
 		var i, j, count;
 
-		content  = this.ui.find('.content');
+		content  = this.ui.querySelector('.content');
 		list     = menu.split(':');
 		_ownerID = gid;
 		_index   = 0;
 
-		content.empty();
+		content.innerHTML = '';
 
 		for (i = 0, j = 0, count = list.length; i < count; ++i) {
 			// Don't display empty menu
 			if (list[i].length) {
-				jQuery('<div/>')
-					.text(list[i])
-					.data('index', j++)
-					.appendTo(content);
+				var div = document.createElement('div');
+				div.textContent = list[i];
+				div.setAttribute('data-index', j++);
+				content.appendChild(div);
 			}
 		}
 
-		content.find('div:first')
-			.addClass('selected');
+		var firstDiv = content.querySelector('div');
+		if (firstDiv) {
+			firstDiv.classList.add('selected');
+		}
 	};
 
 
@@ -202,10 +209,10 @@ define(function(require)
 	 */
 	function selectIndex($this)
 	{
-		this.ui.find('.content div').removeClass('selected');
-		$this.addClass('selected');
+		Array.from(this.ui.querySelectorAll('.content div')).forEach(function(el){ el.classList.remove('selected'); });
+		$this.classList.add('selected');
 
-		_index = parseInt($this.data('index'), 10);
+		_index = parseInt($this.getAttribute('data-index'), 10);
 	}
 
 
@@ -216,14 +223,14 @@ define(function(require)
 	{
 		var delta;
 
-		if (event.originalEvent.wheelDelta) {
-			delta = event.originalEvent.wheelDelta / 120 ;
+		if (event.wheelDelta) {
+			delta = event.wheelDelta / 120 ;
 			if (window.opera) {
 				delta = -delta;
 			}
 		}
-		else if (event.originalEvent.detail) {
-			delta = -event.originalEvent.detail;
+		else if (event.detail) {
+			delta = -event.detail;
 		}
 
 		this.scrollTop = Math.floor(this.scrollTop/20) * 20 - (delta * 20);

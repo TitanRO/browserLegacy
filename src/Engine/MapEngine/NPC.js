@@ -16,7 +16,6 @@ define(function( require )
 	/**
 	 * Load dependencies
 	 */
-	var jQuery        = require('Utils/jquery');
 	var DB            = require('DB/DBManager');
 	var Sound         = require('Audio/SoundManager');
 	var BGM           = require('Audio/BGM');
@@ -33,6 +32,7 @@ define(function( require )
 
 	// Version Dependent UIs
 	var MiniMap = require('UI/Components/MiniMap/MiniMap');
+	var DOM             = require('Utils/DOM');
 
 	/**
 	 * NPC write a message
@@ -67,7 +67,7 @@ define(function( require )
 	{
 		// Should not happened, but sometimes dev write a "close" in script instead of
 		// a "end" when there is no message.
-		if (NpcBox.ui && NpcBox.ui.is(':visible'))  {
+		if (NpcBox.__active && NpcBox.ui && DOM.isVisible(NpcBox.ui))  {
 			NpcBox.addClose( pkt.NAID );
 		}
 	}
@@ -131,13 +131,13 @@ define(function( require )
 		InputBox.onAppend = function OnAppend()
 		{
 			InputBox.setType(type, true);
-			this.ui.find('input').select();
+			this.ui.querySelector('input').select();
 
-			this.ui.find('input').keydown(function(e){
+			this.ui.querySelector('input').addEventListener('keydown', function(e){
 				let enterKey = 13;
 				if (e.keyCode !== enterKey) return;
 	
-				let text = InputBox.ui.find('input').val();
+				let text = InputBox.ui.querySelector('input').value;
 				if (text.length > 0) InputBox.onSubmitRequest(text);
 			});
 		};
@@ -178,58 +178,50 @@ define(function( require )
 		var WinDeal = WinPopup.clone('WinDeal');
 		var NAID    = pkt.NAID;
 
+		function createDealButton(parseHTMLContext, background, hover, down, onClick)
+		{
+			var btn = document.createElement('button');
+			btn.classList.add('btn');
+			btn.dataset.background = background;
+			btn.dataset.hover = hover;
+			btn.dataset.down = down;
+			btn.addEventListener('click', onClick, { once: true });
+			parseHTMLContext.parseHTML.call(btn, btn);
+			return btn;
+		}
+
 		WinDeal.init = function Init()
 		{
-			this.draggable();
-			this.ui.find('.text').text( DB.getMessage(92) );
+			var btns = this.ui.querySelector('.btns');
 
-			this.ui.css({
+			this.draggable();
+			this.ui.querySelector('.text').textContent = DB.getMessage(92);
+
+			DOM.setCss(this.ui, {
 				top:  (Renderer.height) / 1.5,
 				left: (Renderer.width -280) / 2.0,
 				zIndex: 100
 			});
 
-			this.ui.find('.btns').append(
+			btns.appendChild(createDealButton(this, 'btn_buy.bmp', 'btn_buy_a.bmp', 'btn_buy_b.bmp', function(){
+				WinDeal.remove();
+				var _pkt  = new PACKET.CZ.ACK_SELECT_DEALTYPE();
+				_pkt.type = 0;
+				_pkt.NAID = NAID;
+				Network.sendPacket(_pkt);
+			}));
 
-				jQuery('<button/>').
-					addClass('btn').
-					data('background', 'btn_buy.bmp').
-					data('hover',      'btn_buy_a.bmp').
-					data('down',       'btn_buy_b.bmp').
-					one('click',function(){
-						WinDeal.remove();
-						var _pkt  = new PACKET.CZ.ACK_SELECT_DEALTYPE();
-						_pkt.type = 0;
-						_pkt.NAID = NAID;
-						Network.sendPacket(_pkt);
-					}).
-					each( this.parseHTML ),
+			btns.appendChild(createDealButton(this, 'btn_sell.bmp', 'btn_sell_a.bmp', 'btn_sell_b.bmp', function(){
+				WinDeal.remove();
+				var _pkt  = new PACKET.CZ.ACK_SELECT_DEALTYPE();
+				_pkt.type = 1;
+				_pkt.NAID = NAID;
+				Network.sendPacket(_pkt);
+			}));
 
-				jQuery('<button/>').
-					addClass('btn').
-					data('background', 'btn_sell.bmp').
-					data('hover',      'btn_sell_a.bmp').
-					data('down',       'btn_sell_b.bmp').
-					one('click',function(){
-						WinDeal.remove();
-						var _pkt  = new PACKET.CZ.ACK_SELECT_DEALTYPE();
-						_pkt.type = 1;
-						_pkt.NAID = NAID;
-						Network.sendPacket(_pkt);
-					}).
-					each( this.parseHTML ),
-
-				jQuery('<button/>').
-					addClass('btn').
-					data('background', 'btn_cancel.bmp').
-					data('hover',      'btn_cancel_a.bmp').
-					data('down',       'btn_cancel_b.bmp').
-					one('click',function(){
-						WinDeal.remove();
-					}).
-					each( this.parseHTML )
-			);
-
+			btns.appendChild(createDealButton(this, 'btn_cancel.bmp', 'btn_cancel_a.bmp', 'btn_cancel_b.bmp', function(){
+				WinDeal.remove();
+			}));
 		};
 
 		WinDeal.append();

@@ -15,7 +15,7 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
-	var jQuery             = require('Utils/jquery');
+	var DOM = require('Utils/DOM');
 
 	var Configs            = require('Core/Configs');
 	var Client             = require('Core/Client');
@@ -76,46 +76,44 @@ define(function(require)
 		Thread.init();
 
 
-		jQuery('head:first').append(
-			'<style type="text/css">' +
-			'	#previous { background-image:url(' + require.toUrl('./Icons/arw-left.png') + '); }' +
-			'	#next     { background-image:url(' + require.toUrl('./Icons/arw-right.png') + '); }' +
-			'	#progress { background-image:url(' + require.toUrl('./Icons/load.gif') + '); }' +
-			'</style>'
-		);
+		(function(){ var s = document.createElement('style'); s.type = 'text/css'; s.textContent =
+			'#previous { background-image:url(' + require.toUrl('./Icons/arw-left.png') + '); }' +
+			'#next     { background-image:url(' + require.toUrl('./Icons/arw-right.png') + '); }' +
+			'#progress { background-image:url(' + require.toUrl('./Icons/load.gif') + '); }';
+			document.head.appendChild(s);
+		})();
 
 		// Drag drop the GRF.
-		ui.find('#info')
-			.on('dragover',  function(){ this.style.backgroundColor = '#DFD'; return false; })
-			.on('dragleave', function(){ this.style.backgroundColor = '#EEE'; return false; })
-			.on('drop', function(event){ this.style.backgroundColor = '#EEE'; processGRF(event.originalEvent); return false; });
+		var _grfInfo = ui.querySelector('#info');
+		_grfInfo.addEventListener('dragover', function(){ this.style.backgroundColor = '#DFD'; return false; });
+		_grfInfo.addEventListener('dragleave', function(){ this.style.backgroundColor = '#EEE'; return false; });
+		_grfInfo.addEventListener('drop', function(event){ this.style.backgroundColor = '#EEE'; processGRF(event.originalEvent); return false; });
 
 		// Load GRFs
-		ui.find('#file').change(processGRF);
-		ui.find('#info button').mousedown(function(){
-			ui.find('#file').click();
+		ui.querySelector('#file').addEventListener('change', processGRF);
+		ui.querySelector('#info button').addEventListener('mousedown', function(){
+			ui.querySelector('#file').addEventListener('click', );
 		});
 
 
 		// Bind icons events
-		ui
-			.on('click', '.directory',   onDirectoryClick)
-			.on('click', '.audio',       onAudioClick)
-			.on('click', '.img, .thumb', onImageClick)
-			.on('click', '.txt',         onTextClick)
-			.on('click', '.map',         onWorldClick)
-			.on('click', '.3d',          onObjectClick)
-			.on('click', '.gr2',         onGrannyClick)
-			.on('click', '.fx',          onEffectClick)
-			.on('contextmenu', '.icon', function(event){ showContextMenu(this,event); return false; });
+		DOM.addDelegatedEvent(ui, 'click', '.directory', onDirectoryClick);
+		DOM.addDelegatedEvent(ui, 'click', '.audio', onAudioClick);
+		DOM.addDelegatedEvent(ui, 'click', '.img, .thumb', onImageClick);
+		DOM.addDelegatedEvent(ui, 'click', '.txt', onTextClick);
+		DOM.addDelegatedEvent(ui, 'click', '.map', onWorldClick);
+		DOM.addDelegatedEvent(ui, 'click', '.3d', onObjectClick);
+		DOM.addDelegatedEvent(ui, 'click', '.gr2', onGrannyClick);
+		DOM.addDelegatedEvent(ui, 'click', '.fx', onEffectClick);
+		DOM.addDelegatedEvent(ui, 'contextmenu', '.icon', function(event){ showContextMenu(this, event); event.preventDefault(); });
 
 		// Initialize toolbar
 		initToolBar();
 
 		// Initialize history
 		History.init(
-			ui.find('#previous'),
-			ui.find('#next')
+			ui.querySelector('#previous'),
+			ui.querySelector('#next')
 		);
 
 		// Renderer is not rendering, causing issue in src/UI/UIComponents.js#212
@@ -144,7 +142,7 @@ define(function(require)
 		var ui = Viewer.ui;
 
 		// Path submit
-		ui.find('#path').keydown(function(event){
+		ui.querySelector('#path').addEventListener('keydown', function(event){
 			if (event.which === KEYS.ENTER) {
 				var value = this.value.replace(/^\s+|\s+$/g, '');
 				if (value.substr(-1) !== '/') {
@@ -155,7 +153,7 @@ define(function(require)
 		});
 
 		// History before
-		ui.find('#previous').click(function(){
+		ui.querySelector('#previous').addEventListener('click', function(){
 			var path = History.previous();
 			if (path) {
 				moveToDirectory( path, false );
@@ -163,7 +161,7 @@ define(function(require)
 		});
 
 		// History after
-		ui.find('#next').click(function(){
+		ui.querySelector('#next').addEventListener('click', function(){
 			var path = History.next();
 			if (path) {
 				moveToDirectory( path, false );
@@ -171,10 +169,10 @@ define(function(require)
 		});
 
 		// Search toolbar
-		ui.find('#search')
-			.focus(function(){ this.value = ''; })
-			.blur(function(){ this.value = this.value || 'Search...'; })
-			.keydown( function(event) {
+		var _grfSearch = ui.querySelector('#search');
+		_grfSearch.addEventListener('focus', function(){ this.value = ''; });
+		_grfSearch.addEventListener('blur', function(){ this.value = this.value || 'Search...'; });
+		_grfSearch.addEventListener('keydown',  function(event) {
 				if (event.which === KEYS.ENTER) {
 					var value = this.value.replace(/^\s+|\s+$/g, '');
 					if (value.length > 2) {
@@ -193,72 +191,68 @@ define(function(require)
 	 */
 	function showContextMenu( iconElement, event )
 	{
-		var contextmenu = Viewer.ui.find('#contextmenu');
-		var overlay     = Viewer.ui.find('.overlay');
-		var header = contextmenu.find('.header:first');
-		var open = contextmenu.find('.open:first');
-		var save = contextmenu.find('.save:first');
-		var info = contextmenu.find('.info:first');
-		var icon = jQuery(iconElement);
+		var contextmenu = Viewer.ui.querySelector('#contextmenu');
+		var overlay     = Viewer.ui.querySelector('.overlay');
+		var header = contextmenu.querySelector('.header');
+		var open = contextmenu.querySelector('.open');
+		var save = contextmenu.querySelector('.save');
+		var info = contextmenu.querySelector('.info');
+		var icon = iconElement;
+		var path = icon.getAttribute('data-path');
 
-		contextmenu.css({
-			left: event.pageX,
-			top:  event.pageY
-		}).show();
+		contextmenu.style.left = event.pageX + 'px';
+		contextmenu.style.top = event.pageY + 'px';
+		contextmenu.style.display = '';
 
-		overlay.one('mousedown', function(){
-			contextmenu.hide();
-			overlay.hide();
-		}).show();
+		overlay.onmousedown = function(){
+			contextmenu.style.display = 'none';
+			overlay.style.display = 'none';
+		};
+		overlay.style.display = '';
 
-		 // Clean up
-		open.removeClass('disable').off('mousedown');
-		save.removeClass('disable').off('mousedown');
-		info.removeClass('disable').off('mousedown');
-		save.off('click');
+		open.classList.remove('disable');
+		save.classList.remove('disable');
+		info.classList.remove('disable');
 
-		//Header
-		header.get(0).innerHTML = 'Path: ' + icon.data('path');
-		header.get(0).style.backgroundColor = null;
-		header.click(function(){
-				navigator.clipboard.writeText(icon.data('path'));
-				header.get(0).innerHTML = 'Copied: ' + icon.data('path');
-				header.get(0).style.backgroundColor = '#AAFFAA';
-			});
+		header.textContent = 'Path: ' + path;
+		header.style.backgroundColor = '';
+		header.onclick = function(){
+			navigator.clipboard.writeText(path);
+			header.textContent = 'Copied: ' + path;
+			header.style.backgroundColor = '#AAFFAA';
+		};
 
-		// Open
-		if (icon.hasClass('file')) {
-			open.addClass('disable');
+		if (icon.classList.contains('file')) {
+			open.classList.add('disable');
 		}
 		else {
-			open.one('mousedown', function(){
+			open.onmousedown = function(){
 				icon.click();
-				overlay.mousedown();
-			});
+				if (overlay.onmousedown) {
+					overlay.onmousedown();
+				}
+			};
 		}
 
-		// Save
-		if (icon.hasClass('directory')) {
-			save.addClass('disable');
-			save.click(function(){ return false; });
-			save.get(0).removeAttribute('download');
+		if (icon.classList.contains('directory')) {
+			save.classList.add('disable');
+			save.removeAttribute('download');
 		}
-
 		else {
-			save.one('mouseup', function(){
-				overlay.mousedown();
-			});
+			save.onmouseup = function(){
+				if (overlay.onmousedown) {
+					overlay.onmousedown();
+				}
+			};
 
-			Client.getFile( icon.data('path'), function( buffer) {
-				// Create temporary url, move to it and release it
-				var url = URL.createObjectURL(new Blob([buffer],{type: 'application/octet-stream'}));
-				save.attr({ href:url, download:icon.text().trim()});
+			Client.getFile(path, function(buffer) {
+				var url = URL.createObjectURL(new Blob([buffer], {type: 'application/octet-stream'}));
+				save.setAttribute('href', url);
+				save.setAttribute('download', icon.textContent.trim());
 			});
 		}
 
-		// Properties
-		// not supported yet.
-		info.addClass('disable');
+		info.classList.add('disable');
 	}
 
 
@@ -299,7 +293,7 @@ define(function(require)
 	 */
 	function processGRF(event)
 	{
-		Viewer.ui.find('#progress').show();
+		Viewer.ui.querySelector('#progress').style.display = '';
 
 		Client.onFilesLoaded = function(){ moveToDirectory('data/', true); };
 		Client.init( (event.dataTransfer || event.target).files );
@@ -334,19 +328,19 @@ define(function(require)
 		var reg       = directory + '([^(\\0|\\\\)]+)';
 
 		// Clean windows
-		ui.find('#path').val(path);
-		ui.find('.icon').remove();
-		ui.find('#progress').show();
-		ui.find('#msg').hide();
+		ui.querySelector('#path').value = path;
+		ui.querySelectorAll('.icon').forEach(function(el){ el.remove(); });
+		ui.querySelector('#progress').style.display = '';
+		ui.querySelector('#msg').style.display = 'none';
 
 		// Go back to the home
 		if (!path.length) {
-			ui.find('#info').show();
+			ui.querySelector('#info').style.display = '';
 			renderFiles(['data']);
 			return;
 		}
 
-		ui.find('#info').hide();
+		ui.querySelector('#info').style.display = 'none';
 
 		// Changing action to avoid conflict
 		var actionID = ++_actionID;
@@ -376,10 +370,10 @@ define(function(require)
 		var actionID = ++_actionID;
 
 		// Clean path
-		ui.find('.icon').remove();
-		ui.find('#progress').show();
-		ui.find('#info').hide();
-		ui.find('#msg').hide();
+		ui.querySelectorAll('.icon').forEach(function(el){ el.remove(); });
+		ui.querySelector('#progress').style.display = '';
+		ui.querySelector('#info').style.display = 'none';
+		ui.querySelector('#msg').style.display = 'none';
 
 		// Send request
 		Client.search( new RegExp(reg, 'gi'), function( list ) {
@@ -420,11 +414,11 @@ define(function(require)
 	 */
 	function renderFiles( list )
 	{
-		Viewer.ui.find('#progress').hide();
+		Viewer.ui.querySelector('#progress').style.display = 'none';
 
 		// No file in directory ? (or error : the file isn't a directory)
 		if (!list.length) {
-			Viewer.ui.find('#msg').text('No file found.').show();
+			Viewer.ui.querySelector('#msg').textContent = 'No file found.'.style.display = '';
 			return;
 		}
 
@@ -449,7 +443,7 @@ define(function(require)
 					'</div>';
 			}
 
-			jQuery(html).appendTo('#grfviewer');
+			(function(){ var c = document.getElementById('grfviewer'); if(c){ c.insertAdjacentHTML('beforeend', html); } })();
 
 			i += j;
 
@@ -541,7 +535,7 @@ define(function(require)
 				return;
 			}
 
-			var nodes = jQuery('.img:lt(5)');
+			var nodes = Array.prototype.slice.call(document.querySelectorAll('.img'), 0, 5);
 			var load  = 0;
 			var total = nodes.length;
 
@@ -551,19 +545,19 @@ define(function(require)
 			}
 
 			// Work with current loaded files
-			nodes.each(function(){
-				var self = jQuery(this);
+			nodes.forEach(function(){
+				var self = this;
 
-				Client.getFile( self.data('path'), function( data ) {
-					// Clean from memory...
-					Memory.remove(self.data('path'));
-					self.removeClass('img').addClass('thumb');
+				Client.getFile( self.getAttribute('data-path'), function( data ) {
+					Memory.remove(self.getAttribute('data-path'));
+					self.classList.remove('img');
+					self.classList.add('thumb');
 
-					var url = getImageThumbnail( self.data('path'), data );
+					var url = getImageThumbnail( self.getAttribute('data-path'), data );
 
 					// Display image
 					if (url) {
-						var img = self.find('img:first').get(0);
+						var img = self.querySelector('img');
 						if (url.match(/^blob\:/)){
 							img.onload = img.onerror = img.onabort = cleanUp;
 						}
@@ -655,9 +649,9 @@ define(function(require)
 	{
 		var ui   = Viewer.ui;
 		var path = this.getAttribute('data-path');
-		var box  = ui.find('#preview .box');
+		var box  = ui.querySelector('#preview .box');
 
-		ui.find('#progress').show();
+		ui.querySelector('#progress').style.display = '';
 
 		Client.loadFile( path, function(url) {
 			// Create audio
@@ -666,18 +660,23 @@ define(function(require)
 			audio.controls = true;
 			audio.play();
 
-			// Show it on a box
-			box
-				.css('top', ( jQuery(window).height() - 100 ) / 2 )
-				.append(jQuery(audio).click(function(event){
-					event.stopPropagation();
-				}));
-
-			ui.find('#progress').hide();
-			ui.find('#preview').show().one('click', function(){
-				jQuery(this).hide();
-				box.find('audio').unbind().remove();
+			box.style.top = ((window.innerHeight - 100) / 2) + 'px';
+			box.innerHTML = '';
+			audio.addEventListener('click', function(event){
+				event.stopPropagation();
 			});
+			box.appendChild(audio);
+
+			ui.querySelector('#progress').style.display = 'none';
+			var preview = ui.querySelector('#preview');
+			preview.style.display = '';
+			preview.onclick = function(){
+				preview.style.display = 'none';
+				var a = box.querySelector('audio');
+				if (a) {
+					a.remove();
+				}
+			};
 		});
 	}
 
@@ -689,8 +688,8 @@ define(function(require)
 	{
 		var ui   = Viewer.ui;
 		var path = this.getAttribute('data-path');
-		var box  = ui.find('#preview .box');
-		ui.find('#progress').show();
+		var box  = ui.querySelector('#preview .box');
+		ui.querySelector('#progress').style.display = '';
 
 		Client.getFile( path, function(data)
 		{
@@ -701,12 +700,12 @@ define(function(require)
 				// Sprite support
 				case 'spr':
 					var spr = new Sprite(data);
-					box.css('top', 200);
+					box.style.top = (200) + 'px';
 
 					for (i = 0, count = spr.frames.length; i < count; ++i) {
 						canvas = spr.getCanvasFromFrame( i );
 						if (canvas) {
-							box.append(canvas);
+							box.appendChild(canvas);
 						}
 					}
 					break;
@@ -725,18 +724,16 @@ define(function(require)
 						ctx.fillRect( ( (i/4|0) % 16 )  * 8, ( (i/4|0) / 16 | 0 )  * 8, 8, 8 );
 					}
 
-					box
-						.css('top', jQuery(window).height() / 2 - 64 )
-						.append( canvas );
+					box.style.top = (window.innerHeight / 2 - 64) + 'px';
+					box.appendChild(canvas);
 					break;
 
 				// Targa support
 				case 'tga':
 					var tga = new Targa();
 					tga.load( new Uint8Array(data) );
-					box
-						.css('top', jQuery(window).height() / 2 - 64 )
-						.append( tga.getCanvas() );
+					box.style.top = (window.innerHeight / 2 - 64) + 'px';
+					box.appendChild(tga.getCanvas());
 						break;
 
 				// Image Support
@@ -747,9 +744,8 @@ define(function(require)
 					var img = new Image();
 					img.src = url;
 					img.onload = function() {
-						box
-							.css('top', (jQuery(window).height()-this.height)/2 )
-							.append(this);
+						box.style.top = ((window.innerHeight - this.height) / 2) + 'px';
+						box.appendChild(this);
 
 						URL.revokeObjectURL(url);
 					};
@@ -757,11 +753,11 @@ define(function(require)
 			}
 
 			// Display progress bar
-			ui.find('#preview').show();
-			ui.find('#progress').hide();
-			ui.find('#preview').one('click',function(){
-				jQuery(this).hide();
-				box.find('img, canvas').remove();
+			ui.querySelector('#preview').style.display = '';
+			ui.querySelector('#progress').style.display = 'none';
+			ui.querySelector('#preview').addEventListener('click', function(){
+				this.style.display = 'none';
+				box.querySelectorAll('img, canvas').forEach(function(el){ el.remove(); });
 			});
 		});
 	}
@@ -826,15 +822,15 @@ define(function(require)
 			var path  = this.getAttribute('data-path').replace(/\\/g, '/');
 
 			// Show iframe
-			ui.find('#preview .box').css('top', (jQuery(window).height()-400)* 0.5 );
+			ui.querySelector('#preview .box').style.top = ((window.innerHeight-400) + 'px'* 0.5 );
 			element.style.display = 'block';
 
 
-			ui.find('#preview').show();
+			ui.querySelector('#preview').style.display = '';
 
 			// Unload app
-			ui.find('#preview').one('click',function(){
-				ui.find('#preview').hide();
+			ui.querySelector('#preview').addEventListener('click', function(){
+				ui.querySelector('#preview').style.display = 'none';
 				element.style.display = 'none';
 				App._APP.postMessage({ type:'stop' }, location.origin);
 				window.removeEventListener('message', onMessage, false);
@@ -844,7 +840,7 @@ define(function(require)
 
 			if (!ready) {
 				// Once app is ready
-				ui.find('#preview .box').append(element);
+				ui.querySelector('#preview .box').appendChild(element);
 
 				App.start();
 				App.onReady = function(){
@@ -923,13 +919,13 @@ define(function(require)
 			var path = this.getAttribute('data-path').replace(/\\/g, '/');
 
 			// Show iframe
-			ui.find('#preview .box').css('top', (jQuery(window).height()-400)* 0.5 );
-			ui.find('#preview').show();
+			ui.querySelector('#preview .box').style.top = ((window.innerHeight-400) + 'px'* 0.5 );
+			ui.querySelector('#preview').style.display = '';
 			element.style.display = 'block';
 
 			// Unload app
-			ui.find('#preview').one('click',function(){
-				ui.find('#preview').hide();
+			ui.querySelector('#preview').addEventListener('click', function(){
+				ui.querySelector('#preview').style.display = 'none';
 				element.style.display = 'none';
 				App._APP.postMessage({ type:'stop' }, location.origin);
 				window.removeEventListener('message', onMessage, false);
@@ -939,7 +935,7 @@ define(function(require)
 
 			if (!ready) {
 				// Once app is ready
-				ui.find('#preview .box').append(element);
+				ui.querySelector('#preview .box').appendChild(element);
 
 				App.start();
 				App.onReady = function(){
@@ -1026,18 +1022,18 @@ define(function(require)
 			var ui   = Viewer.ui;
 			var path = this.getAttribute('data-path').replace(/\\/g, '/');
 
-			ui.find('#progress').show();
+			ui.querySelector('#progress').style.display = '';
 			element.style.display = 'block';
 
 			// Show iframe
-			ui.find('#preview .box').css('top', (jQuery(window).height()-480)* 0.5 );
-			ui.find('#preview').show();
-			ui.find('#progress').hide();
+			ui.querySelector('#preview .box').style.top = ((window.innerHeight-480) + 'px'* 0.5 );
+			ui.querySelector('#preview').style.display = '';
+			ui.querySelector('#progress').style.display = 'none';
 			document.body.style.overflow = 'hidden';
 
 			// Unload app
-			ui.find('#preview').one('click',function(){
-				ui.find('#preview').hide();
+			ui.querySelector('#preview').addEventListener('click', function(){
+				ui.querySelector('#preview').style.display = 'none';
 				document.body.style.overflow = 'auto';
 				element.style.display = 'none';
 
@@ -1049,7 +1045,7 @@ define(function(require)
 
 			if (!ready) {
 				// Once app is ready
-				ui.find('#preview .box').append(element);
+				ui.querySelector('#preview .box').appendChild(element);
 
 				App.start();
 				App.onReady = function(){
@@ -1083,39 +1079,40 @@ define(function(require)
 	{
 		var ui       = Viewer.ui;
 		var path     = this.getAttribute('data-path');
-		var progress = ui.find('#progress');
-		var box      = ui.find('#preview .box');
+		var progress = ui.querySelector('#progress');
+		var box      = ui.querySelector('#preview .box');
 
-		progress.show();
+		progress.style.display = '';
 
 		Client.loadFile( path, function( text ) {
-			box
-				.css('top', ( jQuery(window).height()-300 ) / 2 )
-				.append(
-					jQuery('<pre/>')
-					.text(text)
-					.click(function(event){
-						event.stopPropagation();
-					})
-					.css({
-						 background: 'white',
-						 width:      '500px',
-						 display:    'inline-block',
-						 height:     '300px',
-						 overflow:   'scroll',
-						 textAlign:  'left',
-						 padding:    '10px'
-					})
-				);
+			var pre = document.createElement('pre');
+			pre.textContent = text;
+			pre.addEventListener('click', function(event){
+				event.stopPropagation();
+			});
+			pre.style.background = 'white';
+			pre.style.width = '500px';
+			pre.style.display = 'inline-block';
+			pre.style.height = '300px';
+			pre.style.overflow = 'scroll';
+			pre.style.textAlign = 'left';
+			pre.style.padding = '10px';
 
-			progress.hide();
+			box.style.top = ((window.innerHeight - 300) / 2) + 'px';
+			box.innerHTML = '';
+			box.appendChild(pre);
 
-			ui.find('#preview')
-				.show()
-				.one('click',function(){
-					ui.find('#preview').hide();
-					box.find('pre').unbind().remove();
-				});
+			progress.style.display = 'none';
+
+			var preview = ui.querySelector('#preview');
+			preview.style.display = '';
+			preview.onclick = function(){
+				preview.style.display = 'none';
+				var p = box.querySelector('pre');
+				if (p) {
+					p.remove();
+				}
+			};
 		});
 	}
 
@@ -1185,15 +1182,15 @@ define(function(require)
 			var path  = this.getAttribute('data-path').replace(/\\/g, '/');
 
 			// Show iframe
-			ui.find('#preview .box').css('top', (jQuery(window).height()-400)* 0.5 );
+			ui.querySelector('#preview .box').style.top = ((window.innerHeight-400) + 'px'* 0.5 );
 			element.style.display = 'block';
 
 
-			ui.find('#preview').show();
+			ui.querySelector('#preview').style.display = '';
 
 			// Unload app
-			ui.find('#preview').one('click',function(){
-				ui.find('#preview').hide();
+			ui.querySelector('#preview').addEventListener('click', function(){
+				ui.querySelector('#preview').style.display = 'none';
 				element.style.display = 'none';
 				App._APP.postMessage({ type:'stop' }, location.origin);
 				window.removeEventListener('message', onMessage, false);
@@ -1203,7 +1200,7 @@ define(function(require)
 
 			if (!ready) {
 				// Once app is ready
-				ui.find('#preview .box').append(element);
+				ui.querySelector('#preview .box').appendChild(element);
 
 				App.start();
 				App.onReady = function(){

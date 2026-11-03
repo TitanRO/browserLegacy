@@ -10,7 +10,6 @@ define(function (require) {
 
 	'use strict';
 	
-	var $ = require("Utils/jquery");
 	var KEYS = require("Controls/KeyEventHandler");
 	var Preferences = require("Core/Preferences");
 	var Renderer = require("Renderer/Renderer");
@@ -20,6 +19,7 @@ define(function (require) {
 	var BattleMode = require("Controls/BattleMode");
 	var htmlText = require("text!./ShortCutOption.html");
 	var cssText = require("text!./ShortCutOption.css");
+	var DOM             = require('Utils/DOM');
 	
 	var ShortCutOption = new UIComponent("ShortCutOption", htmlText, cssText);
 	
@@ -41,29 +41,29 @@ define(function (require) {
 	 * Initialize UI
 	 */
 	ShortCutOption.init = function () {
-		this.ui.find(".close").on("click", function(){ ShortCutOption.remove(); });
-		this.ui.find(".tabs").on("click", "button", function () {
-			var tab = $(this).data("index");
-			ShortCutOption.ui.find(".selectedtab").removeClass("selectedtab");
-			ShortCutOption.ui.find("."+tab).addClass("selectedtab");
+		this.ui.querySelector(".close").addEventListener("click", function(){ ShortCutOption.remove(); });
+		DOM.addDelegatedEvent(this.ui.querySelector(".tabs"), "click", "button", function () {
+			var tab = this.getAttribute('data-index');
+			ShortCutOption.ui.querySelector(".selectedtab").classList.remove("selectedtab");
+			ShortCutOption.ui.querySelector("."+tab).classList.add("selectedtab");
 		});
-		this.ui.find("td").on("click", function () {
-			if ($(this).hasClass("customize")) {
+		this.ui.querySelector("td").addEventListener("click", function () {
+			if (this.classList.contains("customize")) {
 				ShortCutOption.isCapturing = true;
-				$("#ShortCutOption td.selected").removeClass("selected");
-				$(this).addClass("selected");
+				document.querySelectorAll("#ShortCutOption td.selected").forEach(function(el) { el.classList.remove("selected"); });
+				this.classList.add("selected");
 			} else {
 				ShortCutOption.isCapturing = false;
-				$("#ShortCutOption td.selected").removeClass("selected");
+				document.querySelectorAll("#ShortCutOption td.selected").forEach(function(el) { el.classList.remove("selected"); });
 			}
 		});
 		
-		this.ui.find(".button.reset").on("click", function(){ resetKeysToDefault(); });
-		this.ui.find(".button.ok").on("click", function(){ applySettings(); });
-		this.ui.find(".button.cancel").on("click", function(){ cancelSettings(); });
+		this.ui.querySelector(".button.reset").addEventListener("click", function(){ resetKeysToDefault(); });
+		this.ui.querySelector(".button.ok").addEventListener("click", function(){ applySettings(); });
+		this.ui.querySelector(".button.cancel").addEventListener("click", function(){ cancelSettings(); });
 		
 		updateKeyList();
-		this.draggable(this.ui.find(".titlebar"));
+		this.draggable(this.ui.querySelector(".titlebar"));
 	};
 
 
@@ -71,9 +71,9 @@ define(function (require) {
 	 * Apply preferences once append to body
 	 */
 	ShortCutOption.onAppend = function () {
-		this.ui.css({
-			top: .5 * (Renderer.height - this.ui.height()),
-			left: .5 * (Renderer.width - this.ui.width()),
+		DOM.setCss(this.ui, {
+			top: .5 * (Renderer.height - this.ui.offsetHeight),
+			left: .5 * (Renderer.width - this.ui.offsetWidth),
 			zIndex: 100
 		});
 	};
@@ -83,8 +83,8 @@ define(function (require) {
 	 * Remove Inventory from window (and so clean up items)
 	 */
 	ShortCutOption.onRemove = function () {
-		_preferences.x = parseInt(this.ui.css("left"), 10);
-		_preferences.y = parseInt(this.ui.css("top"), 10);
+		_preferences.x = parseInt(this.ui.style.left, 10);
+		_preferences.y = parseInt(this.ui.style.top, 10);
 		_preferences.save();
 	};
 
@@ -97,36 +97,38 @@ define(function (require) {
 	ShortCutOption.onKeyDown = function (event) {
 		if (ShortCutOption.isCapturing) {
 			if (16 != event.which && 17 != event.which && 18 != event.which) {
-				var box = ShortCutOption.ui.find("td.selected");
+				var box = ShortCutOption.ui.querySelector("td.selected");
 				
 				if ( tempMatch(event.which) ) {
 					return alert("Key already assigned!"), false;
-				} else if( ShortCuts[box.data("button")] ){
+				} else if( ShortCuts[box.getAttribute('data-button')] ){
 					
 					if(event.which == 27){ // Escape
-						ShortCutsTemp[box.data("button")] = {};
-						ShortCutsTemp[box.data("button")].cust = {};
-						ShortCutsTemp[box.data("button")].cust.key = "";
-						ShortCutsTemp[box.data("button")].cust.alt = false;
-						ShortCutsTemp[box.data("button")].cust.ctrl = false;
-						ShortCutsTemp[box.data("button")].cust.shift = false;
+						ShortCutsTemp[box.getAttribute('data-button')] = {};
+						ShortCutsTemp[box.getAttribute('data-button')].cust = {};
+						ShortCutsTemp[box.getAttribute('data-button')].cust.key = "";
+						ShortCutsTemp[box.getAttribute('data-button')].cust.alt = false;
+						ShortCutsTemp[box.getAttribute('data-button')].cust.ctrl = false;
+						ShortCutsTemp[box.getAttribute('data-button')].cust.shift = false;
 					} else {
-						ShortCutsTemp[box.data("button")] = {};
-						ShortCutsTemp[box.data("button")].cust = {};
-						ShortCutsTemp[box.data("button")].cust.key = event.which;
-						ShortCutsTemp[box.data("button")].cust.alt = KEYS.ALT;
-						ShortCutsTemp[box.data("button")].cust.ctrl = KEYS.CTRL;
-						ShortCutsTemp[box.data("button")].cust.shift = KEYS.SHIFT;
+						ShortCutsTemp[box.getAttribute('data-button')] = {};
+						ShortCutsTemp[box.getAttribute('data-button')].cust = {};
+						ShortCutsTemp[box.getAttribute('data-button')].cust.key = event.which;
+						ShortCutsTemp[box.getAttribute('data-button')].cust.alt = KEYS.ALT;
+						ShortCutsTemp[box.getAttribute('data-button')].cust.ctrl = KEYS.CTRL;
+						ShortCutsTemp[box.getAttribute('data-button')].cust.shift = KEYS.SHIFT;
 					}
 					
-					box.text((getAlt(box.data("button")) ? "ALT + " : "") + (getCtrl(box.data("button")) ? "CTRL + " : "") + (getShift(box.data("button")) ? "SHIFT + " : "") + KEYS.toReadableKey(getKey(box.data("button")), 10));
+					box.textContent = (getAlt(box.getAttribute('data-button') ? "ALT + " : "") + (getCtrl(box.getAttribute('data-button')) ? "CTRL + " : "") + (getShift(box.getAttribute('data-button')) ? "SHIFT + " : "") + KEYS.toReadableKey(getKey(box.getAttribute('data-button')), 10));
 					
-					$("#ShortCutOption td.selected").addClass("changed");
-					$("#ShortCutOption td.selected").removeClass("selected");
+					document.querySelectorAll("#ShortCutOption td.selected").forEach(function(el) {
+						el.classList.add("changed");
+						el.classList.remove("selected");
+					});
 					ShortCutOption.isCapturing = false;
 				} else {
-					console.warn( 'Shortcut "'+box.data("button")+'" is not defined in ShortCutControls' );
-					$("#ShortCutOption td.selected").removeClass("selected");
+					console.warn( 'Shortcut "'+box.getAttribute('data-button')+'" is not defined in ShortCutControls' );
+					document.querySelectorAll("#ShortCutOption td.selected").forEach(function(el) { el.classList.remove("selected"); });
 					ShortCutOption.isCapturing = false;
 				}
 				event.stopImmediatePropagation();
@@ -139,17 +141,17 @@ define(function (require) {
 	 * Updates the key list on the UI
 	 */
 	function updateKeyList() {
-		var $shortcut = ShortCutOption.ui.find("td[data-button]");
+		var $shortcut = ShortCutOption.ui.querySelectorAll("td[data-button]");
 		for (var i=0; i < $shortcut.length; i++) {
-			if (getKey($shortcut.eq(i).data("button"))) {
-				$shortcut.eq(i).text(
-					(getAlt($shortcut.eq(i).data("button")) ? "ALT + " : "") + 
-					(getCtrl($shortcut.eq(i).data("button")) ? "CTRL + " : "") + 
-					(getShift($shortcut.eq(i).data("button")) ? "SHIFT + " : "") + 
-					KEYS.toReadableKey(parseInt(getKey($shortcut.eq(i).data("button")), 10))
+			if (getKey($shortcut[i].getAttribute('data-button'))) {
+				$shortcut[i].textContent = 
+					(getAlt($shortcut[i].getAttribute('data-button') ? "ALT + " : "") + 
+					(getCtrl($shortcut[i].getAttribute('data-button')) ? "CTRL + " : "") + 
+					(getShift($shortcut[i].getAttribute('data-button')) ? "SHIFT + " : "") + 
+					KEYS.toReadableKey(parseInt(getKey($shortcut[i].getAttribute('data-button')), 10))
 				);
 			} else {
-				$shortcut.eq(i).text("N/A");
+				$shortcut[i].textContent = "N/A";
 			}
 		}
 	}
@@ -164,9 +166,9 @@ define(function (require) {
 			ShortCutsTemp[SC] = {};
 			ShortCutsTemp[SC].cust = false;
 			if( ShortCuts[SC].cust != ShortCutsTemp[SC].cust){
-				$("#ShortCutOption td[data-button='"+SC+"']").addClass("changed");
+				document.querySelector("#ShortCutOption td[data-button='"+SC+"']").classList.add("changed");
 			} else {
-				$("#ShortCutOption td[data-button='"+SC+"']").removeClass("changed");
+				document.querySelector("#ShortCutOption td[data-button='"+SC+"']").classList.remove("changed");
 			}
 		});
 		updateKeyList();
@@ -194,7 +196,7 @@ define(function (require) {
 		BattleMode.reload();
 		ShortCutsTemp = {};
 		updateKeyList();
-		$("#ShortCutOption td.changed").removeClass("changed");
+		document.querySelectorAll("#ShortCutOption td.changed").forEach(function(el) { el.classList.remove("changed"); });
 	}
 	
 	/**
@@ -203,7 +205,7 @@ define(function (require) {
 	function cancelSettings() {
 		ShortCutsTemp = {};
 		updateKeyList();
-		$("#ShortCutOption td.changed").removeClass("changed");
+		document.querySelectorAll("#ShortCutOption td.changed").forEach(function(el) { el.classList.remove("changed"); });
 	}
 
 	/**

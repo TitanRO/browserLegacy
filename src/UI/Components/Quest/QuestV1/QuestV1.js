@@ -25,9 +25,9 @@ define(function (require) {
 	var QuestHelper = require('./QuestHelperV1');
 	var htmlText = require('text!./QuestV1.html');
 	var cssText = require('text!./QuestV1.css');
-	var jQuery = require('Utils/jquery');
 	var ChatBox = require('UI/Components/ChatBox/ChatBox');
 	var Session = require('Engine/SessionStorage');
+	var DOM             = require('Utils/DOM');
 
 	/**
 	 * Create Component
@@ -73,18 +73,23 @@ define(function (require) {
 		QuestHelper.prepare();
 
 		// Avoid drag drop problems
-		this.ui.find('.base').mousedown(function (event) {
-			event.stopImmediatePropagation();
-			return false;
-		});
+		var stopBlock = this.ui.querySelector('.btn-left');
+		if (stopBlock) {
+			stopBlock.addEventListener('mousedown', function (event) {
+				event.stopImmediatePropagation();
+				return false;
+			});
+		}
 
-		this.ui.find('.view').click(onClickView);
-		this.ui.find('.close').click(onClose);
-		this.ui.find('.btn-right').click(onClose);
+		var viewBtn = this.ui.querySelector('.footer .btn.view');
+		if (viewBtn) {
+			viewBtn.addEventListener('click', onClickView);
+		}
 
-		this.ui.on('click', '.quest-menu-item', onClickMenu);
-		this.ui.find('#active-quest-list').show();
-		this.draggable(this.ui.find('.titlebar'));
+		DOM.addDelegatedEvent(this.ui, 'click', '.btn-right, .footer .close', onClose);
+		DOM.addDelegatedEvent(this.ui, 'click', '.quest-menu-item', onClickMenu);
+		this.ui.querySelector('#active-quest-list').style.display = '';
+		this.draggable(this.ui.querySelector('.titlebar'));
 	};
 
 
@@ -94,21 +99,21 @@ define(function (require) {
 	QuestV1.onAppend = function onAppend() {
 		_index = -1;
 
-		this.ui.css({
-			top: Math.min(Math.max(0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min(Math.max(0, _preferences.x), Renderer.width - this.ui.width())
+		DOM.setCss(this.ui, {
+			top: Math.min(Math.max(0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min(Math.max(0, _preferences.x), Renderer.width - this.ui.offsetWidth)
 		});
 
 		Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/tab_que_01.bmp', function (data) {
-			QuestV1.ui.find('.quest-menu').css('backgroundImage', 'url(' + data + ')');
+			QuestV1.ui.querySelector('.quest-menu').style.backgroundImage = 'url(' + data + ')';
 		}.bind(this));
 
-		QuestV1.ui.find('#active-quest-list').show();
-		QuestV1.ui.find('#inactive-quest-list').hide();
-		QuestV1.ui.find('#all-quest-list').hide();
+		QuestV1.ui.querySelector('#active-quest-list').style.display = '';
+		QuestV1.ui.querySelector('#inactive-quest-list').style.display = 'none';
+		QuestV1.ui.querySelector('#all-quest-list').style.display = 'none';
 
 		if (!_preferences.show) {
-			this.ui.hide();
+			this.ui.style.display = 'none';
 		}
 	};
 
@@ -119,9 +124,9 @@ define(function (require) {
 	QuestV1.clean = function clean() {
 		_active_menu = '';
 		_questList = {};
-		QuestV1.ui.find('#active-quest-list').hide();
-		QuestV1.ui.find('#inactive-quest-list').hide();
-		QuestV1.ui.find('#all-quest-list').hide();
+		QuestV1.ui.querySelector('#active-quest-list').style.display = 'none';
+		QuestV1.ui.querySelector('#inactive-quest-list').style.display = 'none';
+		QuestV1.ui.querySelector('#all-quest-list').style.display = 'none';
 		QuestV1.ClearQuestList();
 		QuestHelper.clearQuestDesc();
 		onClose();
@@ -134,9 +139,9 @@ define(function (require) {
 	 */
 	QuestV1.onRemove = function onRemove() {
 		// Save preferences
-		_preferences.show = this.ui.is(':visible');
-		_preferences.y = parseInt(this.ui.css('top'), 10);
-		_preferences.x = parseInt(this.ui.css('left'), 10);
+		_preferences.show = DOM.isVisible(this.ui);
+		_preferences.y = parseInt(this.ui.style.top, 10);
+		_preferences.x = parseInt(this.ui.style.left, 10);
 		_preferences.save();
 	};
 
@@ -147,8 +152,8 @@ define(function (require) {
 	QuestV1.onShortCut = function onShurtCut(key) {
 		switch (key.cmd) {
 			case 'TOGGLE':
-				this.ui.toggle();
-				if (this.ui.is(':visible')) {
+				DOM.toggleDisplay(this.ui);
+				if (DOM.isVisible(this.ui)) {
 					this.focus();
 				}
 				break;
@@ -160,10 +165,10 @@ define(function (require) {
 	 * Show/Hide UI
 	 */
 	QuestV1.toggle = function toggle() {
-		if (this.ui.is(':visible')) {
-			this.ui.hide();
+		if (DOM.isVisible(this.ui)) {
+			this.ui.style.display = 'none';
 		} else {
-			this.ui.show();
+			this.ui.style.display = '';
 		}
 	};
 
@@ -281,61 +286,80 @@ define(function (require) {
 
 		let ul_id = (quest.active == 1) ? "#active-quest-list" : "#inactive-quest-list";
 
-		this.ui.find(ul_id).append(li_text);
-		this.ui.find('#' + toggle_id).on('contextmenu', onClickQuestToggle);
-		this.ui.find('#' + toggle_id).on('click', onClickQuest);
-		this.ui.find('#all-quest-list').append(li_text);
-		this.ui.find('.' + toggle_id).on('click', onClickQuest);
-		this.ui.each(this.parseHTML).find('*').each(this.parseHTML);
+		var _tmp = document.createElement('div');
+		_tmp.innerHTML = li_text;
+		var liEl = _tmp.firstChild;
+		if (!liEl) {
+			return;
+		}
+
+		var listEl = this.ui.querySelector(ul_id);
+		if (listEl) {
+			listEl.appendChild(liEl);
+		}
+		liEl.addEventListener('contextmenu', onClickQuestToggle);
+		liEl.addEventListener('click', onClickQuest);
+
+		var allListEl = this.ui.querySelector('#all-quest-list');
+		if (allListEl) {
+			var liClone = liEl.cloneNode(true);
+			liClone.addEventListener('click', onClickQuest);
+			allListEl.appendChild(liClone);
+			this.parseElementTree(liClone);
+		}
+
+		this.parseElementTree(liEl);
 	};
 
 
 	function onClickMenu(e) {
-		var quest_element = jQuery(e.currentTarget);
+		var quest_element = e.currentTarget;
 
-		if (_active_menu == quest_element.attr('id')) return;
-		_active_menu = quest_element.attr('id');
+		if (_active_menu == quest_element.getAttribute('id')) return;
+		_active_menu = quest_element.getAttribute('id');
 
 		var background_image = "";
-		QuestV1.ui.find('#active-quest-list').hide();
-		QuestV1.ui.find('#inactive-quest-list').hide();
-		QuestV1.ui.find('#all-quest-list').hide();
+		QuestV1.ui.querySelector('#active-quest-list').style.display = 'none';
+		QuestV1.ui.querySelector('#inactive-quest-list').style.display = 'none';
+		QuestV1.ui.querySelector('#all-quest-list').style.display = 'none';
 		switch (_active_menu) {
 			case 'inactive':
 				background_image = "tab_que_02";
-				QuestV1.ui.find('#inactive-quest-list').show();
+				QuestV1.ui.querySelector('#inactive-quest-list').style.display = '';
 				break;
 			case 'all':
 				background_image = "tab_que_03";
-				QuestV1.ui.find('#all-quest-list').show();
+				QuestV1.ui.querySelector('#all-quest-list').style.display = '';
 				break;
 			default:
 				background_image = "tab_que_01";
-				QuestV1.ui.find('#active-quest-list').show();
+				QuestV1.ui.querySelector('#active-quest-list').style.display = '';
 		}
 
 		Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/' + background_image + '.bmp', function (data) {
-			QuestV1.ui.find('.quest-menu').css('backgroundImage', 'url(' + data + ')');
+			QuestV1.ui.querySelector('.quest-menu').style.backgroundImage = 'url(' + data + ')';
 		}.bind(this));
 
 		QuestHelper.clearQuestDesc();
 	}
 
 	function onClickQuest(e) {
-		var toggle_element = jQuery(e.currentTarget);
-		let tid = toggle_element.attr('id');
+		var toggle_element = e.currentTarget;
+		let tid = toggle_element.getAttribute('id');
 		let id = tid.replace("qid", "");
 		if (_index > -1) {
-			QuestV1.ui.find('.qid' + _index).css('background-color', 'white');
-			QuestV1.ui.find('#qid' + _index).css('background-color', 'white');
+			var _oldEl = QuestV1.ui.querySelector('.qid' + _index);
+			if (_oldEl) { _oldEl.style.backgroundColor = 'white'; }
+			var _oldEl2 = QuestV1.ui.querySelector('#qid' + _index);
+			if (_oldEl2) { _oldEl2.style.backgroundColor = 'white'; }
 		}
 		_index = id;
-		toggle_element.css('background-color', 'lightgray');
+		toggle_element.style.backgroundColor = 'lightgray';
 	}
 
 	function onClickQuestToggle(e) {
-		var toggle_element = jQuery(e.currentTarget);
-		let tid = toggle_element.attr('id');
+		var toggle_element = e.currentTarget;
+		let tid = toggle_element.getAttribute('id');
 		let id = tid.replace("qid", "");
 		var _pkt = new PACKET.CZ.ACTIVE_QUEST();
 		_pkt.questID = _questList[id].questID;
@@ -349,7 +373,7 @@ define(function (require) {
 			QuestHelper.setQuestInfo(_questList[_index]);
 			QuestHelper.prepare();
 			QuestHelper.append();
-			QuestHelper.ui.show();
+			QuestHelper.ui.style.display = '';
 			QuestHelper.ui.focus();
 		}
 	}
@@ -360,7 +384,9 @@ define(function (require) {
 	}
 
 	QuestV1.ClearQuestList = function ClearQuestList() {
-		QuestV1.ui.find('.quest-list').html('');
+		QuestV1.ui.querySelectorAll('.quest-list').forEach(function (el) {
+			el.innerHTML = '';
+		});
 	}
 
 
@@ -368,7 +394,7 @@ define(function (require) {
 	 * Close the window
 	 */
 	function onClose() {
-		QuestV1.ui.hide();
+		QuestV1.ui.style.display = 'none';
 	}
 
 	/**

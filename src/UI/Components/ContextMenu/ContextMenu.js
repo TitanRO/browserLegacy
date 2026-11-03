@@ -13,7 +13,6 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
-	var jQuery       = require('Utils/jquery');
 	var Renderer     = require('Renderer/Renderer');
 	var Mouse        = require('Controls/MouseEventHandler');
 	var UIManager    = require('UI/UIManager');
@@ -32,13 +31,15 @@ define(function(require)
 	 */
 	ContextMenu.init = function init()
 	{
-		this.ui.mousedown(function(){
+		this.ui.addEventListener('mousedown', function(){
 			ContextMenu.remove();
 		});
 
-		this.ui.find('.menu').on('mousedown', 'div', function(event){
-			event.stopImmediatePropagation();
-			return false;
+		this.ui.querySelector('.menu').addEventListener('mousedown', function(event){
+			if (event.target.matches('div')) {
+				event.stopImmediatePropagation();
+				return false;
+			}
 		});
 	};
 
@@ -48,9 +49,9 @@ define(function(require)
 	 */
 	ContextMenu.onAppend = function onAppend()
 	{
-		var menu   = this.ui.find('.menu');
-		var width  = menu.width();
-		var height = menu.height();
+		var menu   = this.ui.querySelector('.menu');
+		var width  = menu.offsetWidth;
+		var height = menu.offsetHeight;
 		var x      = Mouse.screen.x;
 		var y      = Mouse.screen.y;
 
@@ -62,7 +63,8 @@ define(function(require)
 			y = Mouse.screen.y - height;
 		}
 
-		menu.css({ top:y, left:x });
+		menu.style.top  = y + 'px';
+		menu.style.left = x + 'px';
 	};
 
 
@@ -71,7 +73,7 @@ define(function(require)
 	 */
 	ContextMenu.onRemove = function onRemove()
 	{
-		this.ui.find('.menu').empty();
+		this.ui.querySelector('.menu').innerHTML = '';
 	};
 
 
@@ -83,10 +85,13 @@ define(function(require)
 	 */
 	ContextMenu.addElement = function addElement(text, callback)
 	{
-		this.ui.find('.menu').append(jQuery('<div/>').text(text).click(function(){
+		var div = document.createElement('div');
+		div.textContent = text;
+		div.addEventListener('click', function(){
 			ContextMenu.remove();
 			callback();
-		}));
+		});
+		this.ui.querySelector('.menu').appendChild(div);
 	};
 
 
@@ -95,7 +100,7 @@ define(function(require)
 	 */
 	ContextMenu.nextGroup = function nextGroup()
 	{
-		this.ui.find('.menu').append('<hr/>');
+		this.ui.querySelector('.menu').insertAdjacentHTML('beforeend', '<hr/>');
 	};
 
 

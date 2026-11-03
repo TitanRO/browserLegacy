@@ -34,7 +34,7 @@ define(function(require)
 	 */
 	CardIllustration.init = function init()
 	{
-		this.ui.find('.close').click(this.remove.bind(this));
+		this.ui.querySelector('.close').addEventListener('click', this.remove.bind(this));
 		this.draggable();
 	};
 
@@ -46,11 +46,11 @@ define(function(require)
 	 */
 	CardIllustration.setCard = function setCard( item )
 	{
-		this.ui.find('.titlebar .text').text( item.identifiedDisplayName );
-		this.ui.find('.content').css('backgroundImage', 'none' );
+		this.ui.querySelector('.titlebar .text').textContent =  item.identifiedDisplayName ;
+		this.ui.querySelector('.content').style.backgroundImage = 'none' ;
 
 		Client.loadFile( DB.INTERFACE_PATH + 'cardbmp/' + item.illustResourcesName + '.bmp', function(data){
-			this.ui.find('.content').css('backgroundImage', 'url('+data+')' );
+			this.ui.querySelector('.content').style.backgroundImage = 'url('+ data +')';
 		}.bind(this));
 	};
 

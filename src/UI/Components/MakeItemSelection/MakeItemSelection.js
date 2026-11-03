@@ -15,7 +15,7 @@
      /**
       * Dependencies
       */
-     var jQuery      = require('Utils/jquery');
+     var DOM         = require('Utils/DOM');
      var DB          = require('DB/DBManager');
      var SkillInfo   = require('DB/Skills/SkillInfo');
      var Client      = require('Core/Client');
@@ -49,38 +49,43 @@
      MakeItemSelection.init = function init()
      {
          // Show at center.
-         this.ui.css({
+         DOM.setCss(this.ui, {
              top:  (Renderer.height- 200)/2,
              left: (Renderer.width - 200)/2
          });
 
-         this.list  = this.ui.find('.list:first');
+         this.list  = this.ui.querySelector('.list');
          this.index = 0;
 		 this.mkType = 0;
          this.material = [];
 
-         this.draggable(this.ui.find('.head'));
+         this.draggable(this.ui.querySelector('.head'));
 
          // Click Events
-         this.ui.find('.cancel').click(function(){
+         this.ui.querySelector('.cancel').addEventListener('click', function(){
              this.index = -1;
              this.selectIndex();
          }.bind(this) );
 
          // Bind events
-         this.ui
-             .on('mousedown', '.item', function(){
-                 MakeItemSelection.setIndex( Math.floor(this.getAttribute('data-index')) );
-             });
+         DOM.addDelegatedEvent(this.ui, 'mousedown', '.item', function(){
+             MakeItemSelection.setIndex( Math.floor(this.getAttribute('data-index')) );
+         });
+
+         DOM.addDelegatedEvent(this.ui, 'dblclick', '.item', function(event){
+             if (MakeItemSelection._itemDblClick) {
+                 MakeItemSelection._itemDblClick.call(this, event);
+             }
+         });
 
          // on drop item
-         this.ui.find('.materials')
-                 .on('drop',     onDrop)
-                 .on('dragover', stopPropagation);
+         var _misMaterials = this.ui.querySelector('.materials');
+         _misMaterials.addEventListener('drop', onDrop);
+         _misMaterials.addEventListener('dragover', stopPropagation);
 
 
-		this.ui.find('.item').remove();
-        this.ui.find('.materials').hide();
+		this.ui.querySelector('.item').remove();
+        this.ui.querySelector('.materials').style.display = 'none';
      };
 
 
@@ -94,10 +99,10 @@
          var i, count;
          var item, it, file, name, showMaterials;
 
-         MakeItemSelection.list.empty();
-		 this.ui.find('.list').css('backgroundColor', '#f7f7f7');
-         this.ui.find('.materials').hide();
-		 this.ui.find('.item').remove();
+         MakeItemSelection.list.innerHTML = '';
+		 this.ui.querySelector('.list').style.backgroundColor = '#f7f7f7';
+         this.ui.querySelector('.materials').style.display = 'none';
+		 this.ui.querySelector('.item').remove();
 
          showMaterials = true;
          this.mkType = 0;
@@ -133,10 +138,10 @@
          var i, count;
          var item, it, file, name;
 
-         MakeItemSelection.list.empty();
-		 this.ui.find('.list').css('backgroundColor', '#f7f7f7');
-         this.ui.find('.materials').hide();
-		 this.ui.find('.item').remove();
+         MakeItemSelection.list.innerHTML = '';
+		 this.ui.querySelector('.list').style.backgroundColor = '#f7f7f7';
+         this.ui.querySelector('.materials').style.display = 'none';
+		 this.ui.querySelector('.item').remove();
 
 		 this.mkType = mkType; // add mk type
 
@@ -165,17 +170,17 @@
       */
      function addElement( url, index, name)
      {
-         MakeItemSelection.list.append(
+         MakeItemSelection.list.insertAdjacentHTML('beforeend',
              '<div class="item" data-index="'+ index +'">' +
                  '<div class="icon"></div>' +
-                 '<span class="name">' + jQuery.escape(name) + '</span>' +
+                 '<span class="name">' + DOM.escapeHtml(name) + '</span>' +
              '</div>'
          );
 
          Client.loadFile( url, function(data){
              MakeItemSelection.list
-                 .find('div[data-index='+ index +'] .icon')
-                 .css('backgroundImage', 'url('+ data +')');
+                 .querySelector('div[data-index="'+ index +'"] .icon')
+                 .style.backgroundImage = 'url('+ data +')';
          });
      }
 
@@ -187,25 +192,24 @@
       */
      MakeItemSelection.advance = function advance(){
          var it, title, metal;
-         MakeItemSelection.list.empty();
+         MakeItemSelection.list.innerHTML = '';
          it   = DB.getItemInfo( this.index );
          title = it.identifiedDisplayName + ' ' + DB.getMessage(426);
          metal = it.processitemlist;
          MakeItemSelection.setTitle(title);
 
-         this.ui.find('.ok').unbind('click');
-         this.ui.find('.ok').click( this.selectIndex.bind(this) );
-         this.ui.find('.list').css('backgroundColor', '#ffffff');
+         var okBtn = this.ui.querySelector('.ok');
+         okBtn.replaceWith(okBtn.cloneNode(true));
+         this.ui.querySelector('.ok').addEventListener('click', this.selectIndex.bind(this));
+         this.ui.querySelector('.list').style.backgroundColor = '#ffffff';
 
-         // Rune craft passa direto
-         this.ui.find('.list')
-			.append(
+         this.ui.querySelector('.list').insertAdjacentHTML('beforeend',
 				`<pre>${it.identifiedDisplayName} - ${DB.getMessage(427)}`+
 					`\n`+
 					`${metal}`+
 				`</pre>`
 			);
-         this.ui.find('.materials').show()
+         this.ui.querySelector('.materials').style.display = ''
 
      };
 
@@ -218,8 +222,8 @@
      MakeItemSelection.setIndex = function setIndex( id )
      {
 		 id = id === 0 ? this.index : id;
-         this.list.find('div[data-index='+ this.index +']').removeClass('select');
-         this.list.find('div[data-index='+ id         +']').addClass('select');
+         this.list.querySelector('div[data-index='+ this.index +']').classList.remove('select');
+         this.list.querySelector('div[data-index='+ id         +']').classList.add('select');
          this.index = id;
      };
 
@@ -254,7 +258,7 @@
       */
      MakeItemSelection.setTitle = function setTitle( title )
      {
-         this.ui.find('.head .text').text( title );
+         this.ui.querySelector('.head .text').textContent =  title ;
      };
 
 
@@ -295,23 +299,23 @@
      {
 
          var it      = DB.getItemInfo( item.ITID );
-         var content = this.ui.find('.materials');
+         var content = this.ui.querySelector('.materials');
 
-         content.append(
+         content.insertAdjacentHTML('beforeend',
              '<div class="item" data-index="'+ item.index +'" draggable="false">' +
                  '<div class="icon"></div>' +
              '</div>'
          );
 
-         if (content.height() < content[0].scrollHeight) {
-             this.ui.find('.hide').hide();
+         if (content.offsetHeight < content.scrollHeight) {
+             this.ui.querySelector('.hide').style.display = 'none';
          }
          else {
-             this.ui.find('.hide').show();
+             this.ui.querySelector('.hide').style.display = '';
          }
 
          Client.loadFile( DB.INTERFACE_PATH + 'item/' + ( item.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName ) + '.bmp', function(data){
-             content.find('.item[data-index="'+ item.index +'"] .icon').css('backgroundImage', 'url('+ data +')');
+             content.querySelector('.item[data-index="'+ item.index +'"] .icon').style.backgroundImage = 'url('+ data +')';
          });
 
          return true;
@@ -330,7 +334,7 @@
 
          try {
              data = JSON.parse(
-                 event.originalEvent.dataTransfer.getData('Text')
+                 event.dataTransfer.getData('Text')
              );
          }
          catch(e) {}
@@ -361,21 +365,16 @@
 
 
      function bindSelectEvents(showMaterials){
+         var okBtn = MakeItemSelection.ui.querySelector('.ok');
+         var newOk = okBtn.cloneNode(true);
+         okBtn.parentNode.replaceChild(newOk, okBtn);
+
          if(showMaterials){
-
-             MakeItemSelection.ui.find('.ok').unbind('click');
-             MakeItemSelection.ui.find('.ok').click( MakeItemSelection.advance.bind(MakeItemSelection) );
-
-			 MakeItemSelection.ui.off('dblclick', '.item');
-			 MakeItemSelection.ui.on('dblclick', '.item', MakeItemSelection.advance.bind(MakeItemSelection));
-
+             newOk.addEventListener('click', MakeItemSelection.advance.bind(MakeItemSelection));
+             MakeItemSelection._itemDblClick = MakeItemSelection.advance.bind(MakeItemSelection);
          }else{
-
-             MakeItemSelection.ui.find('.ok').unbind('click');
-			 MakeItemSelection.ui.find('.ok').click( MakeItemSelection.selectIndex.bind(MakeItemSelection) );
-
-             MakeItemSelection.ui.off('dblclick', '.item');
-             MakeItemSelection.ui.on('dblclick', '.item', MakeItemSelection.selectIndex.bind(MakeItemSelection));
+             newOk.addEventListener('click', MakeItemSelection.selectIndex.bind(MakeItemSelection));
+             MakeItemSelection._itemDblClick = MakeItemSelection.selectIndex.bind(MakeItemSelection);
          }
      }
 

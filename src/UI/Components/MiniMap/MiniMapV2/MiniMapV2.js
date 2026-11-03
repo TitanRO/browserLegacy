@@ -11,6 +11,7 @@ define(function(require)
 {
 	'use strict';
 
+	var DOM       = require('Utils/DOM');
 
 	/**
 	 * Dependencies
@@ -129,7 +130,7 @@ define(function(require)
 			};
 		}
 
-		_ctx          = this.ui.find('canvas')[0].getContext('2d');
+		_ctx          = this.ui.querySelector('canvas').getContext('2d');
 		this.opacity  = 2;
 
 		Client.loadFile( DB.INTERFACE_PATH + 'map/map_arrow.bmp', function(dataURI){
@@ -160,11 +161,11 @@ define(function(require)
 
 		
 		// Bind DOM elements
-		this.ui.find('.plus').mousedown(genericUpdateZoom(+1));
-		this.ui.find('.minus').mousedown(genericUpdateZoom(-1));
+		this.ui.querySelector('.plus').addEventListener('mousedown', genericUpdateZoom(+1));
+		this.ui.querySelector('.minus').addEventListener('mousedown', genericUpdateZoom(-1));
 
 		// Bind DOM elements
-		this.ui.find('.info_container button').mousedown(function(){
+		this.ui.querySelector('.info_container button').addEventListener('mousedown', function(){
 			switch (this.className) {
 				case 'object':
 					_preferences.townInfoShow = !_preferences.townInfoShow;
@@ -404,8 +405,8 @@ define(function(require)
 	 */
 	MiniMapV2.updateCoordinates = function updateCoordinates( x, y )
 	{
-		MiniMapV2.ui.find('.coordinates .coord.x').html(Math.floor(x));
-		MiniMapV2.ui.find('.coordinates .coord.y').html(Math.floor(y));
+		MiniMapV2.ui.querySelector('.coordinates .coord.x').innerHTML = Math.floor(x);
+		MiniMapV2.ui.querySelector('.coordinates .coord.y').innerHTML = Math.floor(y);
 	};
 
 
@@ -432,17 +433,17 @@ define(function(require)
 
 		switch (this.opacity) {
 			case 0:
-				this.ui.hide();
+				DOM.hide(this.ui);
 				break;
 
 			case 1:
 				_ctx.globalAlpha = 0.5;
-				this.ui.show();
+				DOM.show(this.ui);
 				break;
 
 			case 2:
 				_ctx.globalAlpha = 1.0;
-				this.ui.show();
+				DOM.show(this.ui);
 				break;
 		}
 	};

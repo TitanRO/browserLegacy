@@ -17,7 +17,6 @@ define(function( require )
 	/**
 	 * Load dependencies
 	 */
-	var jQuery           = require('Utils/jquery');
 	var DB               = require('DB/DBManager');
 	var Configs          = require('Core/Configs');
 	var SoundManager     = require('Audio/SoundManager');
@@ -37,6 +36,7 @@ define(function( require )
 	var Mouse            = require('Controls/MouseEventHandler');
 	var KEYS             = require('Controls/KeyEventHandler');
 	var UIManager        = require('UI/UIManager');
+	var DOM              = require('Utils/DOM');
 	var EffectManager    = require('Renderer/EffectManager');
 	var Background       = require('UI/Background');
 	var Escape           = require('UI/Components/Escape/Escape');
@@ -104,6 +104,28 @@ define(function( require )
 
 	var snCounter = 0;
 	var chatLines = 0;
+
+
+	/**
+	 * Sit/stand toggle on INSERT key while on map
+	 *
+	 * @param {KeyboardEvent} event
+	 */
+	function onMapKeyDown(event)
+	{
+		if (event.which === KEYS.INSERT) {
+			var pkt;
+			if(PACKETVER.value >= 20180307) {
+				pkt        = new PACKET.CZ.REQUEST_ACT2();
+			} else {
+				pkt        = new PACKET.CZ.REQUEST_ACT();
+			}
+			pkt.action = Session.Entity.action === Session.Entity.ACTION.SIT ? 3 : 2;
+			Network.sendPacket(pkt);
+			event.stopImmediatePropagation();
+			return false;
+		}
+	}
 
 
 	/**
@@ -189,8 +211,12 @@ define(function( require )
 		}, true);
 
 
+		// Capture before _isInitialised is set; the versioned UI prepare block below
+		// must run on the same first-init pass as packet hooks.
+		var isFirstInit = !_isInitialised;
+
 		// Select UI version when needed
-		if(MapEngine.needsUIVerUpdate || !_isInitialised){
+		if(MapEngine.needsUIVerUpdate || isFirstInit){
 			if(PACKETVER.value < 20200520) {
 				BasicInfo.selectUIVersion();
 			}
@@ -204,8 +230,7 @@ define(function( require )
 		}
 
 		// Do not hook multiple time
-		if (!_isInitialised) {
-			_isInitialised = true;
+		if (isFirstInit) {
 
 			MapControl.init();
 			MapControl.onRequestWalk     = onRequestWalk;
@@ -335,7 +360,7 @@ define(function( require )
 		}
 
 		// Init selected UIs when needed
-		if(MapEngine.needsUIVerUpdate || !_isInitialised){
+		if(MapEngine.needsUIVerUpdate || isFirstInit){
 			// Prepare UIs
 			MiniMap.getUI().prepare();
 			SkillList.getUI().prepare();
@@ -357,6 +382,10 @@ define(function( require )
 
 			// Avoid zone server change init
 			MapEngine.needsUIVerUpdate = false;
+		}
+
+		if (isFirstInit) {
+			_isInitialised = true;
 		}
 	};
 
@@ -529,11 +558,16 @@ define(function( require )
 			BasicInfo.getUI().prepare();
 		}
 
-		BasicInfo.getUI().update('blvl', Session.Character.level );
-		BasicInfo.getUI().update('jlvl', Session.Character.joblevel );
-		BasicInfo.getUI().update('zeny', Session.Character.money );
-		BasicInfo.getUI().update('name', Session.Character.name );
-		BasicInfo.getUI().update('job',  Session.Character.job );
+		var basicInfoUI = BasicInfo.getUI();
+		if (basicInfoUI && !basicInfoUI.__loaded) {
+			basicInfoUI.prepare();
+		}
+
+		basicInfoUI.update('blvl', Session.Character.level );
+		basicInfoUI.update('jlvl', Session.Character.joblevel );
+		basicInfoUI.update('zeny', Session.Character.money );
+		basicInfoUI.update('name', Session.Character.name );
+		basicInfoUI.update('job',  Session.Character.job );
 
 		// Fix http://forum.robrowser.com/?topic=32177.0
 		onMapChange({
@@ -551,25 +585,12 @@ define(function( require )
 	 */
 	function onMapChange( pkt )
 	{
-		jQuery(window).off('keydown.map');
+		window.removeEventListener('keydown', onMapKeyDown);
 
 		MapRenderer.onLoad = function(){
 
 			// TODO: find a better place to put it
-			jQuery(window).on('keydown.map', function( event ){
-				if (event.which === KEYS.INSERT) {
-					var pkt;
-					if(PACKETVER.value >= 20180307) {
-						pkt        = new PACKET.CZ.REQUEST_ACT2();
-					} else {
-						pkt        = new PACKET.CZ.REQUEST_ACT();
-					}
-					pkt.action = Session.Entity.action === Session.Entity.ACTION.SIT ? 3 : 2;
-					Network.sendPacket(pkt);
-					event.stopImmediatePropagation();
-					return false;
-				}
-			});
+			window.addEventListener('keydown', onMapKeyDown);
 
 			Session.Entity.set({
 				PosDir: [ pkt.xPos, pkt.yPos, 0 ],
@@ -648,7 +669,7 @@ define(function( require )
 			Navigation.append();
 
 			if (PACKETVER.value >= 20090617 && PACKETVER.value < 20140521) {
-				WinStats.getUI().append(Equipment.getUI().ui.find('.status_component'));
+				WinStats.getUI().append(Equipment.getUI().ui.querySelector('.status_component'));
 			} else {
 				WinStats.getUI().append();
 			}
@@ -689,7 +710,7 @@ define(function( require )
 	 */
 	function onServerChange( pkt )
 	{
-		jQuery(window).off('keydown.map');
+		window.removeEventListener('keydown', onMapKeyDown);
 		MapEngine.init( pkt.addr.ip, pkt.addr.port, pkt.mapName );
 	}
 
@@ -1130,9 +1151,9 @@ define(function( require )
 	function onUseItem( index )
 	{
 		// Items are not usable when Laphine Synthesis, Upgrade, ItemReform UI is open (if they are available at all)
-		if ((LaphineSys.__loaded && LaphineSys.__active && LaphineSys.ui.is(':visible')) || 
-			(LaphineUpg.__loaded && LaphineUpg.__active && LaphineUpg.ui.is(':visible')) || 
-			(ItemReform.__loaded && ItemReform.__active && ItemReform.ui.is(':visible'))) {
+		if ((LaphineSys.__loaded && LaphineSys.__active && DOM.isVisible(LaphineSys.ui)) || 
+			(LaphineUpg.__loaded && LaphineUpg.__active && DOM.isVisible(LaphineUpg.ui)) || 
+			(ItemReform.__loaded && ItemReform.__active && DOM.isVisible(ItemReform.ui))) {
 			return false;
 		}
 

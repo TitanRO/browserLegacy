@@ -15,6 +15,7 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
+	var DOM                = require('Utils/DOM');
 	var Renderer           = require('Renderer/Renderer');
 	var KEYS               = require('Controls/KeyEventHandler');
 	var Entity             = require('Renderer/Entity/Entity');
@@ -30,6 +31,18 @@ define(function(require)
 	 * Create Chararacter Selection namespace
 	 */
 	var CharCreate = new UIComponent( 'CharCreate', htmlText, cssText );
+
+
+	function qs(selector)
+	{
+		return DOM.qs(CharCreate.ui, selector);
+	}
+
+
+	function qsa(selector)
+	{
+		return DOM.qsa(CharCreate.ui, selector);
+	}
 
 
 	/**
@@ -60,30 +73,34 @@ define(function(require)
 	 */
 	CharCreate.init = function init()
 	{
-		_graph       = this.ui.find('.graph canvas')[0].getContext('2d');
-		_chargen.ctx = this.ui.find('.chargen canvas')[0].getContext('2d');
+		var graphCanvas = qs('.graph canvas');
+		var chargenCanvas = qs('.chargen canvas');
+		_graph       = graphCanvas.getContext('2d');
+		_chargen.ctx = chargenCanvas.getContext('2d');
 
 		// Setup GUI
-		this.ui.css({
-			top: (Renderer.height-342)/2,
-			left: (Renderer.width-576)/2
+		DOM.setCss(this.ui, {
+			top: (Renderer.height-342)/2 + 'px',
+			left: (Renderer.width-576)/2 + 'px'
 		});
 
 		this.draggable();
 
 		// Bind Events
-		this.ui.find('.chargen .left' ).mousedown(updateCharacterGeneric('head', -1));
-		this.ui.find('.chargen .right').mousedown(updateCharacterGeneric('head', +1));
-		this.ui.find('.chargen .up'   ).mousedown(updateCharacterGeneric('headpalette', +1));
-		this.ui.find('.graph button'  ).mousedown(updateStats);
+		qs('.chargen .left').addEventListener('mousedown', updateCharacterGeneric('head', -1));
+		qs('.chargen .right').addEventListener('mousedown', updateCharacterGeneric('head', +1));
+		qs('.chargen .up').addEventListener('mousedown', updateCharacterGeneric('headpalette', +1));
+		qs('.graph button').addEventListener('mousedown', updateStats);
 
-		this.ui.find('input').mousedown(function(event){
-			this.focus();
-			event.stopImmediatePropagation();
+		qsa('input').forEach(function(input) {
+			input.addEventListener('mousedown', function(event){
+				this.focus();
+				event.stopImmediatePropagation();
+			});
 		});
 
-		this.ui.find('.cancel').click(cancel);
-		this.ui.find('.make').click(create);
+		qs('.cancel').addEventListener('click', cancel);
+		qs('.make').addEventListener('click', create);
 	};
 
 
@@ -111,7 +128,11 @@ define(function(require)
 			action: 0
 		});
 
-		this.ui.find('input').val('').focus();
+		var input = qs('input');
+		if (input) {
+			input.value = '';
+			input.focus();
+		}
 
 		Renderer.render(render);
 		updateGraphic();
@@ -170,16 +191,16 @@ define(function(require)
 	 */
 	function create()
 	{
-		var ui = CharCreate.ui;
+		var nameInput = qs('input');
 
 		CharCreate.onCharCreationRequest(
-			ui.find('input').val(),
-			parseInt( ui.find('.info .str').text(), 10),
-			parseInt( ui.find('.info .agi').text(), 10),
-			parseInt( ui.find('.info .vit').text(), 10),
-			parseInt( ui.find('.info .int').text(), 10),
-			parseInt( ui.find('.info .dex').text(), 10),
-			parseInt( ui.find('.info .luk').text(), 10),
+			nameInput ? nameInput.value : '',
+			parseInt(qs('.info .str').textContent, 10),
+			parseInt(qs('.info .agi').textContent, 10),
+			parseInt(qs('.info .vit').textContent, 10),
+			parseInt(qs('.info .int').textContent, 10),
+			parseInt(qs('.info .dex').textContent, 10),
+			parseInt(qs('.info .luk').textContent, 10),
 			_chargen.entity.head,
 			_chargen.entity.headpalette
 		);
@@ -234,7 +255,7 @@ define(function(require)
 	function updateStats()
 	{
 		// Can't be upper than 9
-		if (CharCreate.ui.find('.info .' + this.className).text() === '9') {
+		if (qs('.info .' + this.className).textContent === '9') {
 			return;
 		}
 
@@ -249,8 +270,8 @@ define(function(require)
 		};
 
 		// Update infos
-		CharCreate.ui.find('.info .' +       this.className )[0].textContent++;
-		CharCreate.ui.find('.info .' + group[this.className])[0].textContent--;
+		qs('.info .' + this.className).textContent++;
+		qs('.info .' + group[this.className]).textContent--;
 
 		updateGraphic();
 	}
@@ -273,11 +294,11 @@ define(function(require)
 		ctx.fillStyle = '#7b94ce';
 		ctx.translate(x, y);
 		ctx.beginPath();
-		ctx.moveTo( 0, Math.floor( y/10 * ( parseInt(CharCreate.ui.find('.info .'+list[5]).text())+1 ) ) );
+		ctx.moveTo( 0, Math.floor( y/10 * ( parseInt(qs('.info .'+list[5]).textContent, 10)+1 ) ) );
 
 		for (i = 0; i < 6; i++) {
 			ctx.rotate( 60 * Math.PI / 180 );
-			ctx.lineTo( 0, Math.floor( y/10 * ( parseInt(CharCreate.ui.find('.info .'+list[i]).text())+1 )) );
+			ctx.lineTo( 0, Math.floor( y/10 * ( parseInt(qs('.info .'+list[i]).textContent, 10)+1 )) );
 		}
 
 		ctx.closePath();

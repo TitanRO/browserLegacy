@@ -11,6 +11,7 @@ define(function(require)
 {
 	'use strict';
 
+	var DOM       = require('Utils/DOM');
 
 	/**
 	 * Dependencies
@@ -127,7 +128,7 @@ define(function(require)
 			};
 		}
 
-		_ctx          = this.ui.find('canvas')[0].getContext('2d');
+		_ctx          = this.ui.querySelector('canvas').getContext('2d');
 		this.opacity  = 2;
 
 		Client.loadFile( DB.INTERFACE_PATH + 'map/map_arrow.bmp', function(dataURI){
@@ -157,8 +158,8 @@ define(function(require)
 		});
 
 		// Bind DOM elements
-		this.ui.find('.plus').mousedown(genericUpdateZoom(+1));
-		this.ui.find('.minus').mousedown(genericUpdateZoom(-1));
+		this.ui.querySelector('.plus').addEventListener('mousedown', genericUpdateZoom(+1));
+		this.ui.querySelector('.minus').addEventListener('mousedown', genericUpdateZoom(-1));
 	};
 
 
@@ -397,17 +398,17 @@ define(function(require)
 
 		switch (this.opacity) {
 			case 0:
-				this.ui.hide();
+				DOM.hide(this.ui);
 				break;
 
 			case 1:
 				_ctx.globalAlpha = 0.5;
-				this.ui.show();
+				DOM.show(this.ui);
 				break;
 
 			case 2:
 				_ctx.globalAlpha = 1.0;
-				this.ui.show();
+				DOM.show(this.ui);
 				break;
 		}
 	};

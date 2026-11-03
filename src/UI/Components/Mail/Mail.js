@@ -15,7 +15,6 @@
 	  * Dependencies
 	  */
 	 var DB                 = require('DB/DBManager');
-	 var jQuery             = require('Utils/jquery');
 	 var Preferences        = require('Core/Preferences');
 	 var Client             = require('Core/Client');
 	 var Session      		= require('Engine/SessionStorage');
@@ -29,6 +28,7 @@
 	 var UIComponent        = require('UI/UIComponent');
 	 var htmlText           = require('text!./Mail.html');
 	 var cssText            = require('text!./Mail.css');
+	 var DOM                = require('Utils/DOM');
  
  
 	 /**
@@ -78,48 +78,48 @@
 	  */
 	 Mail.onAppend = function OnAppend()
 	 {
-		this.ui.find('.right .close').on('click',this.onClosePressed.bind(this)).removeClass( "hover" );
-		this.ui.find('#inbox').on('click',offCreateMessagesOnWindowMailbox);  // remove all item reset layout
-		this.ui.find('#write').on('click',openWindowCreateMessages);  // remove all item reset layouts
-		this.ui.find('#create_mail_cancel').on('click',offCreateMessagesOnWindowMailbox); // remove all item reset layout
-		this.ui.find('#create_mail_send').on('click',sendCreateMessagesMail); // send mail
+		var _mailClose = this.ui.querySelector('.right .close');
+		_mailClose.addEventListener('click', this.onClosePressed.bind(this));
+		_mailClose.classList.remove('hover');
+		this.ui.querySelector('#inbox').addEventListener('click', offCreateMessagesOnWindowMailbox);  // remove all item reset layout
+		this.ui.querySelector('#write').addEventListener('click', openWindowCreateMessages);  // remove all item reset layouts
+		this.ui.querySelector('#create_mail_cancel').addEventListener('click', offCreateMessagesOnWindowMailbox); // remove all item reset layout
+		this.ui.querySelector('#create_mail_send').addEventListener('click', sendCreateMessagesMail); // send mail
 
 		updatePageMailItems();
 
-		this.ui
-			.find('.container_item')
-			// on drop item
-			.on('drop', onDrop)
-			.on('dragover', stopPropagation)
-				// item
-				.on('mouseover',   '.item', onItemOver)				
-				.on('mouseout',    '.item', onItemOut)
-				.on('dragstart',   '.item', onItemDragStart)
-				.on('dragend',     '.item', onItemDragEnd)
-				.on('contextmenu', '.item', onItemInfo);
+		var _mailContainer = this.ui.querySelector('.container_item');
+		// on drop item
+		_mailContainer.addEventListener('drop', onDrop);
+		_mailContainer.addEventListener('dragover', stopPropagation);
+		// item
+		DOM.addDelegatedEvent(_mailContainer, 'mouseover', '.item', onItemOver);
+		DOM.addDelegatedEvent(_mailContainer, 'mouseout', '.item', onItemOut);
+		DOM.addDelegatedEvent(_mailContainer, 'dragstart', '.item', onItemDragStart);
+		DOM.addDelegatedEvent(_mailContainer, 'dragend', '.item', onItemDragEnd);
+		DOM.addDelegatedEvent(_mailContainer, 'contextmenu', '.item', onItemInfo);
 
 		
 		// Validate information dragged into text field
-		this.ui.find('input[type=text]')
-				.on('drop', onDropText)
-				.on('dragover', stopPropagation)
-	
-		this.ui.find('textarea')
-				.on('drop', onDropText)
-				.on('dragover', stopPropagation)
+		var _mailInputText = this.ui.querySelector('input[type=text]');
+		_mailInputText.addEventListener('drop', onDropText);
+		_mailInputText.addEventListener('dragover', stopPropagation);
+		var _mailTextarea = this.ui.querySelector('textarea');
+		_mailTextarea.addEventListener('drop', onDropText);
+		_mailTextarea.addEventListener('dragover', stopPropagation);
 
-		this.ui.find('#zeny_amt').on('click',onAddZenyInput);
-		this.ui.find('#zeny_ok').on('click',onValidZenyInput);
+		this.ui.querySelector('#zeny_amt').addEventListener('click', onAddZenyInput);
+		this.ui.querySelector('#zeny_ok').addEventListener('click', onValidZenyInput);
 
 		onWindowMailbox();
 
 		// Apply preferences
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 
-		this.draggable(this.ui.find('.titlebar'));		
+		this.draggable(this.ui.querySelector('.titlebar'));		
 	 };
 
 	 
@@ -141,17 +141,18 @@
 		}
 
 		var it      = DB.getItemInfo( item.ITID );
-		var content = this.ui.find('.container_item');
-		this.ui.find(".item" ).remove();
-		content.append(
+		var content = this.ui.querySelector('.container_item');
+		this.ui.querySelector(".item" ).remove();
+		content.insertAdjacentHTML('beforeend',
 			'<div class="item" data-index="'+ item.index +'" draggable="true">' +
 				'<div class="icon"></div>' +				
 				'<div class="amount"><span class="count">' + (item.count || 1) + '</span></div>' +
 			'</div>'
 		);
-		this.ui.find('.hide').show();
+		this.ui.querySelector('.hide').style.display = '';
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + ( item.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName ) + '.bmp', function(data){
-			content.find('.item[data-index="'+ item.index +'"] .icon').css('backgroundImage', 'url('+ data +')');
+			var _iconEl = content.querySelector('.item[data-index="'+ item.index +'"] .icon');
+			if (_iconEl) _iconEl.style.backgroundImage = 'url('+ data +')';
 		});
 		return true;
 	};
@@ -163,7 +164,7 @@
 	  */
 	 Mail.removeItem = function removeItem()
 	 {
-		this.ui.find(".item" ).remove();
+		this.ui.querySelector(".item" ).remove();
 	 };
 
 	 
@@ -173,7 +174,7 @@
 	  */
 	 Mail.removeZeny = function removeZeny()
 	 {
-		this.ui.find(".input_zeny_amt" ).val('');
+		this.ui.querySelector(".input_zeny_amt" ).value = '';
 	 };
 
 	 /**
@@ -183,12 +184,12 @@
 	 {
 		 this.list.length = 0;
 		 // Save preferences
-		 _preferences.show   =  this.ui.is(':visible');
+		 _preferences.show   =  DOM.isVisible(this.ui);
 		 _preferences.reduce = !!_realSize;
-		 _preferences.y      =  parseInt(this.ui.css('top'), 10);
-		 _preferences.x      =  parseInt(this.ui.css('left'), 10);
-		 _preferences.width  =  Math.floor( (this.ui.width()  - (23 + 16 + 16 - 30)) / 32 );
-		 _preferences.height =  Math.floor( (this.ui.height() - (31 + 19 - 30     )) / 32 );
+		 _preferences.y      =  parseInt(this.ui.style.top, 10);
+		 _preferences.x      =  parseInt(this.ui.style.left, 10);
+		 _preferences.width  =  Math.floor( (this.ui.offsetWidth  - (23 + 16 + 16 - 30)) / 32 );
+		 _preferences.height =  Math.floor( (this.ui.offsetHeight - (31 + 19 - 30     )) / 32 );
 		 _preferences.magnet_top = this.magnet.TOP;
 		 _preferences.magnet_bottom = this.magnet.BOTTOM;
 		 _preferences.magnet_left = this.magnet.LEFT;
@@ -207,7 +208,7 @@
 		 width  = Math.min( Math.max(width,  6), 9);
 		 height = Math.min( Math.max(height, 2), 6);
  
-		 this.ui.css({
+		 DOM.setCss(this.ui, {
 			 width:  23 + 16 + 16 + width  * 32,
 			 height: 31 + 19      + height * 32
 		 });
@@ -285,7 +286,7 @@
 	Mail.replyNewMail = function replyNewMail( fromName )
 	{
 		onWindowCreateMessages();
-		Mail.ui.find('.text_to').val(fromName.replace(/^(\$|\%)/, '').replace(/\t/g, ''));
+		Mail.ui.querySelector('.text_to').value = fromName.replace(/^(\$|\%)/, '').replace(/\t/g, '');
 	}
 
 	/**
@@ -301,17 +302,15 @@
 			// Do something after the sleep!
 			onWindowCreateMessages();
 			offWindowListMail();
-			Mail.ui.find('.text_to').val(fromName.replace(/^(\$|\%)/, '').replace(/\t/g, ''));
-			Mail.ui.find('#inbox').off('click');
-			Mail.ui.find('#inbox')
-				.prop('disabled', false)
-			.on('click', function() {
+			Mail.ui.querySelector('.text_to').value = fromName.replace(/^(\$|\%)/, '').replace(/\t/g, '');
+			var _inboxBtn = Mail.ui.querySelector('#inbox');
+			_inboxBtn.disabled = false;
+			_inboxBtn.addEventListener('click', function() {
 				
 			});
-			Mail.ui.find('#create_mail_cancel').off('click');
-			Mail.ui.find('#create_mail_cancel').on('click',this.onClosePressed.bind(this));
-			//Mail.ui.find('.block_zeny_item').remove();
-			//Mail.ui.find('.block_send_cancel').css('margin-top','19%');
+			Mail.ui.querySelector('#create_mail_cancel').addEventListener('click', this.onClosePressed.bind(this));
+			//Mail.ui.querySelector('.block_zeny_item').remove();
+			//Mail.ui.querySelector('.block_send_cancel').style.margin-top = '19%';
 
 		});
 		
@@ -319,9 +318,9 @@
 
 	Mail.clearFieldsItemZeny = function clearFieldsItemZeny()
 	{
-		this.ui.find(".item" ).remove();
-		this.ui.find(".input_zeny_amt" ).val('');
-		this.ui.find('#create_mail_send').prop('disabled', false);
+		this.ui.querySelector(".item" ).remove();
+		this.ui.querySelector(".input_zeny_amt" ).value = '';
+		this.ui.querySelector('#create_mail_send').disabled = false;
 	}
 
 	/*
@@ -329,7 +328,7 @@
 	*/
 	function updatePageMailItems()
 	{
-		Mail.ui.find('.next').click(function(e) {
+		Mail.ui.querySelector('.next').addEventListener('click', function(e) {
 			e.stopImmediatePropagation();
 			if (Mail.page < Mail.list.mailList.length / Mail.pageSize - 1) {
 				Mail.page++;
@@ -337,7 +336,7 @@
 				adjustButtons();
 			}
 		});
-		Mail.ui.find('.prev').click(function(e) {
+		Mail.ui.querySelector('.prev').addEventListener('click', function(e) {
 			e.stopImmediatePropagation();
 			if (Mail.page > 0) {
 				Mail.page--;
@@ -357,28 +356,29 @@
 		Mail.parseMailrefreshinbox();
 
 		// Off window create mail
-		Mail.ui.find('#create_mail_send').prop('disabled', false);
-		Mail.ui.find('.block_create_mail').hide();
-		Mail.ui.find('.text_to').val("");
-		Mail.ui.find('.input_title').val("");
-		Mail.ui.find('.textarea_mail').val("");
-		Mail.ui.find('.input_zeny_amt').val("");
-		Mail.ui.find('.input_add_item').val("");
+		Mail.ui.querySelector('#create_mail_send').disabled = false;
+		Mail.ui.querySelector('.block_create_mail').style.display = 'none';
+		Mail.ui.querySelector('.text_to').value = "";
+		Mail.ui.querySelector('.input_title').value = "";
+		Mail.ui.querySelector('.textarea_mail').value = "";
+		Mail.ui.querySelector('.input_zeny_amt').value = "";
+		Mail.ui.querySelector('.input_add_item').value = "";
 		
 		// on window list mail
-		Mail.ui.find('.prev_next').show();
-		Mail.ui.find('.block_mail').show();		
+		Mail.ui.querySelector('.prev_next').style.display = '';
+		Mail.ui.querySelector('.block_mail').style.display = '';		
 		Client.loadFile( DB.INTERFACE_PATH + 'basic_interface/maillist1_bg.bmp', function(url) {
-			Mail.ui.find('.body').css('backgroundImage', 'url(' + url + ')');
+			Mail.ui.querySelector('.body').style.backgroundImage = 'url(' + url + ')';
 		}.bind(this));
-		Mail.ui.find('#title').text(DB.getMessage(1025));		
+		Mail.ui.querySelector('#title').textContent = DB.getMessage(1025);
 	};
 
 
 	function createMailList()
 	{
-		var content = Mail.ui.find('.list_item_mail');
-		Mail.ui.find(".item_mail" ).remove();
+		var content = Mail.ui.querySelector('.list_item_mail');
+		var _oldItems = Mail.ui.querySelectorAll('.item_mail');
+		Array.prototype.forEach.call(_oldItems, function(el){ el.remove(); });
 
 		if(Mail.list.length == 0) return;
 
@@ -388,7 +388,7 @@
 			let header = Mail.list.mailList[i].HEADER.length > 23 ?  Mail.list.mailList[i].HEADER.substring(0,23)+"..." :  Mail.list.mailList[i].HEADER;
 			let mailId = Mail.list.mailList[i].MailID;
 			let isOpen = Mail.list.mailList[i].isOpen;
-			content.append(
+			content.insertAdjacentHTML('beforeend',
 				`<div class="item_mail">
 					<div class="envelop" style="flex: 1;">
 						<div class="btn_envelop" id="envelop_`+mailId+`"></div>
@@ -415,25 +415,28 @@
 			);
 			if(!isOpen){
 				Client.loadFile( DB.INTERFACE_PATH + 'basic_interface/envelop.bmp', function(data){
-					
-					content.find('#envelop_'+mailId).css('backgroundImage', 'url('+ data +')');
+					var _env = content.querySelector('#envelop_'+mailId);
+					if (_env) _env.style.backgroundImage = 'url('+ data +')';
 				});
 			}
-			Mail.ui.find("#from_name_"+mailId).on('click', () =>
+			var _fromName = Mail.ui.querySelector("#from_name_"+mailId);
+			if (_fromName) _fromName.addEventListener('click', () =>
 				{
-					Mail.replyNewMail(Mail.ui.find("#from_name_"+mailId +" .to").text());
+					var _toEl = Mail.ui.querySelector("#from_name_"+mailId +" .to");
+					Mail.replyNewMail(_toEl ? _toEl.textContent : '');
 				}
 			);
-			Mail.ui.find("#from_header_"+mailId).on('click', (event) =>
+			var _fromHeader = Mail.ui.querySelector("#from_header_"+mailId);
+			if (_fromHeader) _fromHeader.addEventListener('click', (event) =>
 				{
-					Mail.openMail(jQuery(event.currentTarget).data('id'));
+					Mail.openMail(event.currentTarget.getAttribute('data-id'));
 				}
 			);
 		}
 		if(Mail.list.mailList.length === 0){
-			Mail.ui.find('.prev_next').hide();
+			Mail.ui.querySelector('.prev_next').style.display = 'none';
 		}else{
-			Mail.ui.find('#infor_page').text((Mail.page + 1)+"/"+Math.ceil(Mail.list.mailList.length / Mail.pageSize));
+			Mail.ui.querySelector('#infor_page').textContent = (Mail.page + 1)+"/"+Math.ceil(Mail.list.mailList.length / Mail.pageSize);
 		}
 		
 		adjustButtons();
@@ -456,34 +459,38 @@
 			addEventNextAndPrevRemove('prev');
 		}
 				
-		Mail.ui.find('.next span').prop('disabled', mailLength <=  Mail.pageSize || Mail.page > mailLength /  Mail.pageSize - 1);
-    	Mail.ui.find('.prev span').prop('disabled', mailLength <=  Mail.pageSize || Mail.page == 0);
+		Mail.ui.querySelector('.next span').disabled = mailLength <=  Mail.pageSize || Mail.page > mailLength /  Mail.pageSize - 1;
+    	Mail.ui.querySelector('.prev span').disabled = mailLength <=  Mail.pageSize || Mail.page == 0;
 	}
 
 	function addEventNextAndPrevAdd(eventName)
-	{		
-		var overlay = Mail.ui.find('.prev_next .overlay_'+eventName+'');
-		var text = Mail.ui.find('.prev_next .'+eventName+' span');
-		text.addClass('event_add_cursor');
-		overlay.text(text.text());
+	{
+		var overlay = Mail.ui.querySelector('.prev_next .overlay_'+eventName+'');
+		var text = Mail.ui.querySelector('.prev_next .'+eventName+' span');
+		if (text) text.classList.add('event_add_cursor');
+		if (overlay && text) overlay.textContent = text.textContent;
 
-		Mail.ui.find('.'+eventName+' .event_add_cursor' ).mouseover(function() {
-			if(text.hasClass('event_add_cursor')){	
-				overlay.show();
-			}
-		}).mouseout(function() {
-			overlay.hide();
-		});
+		var _evtEl = Mail.ui.querySelector('.'+eventName+' .event_add_cursor');
+		if (_evtEl) {
+			_evtEl.addEventListener('mouseover', function() {
+				if(text && text.classList.contains('event_add_cursor')){
+					overlay.style.display = '';
+				}
+			});
+			_evtEl.addEventListener('mouseout', function() {
+				if (overlay) overlay.style.display = 'none';
+			});
+		}
 	}
 
 	function addEventNextAndPrevRemove(eventName)
 	{
 		// Get back data
-		var overlay = Mail.ui.find('.prev_next .overlay_'+eventName+'');
-		var text = Mail.ui.find('.prev_next .'+eventName+' span');
+		var overlay = Mail.ui.querySelector('.prev_next .overlay_'+eventName+'');
+		var text = Mail.ui.querySelector('.prev_next .'+eventName+' span');
 		// Display box
-		overlay.hide();
-		text.removeClass('event_add_cursor');
+		overlay.style.display = 'none';
+		text.classList.remove('event_add_cursor');
 	}
 
 	function offCreateMessagesOnWindowMailbox(event)
@@ -498,17 +505,17 @@
 	function sendCreateMessagesMail(event)
 	{
 		event.stopImmediatePropagation();
-		if(Mail.ui.find('#zeny_ok').is(':visible'))
+		if(DOM.isVisible(Mail.ui.querySelector('#zeny_ok')))
 		{
 			ChatBox.addText( DB.getMessage(1110), ChatBox.TYPE.ERROR, ChatBox.FILTER.PUBLIC_LOG);
 			return;
 		}
 
-		let to = Mail.ui.find('.text_to').val();
+		let to = Mail.ui.querySelector('.text_to').value;
 		to = to.length > 50 ? to.substring(0,50) : to;
-		let title = Mail.ui.find('.input_title').val();
+		let title = Mail.ui.querySelector('.input_title').value;
 		title = title.length > 50 ? title.substring(0,50) : title;
-		let message = Mail.ui.find('.textarea_mail').val();
+		let message = Mail.ui.querySelector('.textarea_mail').value;
 		message = message.length > 198 ? message.substring(0,198) : message;
 
 		if(title === "")
@@ -523,7 +530,7 @@
 			msg_len:		message.length,
 			msg:			message, 
 		}
-		Mail.ui.find('#create_mail_send').prop('disabled', true);
+		Mail.ui.querySelector('#create_mail_send').disabled = true;
 		Mail.parseMailSend(send_message);
 	}
 
@@ -545,46 +552,46 @@
 		offWindowListMail();
 
 		Client.loadFile( DB.INTERFACE_PATH + 'basic_interface/maillist2_bg.bmp', function(url) {
-			Mail.ui.find('.body').css('backgroundImage', 'url(' + url + ')');
+			Mail.ui.querySelector('.body').style.backgroundImage = 'url(' + url + ')';
 		}.bind(this));
-		Mail.ui.find('#title').text(DB.getMessage(1026));
+		Mail.ui.querySelector('#title').textContent = DB.getMessage(1026);
 	};
 
 
 	function offWindowListMail()
 	{
 		// Off window list mail
-		Mail.ui.find('.prev_next').hide();
-		Mail.ui.find('.block_mail').hide();
+		Mail.ui.querySelector('.prev_next').style.display = 'none';
+		Mail.ui.querySelector('.block_mail').style.display = 'none';
 
 		// Off window create mail
-		Mail.ui.find('.block_create_mail').show();
+		Mail.ui.querySelector('.block_create_mail').style.display = '';
 		//Focus textArea
-		Mail.ui.find('.textarea_mail').focus();
+		Mail.ui.querySelector('.textarea_mail').focus();
 	}
 
 	function onAddZenyInput(event)
 	{
 		event.stopImmediatePropagation();
-		Mail.ui.find('#zeny_amt').hide();
-		Mail.ui.find('#zeny_ok').show();
-		Mail.ui.find('.input_zeny_amt').prop('disabled', false);		
-		Mail.ui.find('.input_zeny_amt').focus();
-		Mail.ui.find('.input_zeny_amt').select();
+		Mail.ui.querySelector('#zeny_amt').style.display = 'none';
+		Mail.ui.querySelector('#zeny_ok').style.display = '';
+		Mail.ui.querySelector('.input_zeny_amt').disabled = false;		
+		Mail.ui.querySelector('.input_zeny_amt').focus();
+		Mail.ui.querySelector('.input_zeny_amt').select();
 		Mail.parseMailWinopen(2); // reset zeny
 	}
 	
 	function onValidZenyInput(event)
 	{
 		event.stopImmediatePropagation();
-		Mail.ui.find('#zeny_amt').show();
-		Mail.ui.find('#zeny_ok').hide();
-		let val_Zeny = Mail.ui.find('.input_zeny_amt').val().split(',').join('');
+		Mail.ui.querySelector('#zeny_amt').style.display = '';
+		Mail.ui.querySelector('#zeny_ok').style.display = 'none';
+		let val_Zeny = Mail.ui.querySelector('.input_zeny_amt').value.split(',').join('');
 		val_Zeny     = Math.min( Math.max(0, val_Zeny), Session.zeny);
 		val_Zeny 	 = isNaN(val_Zeny) ? 0 : val_Zeny;
 
-		Mail.ui.find('.input_zeny_amt').val(prettifyZeny(val_Zeny));
-		Mail.ui.find('.input_zeny_amt').prop('disabled', true);
+		Mail.ui.querySelector('.input_zeny_amt').value = prettifyZeny(val_Zeny);
+		Mail.ui.querySelector('.input_zeny_amt').disabled = true;
 		// add zeny to mail
 		Mail.
 			parseMailSetattach(
@@ -612,7 +619,7 @@
 		event.stopImmediatePropagation();
 
 		try {
-			data = JSON.parse(event.originalEvent.dataTransfer.getData('Text'));
+			data = JSON.parse(event.dataTransfer.getData('Text'));
 			item = data.data;
 		}
 		catch(e) {
@@ -682,17 +689,17 @@
 		}
 
 		// Get back data
-		var overlay = Mail.ui.find('.container_item .overlay');
+		var overlay = Mail.ui.querySelector('.container_item .overlay');
 
 		// Display box
-		overlay.show();
-		overlay.text(DB.getItemName(item) + ' ' + (item.count || 1) + ' ea');
+		overlay.style.display = '';
+		overlay.textContent = DB.getItemName(item) + ' ' + (item.count || 1) + ' ea';
 
 		if (item.IsIdentified) {
-			overlay.removeClass('grey');
+			overlay.classList.remove('grey');
 		}
 		else {
-			overlay.addClass('grey');
+			overlay.classList.add('grey');
 		}
 	}
 
@@ -701,7 +708,7 @@
 	 */
 	function onItemOut()
 	{
-		Mail.ui.find('.container_item .overlay').hide();
+		Mail.ui.querySelector('.container_item .overlay').style.display = 'none';
 	}
 
 	/**
@@ -721,8 +728,8 @@
 		var url   = this.firstChild.style.backgroundImage.match(/\(([^\)]+)/)[1];
 		img.src   = url.replace(/^\"/, '').replace(/\"$/, '');
 
-		event.originalEvent.dataTransfer.setDragImage( img, 12, 12 );
-		event.originalEvent.dataTransfer.setData('Text',
+		event.dataTransfer.setDragImage( img, 12, 12 );
+		event.dataTransfer.setData('Text',
 			JSON.stringify( window._OBJ_DRAG_ = {
 				type: 'item',
 				from: 'Mail',
@@ -777,8 +784,8 @@
 	{
 		height = Math.min( Math.max(height, 8), 17);
 
-		Mail.ui.find('.body').css('height', height * 32);
-		Mail.ui.css('height', 31 + 19 + height * 32);
+		Mail.ui.querySelector('.body').style.height = height * 32;
+		Mail.ui.style.height = 31 + 19 + height * 32;
 	}
 
 	/**
@@ -843,7 +850,7 @@
 		 event.stopImmediatePropagation(); 
 		 var data;
 		 try {
-			data = JSON.parse(event.originalEvent.dataTransfer.getData('Text'));
+			data = JSON.parse(event.dataTransfer.getData('Text'));
 		 }
 		 catch(e) {
 			 return false;
@@ -854,7 +861,7 @@
 			 return false;
 		 }
 
-		 jQuery(event.currentTarget).val(data);
+		 event.currentTarget.value = data;
 		 return false;
 	 }
 
@@ -864,7 +871,7 @@
 	 function onResize()
 	 {
 		var ui         = Mail.ui;
-		var top        = ui.position().top;
+		var top        = DOM.getPosition(ui).top;
 		var lastHeight = 0;
 		var _Interval;
 
@@ -888,12 +895,13 @@
 		_Interval = setInterval( resizing, 30);
 
 		// Stop resizing on left click
-		jQuery(window).on('mouseup.resize', function(event){
+		var _resizeHandler = function(event){
 			if (event.which === 1) {
 				clearInterval(_Interval);
-				jQuery(window).off('mouseup.resize');
+				window.removeEventListener('mouseup', _resizeHandler);
 			}
-		});
+		};
+		window.addEventListener('mouseup', _resizeHandler);
 	 }
 
 

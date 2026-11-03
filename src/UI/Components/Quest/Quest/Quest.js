@@ -26,9 +26,9 @@ define(function (require) {
 	var PACKET = require('Network/PacketStructure');
 	var htmlText = require('text!./Quest.html');
 	var cssText = require('text!./Quest.css');
-	var jQuery = require('Utils/jquery');
 	var ChatBox = require('UI/Components/ChatBox/ChatBox');
 	var Session = require('Engine/SessionStorage');
+	var DOM             = require('Utils/DOM');
 
 	/**
 	 * Create Component
@@ -75,17 +75,19 @@ define(function (require) {
 		QuestWindow.prepare();
 
 		// Avoid drag drop problems
-		this.ui.find('.base').mousedown(function (event) {
-			event.stopImmediatePropagation();
-			return false;
-		});
+		var stopBlock = this.ui.querySelector('.quest-right-panel');
+		if (stopBlock) {
+			stopBlock.addEventListener('mousedown', function (event) {
+				event.stopImmediatePropagation();
+				return false;
+			});
+		}
 
-		this.ui.find('.close').click(onClose);
-		this.ui.on('click', '.quest-menu-item', onClickMenu);
-		this.ui.on('click', '.close-quest-container-btn', onClickClose);
-		this.draggable(this.ui.find('.titlebar'));
-		this.ui.find('#active-quest-list').show();
-		this.ui.on('click', '.toggle-quest-list', onClickQuestCheckbox);
+		DOM.addDelegatedEvent(this.ui, 'click', '.quest-menu-item', onClickMenu);
+		DOM.addDelegatedEvent(this.ui, 'click', '.close-quest-container-btn', onClickClose);
+		this.draggable(this.ui.querySelector('.titlebar'));
+		this.ui.querySelector('#active-quest-list').style.display = '';
+		DOM.addDelegatedEvent(this.ui, 'click', '.toggle-quest-list', onClickQuestCheckbox);
 	};
 
 
@@ -93,23 +95,23 @@ define(function (require) {
 	 * Once append to the DOM, start to position the UI
 	 */
 	Quest.onAppend = function onAppend() {
-		this.ui.css({
-			top: Math.min(Math.max(0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min(Math.max(0, _preferences.x), Renderer.width - this.ui.width())
+		DOM.setCss(this.ui, {
+			top: Math.min(Math.max(0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min(Math.max(0, _preferences.x), Renderer.width - this.ui.offsetWidth)
 		});
 
 		var checkbox_background = (_preferences.showwindow) ? "checkbox_on" : "checkbox_off";
 
 		Client.loadFile(DB.INTERFACE_PATH + 'renew_questui/' + checkbox_background + '.bmp', function (data) {
-			Quest.ui.find('.toggle-quest-image').css('backgroundImage', 'url(' + data + ')');
+			Quest.ui.querySelector('.toggle-quest-image').style.backgroundImage = 'url(' + data + ')';
 		}.bind(this));
 
 		Client.loadFile(DB.INTERFACE_PATH + 'renew_questui/bg_quest1.bmp', function (data) {
-			Quest.ui.find('.titlebar').css('backgroundImage', 'url(' + data + ')');
+			Quest.ui.querySelector('.titlebar').style.backgroundImage = 'url(' + data + ')';
 		}.bind(this));
 
 		if (!_preferences.show) {
-			this.ui.hide();
+			this.ui.style.display = 'none';
 		}
 		
 		QuestWindow.append();
@@ -122,10 +124,10 @@ define(function (require) {
 	Quest.clean = function clean() {
 		_active_menu = '';
 		_questList = {};
-		Quest.ui.find('#active-quest-list').show();
-		Quest.ui.find('#inactive-quest-list').hide();
-		Quest.ui.find('#feature-quest-list').hide();
-		Quest.ui.find('#cooldown-quest-list').hide();
+		Quest.ui.querySelector('#active-quest-list').style.display = '';
+		Quest.ui.querySelector('#inactive-quest-list').style.display = 'none';
+		Quest.ui.querySelector('#feature-quest-list').style.display = 'none';
+		Quest.ui.querySelector('#cooldown-quest-list').style.display = 'none';
 		Quest.ClearQuestList();
 		QuestHelper.clearQuestDesc();
 		QuestWindow.ClearQuestList();
@@ -139,9 +141,9 @@ define(function (require) {
 	 */
 	Quest.onRemove = function onRemove() {
 		// Save preferences
-		_preferences.show = this.ui.is(':visible');
-		_preferences.y = parseInt(this.ui.css('top'), 10);
-		_preferences.x = parseInt(this.ui.css('left'), 10);
+		_preferences.show = DOM.isVisible(this.ui);
+		_preferences.y = parseInt(this.ui.style.top, 10);
+		_preferences.x = parseInt(this.ui.style.left, 10);
 		_preferences.save();
 	};
 
@@ -152,8 +154,8 @@ define(function (require) {
 	Quest.onShortCut = function onShurtCut(key) {
 		switch (key.cmd) {
 			case 'TOGGLE':
-				this.ui.toggle();
-				if (this.ui.is(':visible')) {
+				DOM.toggleDisplay(this.ui);
+				if (DOM.isVisible(this.ui)) {
 					this.focus();
 				}
 				break;
@@ -165,10 +167,10 @@ define(function (require) {
 	 * Show/Hide UI
 	 */
 	Quest.toggle = function toggle() {
-		if (this.ui.is(':visible')) {
-			this.ui.hide();
+		if (DOM.isVisible(this.ui)) {
+			this.ui.style.display = 'none';
 		} else {
-			this.ui.show();
+			this.ui.style.display = '';
 		}
 	};
 
@@ -304,67 +306,79 @@ define(function (require) {
 			li_text = '<li> <div class="quest-item-icon"> <div class="quest-item-icon-image" data-background="renew_questui/' + quest.icon + '"> <span class="quest-item-icon-image-text">Quest</span> </div> </div>  <div class="quest-item-title"> <span class="quest-item-title-text">' + title + '</span>  </div> <div class="quest-item-display"> <div class="quest-item-display-image"> <span class="quest-item-display-image-text"></span> </div></div><div class="quest-item-summary"><span class="quest-item-summary-text">' + summary + '</span></div>				<div class="quest-item-toggle"><button id="' + toggle_id + '" class="quest-item-toggle-image" data-background="renew_questui/bt_lock.bmp"><span class="quest-item-toggle-image-text">Toggle</span></button></div></li>';
 		}
 
-		this.ui.find(ul_id).append(
-			jQuery(li_text).
-				addClass('quest-item').
-				data('background', 'renew_questui/bg_questlist.bmp').
-				data('hover', 'renew_questui/bg_questlist_check.bmp').
-				data('down', 'renew_questui/bg_questlist_press.bmp').
-				on('click', function (e) {
-					if (e.target.tagName.toLowerCase() == "button") return;
-					let element = jQuery(e.currentTarget);
-					if (element.attr('class') == "quest-item") {
-						QuestHelper.clearQuestDesc();
-						QuestHelper.setQuestInfo(quest);
-						QuestHelper.prepare();
-						QuestHelper.append();
-						QuestHelper.ui.show();
-						QuestHelper.ui.focus();
-					}
-				}).
-				each(this.parseHTML)
-		);
+		var _tmp = document.createElement('div');
+		_tmp.innerHTML = li_text;
+		var liEl = _tmp.firstChild;
+		liEl.classList.add('quest-item');
+		liEl.dataset.background = 'renew_questui/bg_questlist.bmp';
+		liEl.dataset.hover = 'renew_questui/bg_questlist_check.bmp';
+		liEl.dataset.down = 'renew_questui/bg_questlist_press.bmp';
+		liEl.addEventListener('click', function (e) {
+			if (e.target.tagName.toLowerCase() == "button") return;
+			var element = e.currentTarget;
+			if (element.getAttribute('class').indexOf("quest-item") !== -1) {
+				QuestHelper.clearQuestDesc();
+				QuestHelper.setQuestInfo(quest);
+				QuestHelper.prepare();
+				QuestHelper.append();
+				QuestHelper.ui.style.display = '';
+				QuestHelper.ui.focus();
+			}
+		});
+		this.parseElementTree(liEl);
 
-		this.ui.find('#' + toggle_id).on('click', onClickQuestToggle);
-		this.ui.find('#' + show_id).on('click', onClickQuestDisplay);
-		Client.loadFile(DB.INTERFACE_PATH + 'renew_questui/' + bt_check + '.bmp', function (data) {
-			Quest.ui.find('#' + show_id).css('backgroundImage', 'url(' + data + ')');
-		}.bind(this));
-		this.ui.each(this.parseHTML).find('*').each(this.parseHTML);
+		var listEl = this.ui.querySelector(ul_id);
+		if (!listEl) {
+			return;
+		}
+		listEl.appendChild(liEl);
+
+		var toggleBtn = liEl.querySelector('#' + toggle_id);
+		if (toggleBtn) {
+			toggleBtn.addEventListener('click', onClickQuestToggle);
+		}
+		var showBtn = liEl.querySelector('#' + show_id);
+		if (showBtn) {
+			showBtn.addEventListener('click', onClickQuestDisplay);
+			Client.loadFile(DB.INTERFACE_PATH + 'renew_questui/' + bt_check + '.bmp', function (data) {
+				showBtn.style.backgroundImage = 'url(' + data + ')';
+			}.bind(this));
+		}
+		this.parseElementTree(this.ui);
 	};
 
 
 	function onClickMenu(e) {
-		var quest_element = jQuery(e.currentTarget);
+		var quest_element = e.currentTarget;
 
-		if (_active_menu == quest_element.attr('id')) return;
-		_active_menu = quest_element.attr('id');
+		if (_active_menu == quest_element.getAttribute('id')) return;
+		_active_menu = quest_element.getAttribute('id');
 
 		var background_image = "";
-		Quest.ui.find('#active-quest-list').hide();
-		Quest.ui.find('#inactive-quest-list').hide();
-		Quest.ui.find('#feature-quest-list').hide();
-		Quest.ui.find('#cooldown-quest-list').hide();
+		Quest.ui.querySelector('#active-quest-list').style.display = 'none';
+		Quest.ui.querySelector('#inactive-quest-list').style.display = 'none';
+		Quest.ui.querySelector('#feature-quest-list').style.display = 'none';
+		Quest.ui.querySelector('#cooldown-quest-list').style.display = 'none';
 		switch (_active_menu) {
 			case 'feature':
 				background_image = "bg_quest2";
-				Quest.ui.find('#feature-quest-list').show();
+				Quest.ui.querySelector('#feature-quest-list').style.display = '';
 				break;
 			case 'inactive':
 				background_image = "bg_quest3";
-				Quest.ui.find('#inactive-quest-list').show();
+				Quest.ui.querySelector('#inactive-quest-list').style.display = '';
 				break;
 			case 'cooldown':
 				background_image = "bg_quest4";
-				Quest.ui.find('#cooldown-quest-list').show();
+				Quest.ui.querySelector('#cooldown-quest-list').style.display = '';
 				break;
 			default:
 				background_image = "bg_quest1";
-				Quest.ui.find('#active-quest-list').show();
+				Quest.ui.querySelector('#active-quest-list').style.display = '';
 		}
 
 		Client.loadFile(DB.INTERFACE_PATH + 'renew_questui/' + background_image + '.bmp', function (data) {
-			Quest.ui.find('.titlebar').css('backgroundImage', 'url(' + data + ')');
+			Quest.ui.querySelector('.titlebar').style.backgroundImage = 'url(' + data + ')';
 		}.bind(this));
 
 		QuestHelper.clearQuestDesc();
@@ -374,24 +388,24 @@ define(function (require) {
 		var checkbox_background;
 		if (_preferences.showwindow) {
 			checkbox_background = "checkbox_off";
-			QuestWindow.ui.hide();
+			QuestWindow.ui.style.display = 'none';
 		}
 		else {
 			checkbox_background = "checkbox_on";
-			QuestWindow.ui.show();
+			QuestWindow.ui.style.display = '';
 		}
 		_preferences.showwindow = !_preferences.showwindow;
 		_preferences.save();
 
 		Client.loadFile(DB.INTERFACE_PATH + 'renew_questui/' + checkbox_background + '.bmp', function (data) {
-			Quest.ui.find('.toggle-quest-image').css('backgroundImage', 'url(' + data + ')');
+			Quest.ui.querySelector('.toggle-quest-image').style.backgroundImage = 'url(' + data + ')';
 		}.bind(this));
 	}
 
 
 	function onClickQuestToggle(e) {
-		var toggle_element = jQuery(e.currentTarget);
-		let tid = toggle_element.attr('id');
+		var toggle_element = e.currentTarget;
+		let tid = toggle_element.getAttribute('id');
 		let id = tid.replace("qid", "");
 		var _pkt = new PACKET.CZ.ACTIVE_QUEST();
 		_pkt.questID = _questList[id].questID;
@@ -400,8 +414,8 @@ define(function (require) {
 	}
 
 	function onClickQuestDisplay(e) {
-		var display_element = jQuery(e.currentTarget);
-		let cid = display_element.attr('id');
+		var display_element = e.currentTarget;
+		let cid = display_element.getAttribute('id');
 		let id = cid.replace("sid", "");
 		let iid = parseInt(Number(id));
 
@@ -416,7 +430,8 @@ define(function (require) {
 		}
 
 		Client.loadFile(DB.INTERFACE_PATH + 'renew_questui/' + checkbox_background + '.bmp', function (data) {
-			Quest.ui.find('#' + cid).css('backgroundImage', 'url(' + data + ')');
+			var el = Quest.ui.querySelector('#' + cid);
+			if (el) { el.style.backgroundImage = 'url(' + data + ')'; }
 		}.bind(this));
 
 		QuestWindow.ClearQuestList();
@@ -424,7 +439,7 @@ define(function (require) {
 	}
 
 	function onClickClose(e) {
-		Quest.ui.hide();
+		Quest.ui.style.display = 'none';
 	}
 
 
@@ -437,7 +452,9 @@ define(function (require) {
 
 
 	Quest.ClearQuestList = function ClearQuestList() {
-		Quest.ui.find('.quest-list').html('');
+		Quest.ui.querySelectorAll('.quest-list').forEach(function (el) {
+			el.innerHTML = '';
+		});
 	}
 
 
@@ -445,7 +462,7 @@ define(function (require) {
 	 * Close the window
 	 */
 	function onClose() {
-		Quest.ui.hide();
+		Quest.ui.style.display = 'none';
 	}
 
 	/**

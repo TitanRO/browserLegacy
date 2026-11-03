@@ -20,6 +20,7 @@ define(function( require )
 	var BGM            = require('Audio/BGM');
 	var DB             = require('DB/DBManager');
 	var UIManager      = require('UI/UIManager');
+	var DOM            = require('Utils/DOM');
 	var Background     = require('UI/Background');
 	var Cursor         = require('UI/CursorManager');
 	var Session        = require('Engine/SessionStorage');
@@ -301,7 +302,7 @@ define(function( require )
 
 		// Problem during loading ?
 		if (!success) {
-			UIManager.showErrorBox( error ).ui.css('zIndex', 1000);
+			DOM.setCss(UIManager.showErrorBox( error ).ui, 'zIndex', 1000);
 			return;
 		}
 

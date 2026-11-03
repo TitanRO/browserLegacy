@@ -70,7 +70,7 @@ define(function (require) {
 
 		Mouse.intersect = true;
 		MapControl.init();
-		Renderer.show();
+		Renderer.style.display = '';
 		EffectManager.init(Renderer.getContext());
 		SpriteRenderer.init(Renderer.getContext());
 		Client.init([]);
@@ -82,7 +82,7 @@ define(function (require) {
 		Camera.init();
 
 		// Initialize the dropdown
-		initDropDown(this.ui.find('select').get(0), this.ui.find('button').get(0));
+		initDropDown(this.ui.querySelector('select'), this.ui.querySelector('button'));
 	};
 
 
@@ -122,7 +122,7 @@ define(function (require) {
 
 		loadEffect(0);
 
-		Viewer.ui.find('.head').show();
+		Viewer.ui.querySelector('.head').style.display = '';
 		select.focus();
 	}
 

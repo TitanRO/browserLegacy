@@ -1,0 +1,5 @@
+# jQuery migration — COMPLETE (2026-05-27)
+#
+# All src/ files migrated to native DOM via Utils/DOM.js helpers.
+# jquery-lite.js, Utils/jquery.js, and Vendors/jquery.js removed.
+# Build verified: npm run build -- -O -T -H (exit 0, no jquery in Online.js)

@@ -16,7 +16,7 @@ define(function(require)
 	 * Dependencies
 	 */
 	var DB                 = require('DB/DBManager');
-	var jQuery             = require('Utils/jquery');
+	var DOM                = require('Utils/DOM');
 	var Client             = require('Core/Client');
 	var Events             = require('Core/Events');
 	var Renderer           = require('Renderer/Renderer');
@@ -30,6 +30,12 @@ define(function(require)
 	 * Create component
 	 */
 	var ItemObtain = new UIComponent( 'ItemObtain', htmlText, cssText );
+
+
+	function qs(selector)
+	{
+		return DOM.qs(ItemObtain.ui, selector);
+	}
 
 
 	/**
@@ -61,7 +67,7 @@ define(function(require)
 	 */
 	ItemObtain.init = function init()
 	{
-		// this.ui.css('zIndex', 45); // Between Interface and Game Announce
+		// this.ui.style.zIndex = '45'; // Between Interface and Game Announce
 	};
 
 
@@ -70,7 +76,7 @@ define(function(require)
 	 */
 	ItemObtain.onAppend = function onAppend()
 	{
-		this.ui.css('left', ( Renderer.width - (this.ui.width()) ) >> 1 );
+		this.ui.style.left = (( Renderer.width - this.ui.offsetWidth ) >> 1) + 'px';
 	};
 
 
@@ -105,18 +111,23 @@ define(function(require)
 		var it       = DB.getItemInfo(item.ITID);
 		var display  = DB.getItemName(item, {showItemSlots: false , showItemOptions: false});
 		var resource = item.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName;
+		var content  = qs('.content');
 
 		this.placeOnTop();
 
-		this.ui.find('.content').html(
-			'<img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="'+ item.ITID +'" width="24" height="24" /> ' +
-			jQuery.escape(display + ' ' + DB.getMessage(696).replace('%d', item.count || 1))
-		);
+		if (content) {
+			content.innerHTML =
+				'<img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" class="'+ item.ITID +'" width="24" height="24" /> ' +
+				DOM.sanitizeHtml(display + ' ' + DB.getMessage(696).replace('%d', item.count || 1));
+		}
 
-		this.ui.css('left', ( Renderer.width - (this.ui.width()) ) >> 1 );
+		this.ui.style.left = (( Renderer.width - this.ui.offsetWidth ) >> 1) + 'px';
 
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + resource + '.bmp', (function(url){
-			this.ui.find('img.' + item.ITID).attr('src', url);
+			var img = qs('img.' + item.ITID);
+			if (img) {
+				img.src = url;
+			}
 		}).bind(this));
 
 		// Start tomer

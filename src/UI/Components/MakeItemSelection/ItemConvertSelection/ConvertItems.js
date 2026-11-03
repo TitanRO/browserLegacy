@@ -13,7 +13,6 @@
      /**
       * Dependencies
       */
-     var jQuery      		= require('Utils/jquery');
      var DB          		= require('DB/DBManager');
      var Preferences 		= require('Core/Preferences');
      var Mouse       		= require('Controls/MouseEventHandler');
@@ -25,6 +24,7 @@
 	 var MakeModelMessage 	= require('UI/Components/MakeItemSelection/ItemConvertSelection/MakeModelMessage/MakeModelMessage');
      var htmlText    		= require('text!./ConvertItems.html');
      var cssText     		= require('text!./ConvertItems.css');
+     var DOM                = require('Utils/DOM');
      var getModule   		= require;
  
     /**
@@ -53,34 +53,33 @@
      ConvertItems.init = function init()
      {
          // Show at center.
-         this.ui.css({
+         DOM.setCss(this.ui, {
              top:  (Renderer.height- 200)/2,
              left: (Renderer.width - 10)/2
          });
  
          this.material = [];
  
-         this.draggable(this.ui.find('.head'));
-         this.ui.find('.footer .extend').mousedown(onResize);
-		 this.ui.find('.trade').on('click',onMessageModel); 
-		 this.ui.find('.cancel').on('click',onClose);
+         this.draggable(this.ui.querySelector('.head'));
+         this.ui.querySelector('.footer .extend').addEventListener('mousedown', onResize);
+		 this.ui.querySelector('.trade').addEventListener('click', onMessageModel); 
+		 this.ui.querySelector('.cancel').addEventListener('click', onClose);
 		 
          resizeHeight(_preferences.height);
          
-        this.ui
-            .on('drop',     onDrop)
-            .on('dragover', stopPropagation)
+        this.ui.addEventListener('drop', onDrop);
+        this.ui.addEventListener('dragover', stopPropagation);
+        var _ciContent = this.ui.querySelector('.container .content');
+        _ciContent.addEventListener('mousewheel', onScroll);
+        _ciContent.addEventListener('DOMMouseScroll', onScroll);
+        DOM.addDelegatedEvent(_ciContent, 'mouseover', '.item', onItemOver);
+        DOM.addDelegatedEvent(_ciContent, 'mouseout', '.item', onItemOut);
+        DOM.addDelegatedEvent(_ciContent, 'dragstart', '.item', onItemDragStart);
+        DOM.addDelegatedEvent(_ciContent, 'dragend', '.item', onItemDragEnd);
+        DOM.addDelegatedEvent(_ciContent, 'contextmenu', '.item', onItemInfo);
 
-			.find('.container .content')
-				.on('mousewheel DOMMouseScroll', onScroll)
-				.on('mouseover',   '.item',      onItemOver)
-				.on('mouseout',    '.item',      onItemOut)
-				.on('dragstart',   '.item',      onItemDragStart)
-				.on('dragend',     '.item',      onItemDragEnd)
-				.on('contextmenu', '.item',      onItemInfo);
 
-
-        this.draggable(this.ui.find('.titlebar'));
+        this.draggable(this.ui.querySelector('.titlebar'));
      };
 
 
@@ -90,22 +89,22 @@
 	ConvertItems.onAppend = function OnAppend()
 	{
 		this.material = [];
-		this.ui.find('.item').remove();
+		this.ui.querySelector('.item').remove();
 	}
  
      ConvertItems.addItem = function addItem( item ){
         var it   = DB.getItemInfo( item.ITID );
 
-        this.ui.find('.container .content').append(
+        this.ui.querySelector('.container .content').insertAdjacentHTML('beforeend',
             '<div class="item" data-index="' + item.index +'" draggable="true">' +
                 '<div class="icon"></div>' +
                 '<div class="amount">'+ (item.count ? '<span class="count">' + item.count + '</span>' + ' ' : '') + '</div>' +
-                '<span class="name">' + jQuery.escape(DB.getItemName(item)) + '</span>' +
+                '<span class="name">' + DOM.escapeHtml(DB.getItemName(item)) + '</span>' +
             '</div>'
         );
 
         Client.loadFile( DB.INTERFACE_PATH + 'item/' + ( item.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName ) + '.bmp', function(data){
-            this.ui.find('.item[data-index="'+ item.index +'"] .icon').css('backgroundImage', 'url('+ data +')');
+            this.ui.querySelector('.item[data-index="'+ item.index +'"] .icon').style.backgroundImage = 'url('+ data +')';
         }.bind(this));
 
         return true;
@@ -130,17 +129,17 @@
 
 		// Update quantity
 		if (item.count > 0) {
-			this.ui.find('.item[data-index="'+ item.index +'"] .count').text( item.count );
+			this.ui.querySelector('.item[data-index="'+ item.index +'"] .count').textContent =  item.count ;
 			return;
 		}
 
 		// no quantity, remove
 		this.material.splice( this.material.indexOf(item), 1 );
-		this.ui.find('.item[data-index="'+ item.index +'"]').remove();
+		this.ui.querySelector('.item[data-index="'+ item.index +'"]').remove();
 
-		var content = this.ui.find('.container .content');
-		if (content.height() === content[0].scrollHeight) {
-			this.ui.find('.hide').show();
+		var content = this.ui.querySelector('.container .content');
+		if (content.offsetHeight === content.scrollHeight) {
+			this.ui.querySelector('.hide').style.display = '';
 		}
 	};
 
@@ -202,7 +201,7 @@
 	function onResize()
 	{
 		var ui         = ConvertItems.ui;
-		var top        = ui.position().top;
+		var top        = DOM.getPosition(ui).top;
 		var lastHeight = 0;
 		var _Interval;
 
@@ -226,12 +225,13 @@
 		_Interval = setInterval( resizing, 30);
 
 		// Stop resizing on left click
-		jQuery(window).on('mouseup.resize', function(event){
+		var _resizeHandler = function(event){
 			if (event.which === 1) {
 				clearInterval(_Interval);
-				jQuery(window).off('mouseup.resize');
+				window.removeEventListener('mouseup', _resizeHandler);
 			}
-		});
+		};
+		window.addEventListener('mouseup', _resizeHandler);
 	}
 
 
@@ -242,8 +242,8 @@
 	{
 		height = Math.min( Math.max(height, 8), 17);
 
-		ConvertItems.ui.find('.container .content').css('height', height * 32);
-		ConvertItems.ui.css('height', 31 + 19 + height * 32);
+		ConvertItems.ui.querySelector('.container .content').style.height = height * 32;
+		ConvertItems.ui.style.height = 31 + 19 + height * 32;
 	}
  
      /**
@@ -262,7 +262,7 @@
       */
      ConvertItems.setTitle = function setTitle( title )
      {
-         this.ui.find('.head .text').text( title );
+         this.ui.querySelector('.head .text').textContent =  title ;
      };
  
  
@@ -305,7 +305,7 @@
 			ConvertItems.material[i].count -= count;
 
 			if (ConvertItems.material[i].count > 0) {
-				this.ui.find('.item[data-index="'+ index +'"] .count').text(ConvertItems.material[i].count);
+				this.ui.querySelector('.item[data-index="'+ index +'"] .count').textContent = ConvertItems.material[i].count;
 				return ConvertItems.material[i];
 			}
 		}
@@ -313,7 +313,7 @@
 		// Remove item
 		item = ConvertItems.material[i];
 		ConvertItems.material.splice( i, 1 );
-		this.ui.find('.item[data-index="'+ index +'"]').remove();
+		this.ui.querySelector('.item[data-index="'+ index +'"]').remove();
 
 		return item;
 	};
@@ -323,7 +323,7 @@
 	 */
 	function onItemOut()
 	{
-		ConvertItems.ui.find('.overlay').hide();
+		ConvertItems.ui.querySelector('.overlay').style.display = 'none';
 	}
      
      /**
@@ -344,8 +344,8 @@
 		url     = url = url.replace(/^\"/, '').replace(/\"$/, ''); // Firefox bug
 		img.src = url;
 
-		event.originalEvent.dataTransfer.setDragImage( img, 12, 12 );
-		event.originalEvent.dataTransfer.setData('Text',
+		event.dataTransfer.setDragImage( img, 12, 12 );
+		event.dataTransfer.setData('Text',
 			JSON.stringify( window._OBJ_DRAG_ = {
 				type: 'item',
 				from: 'ConvertItems',
@@ -422,7 +422,7 @@
  
          try {
              data = JSON.parse(
-                 event.originalEvent.dataTransfer.getData('Text')
+                 event.dataTransfer.getData('Text')
              );
          }
          catch(e) {}
@@ -486,14 +486,14 @@
 	{
 		var delta;
 
-		if (event.originalEvent.wheelDelta) {
-			delta = event.originalEvent.wheelDelta / 120 ;
+		if (event.wheelDelta) {
+			delta = event.wheelDelta / 120 ;
 			if (window.opera) {
 				delta = -delta;
 			}
 		}
-		else if (event.originalEvent.detail) {
-			delta = -event.originalEvent.detail;
+		else if (event.detail) {
+			delta = -event.detail;
 		}
 
 		this.scrollTop = Math.floor(this.scrollTop/32) * 32 - (delta * 32);
@@ -516,19 +516,19 @@
 
 		// Get back data
 		var item    = ConvertItems.material[i];
-		var pos     = jQuery(this).position();
-		var overlay = ConvertItems.ui.find('.overlay');
+		var pos     = DOM.getPosition(this);
+		var overlay = ConvertItems.ui.querySelector('.overlay');
 
 		// Display box
-		overlay.show();
-		overlay.css({top: pos.top-10, left:pos.left+35});
-		overlay.text(DB.getItemName(item) + ' ' + ( item.count || 1 ) + ' ea');
+		overlay.style.display = '';
+		overlay.style.top = pos.top-10; overlay.style.left = pos.left+35;
+		overlay.textContent = DB.getItemName(item) + ' ' + ( item.count || 1 ) + ' ea';
 
 		if (item.IsIdentified) {
-			overlay.removeClass('grey');
+			overlay.classList.remove('grey');
 		}
 		else {
-			overlay.addClass('grey');
+			overlay.classList.add('grey');
 		}
 	}
      

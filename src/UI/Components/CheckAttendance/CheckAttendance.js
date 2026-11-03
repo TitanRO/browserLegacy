@@ -23,8 +23,8 @@ define(function (require) {
 	var PACKET = require('Network/PacketStructure');
 	var htmlText = require('text!./CheckAttendance.html');
 	var cssText = require('text!./CheckAttendance.css');
-	var jQuery = require('Utils/jquery');
 	var ChatBox = require('UI/Components/ChatBox/ChatBox');
+	var DOM             = require('Utils/DOM');
 
 	/**
 	 * Create Component
@@ -54,15 +54,19 @@ define(function (require) {
 	 * Initialize the component (event listener, etc.)
 	 */
 	CheckAttendance.init = function init() {
-		// Avoid drag drop problems
 		_CheckAttendanceInfo = DB.getCheckAttendanceInfo();
-		this.ui.find('.base').mousedown(function (event) {
-			event.stopImmediatePropagation();
-			return false;
-		});
 
-		this.ui.find('.close-container-btn').click(CheckAttendance.onClose);
-		this.draggable(this.ui.find('.titlebar'));
+		// Avoid drag drop problems
+		var stopBlock = this.ui.querySelector('.titlebar');
+		if (stopBlock) {
+			stopBlock.addEventListener('mousedown', function (event) {
+				event.stopImmediatePropagation();
+				return false;
+			});
+		}
+
+		this.ui.querySelector('.close-container-btn').addEventListener('click', CheckAttendance.onClose);
+		this.draggable(this.ui.querySelector('.titlebar'));
 	};
 
 
@@ -70,13 +74,13 @@ define(function (require) {
 	 * Once append to the DOM, start to position the UI
 	 */
 	CheckAttendance.onAppend = function onAppend() {
-		this.ui.css({
-			top: Math.min(Math.max(0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min(Math.max(0, _preferences.x), Renderer.width - this.ui.width())
+		DOM.setCss(this.ui, {
+			top: Math.min(Math.max(0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min(Math.max(0, _preferences.x), Renderer.width - this.ui.offsetWidth)
 		});
 
 		if (!_preferences.show) {
-			this.ui.hide();
+			this.ui.style.display = 'none';
 		}
 
 		if (_checkAttendanceData >= 0 && _CheckAttendanceInfo.Config) {
@@ -94,8 +98,8 @@ define(function (require) {
 	CheckAttendance.onShortCut = function onShurtCut(key) {
 		switch (key.cmd) {
 			case 'TOGGLE':
-				this.ui.toggle();
-				if (this.ui.is(':visible')) {
+				DOM.toggleDisplay(this.ui);
+				if (DOM.isVisible(this.ui)) {
 					this.focus();
 				}
 				break;
@@ -107,8 +111,8 @@ define(function (require) {
 	 * Show/Hide UI
 	 */
 	CheckAttendance.toggle = function toggle() {
-		if (this.ui.is(':visible')) {
-			this.ui.hide();
+		if (DOM.isVisible(this.ui)) {
+			this.ui.style.display = 'none';
 		} else {
 			var _pkt = new PACKET.CZ.UI_OPEN();
 			_pkt.UIType = 5;
@@ -137,7 +141,7 @@ define(function (require) {
 			let start = regex.exec(_CheckAttendanceInfo.Config.StartDate);
 			let end = regex.exec(_CheckAttendanceInfo.Config.EndDate);
 			let period_string = `Event Period: From ${start[2]}/${start[3]} ~ Until ${end[2]}/${end[3]} (Month/Day) 24:00`;
-			this.ui.find('.top-panel-period').html(period_string);
+			this.ui.querySelector('.top-panel-period').innerHTML = period_string;
 
 			if (_checkAttendanceData >= 0) {
 				already_requested = _checkAttendanceData % 10;
@@ -149,8 +153,8 @@ define(function (require) {
 				let now_date = new Date();
 				let remaining_days = Math.round(Math.abs((end_date.getTime() - now_date.getTime()) / (1000 * 3600 * 24)));
 
-				this.ui.find('.total-days').html(total_days_string);
-				this.ui.find('.remaining-day-text').html(remaining_days);
+				this.ui.querySelector('.total-days').innerHTML = total_days_string;
+				this.ui.querySelector('.remaining-day-text').innerHTML = remaining_days;
 			}
 		}
 
@@ -171,15 +175,15 @@ define(function (require) {
 					'</div>' +
 					'<div class="day">' + day + ' Day</div>' +
 					'</li>';
-				this.ui.find('.days-list').append(item_slot);
+				this.ui.querySelector('.days-list').insertAdjacentHTML('beforeend', item_slot);
 				if (!already_requested && day == current_day) {
-					this.ui.find('#' + 'attendance_day_' + i).on('click', onClickAttendance);
-					this.ui.find('#' + 'attendance_day_' + i).addClass('event_add_cursor');
+					this.ui.querySelector('#' + 'attendance_day_' + i).addEventListener('click', onClickAttendance);
+					this.ui.querySelector('#' + 'attendance_day_' + i).classList.add('event_add_cursor');
 				}
 			}
 		}
 
-		this.ui.each(this.parseHTML).find('*').each(this.parseHTML);
+		this.parseElementTree(this.ui);
 	}
 
 
@@ -187,10 +191,10 @@ define(function (require) {
 	 * Clean CheckAttendance UI
 	 */
 	CheckAttendance.cleanUI = function cleanUI() {
-		CheckAttendance.ui.find('.top-panel-period').html('');
-		CheckAttendance.ui.find('.days-list').empty('');
-		CheckAttendance.ui.find('.total-days').html('');
-		CheckAttendance.ui.find('.remaining-days-text').html('');
+		CheckAttendance.ui.querySelector('.top-panel-period').innerHTML = '';
+		DOM.empty(CheckAttendance.ui.querySelector('.days-list'));
+		CheckAttendance.ui.querySelector('.total-days').innerHTML = '';
+		CheckAttendance.ui.querySelector('.remaining-days-text').innerHTML = '';
 	};
 
 
@@ -198,7 +202,7 @@ define(function (require) {
 	 * Close the window
 	 */
 	CheckAttendance.onClose = function onClose() {
-		CheckAttendance.ui.hide();
+		CheckAttendance.ui.style.display = 'none';
 	}
 
 
@@ -207,14 +211,16 @@ define(function (require) {
 	 */
 	function onClickAttendance(e) {
 		// send reward request
-		var toggle_element = jQuery(e.currentTarget);
-		let id = toggle_element.attr('id');
-		CheckAttendance.ui.find('#' + id + ' .checked-hidden').attr("class", "checked");
+		var toggle_element = e.currentTarget;
+		let id = toggle_element.getAttribute('id');
+		var _checkedHidden = CheckAttendance.ui.querySelector('#' + id + ' .checked-hidden');
+		if (_checkedHidden) _checkedHidden.setAttribute("class", "checked");
 		let completed_div = '<div class="completed" data-background="check_attendance/bt_slot_complete.tga"></div>'
-		CheckAttendance.ui.find('#' + id).append(completed_div);
+		var _attSlot = CheckAttendance.ui.querySelector('#' + id);
+		if (_attSlot) _attSlot.insertAdjacentHTML('beforeend', completed_div);
 		let current_day = parseInt(_checkAttendanceData / 10) + 1;
 		let total_days_string = `${current_day} Day attendance success`;
-		CheckAttendance.ui.find('.total-days').html(total_days_string);
+		CheckAttendance.ui.querySelector('.total-days').innerHTML = total_days_string;
 		var _pkt = new PACKET.CZ.REQ_CHECK_ATTENDANCE();
 		Network.sendPacket(_pkt);
 	}

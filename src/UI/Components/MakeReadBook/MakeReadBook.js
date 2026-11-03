@@ -18,7 +18,6 @@
 	  * Dependencies
 	  */
 	 var DB                 = require('DB/DBManager');
-	 var jQuery             = require('Utils/jquery');
 	 var Preferences        = require('Core/Preferences');
 	 var Renderer           = require('Renderer/Renderer');
 	 var Mouse              = require('Controls/MouseEventHandler');
@@ -26,6 +25,7 @@
 	 var UIComponent        = require('UI/UIComponent');
 	 var htmlText           = require('text!./MakeReadBook.html');
 	 var cssText            = require('text!./MakeReadBook.css');
+	 var DOM                = require('Utils/DOM');
 	 var Sprite             = require('Loaders/Sprite');
 	 var Client             = require('Core/Client');
 	 var TextEncoding       = require('Vendors/text-encoding');
@@ -135,10 +135,10 @@
 	 MakeReadBook.openBook = function openBook(){
 		MakeReadBook.append();
 
-		this.ui.find('.panel').css('background-color', '#'+_BOOK_INFORMATION['color']);
-		this.ui.find('.footer').css('background-color', '#'+_BOOK_INFORMATION['color']);
+		this.ui.querySelector('.panel').style.backgroundColor = '#'+_BOOK_INFORMATION['color'];
+		this.ui.querySelector('.footer').style.backgroundColor = '#'+_BOOK_INFORMATION['color'];
 
-		this.ui.find('#titleBook').text(_BOOK_INFORMATION['title']);
+		this.ui.querySelector('#titleBook').textContent = _BOOK_INFORMATION['title'];
 
 		Client.getFiles(
 			[
@@ -152,27 +152,28 @@
 				var canvas;
 				canvas  = sprite_close.getCanvasFromFrame( 0 );
 				canvas.className = 'clone_book event_add_cursor';
-				MakeReadBook.ui.find('.footer').find('canvas').remove();
-				MakeReadBook.ui.find('.footer').append(canvas);
-				var cloneBook = MakeReadBook.ui.find('.clone_book');
-				cloneBook.click(onClose);
+				MakeReadBook.ui.querySelector('.footer').querySelector('canvas').remove();
+				MakeReadBook.ui.querySelector('.footer').append(canvas);
+				var cloneBook = MakeReadBook.ui.querySelector('.clone_book');
+				cloneBook.addEventListener('click', onClose);
 
 				// highlighter
 				var sprite_highlighter = new Sprite( spr_highlighter );
 				var canvas;
 				canvas  = sprite_highlighter.getCanvasFromFrame( 0 );
 				canvas.className = 'highlighter event_add_cursor';
-				MakeReadBook.ui.find('#highlighter').find('canvas').remove();
-				MakeReadBook.ui.find('#highlighter').append(canvas);
-				var highlighter = MakeReadBook.ui.find('.highlighter');
-				highlighter.mouseover(function(e) {
+				MakeReadBook.ui.querySelector('#highlighter').querySelector('canvas').remove();
+				MakeReadBook.ui.querySelector('#highlighter').append(canvas);
+				var highlighter = MakeReadBook.ui.querySelector('.highlighter');
+				highlighter.addEventListener('mouseover', function(e) {
 					e.stopImmediatePropagation();
-					MakeReadBook.ui.find('.bookmark').show();
-				}).mouseout(function(e) {
-					e.stopImmediatePropagation();
-					MakeReadBook.ui.find('.bookmark').hide();
+					MakeReadBook.ui.querySelector('.bookmark').style.display = '';
 				});
-				highlighter.click(function(e) {
+				highlighter.addEventListener('mouseout', function(e) {
+					e.stopImmediatePropagation();
+					MakeReadBook.ui.querySelector('.bookmark').style.display = 'none';
+				});
+				highlighter.addEventListener('click', function(e) {
 					e.stopImmediatePropagation();
 					_BOOK_INFORMATION['bookmark_activated'] = true;
 					_BOOK_INFORMATION['bookmark_activated_page'] = _BOOK_INFORMATION['page'];
@@ -181,20 +182,21 @@
 
 
 				// remove canvas next and previous
-				MakeReadBook.ui.find('#next_previous').find('canvas').remove();
+				MakeReadBook.ui.querySelector('#next_previous').querySelector('canvas').remove();
 				// previous
 				var sprite_previous = new Sprite( spr_previous );
 				var canvas;
 				canvas  = sprite_previous.getCanvasFromFrame( 0 );
 				canvas.className = 'previous_btn event_add_cursor';
-				MakeReadBook.ui.find('#next_previous').append(canvas);
-				var previous_btn = MakeReadBook.ui.find('.previous_btn');
-				previous_btn.mouseover(function(e) {
+				MakeReadBook.ui.querySelector('#next_previous').append(canvas);
+				var previous_btn = MakeReadBook.ui.querySelector('.previous_btn');
+				previous_btn.addEventListener('mouseover', function(e) {
 					e.stopImmediatePropagation();
-					MakeReadBook.ui.find('.previous').show();
-				}).mouseout(function(e) {
+					MakeReadBook.ui.querySelector('.previous').style.display = '';
+				});
+				previous_btn.addEventListener('mouseout', function(e) {
 					e.stopImmediatePropagation();
-					MakeReadBook.ui.find('.previous').hide();
+					MakeReadBook.ui.querySelector('.previous').style.display = 'none';
 				});
 
 				// next
@@ -202,18 +204,19 @@
 				var canvas;
 				canvas  = sprite_next.getCanvasFromFrame( 0 );
 				canvas.className = 'next_btn event_add_cursor';
-				MakeReadBook.ui.find('#next_previous').append(canvas);
-				var next_btn = MakeReadBook.ui.find('.next_btn');
-				next_btn.mouseover(function(e) {
+				MakeReadBook.ui.querySelector('#next_previous').append(canvas);
+				var next_btn = MakeReadBook.ui.querySelector('.next_btn');
+				next_btn.addEventListener('mouseover', function(e) {
 					e.stopImmediatePropagation();
-					MakeReadBook.ui.find('.next').show();
-				}).mouseout(function(e) {
+					DOM.show(MakeReadBook.ui.querySelector('.next'));
+				});
+				next_btn.addEventListener('mouseout', function(e) {
 					e.stopImmediatePropagation();
-					MakeReadBook.ui.find('.next').hide();
+					DOM.hide(MakeReadBook.ui.querySelector('.next'));
 				});
 
 				// pagination
-				next_btn.click(function(e) {
+				next_btn.addEventListener('click', function(e) {
 					e.stopImmediatePropagation();
 					if (_BOOK_INFORMATION['page'] < _BOOK_INFORMATION['pagesize'] / 1 - 1) {
 						_BOOK_INFORMATION['page']++;
@@ -222,7 +225,7 @@
 						_BOOK_INFORMATION.save();
 					}
 				});
-				previous_btn.click(function(e) {
+				previous_btn.addEventListener('click', function(e) {
 					e.stopImmediatePropagation();
 					if (_BOOK_INFORMATION['page'] > 0) {
 						_BOOK_INFORMATION['page']--;
@@ -311,20 +314,20 @@
 	  */
 	 MakeReadBook.onAppend = function OnAppend()
 	 {
-		this.ui.show();
+		this.ui.style.display = '';
 
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 
 		_BOOK_INFORMATION['book_open'] = true;
 		_BOOK_INFORMATION.save();
 
-		_preferences.show   =  this.ui.is(':visible');
+		_preferences.show   =  DOM.isVisible(this.ui);
 		_preferences.save();
 
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 	 };
 
 	 /**
@@ -335,15 +338,15 @@
 
 		try {
 			if (_preferences.show) {
-				this.ui.hide();
+				this.ui.style.display = 'none';
 			}
 			 // Save preferences
-			 _preferences.show   =  this.ui.is(':visible');
+			 _preferences.show   =  DOM.isVisible(this.ui);
 			 _preferences.reduce = !!_realSize;
-			 _preferences.y      =  parseInt(this.ui.css('top'), 10);
-			 _preferences.x      =  parseInt(this.ui.css('left'), 10);
-			 _preferences.width  =  Math.floor( (this.ui.width()  - (23 + 16 + 16 - 30)) / 32 );
-			 _preferences.height =  Math.floor( (this.ui.height() - (31 + 19 - 30     )) / 32 );
+			 _preferences.y      =  parseInt(this.ui.style.top, 10);
+			 _preferences.x      =  parseInt(this.ui.style.left, 10);
+			 _preferences.width  =  Math.floor( (this.ui.offsetWidth  - (23 + 16 + 16 - 30)) / 32 );
+			 _preferences.height =  Math.floor( (this.ui.offsetHeight - (31 + 19 - 30     )) / 32 );
 			 _preferences.magnet_top = this.magnet.TOP;
 			 _preferences.magnet_bottom = this.magnet.BOTTOM;
 			 _preferences.magnet_left = this.magnet.LEFT;
@@ -367,7 +370,7 @@
 		 width  = Math.min( Math.max(width,  6), 9);
 		 height = Math.min( Math.max(height, 2), 6);
 
-		 this.ui.css({
+		 DOM.setCss(this.ui, {
 			 width:  23 + 16 + 16 + width  * 32,
 			 height: 31 + 19      + height * 32
 		 });
@@ -393,18 +396,18 @@
 	}
 
 	function page() {
-		MakeReadBook.ui.find('#textBook').text('');
-		var textBody = MakeReadBook.ui.find('#textBook');
+		MakeReadBook.ui.querySelector('#textBook').textContent = '';
+		var textBody = MakeReadBook.ui.querySelector('#textBook');
 
 		for (var i = _BOOK_INFORMATION['page'] * 1 ; i < _BOOK_INFORMATION['pagesize'] && i < (_BOOK_INFORMATION['page'] + 1) *  1 ; i++) {
-			textBody.text(TextEncoding.decodeString(_BOOK_INFORMATION['contents'][i]))
+			textBody.textContent = TextEncoding.decodeString(_BOOK_INFORMATION['contents'][i])
 		}
-		MakeReadBook.ui.find('#pageBook').text('(' + (_BOOK_INFORMATION['page'] + 1) + '/' + Math.ceil(_BOOK_INFORMATION['pagesize'] / 1 ) + ')' );
+		MakeReadBook.ui.querySelector('#pageBook').textContent = '(' + (_BOOK_INFORMATION['page'] + 1) + '/' + Math.ceil(_BOOK_INFORMATION['pagesize'] / 1 ) + ')' ;
 	}
 
 	function adjustButtons() {
-		MakeReadBook.ui.find('.next_btn').prop('disabled', _BOOK_INFORMATION['pagesize'] <= 1 || _BOOK_INFORMATION['page'] > _BOOK_INFORMATION['pagesize'] / 1 - 1);
-		MakeReadBook.ui.find('.previous_btn').prop('disabled', _BOOK_INFORMATION['pagesize'] <= 1 || _BOOK_INFORMATION['page'] == 0);
+		MakeReadBook.ui.querySelector('.next_btn').disabled = _BOOK_INFORMATION['pagesize'] <= 1 || _BOOK_INFORMATION['page'] > _BOOK_INFORMATION['pagesize'] / 1 - 1;
+		MakeReadBook.ui.querySelector('.previous_btn').disabled = _BOOK_INFORMATION['pagesize'] <= 1 || _BOOK_INFORMATION['page'] == 0;
 	}
 
 	 /**
@@ -413,8 +416,8 @@
 	 function onResize()
 	 {
 		 var ui      = MakeReadBook.ui;
-		 var top     = ui.position().top;
-		 var left    = ui.position().left;
+		 var top     = DOM.getPosition(ui).top;
+		 var left    = DOM.getPosition(ui).left;
 		 var lastWidth  = 0;
 		 var lastHeight = 0;
 		 var _Interval;
@@ -444,12 +447,13 @@
 		 _Interval = setInterval( resizing, 30);
 
 		 // Stop resizing on left click
-		 jQuery(window).on('mouseup.resize', function(event){
-			 if (event.which === 1) {
-				 clearInterval(_Interval);
-				 jQuery(window).off('mouseup.resize');
-			 }
-		 });
+		 var _resizeHandler = function(event){
+			if (event.which === 1) {
+				clearInterval(_Interval);
+				window.removeEventListener('mouseup', _resizeHandler);
+			}
+		};
+		window.addEventListener('mouseup', _resizeHandler);
 	 }
 
 

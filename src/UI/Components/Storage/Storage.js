@@ -15,7 +15,6 @@ define(function(require)
 	 */
 	var DB                 = require('DB/DBManager');
 	var ItemType           = require('DB/Items/ItemType');
-	var jQuery             = require('Utils/jquery');
 	var Client             = require('Core/Client');
 	var Preferences        = require('Core/Preferences');
 	var Renderer           = require('Renderer/Renderer');
@@ -27,6 +26,7 @@ define(function(require)
 	var htmlText           = require('text!./Storage.html');
 	var cssText            = require('text!./Storage.css');
 	var getModule		   = require;
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -72,36 +72,35 @@ define(function(require)
 	Storage.init = function Init()
 	{
 		// Bind buttons
-		this.ui.find('.tabs button').mousedown(onSwitchTab);
-		this.ui.find('.footer .extend').mousedown(onResize);
-		this.ui.find('.footer .close').click(this.onClosePressed.bind(this));
+		this.ui.querySelector('.tabs button').addEventListener('mousedown', onSwitchTab);
+		this.ui.querySelector('.footer .extend').addEventListener('mousedown', onResize);
+		this.ui.querySelector('.footer .close').addEventListener('click', this.onClosePressed.bind(this));
 
 		// Load tabs
 		Client.loadFile( DB.INTERFACE_PATH + 'basic_interface/tab_itm_ex_0'+ (_preferences.tab+1) +'.bmp', function(data){
-			Storage.ui.find('.tabs').css('backgroundImage', 'url("' + data + '")');
+			Storage.ui.querySelector('.tabs').style.backgroundImage = 'url("' + data + '")';
 		});
 
 		// Resize, position
 		resizeHeight(_preferences.height);
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 
 		// drag, drop items
-		this.ui
-			.on('drop',     onDrop)
-			.on('dragover', stopPropagation)
+		this.ui.addEventListener('drop', onDrop);
+		this.ui.addEventListener('dragover', stopPropagation);
+		var _storageContent = this.ui.querySelector('.container .content');
+		_storageContent.addEventListener('mousewheel', onScroll);
+		_storageContent.addEventListener('DOMMouseScroll', onScroll);
+		DOM.addDelegatedEvent(_storageContent, 'mouseover', '.item', onItemOver);
+		DOM.addDelegatedEvent(_storageContent, 'mouseout', '.item', onItemOut);
+		DOM.addDelegatedEvent(_storageContent, 'dragstart', '.item', onItemDragStart);
+		DOM.addDelegatedEvent(_storageContent, 'dragend', '.item', onItemDragEnd);
+		DOM.addDelegatedEvent(_storageContent, 'contextmenu', '.item', onItemInfo);
 
-			.find('.container .content')
-				.on('mousewheel DOMMouseScroll', onScroll)
-				.on('mouseover',   '.item',      onItemOver)
-				.on('mouseout',    '.item',      onItemOut)
-				.on('dragstart',   '.item',      onItemDragStart)
-				.on('dragend',     '.item',      onItemDragEnd)
-				.on('contextmenu', '.item',      onItemInfo);
-
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 	};
 
 
@@ -110,13 +109,13 @@ define(function(require)
 	 */
 	Storage.onRemove = function onRemove()
 	{
-		this.ui.find('.container .content').empty();
+		this.ui.querySelector('.container .content').innerHTML = '';
 		_list.length = 0;
 
 		// Save preferences
-		_preferences.y      =  parseInt(this.ui.css('top'), 10);
-		_preferences.x      =  parseInt(this.ui.css('left'), 10);
-		_preferences.height =  Math.floor( (this.ui.height() - (31 + 19 - 30)) / 32 );
+		_preferences.y      =  parseInt(this.ui.style.top, 10);
+		_preferences.x      =  parseInt(this.ui.style.left, 10);
+		_preferences.height =  Math.floor( (this.ui.offsetHeight - (31 + 19 - 30)) / 32 );
 		_preferences.save();
 	};
 
@@ -150,7 +149,7 @@ define(function(require)
 		// Found, update quantity
 		if (i > -1) {
 			_list[i].count += item.count;
-			this.ui.find('.item[data-index="'+ item.index +'"] .count').text(_list[i].count);
+			this.ui.querySelector('.item[data-index="'+ item.index +'"] .count').textContent = _list[i].count;
 			return;
 		}
 
@@ -208,16 +207,16 @@ define(function(require)
 		if (tab === _preferences.tab) {
 			var it   = DB.getItemInfo( item.ITID );
 
-			this.ui.find('.container .content').append(
+			this.ui.querySelector('.container .content').insertAdjacentHTML('beforeend',
 				'<div class="item" data-index="' + item.index +'" draggable="true">' +
 					'<div class="icon"></div>' +
 					'<div class="amount">'+ (item.count ? '<span class="count">' + item.count + '</span>' + ' ' : '') + '</div>' +
-					'<span class="name">' + jQuery.escape(DB.getItemName(item)) + '</span>' +
+					'<span class="name">' + DOM.escapeHtml(DB.getItemName(item)) + '</span>' +
 				'</div>'
 			);
 
 			Client.loadFile( DB.INTERFACE_PATH + 'item/' + ( item.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName ) + '.bmp', function(data){
-				this.ui.find('.item[data-index="'+ item.index +'"] .icon').css('backgroundImage', 'url('+ data +')');
+				this.ui.querySelector('.item[data-index="'+ item.index +'"] .icon').style.backgroundImage = 'url('+ data +')';
 			}.bind(this));
 		}
 
@@ -244,7 +243,7 @@ define(function(require)
 			_list[i].count -= count;
 
 			if (_list[i].count > 0) {
-				this.ui.find('.item[data-index="'+ index +'"] .count').text(_list[i].count);
+				this.ui.querySelector('.item[data-index="'+ index +'"] .count').textContent = _list[i].count;
 				return _list[i];
 			}
 		}
@@ -252,7 +251,7 @@ define(function(require)
 		// Remove item
 		item = _list[i];
 		_list.splice( i, 1 );
-		this.ui.find('.item[data-index="'+ index +'"]').remove();
+		this.ui.querySelector('.item[data-index="'+ index +'"]').remove();
 
 		return item;
 	};
@@ -262,8 +261,8 @@ define(function(require)
 	 * Update or set the current amount of items in storage in ui
 	 */
 	Storage.setItemInfo = function setItemInfo( current, limit ) {
-		this.ui.find('.footer .current').text(current);
-		this.ui.find('.footer .limit').text(limit);
+		this.ui.querySelector('.footer .current').textContent = current;
+		this.ui.querySelector('.footer .limit').textContent = limit;
 	};
 
 
@@ -283,7 +282,7 @@ define(function(require)
 	function onResize()
 	{
 		var ui         = Storage.ui;
-		var top        = ui.position().top;
+		var top = parseInt(ui.style.top, 10) || 0;
 		var lastHeight = 0;
 		var _Interval;
 
@@ -307,12 +306,13 @@ define(function(require)
 		_Interval = setInterval( resizing, 30);
 
 		// Stop resizing on left click
-		jQuery(window).on('mouseup.resize', function(event){
+		var _onResizeEnd = function(event){
 			if (event.which === 1) {
 				clearInterval(_Interval);
-				jQuery(window).off('mouseup.resize');
+				window.removeEventListener('mouseup', _onResizeEnd);
 			}
-		});
+		};
+		window.addEventListener('mouseup', _onResizeEnd);
 	}
 
 
@@ -323,8 +323,8 @@ define(function(require)
 	{
 		height = Math.min( Math.max(height, 8), 17);
 
-		Storage.ui.find('.container .content').css('height', height * 32);
-		Storage.ui.css('height', 31 + 19 + height * 32);
+		Storage.ui.querySelector('.container .content').style.height = height * 32;
+		Storage.ui.style.height = 31 + 19 + height * 32;
 	}
 
 
@@ -334,11 +334,11 @@ define(function(require)
 	 */
 	function onSwitchTab()
 	{
-		var idx          = jQuery(this).index();
+		var idx          = DOM.indexAmongSiblings(this);
 		_preferences.tab = idx;
 
 		Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/tab_itm_ex_0'+ (idx+1) +'.bmp', function(data){
-			Storage.ui.find('.tabs').css('backgroundImage', 'url("' + data + '")');
+			Storage.ui.querySelector('.tabs').style.backgroundImage = 'url("' + data + '")';
 			requestFilter();
 		});
 	}
@@ -353,7 +353,7 @@ define(function(require)
 
 		try {
 			data = JSON.parse(
-				event.originalEvent.dataTransfer.getData('Text')
+				event.dataTransfer.getData('Text')
 			);
 		}
 		catch(e) {}
@@ -412,7 +412,7 @@ define(function(require)
 	 */
 	function requestFilter()
 	{
-		Storage.ui.find('.container .content').empty();
+		Storage.ui.querySelector('.container .content').innerHTML = '';
 		var i, count;
 
 		for (i = 0, count = _list.length; i < count; ++i) {
@@ -447,14 +447,14 @@ define(function(require)
 	{
 		var delta;
 
-		if (event.originalEvent.wheelDelta) {
-			delta = event.originalEvent.wheelDelta / 120 ;
+		if (event.wheelDelta) {
+			delta = event.wheelDelta / 120 ;
 			if (window.opera) {
 				delta = -delta;
 			}
 		}
-		else if (event.originalEvent.detail) {
-			delta = -event.originalEvent.detail;
+		else if (event.detail) {
+			delta = -event.detail;
 		}
 
 		this.scrollTop = Math.floor(this.scrollTop/32) * 32 - (delta * 32);
@@ -477,19 +477,21 @@ define(function(require)
 
 		// Get back data
 		var item    = _list[i];
-		var pos     = jQuery(this).position();
-		var overlay = Storage.ui.find('.overlay');
+		var rect = this.getBoundingClientRect();
+		var uiRect = Storage.ui.getBoundingClientRect();
+		var overlay = Storage.ui.querySelector('.overlay');
 
 		// Display box
-		overlay.show();
-		overlay.css({top: pos.top-10, left:pos.left+35});
-		overlay.text(DB.getItemName(item) + ' ' + ( item.count || 1 ) + ' ea');
+		overlay.style.display = '';
+		overlay.style.top = (pos.top - 10) + 'px';
+		overlay.style.left = (pos.left + 35) + 'px';
+		overlay.textContent = DB.getItemName(item) + ' ' + (item.count || 1) + ' ea';
 
 		if (item.IsIdentified) {
-			overlay.removeClass('grey');
+			overlay.classList.remove('grey');
 		}
 		else {
-			overlay.addClass('grey');
+			overlay.classList.add('grey');
 		}
 	}
 
@@ -499,7 +501,7 @@ define(function(require)
 	 */
 	function onItemOut()
 	{
-		Storage.ui.find('.overlay').hide();
+		Storage.ui.querySelector('.overlay').style.display = 'none';
 	}
 
 
@@ -521,8 +523,8 @@ define(function(require)
 		url     = url = url.replace(/^\"/, '').replace(/\"$/, ''); // Firefox bug
 		img.src = url;
 
-		event.originalEvent.dataTransfer.setDragImage( img, 12, 12 );
-		event.originalEvent.dataTransfer.setData('Text',
+		event.dataTransfer.setDragImage( img, 12, 12 );
+		event.dataTransfer.setData('Text',
 			JSON.stringify( window._OBJ_DRAG_ = {
 				type: 'item',
 				from: 'Storage',
@@ -586,8 +588,8 @@ define(function(require)
 	{
 		var CartItems = getModule('UI/Components/CartItems/CartItems');
 		var Inventory = getModule('UI/Components/Inventory/Inventory');
-		var isInventoryOpen = Inventory.getUI().ui ? Inventory.getUI().ui.is(':visible') : false;
-		var isCartOpen = CartItems.ui ? CartItems.ui.is(':visible') : false;
+		var isInventoryOpen = Inventory.getUI().ui ? DOM.isVisible(Inventory.getUI().ui) : false;
+		var isCartOpen = CartItems.ui ? DOM.isVisible(CartItems.ui) : false;
 
 		if (!item) {
 			return false;

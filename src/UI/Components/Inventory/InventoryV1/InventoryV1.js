@@ -21,7 +21,6 @@ define(function(require)
 	var ItemType           = require('DB/Items/ItemType');
 	var Network            = require('Network/NetworkManager');
 	var PACKET             = require('Network/PacketStructure');
-	var jQuery             = require('Utils/jquery');
 	var Client             = require('Core/Client');
 	var Preferences        = require('Core/Preferences');
 	var Renderer           = require('Renderer/Renderer');
@@ -38,6 +37,7 @@ define(function(require)
 	var htmlText           = require('text!./InventoryV1.html');
 	var cssText            = require('text!./InventoryV1.css');
 	var getModule          = require;
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -112,71 +112,73 @@ define(function(require)
 	InventoryV1.init = function Init()
 	{
 		// Bind buttons
-		this.ui.find('.titlebar .base').mousedown(stopPropagation);
-		this.ui.find('.titlebar .mini').click(onToggleReduction);
-		this.ui.find('.tabs button').mousedown(onSwitchTab);
-		this.ui.find('.footer .extend').mousedown(onResize);
-		this.ui.find('.titlebar .close').click(function(){
-			InventoryV1.ui.hide();
+		this.ui.querySelector('.titlebar .base').addEventListener('mousedown', stopPropagation);
+		this.ui.querySelector('.titlebar .mini').addEventListener('click', onToggleReduction);
+		Array.from(this.ui.querySelectorAll('.tabs button')).forEach(function(btn){ btn.addEventListener('mousedown', onSwitchTab); });
+		this.ui.querySelector('.footer .extend').addEventListener('mousedown', onResize);
+		this.ui.querySelector('.titlebar .close').addEventListener('click', function(){
+			InventoryV1.ui.style.display = 'none';
 		});
 
 		// on drop item
-		this.ui
-			.on('drop',     onDrop)
-			.on('dragover', stopPropagation)
-
+		this.ui.addEventListener('drop', onDrop);
+		this.ui.addEventListener('dragover', stopPropagation);
 		// Items event
-			.find('.container .content')
-				.on('mousewheel DOMMouseScroll', onScroll)
-				.on('mouseover',   '.item', onItemOver)
-				.on('mouseout',    '.item', onItemOut)
-				.on('dragstart',   '.item', onItemDragStart)
-				.on('dragend',     '.item', onItemDragEnd)
-				.on('contextmenu', '.item', onItemInfo)
-				.on('dblclick',    '.item', onItemUsed);
+		var _invContent = this.ui.querySelector('.container .content');
+		_invContent.addEventListener('mousewheel', onScroll);
+		_invContent.addEventListener('DOMMouseScroll', onScroll);
+		DOM.addDelegatedEvent(_invContent, 'mouseover', '.item', onItemOver);
+		DOM.addDelegatedEvent(_invContent, 'mouseout', '.item', onItemOut);
+		DOM.addDelegatedEvent(_invContent, 'dragstart', '.item', onItemDragStart);
+		DOM.addDelegatedEvent(_invContent, 'dragend', '.item', onItemDragEnd);
+		DOM.addDelegatedEvent(_invContent, 'contextmenu', '.item', onItemInfo);
+		DOM.addDelegatedEvent(_invContent, 'dblclick', '.item', onItemUsed);
 
-		this.ui.find('.ncnt').text(0 + ' / ');
-		this.ui.find('.mcnt').text(100);
+		this.ui.querySelector('.ncnt').textContent = 0 + ' / ';
+		this.ui.querySelector('.mcnt').textContent = 100;
 
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 
 		// Add drop events for tabs
-		this.ui.find('.tabs button').on('dragover', stopPropagation).on('drop', onTabDrop);
+		Array.from(this.ui.querySelectorAll('.tabs button')).forEach(function(btn){
+			btn.addEventListener('dragover', stopPropagation);
+			btn.addEventListener('drop', onTabDrop);
+		});
 
 		// Set initial selected tab based on _preferences.tab
-		jQuery('.tabs button').removeClass('selected');
-		var initialTab = this.ui.find('.tabs button').eq(_preferences.tab);
-		initialTab.addClass('selected');
+		Array.from(this.ui.querySelectorAll('.tabs button')).forEach(function(btn){ btn.classList.remove('selected'); });
+		var allTabBtns = this.ui.querySelectorAll('.tabs button');
+		if (allTabBtns[_preferences.tab]) { allTabBtns[_preferences.tab].classList.add('selected'); }
 
 		// Buttons
 		var lockImg = _preferences.itemlock ? 'inventory/item_drop_lock_on.bmp' : 'inventory/item_drop_lock_off.bmp' ;
 		Client.loadFile(DB.INTERFACE_PATH + lockImg, function (data) {
-			InventoryV1.ui.find('.item_drop_lock').css('backgroundImage', 'url(' + data + ')');
+			InventoryV1.ui.querySelector('.item_drop_lock').style.backgroundImage = 'url(' + data + ')';
 		});
 
 		var compImg = _preferences.itemcomp ? 'inventory/item_compare_on.bmp' : 'inventory/item_compare_off.bmp' ;
 		Client.loadFile(DB.INTERFACE_PATH + compImg, function (data) {
-			InventoryV1.ui.find('.item_compare').css('backgroundImage', 'url(' + data + ')');
+			InventoryV1.ui.querySelector('.item_compare').style.backgroundImage = 'url(' + data + ')';
 		});
 
-		var lockSale = _preferences.npcsalelock ? InventoryV1.ui.find('.deallock_on') : InventoryV1.ui.find('.deallock_off');
+		var lockSale = _preferences.npcsalelock ? InventoryV1.ui.querySelector('.deallock_on') : InventoryV1.ui.querySelector('.deallock_off');
 		if (_preferences.tab != InventoryV1.TAB.FAV) {
-			lockSale.hide();
-			InventoryV1.ui.find('.sort').hide();
+			lockSale.style.display = 'none';
+			InventoryV1.ui.querySelector('.sort').style.display = 'none';
 		} else {
-			lockSale.show();
-			InventoryV1.ui.find('.sort').show();
+			lockSale.style.display = '';
+			InventoryV1.ui.querySelector('.sort').style.display = '';
 		}
 
 		// Button Functions
-		InventoryV1.ui.find('.item_drop_lock').click(onItemLock);
-		InventoryV1.ui.find('.item_compare').click(onItemCompare);
-		InventoryV1.ui.find('.deal_lock').click(onNPCLock);
-		InventoryV1.ui.find('.lockoverlayclose').click(function(){
-			InventoryV1.ui.find('.lockoverlaymsg').hide();
+		InventoryV1.ui.querySelector('.item_drop_lock').addEventListener('click', onItemLock);
+		InventoryV1.ui.querySelector('.item_compare').addEventListener('click', onItemCompare);
+		InventoryV1.ui.querySelector('.deal_lock').addEventListener('click', onNPCLock);
+		InventoryV1.ui.querySelector('.lockoverlayclose').addEventListener('click', function(){
+			InventoryV1.ui.querySelector('.lockoverlaymsg').style.display = 'none';
 			clearTimeout(lockOverlayTimeout);
 		});
-		InventoryV1.ui.find('.sort').click( function(){ requestFilter();} );
+		InventoryV1.ui.querySelector('.sort').addEventListener('click',  function(){ requestFilter();} );
 	};
 
 
@@ -187,14 +189,14 @@ define(function(require)
 	{
 		// Apply preferences
 		if (!_preferences.show) {
-			this.ui.hide();
+			this.ui.style.display = 'none';
 		}
 
 		this.resize( _preferences.width, _preferences.height );
 
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 
 		this.magnet.TOP = _preferences.magnet_top;
@@ -202,8 +204,8 @@ define(function(require)
 		this.magnet.LEFT = _preferences.magnet_left;
 		this.magnet.RIGHT = _preferences.magnet_right;
 
-		_realSize = _preferences.reduce ? 0 : this.ui.height();
-		this.ui.find('.titlebar .mini').trigger('mousedown');
+		_realSize = _preferences.reduce ? 0 : this.ui.offsetHeight;
+		this.ui.querySelector('.titlebar .mini').dispatchEvent(new MouseEvent('mousedown', {bubbles: true}));
 	};
 
 
@@ -212,17 +214,17 @@ define(function(require)
 	 */
 	InventoryV1.onRemove = function OnRemove()
 	{
-		this.ui.find('.container .content').empty();
+		this.ui.querySelector('.container .content').innerHTML = '';
 		this.list.length = 0;
 		InventoryV1.newItems.length = 0; // Clear the new items array
-		jQuery('.ItemInfo').remove();
+		ItemInfo.remove();
 
 		// Save preferences
-		_preferences.show   =  this.ui.is(':visible');
+		_preferences.show   =  DOM.isVisible(this.ui);
 		_preferences.reduce = !!_realSize;
-		_preferences.y      =  parseInt(this.ui.css('top'), 10);
-		_preferences.x      =  parseInt(this.ui.css('left'), 10);
-		_preferences.width  =  Math.floor( (this.ui.width()  - (23 + 16 + 16 - 30)) / 32 );
+		_preferences.y      =  parseInt(this.ui.style.top, 10);
+		_preferences.x      =  parseInt(this.ui.style.left, 10);
+		_preferences.width  =  Math.floor( (this.ui.offsetWidth  - (23 + 16 + 16 - 30)) / 32 );
 		_preferences.magnet_top = this.magnet.TOP;
 		_preferences.magnet_bottom = this.magnet.BOTTOM;
 		_preferences.magnet_left = this.magnet.LEFT;
@@ -243,8 +245,8 @@ define(function(require)
 	{
 		switch (key.cmd) {
 			case 'TOGGLE':
-				this.ui.toggle();
-				if (this.ui.is(':visible')) {
+				DOM.toggleDisplay(this.ui);
+				if (DOM.isVisible(this.ui)) {
 					this.focus();
 				}
 				else {
@@ -253,17 +255,16 @@ define(function(require)
 					// the item disapear, if you don't move the mouse and
 					// triggered ALT+E then, the window disapear and you
 					// can't trigger the scene anymore
-					this.ui.trigger('mouseleave');
+					this.ui.dispatchEvent(new MouseEvent('mouseleave', {bubbles: true}));
 					this.clearNewItems(); // Clear new items
-					this.ui.find('.new_item').css('backgroundImage', '');
 				}
 				break;
 		}
 
 		var BasicInfo = getModule('UI/Components/BasicInfo/BasicInfo');
-		var changeUI = BasicInfo.getUI().ui.find('#item .btn_overlay');
+		var changeUI = BasicInfo.getUI().ui.querySelector('#item .btn_overlay');
 		if (changeUI) { // Only applicable to BasicInfoV4 and BasicInfoV5
-			changeUI.hide();
+			changeUI.style.display = 'none';
 		}
 	};
 
@@ -272,19 +273,18 @@ define(function(require)
 	 * Show/Hide UI
 	 */
 	InventoryV1.toggle = function toggle() {
-		this.ui.toggle();
-		if (this.ui.is(':visible')) {
+		DOM.toggleDisplay(this.ui);
+		if (DOM.isVisible(this.ui)) {
 			this.focus();
 		} else {
-			this.ui.trigger('mouseleave');
+			this.ui.dispatchEvent(new MouseEvent('mouseleave', {bubbles: true}));
 			this.clearNewItems(); // Clear new items
-			this.ui.find('.new_item').css('backgroundImage', '');
 		}
 
 		var BasicInfo = getModule('UI/Components/BasicInfo/BasicInfo');
-		var changeUI = BasicInfo.getUI().ui.find('#item .btn_overlay');
+		var changeUI = BasicInfo.getUI().ui.querySelector('#item .btn_overlay');
 		if (changeUI) { // Only applicable to BasicInfoV4 and BasicInfoV5
-			changeUI.hide();
+			changeUI.style.display = 'none';
 		}
 	};
 
@@ -294,6 +294,9 @@ define(function(require)
 	 */
 	InventoryV1.clearNewItems = function clearNewItems() {
 	    this.newItems = [];
+	    this.ui.querySelectorAll('.new_item').forEach(function(el) {
+	    	el.style.backgroundImage = '';
+	    });
 	};
 
 
@@ -307,11 +310,11 @@ define(function(require)
 	{
 		width  = Math.min( Math.max(width,  6), 8);
 
-		this.ui.find('.container .content').css({
+		DOM.setCss(this.ui.querySelector('.container .content'), {
 			width:  width  * 32 + 13, // 13 = scrollbar
 		});
 
-		this.ui.css({
+		DOM.setCss(this.ui, {
 			width:  23 + 16 + 16 + width  * 32,
 		});
 	};
@@ -374,7 +377,7 @@ define(function(require)
 			}
 			if(this.addItemSub(items[i])){
 				this.list.push(items[i]);
-				this.ui.find('.ncnt').text(this.list.length + Equipment.getUI().getNumber() + ' / ');
+				this.ui.querySelector('.ncnt').textContent = this.list.length + Equipment.getUI().getNumber() + ' / ';
 				this.onUpdateItem(items[i].ITID, items[i].count ? items[i].count : 1);
 			}
 
@@ -403,9 +406,9 @@ define(function(require)
 		    InventoryV1.newItems.push(item.index);
 
 			var BasicInfo = getModule('UI/Components/BasicInfo/BasicInfo');
-			var changeUI = BasicInfo.getUI().ui.find('#item .btn_overlay');
+			var changeUI = BasicInfo.getUI().ui.querySelector('#item .btn_overlay');
 			if (changeUI) { // Only applicable to BasicInfoV4 and BasicInfoV5
-				changeUI.show();
+				changeUI.style.display = '';
 			}
 		}
 
@@ -418,7 +421,7 @@ define(function(require)
 				item.count = 1;
 			}
 			object.count += item.count;
-			this.ui.find('.item[data-index="'+ item.index +'"] .count').text( object.count );
+			this.ui.querySelector('.item[data-index="'+ item.index +'"] .count').textContent =  object.count ;
 			this.onUpdateItem(object.ITID, object.count);
 			// Replace the existing index in newItems to maintain it as new
 			var indexPosition = InventoryV1.newItems.indexOf(item.index);
@@ -431,10 +434,10 @@ define(function(require)
 			return;
 		}
 
-		object = jQuery.extend({}, item);
+		object = Object.assign({}, item);
 		if (this.addItemSub(object)) {
 			this.list.push(object);
-			this.ui.find('.ncnt').text(this.list.length + Equipment.getUI().getNumber() + ' / ');
+			this.ui.querySelector('.ncnt').textContent = this.list.length + Equipment.getUI().getNumber() + ' / ';
 			this.onUpdateItem(object.ITID, object.count);
 		}
 
@@ -466,7 +469,7 @@ define(function(require)
 
 			if (tab === _preferences.tab) {
 				Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/new_item.bmp', function (data) {
-        	        InventoryV1.ui.find('.item[data-index="'+ item.index +'"] .new_item').css('backgroundImage', 'url(' + data + ')');
+        	        InventoryV1.ui.querySelector('.item[data-index="'+ item.index +'"] .new_item').style.backgroundImage = 'url(' + data + ')';
         	    });
 			}
 		}
@@ -529,9 +532,9 @@ define(function(require)
 
 		if (tab === _preferences.tab) {
 			var it      = DB.getItemInfo( item.ITID );
-			var content = this.ui.find('.container .content');
+			var content = this.ui.querySelector('.container .content');
 
-			content.append(
+			content.insertAdjacentHTML('beforeend',
 				'<div class="item" data-index="'+ item.index +'" draggable="true">' +
 					'<div class="new_item"></div>' +
 					'<div class="icon"></div>' +
@@ -539,23 +542,23 @@ define(function(require)
 				'</div>'
 			);
 
-			if (content.height() < content[0].scrollHeight) {
-				this.ui.find('.hide').hide();
+			if (content.offsetHeight < content.scrollHeight) {
+				this.ui.querySelector('.hide').style.display = 'none';
 			}
 			else {
-				this.ui.find('.hide').show();
+				this.ui.querySelector('.hide').style.display = '';
 			}
 
 			Client.loadFile( DB.INTERFACE_PATH + 'item/' + ( item.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName ) + '.bmp', function(data){
-				content.find('.item[data-index="'+ item.index +'"] .icon').css('backgroundImage', 'url('+ data +')');
+				content.querySelector('.item[data-index="'+ item.index +'"] .icon').style.backgroundImage = 'url('+ data +')';
 			});
 
 			if (InventoryV1.isNewItem(item.index)) {
 				Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/new_item.bmp', function (data) {
-            	    content.find('.item[data-index="'+ item.index +'"] .new_item').css('backgroundImage', 'url(' + data + ')');
+            	    content.querySelector('.item[data-index="'+ item.index +'"] .new_item').style.backgroundImage = 'url(' + data + ')';
             	});
 			} else {
-				content.find('.item[data-index="'+ item.index +'"] .new_item').css('backgroundImage', '');
+				content.querySelector('.item[data-index="'+ item.index +'"] .new_item').style.backgroundImage = '';
 			}
 		}
 
@@ -583,20 +586,20 @@ define(function(require)
 			item.count -= count;
 
 			if (item.count > 0) {
-				this.ui.find('.item[data-index="'+ item.index +'"] .count').text( item.count );
+				this.ui.querySelector('.item[data-index="'+ item.index +'"] .count').textContent =  item.count ;
 				this.onUpdateItem(item.ITID, item.count);
 				return item;
 			}
 		}
 
 		this.list.splice( this.list.indexOf(item), 1 );
-		this.ui.find('.item[data-index="'+ item.index +'"]').remove();
-		this.ui.find('.ncnt').text(this.list.length + Equipment.getUI().getNumber() + ' / ');
+		this.ui.querySelector('.item[data-index="'+ item.index +'"]').remove();
+		this.ui.querySelector('.ncnt').textContent = this.list.length + Equipment.getUI().getNumber() + ' / ';
 		this.onUpdateItem(item.ITID, 0);
 
-		var content = this.ui.find('.container .content');
-		if (content.height() === content[0].scrollHeight) {
-			this.ui.find('.hide').show();
+		var content = this.ui.querySelector('.container .content');
+		if (content.offsetHeight === content.scrollHeight) {
+			this.ui.querySelector('.hide').style.display = '';
 		}
 
 		return item;
@@ -621,20 +624,20 @@ define(function(require)
 
 		// Update quantity
 		if (item.count > 0) {
-			this.ui.find('.item[data-index="'+ item.index +'"] .count').text( item.count );
+			this.ui.querySelector('.item[data-index="'+ item.index +'"] .count').textContent =  item.count ;
 			this.onUpdateItem(item.ITID, item.count);
 			return;
 		}
 
 		// no quantity, remove
 		this.list.splice( this.list.indexOf(item), 1 );
-		this.ui.find('.item[data-index="'+ item.index +'"]').remove();
-		this.ui.find('.ncnt').text(this.list.length + Equipment.getUI().getNumber() + ' / ');
+		this.ui.querySelector('.item[data-index="'+ item.index +'"]').remove();
+		this.ui.querySelector('.ncnt').textContent = this.list.length + Equipment.getUI().getNumber() + ' / ';
 		this.onUpdateItem(item.ITID, 0);
 
-		var content = this.ui.find('.container .content');
-		if (content.height() === content[0].scrollHeight) {
-			this.ui.find('.hide').show();
+		var content = this.ui.querySelector('.container .content');
+		if (content.offsetHeight === content.scrollHeight) {
+			this.ui.querySelector('.hide').style.display = '';
 		}
 	};
 
@@ -695,10 +698,10 @@ define(function(require)
 	function onResize()
 	{
 		var ui      = InventoryV1.ui;
-		var content = ui.find('.container .content');
-		var hide    = ui.find('.hide');
-		var top     = ui.position().top;
-		var left    = ui.position().left;
+		var content = ui.querySelector('.container .content');
+		var hide    = ui.querySelector('.hide');
+		var top     = parseInt(ui.style.top, 10) || 0;
+		var left    = parseInt(ui.style.left, 10) || 0;
 		var lastWidth  = 0;
 		var _Interval;
 
@@ -719,11 +722,11 @@ define(function(require)
 			lastWidth  = w;
 
 			//Show or hide scrollbar
-			if (content.height() === content[0].scrollHeight) {
-				hide.show();
+			if (content.offsetHeight === content.scrollHeight) {
+				hide.style.display = '';
 			}
 			else {
-				hide.hide();
+				hide.style.display = 'none';
 			}
 		}
 
@@ -731,12 +734,13 @@ define(function(require)
 		_Interval = setInterval( resizing, 30);
 
 		// Stop resizing on left click
-		jQuery(window).on('mouseup.resize', function(event){
+		var _onResizeEnd = function(event){
 			if (event.which === 1) {
 				clearInterval(_Interval);
-				jQuery(window).off('mouseup.resize');
+				window.removeEventListener('mouseup', _onResizeEnd);
 			}
-		});
+		};
+		window.addEventListener('mouseup', _onResizeEnd);
 	};
 
 
@@ -745,32 +749,32 @@ define(function(require)
 	 */
 	function onSwitchTab()
 	{
-		var idx          = jQuery(this).index();
+		var idx          = DOM.indexAmongSiblings(this);
 		_preferences.tab = parseInt(idx, 10);
 		requestFilter();
 
-		jQuery('.tabs button').removeClass('selected');
-    	jQuery(this).addClass('selected');
+		Array.from(document.querySelectorAll('.tabs button')).forEach(function(btn){ btn.classList.remove('selected'); });
+    	this.classList.add('selected');
 
 		// Toggle visibility based on tab selection and npc sale lock preference
 		if (_preferences.tab !== InventoryV1.TAB.FAV) {
-			InventoryV1.ui.find('.deallock_on').hide();
-			InventoryV1.ui.find('.deallock_off').hide();
-			InventoryV1.ui.find('.lockoverlay').hide();
-			InventoryV1.ui.find('.lockoverlaymsg').hide();
-			InventoryV1.ui.find('.sort').hide();
+			InventoryV1.ui.querySelector('.deallock_on').style.display = 'none';
+			InventoryV1.ui.querySelector('.deallock_off').style.display = 'none';
+			InventoryV1.ui.querySelector('.lockoverlay').style.display = 'none';
+			InventoryV1.ui.querySelector('.lockoverlaymsg').style.display = 'none';
+			InventoryV1.ui.querySelector('.sort').style.display = 'none';
 		} else {
 			if (_preferences.npcsalelock) {
-				InventoryV1.ui.find('.deallock_on').show();
-				InventoryV1.ui.find('.lockoverlay').show();
-				InventoryV1.ui.find('.deallock_off').hide();
+				InventoryV1.ui.querySelector('.deallock_on').style.display = '';
+				InventoryV1.ui.querySelector('.lockoverlay').style.display = '';
+				InventoryV1.ui.querySelector('.deallock_off').style.display = 'none';
 			} else {
-				InventoryV1.ui.find('.deallock_on').hide();
-				InventoryV1.ui.find('.lockoverlay').hide();
-				InventoryV1.ui.find('.lockoverlaymsg').hide();
-				InventoryV1.ui.find('.deallock_off').show();
+				InventoryV1.ui.querySelector('.deallock_on').style.display = 'none';
+				InventoryV1.ui.querySelector('.lockoverlay').style.display = 'none';
+				InventoryV1.ui.querySelector('.lockoverlaymsg').style.display = 'none';
+				InventoryV1.ui.querySelector('.deallock_off').style.display = '';
 			}
-			InventoryV1.ui.find('.sort').show();
+			InventoryV1.ui.querySelector('.sort').style.display = '';
 		}
 	};
 
@@ -783,14 +787,14 @@ define(function(require)
 		var ui = InventoryV1.ui;
 
 		if (_realSize) {
-			ui.find('.panel').show();
-			ui.height(_realSize);
+			ui.querySelector('.panel').style.display = '';
+			ui.style.height = _realSize + "px";
 			_realSize = 0;
 		}
 		else {
-			_realSize = ui.height();
-			ui.height(17);
-			ui.find('.panel').hide();
+			_realSize = ui.offsetHeight;
+			ui.style.height = 17 + "px";
+			ui.querySelector('.panel').style.display = 'none';
 		}
 	};
 
@@ -800,7 +804,7 @@ define(function(require)
 	 */
 	function requestFilter()
 	{
-		InventoryV1.ui.find('.container .content').empty();
+		InventoryV1.ui.querySelector('.container .content').innerHTML = '';
 
 		var list = InventoryV1.list;
 		var i, count;
@@ -822,7 +826,7 @@ define(function(require)
 		event.stopImmediatePropagation();
 
 		try {
-			data = JSON.parse(event.originalEvent.dataTransfer.getData('Text'));
+			data = JSON.parse(event.dataTransfer.getData('Text'));
 			item = data.data;
 		}
 		catch(e) {
@@ -909,14 +913,14 @@ define(function(require)
 	{
 		var delta;
 
-		if (event.originalEvent.wheelDelta) {
-			delta = event.originalEvent.wheelDelta / 120 ;
+		if (event.wheelDelta) {
+			delta = event.wheelDelta / 120 ;
 			if (window.opera) {
 				delta = -delta;
 			}
 		}
-		else if (event.originalEvent.detail) {
-			delta = -event.originalEvent.detail;
+		else if (event.detail) {
+			delta = -event.detail;
 		}
 
 		this.scrollTop = Math.floor(this.scrollTop/32) * 32 - (delta * 32);
@@ -945,19 +949,20 @@ define(function(require)
 		}
 
 		// Get back data
-		var pos     = jQuery(this).position();
-		var overlay = InventoryV1.ui.find('.overlay');
+		var rect    = this.getBoundingClientRect();
+		var uiRect  = InventoryV1.ui.getBoundingClientRect();
+		var overlay = InventoryV1.ui.querySelector('.overlay');
 
 		// Display box
-		overlay.show();
-		overlay.css({top: pos.top, left:pos.left+35});
-		overlay.text(DB.getItemName(item) + ': ' + (item.count || 1) + quantity);
+		overlay.style.display = '';
+		DOM.setCss(overlay, {top: (rect.top - uiRect.top) + 'px', left: (rect.left - uiRect.left + 35) + 'px'});
+		overlay.textContent = DB.getItemName(item) + ': ' + (item.count || 1) + quantity;
 
 		if (item.IsIdentified) {
-			overlay.removeClass('grey');
+			overlay.classList.remove('grey');
 		}
 		else {
-			overlay.addClass('grey');
+			overlay.classList.add('grey');
 		}
 	};
 
@@ -967,7 +972,7 @@ define(function(require)
 	 */
 	function onItemOut()
 	{
-		InventoryV1.ui.find('.overlay').hide();
+		InventoryV1.ui.querySelector('.overlay').style.display = 'none';
 	};
 
 
@@ -988,8 +993,8 @@ define(function(require)
 		var url = this.querySelector('.icon').style.backgroundImage.match(/\((.*?)\)/)[1].replace(/('|")/g,'');
 		img.src   = url.replace(/^\"/, '').replace(/\"$/, '');
 
-		event.originalEvent.dataTransfer.setDragImage( img, 12, 12 );
-		event.originalEvent.dataTransfer.setData('Text',
+		event.dataTransfer.setDragImage( img, 12, 12 );
+		event.dataTransfer.setData('Text',
 			JSON.stringify( window._OBJ_DRAG_ = {
 				type: 'item',
 				from: 'Inventory',
@@ -1071,8 +1076,8 @@ define(function(require)
 	 */
 	function transferItemToOtherUI(item)
 	{
-		var isStorageOpen = Storage.ui ? Storage.ui.is(':visible') : false;
-		var isCartOpen = CartItems.ui ? CartItems.ui.is(':visible') : false;
+		var isStorageOpen = Storage.ui ? DOM.isVisible(Storage.ui) : false;
+		var isCartOpen = CartItems.ui ? DOM.isVisible(CartItems.ui) : false;
 
 		if (!item) {
 			return false;
@@ -1117,7 +1122,7 @@ define(function(require)
 		event.stopImmediatePropagation();
 
 		try {
-			data = JSON.parse(event.originalEvent.dataTransfer.getData('Text'));
+			data = JSON.parse(event.dataTransfer.getData('Text'));
 			item = data.data;
 		}
 		catch(e) {
@@ -1208,7 +1213,7 @@ define(function(require)
 
 		// Load the image and update the button background
 		Client.loadFile(DB.INTERFACE_PATH + lockImg, function (data) {
-			InventoryV1.ui.find('.item_drop_lock').css('backgroundImage', 'url(' + data + ')');
+			InventoryV1.ui.querySelector('.item_drop_lock').style.backgroundImage = 'url(' + data + ')';
 		});
 	};
 
@@ -1230,7 +1235,7 @@ define(function(require)
 
 		// Load the image and update the button background
 		Client.loadFile(DB.INTERFACE_PATH + compImg, function (data) {
-			InventoryV1.ui.find('.item_compare').css('backgroundImage', 'url(' + data + ')');
+			InventoryV1.ui.querySelector('.item_compare').style.backgroundImage = 'url(' + data + ')';
 		});
 	};
 
@@ -1249,20 +1254,20 @@ define(function(require)
 
 		// Determine which div to show/hide based on the toggled state
 		if (_preferences.npcsalelock) {
-			InventoryV1.ui.find('.deallock_on').show();
-			InventoryV1.ui.find('.lockoverlay').show();
-			InventoryV1.ui.find('.lockoverlaymsg').show();
-			InventoryV1.ui.find('.deallock_off').hide();
+			InventoryV1.ui.querySelector('.deallock_on').style.display = '';
+			InventoryV1.ui.querySelector('.lockoverlay').style.display = '';
+			InventoryV1.ui.querySelector('.lockoverlaymsg').style.display = '';
+			InventoryV1.ui.querySelector('.deallock_off').style.display = 'none';
 
 			// Show for 3 seconds
             lockOverlayTimeout = setTimeout(function() {
-                InventoryV1.ui.find('.lockoverlaymsg').fadeOut();
+                DOM.fadeOut(InventoryV1.ui.querySelector('.lockoverlaymsg'));
             }, 3000);
 		} else {
-			InventoryV1.ui.find('.deallock_on').hide();
-			InventoryV1.ui.find('.lockoverlay').hide();
-            InventoryV1.ui.find('.lockoverlaymsg').hide();
-			InventoryV1.ui.find('.deallock_off').show();
+			InventoryV1.ui.querySelector('.deallock_on').style.display = 'none';
+			InventoryV1.ui.querySelector('.lockoverlay').style.display = 'none';
+            InventoryV1.ui.querySelector('.lockoverlaymsg').style.display = 'none';
+			InventoryV1.ui.querySelector('.deallock_off').style.display = '';
 		}
 	};
 

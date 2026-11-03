@@ -14,8 +14,8 @@
 	 /**
 	  * Dependencies
 	  */
+	 var DOM                = require('Utils/DOM');
 	 var DB                 = require('DB/DBManager');
-	 var jQuery             = require('Utils/jquery');
 	 var Preferences        = require('Core/Preferences');
 	 var Client             = require('Core/Client');
 	 var Session      		= require('Engine/SessionStorage');
@@ -71,20 +71,21 @@
 	ReadMail.onAppend = function onAppend()
 	{
 		// Bind buttons
-		ReadMail.ui.find('.right .close').click(function(event){
+		ReadMail.ui.querySelector('.right .close').addEventListener('click', function(event){
 			event.stopImmediatePropagation();
 			ReadMail.remove();
 		});
-		ReadMail.ui.find('#read_mail_del').click(deleteMail);
-		ReadMail.ui.find('#read_mail_remail').click(replyMail);
-		ReadMail.ui.find('#read_mail_return').click(returnMail);
+		ReadMail.ui.querySelector('#read_mail_del').addEventListener('click', deleteMail);
+		ReadMail.ui.querySelector('#read_mail_remail').addEventListener('click', replyMail);
+		ReadMail.ui.querySelector('#read_mail_return').addEventListener('click', returnMail);
 		
-		ReadMail.ui.css({
-			top:  Math.min( Math.max( 0, parseInt(getModule('UI/Components/Mail/Mail').ui.css('top'), 10)), Renderer.height - ReadMail.ui.height()),
-			left: Math.min( Math.max( 0, parseInt(getModule('UI/Components/Mail/Mail').ui.css('left'), 10)) + 300, Renderer.width  - ReadMail.ui.width())
+		var mailUi = getModule('UI/Components/Mail/Mail').ui;
+		DOM.setCss(ReadMail.ui, {
+			top: Math.min(Math.max(0, parseInt(mailUi.style.top, 10)), Renderer.height - ReadMail.ui.offsetHeight),
+			left: Math.min(Math.max(0, parseInt(mailUi.style.left, 10) + 300), Renderer.width - ReadMail.ui.offsetWidth)
 		});
 
-		ReadMail.draggable(ReadMail.ui.find('.titlebar'));
+		ReadMail.draggable(ReadMail.ui.querySelector('.titlebar'));
 	};
 
 	/**
@@ -94,12 +95,12 @@
 	{
 		 this.list.length = 0;
 		 // Save preferences
-		 _preferences.show   =  this.ui.is(':visible');
+		 _preferences.show   =  DOM.isVisible(this.ui);
 		 _preferences.reduce = !!_realSize;
-		 _preferences.y      =  parseInt(this.ui.css('top'), 10);
-		 _preferences.x      =  parseInt(this.ui.css('left'), 10);
-		 _preferences.width  =  Math.floor( (this.ui.width()  - (23 + 16 + 16 - 30)) / 32 );
-		 _preferences.height =  Math.floor( (this.ui.height() - (31 + 19 - 30     )) / 32 );
+		 _preferences.y      =  parseInt(this.ui.style.top, 10);
+		 _preferences.x      =  parseInt(this.ui.style.left, 10);
+		 _preferences.width  =  Math.floor( (this.ui.offsetWidth  - (23 + 16 + 16 - 30)) / 32 );
+		 _preferences.height =  Math.floor( (this.ui.offsetHeight - (31 + 19 - 30     )) / 32 );
 		 _preferences.magnet_top = this.magnet.TOP;
 		 _preferences.magnet_bottom = this.magnet.BOTTOM;
 		 _preferences.magnet_left = this.magnet.LEFT;
@@ -115,10 +116,10 @@
 		let textTitle =  inforMail.Header;
 		let textMessage = inforMail.msg === "(no message)" ? "" : inforMail.msg;
 		
-		this.ui.find('.text_sender').text(textSender);
-		this.ui.find('.text_title').text(textTitle);
-		this.ui.find('.textarea_mail').val(textMessage);
-		this.ui.find('.btn_return_reply_remove').data( "mailID", inforMail.MailID );
+		this.ui.querySelector('.text_sender').textContent = textSender;
+		this.ui.querySelector('.text_title').textContent = textTitle;
+		this.ui.querySelector('.textarea_mail').value = textMessage;
+		this.ui.querySelector('.btn_return_reply_remove').dataset.mailId = inforMail.MailID;
 
 		if(inforMail.ITID != 0 || inforMail.Money != 0) {
 			addItemSub(inforMail);
@@ -132,63 +133,61 @@
 		_preferences.item_add_email = {};			
 		_preferences.save();			
 		removeValueItemZeny();
-		ReadMail.ui.find(".zeny_item_infor_box" ).remove();
+		ReadMail.ui.querySelector(".zeny_item_infor_box" ).remove();
 	}
 
 	function addItemSub(itemMail)
 	{
 		removeValueItemZeny();
-		var zenyItemContainer = ReadMail.ui.find('.zeny_item_container');
+		var zenyItemContainer = ReadMail.ui.querySelector('.zeny_item_container');
 		if(itemMail.ITID != 0 && itemMail.count > 0){
 			let item = itemMail;
 			var it      = DB.getItemInfo( item.ITID );
-			var content = ReadMail.ui.find('.container_item');			
-			content.append(
+			var content = ReadMail.ui.querySelector('.container_item');			
+			content.insertAdjacentHTML('beforeend',
 				'<div class="item" data-index="'+ item.index +'" draggable="true">' +
 					'<div class="icon"></div>' +				
 					'<div class="amount"><span class="count">' + (item.count || 1) + '</span></div>' +
 				'</div>'
 			);
-			ReadMail.ui.find('.hide').show();
+			ReadMail.ui.querySelector('.hide').style.display = '';
 			Client.loadFile( DB.INTERFACE_PATH + 'item/' + ( item.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName ) + '.bmp', function(data){
-				content.find('.item[data-index="'+ item.index +'"] .icon').css('backgroundImage', 'url('+ data +')');
+				content.querySelector('.item[data-index="'+ item.index +'"] .icon').style.backgroundImage = 'url('+ data +')';
 			});
 
-			ReadMail.ui
-				.find('.container_item')
-					// item
-					.on('mouseover',   '.item', onItemOver)
-					.on('mouseout',    '.item', onItemOut)
-					.on('contextmenu', '.item', onItemInfo);
+			var _readMailContainer = ReadMail.ui.querySelector('.container_item');
+			// item
+			DOM.addDelegatedEvent(_readMailContainer, 'mouseover', '.item', onItemOver);
+			DOM.addDelegatedEvent(_readMailContainer, 'mouseout', '.item', onItemOut);
+			DOM.addDelegatedEvent(_readMailContainer, 'contextmenu', '.item', onItemInfo);
 		}
 
 		if(itemMail.Money > 0){			
-			ReadMail.ui.find('.input_zeny_amt').val(prettifyZeny(itemMail.Money));
-			ReadMail.ui.find('.input_zeny_amt').prop('disabled', true);
+			ReadMail.ui.querySelector('.input_zeny_amt').value = prettifyZeny(itemMail.Money);
+			ReadMail.ui.querySelector('.input_zeny_amt').disabled = true;
 		}
 		
 
-		ReadMail.ui.find(".zeny_item_infor_box" ).remove();
-		zenyItemContainer.append(
+		ReadMail.ui.querySelector(".zeny_item_infor_box" ).remove();
+		zenyItemContainer.insertAdjacentHTML('beforeend',
 			'<div class="zeny_item_infor_box"></div>'
 		);
-		ReadMail.ui
-			.find('.zeny_item_infor')
-				.mouseover(function(){
-					ReadMail.ui.find('.zeny_item_infor_box').show();
-				})
-				.mouseout(function(){
-					ReadMail.ui.find('.zeny_item_infor_box').hide();
-				})
+		var _zenyInfo = ReadMail.ui.querySelector('.zeny_item_infor');
+		_zenyInfo.addEventListener('mouseover', function(){
+			ReadMail.ui.querySelector('.zeny_item_infor_box').style.display = '';
+		});
+		_zenyInfo.addEventListener('mouseout', function(){
+			ReadMail.ui.querySelector('.zeny_item_infor_box').style.display = 'none';
+		});
 
 		_preferences.item_add_email = itemMail;
 		_preferences.save();
 
 
-		ReadMail.ui.find(".zeny_item_infor").click(function(event){
+		ReadMail.ui.querySelector(".zeny_item_infor").addEventListener('click', function(event){
 			event.stopImmediatePropagation();
 			if(!validItemMoneyExists()){
-				let mailID = ReadMail.ui.find('.btn_return_reply_remove').data('mailID');
+				let mailID = ReadMail.ui.querySelector('.btn_return_reply_remove').getAttribute('data-mail-i-d');
 				getModule('UI/Components/Mail/Mail').parseMailgetattach(mailID);
 			}			
 		});
@@ -201,7 +200,7 @@
 	function onItemOut(event)
 	{
 		event.stopImmediatePropagation();
-		ReadMail.ui.find('.container_item .overlay').hide();
+		ReadMail.ui.querySelector('.container_item .overlay').style.display = 'none';
 	}
 
 	/**
@@ -217,17 +216,17 @@
 		}
 
 		// Get back data
-		var overlay = ReadMail.ui.find('.container_item .overlay');
+		var overlay = ReadMail.ui.querySelector('.container_item .overlay');
 
 		// Display box
-		overlay.show();
-		overlay.text(DB.getItemName(item) + ' ' + (item.count || 1) + ' ea');
+		overlay.style.display = '';
+		overlay.textContent = DB.getItemName(item) + ' ' + (item.count || 1) + ' ea';
 
 		if (item.IsIdentified) {
-			overlay.removeClass('grey');
+			overlay.classList.remove('grey');
 		}
 		else {
-			overlay.addClass('grey');
+			overlay.classList.add('grey');
 		}
 	}
 
@@ -260,7 +259,7 @@
 	function replyMail(event)
 	{
 		event.stopImmediatePropagation();
-		let textSender = ReadMail.ui.find('.text_sender').text();
+		let textSender = ReadMail.ui.querySelector('.text_sender').textContent;
 		getModule('UI/Components/Mail/Mail').replyNewMail(textSender);
 	}
 
@@ -269,7 +268,7 @@
 		event.stopImmediatePropagation();
 		
 		if(validItemMoneyExists()){
-			let mailID = ReadMail.ui.find('.btn_return_reply_remove').data('mailID');
+			let mailID = ReadMail.ui.querySelector('.btn_return_reply_remove').getAttribute('data-mail-i-d');
 			getModule('UI/Components/Mail/Mail').deleteMail(mailID);
 		}else{
 			ChatBox.addText( DB.getMessage(1105), ChatBox.TYPE.ERROR, ChatBox.FILTER.PUBLIC_LOG);
@@ -289,8 +288,8 @@
 	function returnMail(event)
 	{
 		event.stopImmediatePropagation();
-		let mailID = ReadMail.ui.find('.btn_return_reply_remove').data('mailID');
-		let textSender = ReadMail.ui.find('.text_sender').text();
+		let mailID = ReadMail.ui.querySelector('.btn_return_reply_remove').getAttribute('data-mail-i-d');
+		let textSender = ReadMail.ui.querySelector('.text_sender').textContent;
 		getModule('UI/Components/Mail/Mail').returnMail(mailID, textSender);
 	}
 
@@ -298,12 +297,12 @@
 	{
 		 ReadMail.list.length = 0;
 		 // Save preferences
-		 _preferences.show   =  ReadMail.ui.is(':visible');
+		 _preferences.show   =  DOM.isVisible(ReadMail.ui);
 		 _preferences.reduce = !!_realSize;
-		 _preferences.y      =  parseInt(ReadMail.ui.css('top'), 10);
-		 _preferences.x      =  parseInt(ReadMail.ui.css('left'), 10);
-		 _preferences.width  =  Math.floor( (ReadMail.ui.width()  - (23 + 16 + 16 - 30)) / 32 );
-		 _preferences.height =  Math.floor( (ReadMail.ui.height() - (31 + 19 - 30     )) / 32 );
+		 _preferences.y      =  parseInt(ReadMail.ui.style.top, 10);
+		 _preferences.x      =  parseInt(ReadMail.ui.style.left, 10);
+		 _preferences.width  =  Math.floor( (ReadMail.ui.offsetWidth  - (23 + 16 + 16 - 30)) / 32 );
+		 _preferences.height =  Math.floor( (ReadMail.ui.offsetHeight - (31 + 19 - 30     )) / 32 );
 		 _preferences.magnet_top = ReadMail.magnet.TOP;
 		 _preferences.magnet_bottom = ReadMail.magnet.BOTTOM;
 		 _preferences.magnet_left = ReadMail.magnet.LEFT;
@@ -317,7 +316,7 @@
 	 function onResize()
 	 {
 		var ui         = ReadMail.ui;
-		var top        = ui.position().top;
+		var top        = DOM.getPosition(ui).top;
 		var lastHeight = 0;
 		var _Interval;
 
@@ -341,12 +340,13 @@
 		_Interval = setInterval( resizing, 30);
 
 		// Stop resizing on left click
-		jQuery(window).on('mouseup.resize', function(event){
+		var _resizeHandler = function(event){
 			if (event.which === 1) {
 				clearInterval(_Interval);
-				jQuery(window).off('mouseup.resize');
+				window.removeEventListener('mouseup', _resizeHandler);
 			}
-		});
+		};
+		window.addEventListener('mouseup', _resizeHandler);
 	 }
 
 	 /**
@@ -373,8 +373,8 @@
 	}
 
 	function removeValueItemZeny(){
-		ReadMail.ui.find(".item" ).remove();
-		ReadMail.ui.find(".input_zeny_amt" ).val('');
+		ReadMail.ui.querySelector(".item" ).remove();
+		ReadMail.ui.querySelector(".input_zeny_amt" ).value = '';
 	}
 	
 	 /**

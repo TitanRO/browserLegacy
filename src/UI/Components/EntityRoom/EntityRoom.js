@@ -38,18 +38,18 @@ define(function(require)
 	 */
 	EntityRoom.onAppend = function onAppend()
 	{
-		this.ui.find('button').dblclick(function(){
+		this.ui.querySelector('button').addEventListener('dblclick', function(){
 			if (this.onEnter) {
 				this.onEnter();
 			}
 		}.bind(this));
 
 		// Avoid player to move to the cell
-		this.ui.mousedown(function(){
+		this.ui.addEventListener('mousedown', function(){
 			return false;
 		});
 
-		this.ui.css('zIndex', 45);
+		this.ui.style.zIndex = 45;
 	};
 
 
@@ -58,7 +58,10 @@ define(function(require)
 	 */
 	EntityRoom.onRemove = function onRemove()
 	{
-		this.ui.find('button').unbind();
+		var btn = this.ui.querySelector('button');
+		if (btn && btn.parentNode) {
+			btn.parentNode.replaceChild(btn.cloneNode(true), btn);
+		}
 	};
 
 
@@ -70,8 +73,8 @@ define(function(require)
 	 */
 	EntityRoom.setTitle = function setTitle( title, url )
 	{
-		this.ui.find('button img').attr('src', url);
-		this.ui.find('.title, .overlay').text(title);
+		this.ui.querySelector('button img').setAttribute('src', url);
+		this.ui.querySelector('.title, .overlay').textContent = title;
 	};
 
 

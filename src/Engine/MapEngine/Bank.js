@@ -20,6 +20,7 @@ define(function( require )
 	var Session       = require('Engine/SessionStorage');
 	var Bank          = require('UI/Components/Bank/Bank');
 	var ChatBox       = require('UI/Components/ChatBox/ChatBox');
+	var DOM           = require('Utils/DOM');
 
 	/**
 	 * Engine namespace
@@ -44,16 +45,16 @@ define(function( require )
 	function onBankInfo( pkt )
 	{
 		if(!(Bank.__active)) {
-			var inbank = Bank.ui.find('.inbank.currency');
-			var onhand = Bank.ui.find('.onhand.currency');
+			var inbank = Bank.ui.querySelector('.inbank.currency');
+			var onhand = Bank.ui.querySelector('.onhand.currency');
 			if (inbank) {
-				inbank.text(formatNumberWithCommas(pkt.money) + 'z');
+				inbank.textContent = formatNumberWithCommas(pkt.money) + 'z';
 			}
 			if (onhand) {
-				onhand.text(formatNumberWithCommas(Session.zeny) + 'z');
+				onhand.textContent = formatNumberWithCommas(Session.zeny) + 'z';
 			}
 			Bank.append();
-			Bank.ui.find('.depo').focus();
+			Bank.ui.querySelector('.depo').focus();
 		}
 	}
 
@@ -85,26 +86,26 @@ define(function( require )
 		if (!pkt)
 		return;
 
-		var input = Bank.ui.find('.depo');
-		var error = Bank.ui.find('.errorupdate');
+		var input = Bank.ui.querySelector('.depo');
+		var error = Bank.ui.querySelector('.errorupdate');
 
 		switch (pkt.reason) {
 			case 0:	// Success - we just update the bank currency visuals
 				UpdateBank(pkt.money, Session.zeny);
 				if (error)
-					error.empty();
+					DOM.empty(error);
 				break;
 			case 1: // BDA_ERROR
 				// No idea how to reproduce
 				break;
 			case 2:	// BDA_NO_MONEY
 				if (error)
-					error.text( DB.getMessage(2780) );
+					error.textContent = DB.getMessage(2780) ;
 				ChatBox.addText( DB.getMessage(2456), ChatBox.TYPE.ERROR, ChatBox.FILTER.PUBLIC_LOG );
 				break;
 			case 3: // BDA_OVERFLOW
 				if (error)
-					error.text(DB.getMessage(2783) );
+					error.textContent = DB.getMessage(2783) ;
 				ChatBox.addText( DB.getMessage(2787), ChatBox.TYPE.ERROR, ChatBox.FILTER.PUBLIC_LOG );
 				break;
 			default:
@@ -112,20 +113,20 @@ define(function( require )
 		}
 
 		if (input)
-			input.val('');
+			input.value = '';
 	}
 
 	/**
 	 * Update bank from deposit or withdrawal
 	 */
 	function UpdateBank ( money, zeny ) {
-		var inbank = Bank.ui.find('.inbank.currency');
-		var onhand = Bank.ui.find('.onhand.currency');
+		var inbank = Bank.ui.querySelector('.inbank.currency');
+		var onhand = Bank.ui.querySelector('.onhand.currency');
 		if (inbank) {
-			inbank.text(formatNumberWithCommas(money) + 'z');
+			inbank.textContent = formatNumberWithCommas(money) + 'z';
 		}
 		if (onhand) {
-			onhand.text(formatNumberWithCommas(zeny) + 'z');
+			onhand.textContent = formatNumberWithCommas(zeny) + 'z';
 		}
 	}
 
@@ -139,20 +140,20 @@ define(function( require )
 		if (!pkt)
 		return;
 
-		var input = Bank.ui.find('.depo');
-		var error = Bank.ui.find('.errorupdate');
+		var input = Bank.ui.querySelector('.depo');
+		var error = Bank.ui.querySelector('.errorupdate');
 
 		switch (pkt.reason) {
 			case 0:	// Success - we just update the bank currency visuals
 				UpdateBank(pkt.money, Session.zeny);
 				if (error)
-					error.empty();
+					DOM.empty(error);
 				if (input)
-					input.empty();
+					DOM.empty(input);
 				break;
 			case 1: // BWA_NO_MONEY
 				if (error)
-					error.text( DB.getMessage(2786) );
+					error.textContent = DB.getMessage(2786) ;
 				ChatBox.addText( DB.getMessage(2455), ChatBox.TYPE.ERROR, ChatBox.FILTER.PUBLIC_LOG );
 				break;
 			case 2:	// BWA_UNKNOWN_ERROR

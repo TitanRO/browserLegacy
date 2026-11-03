@@ -22,9 +22,9 @@ define(function (require) {
 	var UIComponent = require('UI/UIComponent');
 	var ItemInfo = require('UI/Components/ItemInfo/ItemInfo');
 	var Navigation = require('UI/Components/Navigation/Navigation');
-	var jQuery = require('Utils/jquery');
 	var htmlText = require('text!./QuestHelperV1.html');
 	var cssText = require('text!./QuestHelperV1.css');
+	var DOM             = require('Utils/DOM');
 
 	/**
 	 * Create Component
@@ -100,15 +100,18 @@ define(function (require) {
 	 */
 	QuestHelperV1.init = function init() {
 		// Avoid drag drop problems
-		this.ui.on('click', '.quest-info-close-btn', onClickClose);
-		this.ui.find('.base').mousedown(function (event) {
-			event.stopImmediatePropagation();
-			return false;
-		});
+		DOM.addDelegatedEvent(this.ui, 'click', '.quest-info-close-btn', onClickClose);
+		var stopBlock = this.ui.querySelector('.content');
+		if (stopBlock) {
+			stopBlock.addEventListener('mousedown', function (event) {
+				event.stopImmediatePropagation();
+				return false;
+			});
+		}
 
 		// Add click handler for item links
-		this.ui.on('click', '.item-link', function(event) {
-			var itemId = parseInt(jQuery(this).data('item-id'), 10);
+		DOM.addDelegatedEvent(this.ui, 'click', '.item-link', function(event) {
+			var itemId = parseInt(this.getAttribute('data-item-id'), 10);
 			if (!itemId) {
 				return;
 			}
@@ -126,27 +129,27 @@ define(function (require) {
 		});
 
 		// Add click handler for navi links
-		this.ui.on('click', '.navi-link', function(event) {
-			var naviInfo = jQuery(this).data('navi-info');
-			var displayName = jQuery(this).data('navi-name');
+		DOM.addDelegatedEvent(this.ui, 'click', '.navi-link', function(event) {
+			var naviInfo = this.getAttribute('data-navi-info');
+			var displayName = this.getAttribute('data-navi-name');
 
 			if (!naviInfo) {
 				return;
 			}
 
 			// If the Navigation window is already showing this location, toggle it off
-			if (Navigation.uid === naviInfo && Navigation.ui.is(':visible')) {
+			if (Navigation.uid === naviInfo && DOM.isVisible(Navigation.ui)) {
 				Navigation.hide();
 				return;
 			}
 
 			// Show the Navigation window and set the info
-			Navigation.show();
 			Navigation.uid = naviInfo;
 			Navigation.setNaviInfo(naviInfo, displayName);
+			Navigation.show();
 		});
 
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 	};
 
 
@@ -154,45 +157,48 @@ define(function (require) {
 	 * Once append to the DOM, start to position the UI
 	 */
 	QuestHelperV1.onAppend = function onAppend() {
-		this.ui.css({
-			top: Math.min(Math.max(0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min(Math.max(0, _preferences.x + 382), Renderer.width - this.ui.width())
+		DOM.setCss(this.ui, {
+			top: Math.min(Math.max(0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min(Math.max(0, _preferences.x + 382), Renderer.width - this.ui.offsetWidth)
 		});
 	};
 
 	QuestHelperV1.setQuestInfo = function setQuestInfo(quest) {
-		QuestHelperV1.ui.find('.title').html(processText(quest.title));
-		QuestHelperV1.ui.find('.summary').html(processText(quest.summary));
-		QuestHelperV1.ui.find('.objective').html(processText(quest.description));
+		QuestHelperV1.ui.querySelector('.title').innerHTML = processText(quest.title);
+		QuestHelperV1.ui.querySelector('.summary').innerHTML = processText(quest.summary);
+		QuestHelperV1.ui.querySelector('.objective').innerHTML = processText(quest.description);
 		let list = '<select class="monster-select">'
 		let first = true;
 		for (let huntID in quest.hunt_list) {
 			if(first) {
-				QuestHelperV1.ui.find('.killed').html(quest.hunt_list[huntID].huntCount);
-				QuestHelperV1.ui.find('.limited').html(quest.hunt_list[huntID].maxCount);
+				QuestHelperV1.ui.querySelector('.killed').innerHTML = quest.hunt_list[huntID].huntCount;
+				QuestHelperV1.ui.querySelector('.limited').innerHTML = quest.hunt_list[huntID].maxCount;
 				first = false;
 			}
 			list += '<option current="' + quest.hunt_list[huntID].huntCount + '" max="' + quest.hunt_list[huntID].maxCount + '">' + processText(quest.hunt_list[huntID].mobName) + '</option>';
 		}
 		list += '</select>'
-		QuestHelperV1.ui.find('.monster').html(list);
-		this.ui.find('.monster-select').on('change', onSelectMonster);
+		QuestHelperV1.ui.querySelector('.monster').innerHTML = list;
+		var monsterSelect = this.ui.querySelector('.monster-select');
+		if (monsterSelect) {
+			monsterSelect.addEventListener('change', onSelectMonster);
+		}
 	};
 
 	QuestHelperV1.clearQuestDesc = function clearQuestDesc() {
-		QuestHelperV1.ui.find('.title').html("");
-		QuestHelperV1.ui.find('.summary').html("");
-		QuestHelperV1.ui.find('.objective').html("");
-		QuestHelperV1.ui.find('.monster').html("");
-		QuestHelperV1.ui.find('.killed').html("");
-		QuestHelperV1.ui.find('.limited').html("");
+		QuestHelperV1.ui.querySelector('.title').innerHTML = "";
+		QuestHelperV1.ui.querySelector('.summary').innerHTML = "";
+		QuestHelperV1.ui.querySelector('.objective').innerHTML = "";
+		QuestHelperV1.ui.querySelector('.monster').innerHTML = "";
+		QuestHelperV1.ui.querySelector('.killed').innerHTML = "";
+		QuestHelperV1.ui.querySelector('.limited').innerHTML = "";
 	}
 
 	/**
 	 * Clean up UI
 	 */
 	QuestHelperV1.clean = function clean() {
-		QuestHelperV1.ui.hide();
+		QuestHelperV1.ui.style.display = 'none';
 		onClose();
 	};
 
@@ -209,29 +215,29 @@ define(function (require) {
 	 * Show/Hide UI
 	 */
 	QuestHelperV1.toggle = function toggle() {
-		if (this.ui.is(':visible')) {
-			this.ui.hide();
+		if (DOM.isVisible(this.ui)) {
+			this.ui.style.display = 'none';
 		} else {
-			this.ui.show();
+			this.ui.style.display = '';
 		}
 	};
 
 
 	function onClickClose(e) {
-		QuestHelperV1.ui.hide();
+		QuestHelperV1.ui.style.display = 'none';
 	}
 
 	/**
 	 * Close the window
 	 */
 	function onClose() {
-		QuestHelperV1.ui.hide();
+		QuestHelperV1.ui.style.display = 'none';
 	}
 
 	function onSelectMonster(e) {
-		var selected_monster = jQuery(e.currentTarget);
-		QuestHelperV1.ui.find('.killed').html(selected_monster.attr('current'));
-		QuestHelperV1.ui.find('.limited').html(selected_monster.attr('max'));
+		var selected_monster = e.currentTarget;
+		QuestHelperV1.ui.querySelector('.killed').innerHTML = selected_monster.getAttribute('current');
+		QuestHelperV1.ui.querySelector('.limited').innerHTML = selected_monster.getAttribute('max');
 	}
 
 

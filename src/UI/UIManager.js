@@ -12,12 +12,12 @@ define(function( require )
 	'use strict';
 
 	// Load dependencies
-	var jQuery      = require('Utils/jquery');
-	var UIComponent = require('./UIComponent');
+	var DOM             = require('Utils/DOM');
+	var UIComponent     = require('./UIComponent');
 	var UIVersionManager = require('./UIVersionManager');
-	var KEYS        = require('Controls/KeyEventHandler');
-	var Renderer    = require('Renderer/Renderer');
-	var getModule   = require;
+	var KEYS            = require('Controls/KeyEventHandler');
+	var Renderer        = require('Renderer/Renderer');
+	var getModule       = require;
 
 
 	/**
@@ -97,46 +97,33 @@ define(function( require )
 		var keys = Object.keys(this.components);
 		var i, count = keys.length;
 		var ui;
-		var x, y, width, height;
 
 		for (i = 0; i < count; ++i) {
 			var component = this.components[ keys[i] ];
 			ui = component.ui;
 
 			if (ui) {
-				x      = ui.offset().left;
-				y      = ui.offset().top;
-				width  = ui.width();
-				height = ui.height();
+				DOM.clampWindowPosition(ui, WIDTH, HEIGHT, component.magnet);
 
-				if (y + height > HEIGHT) {
-					ui.css('top', HEIGHT - Math.min(height, HEIGHT));
-				}
-
-				if (x + width > WIDTH) {
-					ui.css('left', WIDTH - Math.min(width, WIDTH));
-				}
-
-				//Magnet
-				if(component.magnet.TOP){
-					//nothing to do
-				}
-				if(component.magnet.BOTTOM){
-					ui.css('top', HEIGHT - height);
-				}
-				if(component.magnet.LEFT){
-					//nothing to do
-				}
-				if(component.magnet.RIGHT){
-					ui.css('left', WIDTH - width);
-				}
-				
 				// Call custom resize function if has one
 				if(component.onResize){ component.onResize(); }
 			}
 			
 		}
 	};
+
+
+	function createPopupButton(component, btnName, onClick)
+	{
+		var button = document.createElement('button');
+		button.className = 'btn';
+		button.dataset.background = 'btn_' + btnName + '.bmp';
+		button.dataset.hover = 'btn_' + btnName + '_a.bmp';
+		button.dataset.down = 'btn_' + btnName + '_b.bmp';
+		component.parseHTML.call(button);
+		button.addEventListener('click', onClick, { once: true });
+		return button;
+	}
 
 
 	/**
@@ -153,26 +140,27 @@ define(function( require )
 		WinError = this.getComponent('WinPopup').clone('WinError');
 		WinError.init = function Init()
 		{
-			this.ui.find('.text').text(text);
-			this.ui.css({
-				top:  (Renderer.height-120) / 1.5 - 120,
-				left: (Renderer.width -280) / 2.0,
-				zIndex: 100
-			});
+			var textEl = this.ui.querySelector('.text');
+			if (textEl) {
+				textEl.textContent = text;
+			}
 
-			WinError.ui.find('.btns').append(
-				jQuery('<button/>').
-					addClass('btn').
-					data('background', 'btn_ok.bmp').
-					data('hover',      'btn_ok_a.bmp').
-					data('down',       'btn_ok_b.bmp').
-					one('click', function(){
-						overlay.remove();
+			this.ui.style.top = ((Renderer.height-120) / 1.5 - 120) + 'px';
+			this.ui.style.left = ((Renderer.width -280) / 2.0) + 'px';
+			this.ui.style.zIndex = '100';
+
+			var btns = this.ui.querySelector('.btns');
+			if (btns) {
+				btns.appendChild(
+					createPopupButton(this, 'ok', function(){
+						if (overlay.parentNode) {
+							overlay.parentNode.removeChild(overlay);
+						}
 						WinError.remove();
 						getModule('Engine/GameEngine').reload();
-					}).
-					each( this.parseHTML )
-			);
+					})
+				);
+			}
 		};
 		WinError.onKeyDown = function OnKeyDown( event )
 		{
@@ -180,20 +168,21 @@ define(function( require )
 			switch (event.which) {
 				case KEYS.ENTER:
 				case KEYS.ESCAPE:
-					overlay.remove();
+					if (overlay.parentNode) {
+						overlay.parentNode.removeChild(overlay);
+					}
 					this.remove();
 					getModule('Engine/GameEngine').reload();
 			}
 		};
 
 		// Add overlay (to block mouseover, click, etc.)
-		overlay = jQuery('<div/>').addClass('win_popup_overlay');
-		overlay.appendTo('body');
+		overlay = document.createElement('div');
+		overlay.className = 'win_popup_overlay';
+		document.body.appendChild(overlay);
 
-		// Push the event to the top, stopImmediatePropagation will block every key down event.
 		WinError.onAppend = function() {
-			var events = jQuery._data( window, 'events').keydown;
-			events.unshift( events.pop() );
+			UIComponent.prioritizeKeyDown(WinError);
 		};
 
 		WinError.append();
@@ -218,29 +207,28 @@ define(function( require )
 		WinMSG.init = function Init()
 		{
 			this.draggable();
-			this.ui.find('.text').text(text);
-			this.ui.css({
-				top:  (Renderer.height-120) / 1.5 - 120,
-				left: (Renderer.width -280) / 2.0,
-				zIndex: 100
-			});
+			var textEl = this.ui.querySelector('.text');
+			if (textEl) {
+				textEl.textContent = text;
+			}
+
+			this.ui.style.top = ((Renderer.height-120) / 1.5 - 120) + 'px';
+			this.ui.style.left = ((Renderer.width -280) / 2.0) + 'px';
+			this.ui.style.zIndex = '100';
 
 			// Just button
 			if (btn_name) {
-				WinMSG.ui.find('.btns').append(
-					jQuery('<button/>').
-						addClass('btn').
-						data('background', 'btn_' + btn_name + '.bmp').
-						data('hover',      'btn_' + btn_name + '_a.bmp').
-						data('down',       'btn_' + btn_name + '_b.bmp').
-						one('click', function(){
+				var btns = this.ui.querySelector('.btns');
+				if (btns) {
+					btns.appendChild(
+						createPopupButton(this, btn_name, function(){
 							WinMSG.remove();
 							if (callback) {
 								callback();
 							}
-						}).
-						each( this.parseHTML )
-				);
+						})
+					);
+				}
 			}
 		};
 
@@ -259,10 +247,8 @@ define(function( require )
 				event.stopImmediatePropagation();
 			};
 
-			// Push the event to the top, stopImmediatePropagation will block every key down.
 			WinMSG.onAppend = function() {
-				var events = jQuery._data( window, 'events').keydown;
-				events.unshift( events.pop() );
+				UIComponent.prioritizeKeyDown(WinMSG);
 			};
 		}
 
@@ -289,40 +275,34 @@ define(function( require )
 		WinPrompt.init = function Init()
 		{
 			this.draggable();
-			this.ui.find('.text').text(text);
-			this.ui.css({
-				top:  (Renderer.height-120) / 1.5 - 120,
-				left: (Renderer.width -280) / 2.0,
-				zIndex: 100
-			});
-			this.ui.find('.btns').append(
+			var textEl = this.ui.querySelector('.text');
+			if (textEl) {
+				textEl.textContent = text;
+			}
 
-				jQuery('<button/>').
-					addClass('btn').
-					data('background', 'btn_' + btn_yes + '.bmp').
-					data('hover',      'btn_' + btn_yes + '_a.bmp').
-					data('down',       'btn_' + btn_yes + '_b.bmp').
-					one('click',function(){
+			this.ui.style.top = ((Renderer.height-120) / 1.5 - 120) + 'px';
+			this.ui.style.left = ((Renderer.width -280) / 2.0) + 'px';
+			this.ui.style.zIndex = '100';
+
+			var btns = this.ui.querySelector('.btns');
+			if (btns) {
+				btns.appendChild(
+					createPopupButton(this, btn_yes, function(){
 						WinPrompt.remove();
 						if (onYes) {
 							onYes();
 						}
-					}).
-					each( this.parseHTML ),
-
-				jQuery('<button/>').
-					addClass('btn').
-					data('background', 'btn_' + btn_no + '.bmp').
-					data('hover',      'btn_' + btn_no + '_a.bmp').
-					data('down',       'btn_' + btn_no + '_b.bmp').
-					one('click',function(){
+					})
+				);
+				btns.appendChild(
+					createPopupButton(this, btn_no, function(){
 						WinPrompt.remove();
 						if (onNo) {
 							onNo();
 						}
-					}).
-					each( this.parseHTML )
-			);
+					})
+				);
+			}
 
 		};
 

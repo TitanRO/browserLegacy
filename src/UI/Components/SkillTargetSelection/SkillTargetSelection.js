@@ -19,7 +19,6 @@ define(function(require)
 	var SkillInfo     = require('DB/Skills/SkillInfo');
 	var KEYS          = require('Controls/KeyEventHandler');
 	var Mouse         = require('Controls/MouseEventHandler');
-	var jQuery        = require('Utils/jquery');
 	var Renderer      = require('Renderer/Renderer');
 	var Entity        = require('Renderer/Entity/Entity');
 	var EntityManager = require('Renderer/EntityManager');
@@ -112,7 +111,7 @@ define(function(require)
 		_skill_level.style.top       	=  0;
 		_skill_level.style.zIndex       = 100;
 
-		jQuery(window).mousemove(function(event)
+		window.addEventListener('mousemove', function(event)
 		{
 			_skill_level.style.left = (event.pageX + 20) + 'px';
 			_skill_level.style.top = (event.pageY - 18) + 'px';
@@ -120,8 +119,8 @@ define(function(require)
 
 		render( DB.getMessage(234), _description);
 
-		this.ui = jQuery('<div id ="SkillTargetSelection"/>'); // just to not break things
-		this.ui.append();
+		this.ui = document.createElement('div'); // just to not break things
+		this.ui.id = 'SkillTargetSelection';
 	};
 
 
@@ -144,14 +143,9 @@ define(function(require)
 			document.body.appendChild(_skill_level);
 		}
 
-		// Execute onKeyDown BEFORE the one executed by Escape window
-		events = jQuery._data( window, 'events').keydown;
-		events.unshift( events.pop() );
-
+		// Note: jQuery._data keydown/mousedown reordering removed (not possible with native events)
 		// Execute before *request move* / *request attack*
-		jQuery(window).one('mousedown.targetselection', intersectEntities);
-		events = jQuery._data(window, 'events').mousedown;
-		events.unshift( events.pop() );
+		window.addEventListener('mousedown', intersectEntities);
 	};
 
 
@@ -175,7 +169,7 @@ define(function(require)
 	 */
 	SkillTargetSelection.onRemove = function onRemove()
 	{
-		jQuery(window).off('mousedown.targetselection');
+		window.removeEventListener('mousedown', intersectEntities);
 
 		Cursor.blockMagnetism = false;
 		Cursor.freeze         = false;

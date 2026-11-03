@@ -16,6 +16,7 @@ define(function(require)
 	 * Dependencies
 	 */
 	var DB                 = require('DB/DBManager');
+	var DOM                = require('Utils/DOM');
 	var MonsterTable       = require('DB/Monsters/MonsterTable');
 	var Preferences        = require('Core/Preferences');
 	var KEYS               = require('Controls/KeyEventHandler');
@@ -33,6 +34,26 @@ define(function(require)
 	 * Create Chararacter Selection namespace
 	 */
 	var CharSelect = new UIComponent( 'CharSelect', htmlText, cssText );
+
+
+	function qs(selector)
+	{
+		return DOM.qs(CharSelect.ui, selector);
+	}
+
+
+	function qsa(selector)
+	{
+		return DOM.qsa(CharSelect.ui, selector);
+	}
+
+
+	function setText(el, value)
+	{
+		if (el) {
+			el.textContent = value;
+		}
+	}
 
 
 	/**
@@ -96,37 +117,62 @@ define(function(require)
 	{
 		var ui = this.ui;
 
-		ui.css({
-			top:  (Renderer.height-342)/2,
-			left: (Renderer.width-576)/2
+		DOM.setCss(ui, {
+			top:  (Renderer.height - 342) / 2 + 'px',
+			left: (Renderer.width - 576) / 2 + 'px'
 		});
 
-		// Bind buttons
-		ui.find('.ok'    ).click(connect);
-		ui.find('.cancel').click(cancel);
-		ui.find('.make'  ).click(create);
-		ui.find('.delete').click(suppress);
+		var okBtn = qs('.ok');
+		var cancelBtn = qs('.cancel');
+		var makeBtn = qs('.make');
+		var deleteBtn = qs('.delete');
+		var arrowLeft = qs('.arrow.left');
+		var arrowRight = qs('.arrow.right');
 
-		ui.find('.arrow.left' ).mousedown(genericArrowDown(-1));
-		ui.find('.arrow.right').mousedown(genericArrowDown(+1));
+		if (okBtn) {
+			okBtn.addEventListener('click', connect);
+		}
+		if (cancelBtn) {
+			cancelBtn.addEventListener('click', cancel);
+		}
+		if (makeBtn) {
+			makeBtn.addEventListener('click', create);
+		}
+		if (deleteBtn) {
+			deleteBtn.addEventListener('click', suppress);
+		}
+		if (arrowLeft) {
+			arrowLeft.addEventListener('mousedown', genericArrowDown(-1));
+		}
+		if (arrowRight) {
+			arrowRight.addEventListener('mousedown', genericArrowDown(+1));
+		}
 
-		// Bind canvas
-		ui.find('.slot1').mousedown(genericCanvasDown(0));
-		ui.find('.slot2').mousedown(genericCanvasDown(1));
-		ui.find('.slot3').mousedown(genericCanvasDown(2));
+		var slot1 = qs('.slot1');
+		var slot2 = qs('.slot2');
+		var slot3 = qs('.slot3');
 
-		ui.find('canvas').
-			dblclick(function(){
+		if (slot1) {
+			slot1.addEventListener('mousedown', genericCanvasDown(0));
+		}
+		if (slot2) {
+			slot2.addEventListener('mousedown', genericCanvasDown(1));
+		}
+		if (slot3) {
+			slot3.addEventListener('mousedown', genericCanvasDown(2));
+		}
+
+		qsa('canvas').forEach(function(canvas) {
+			canvas.addEventListener('dblclick', function() {
 				if (_slots[_index]) {
 					connect();
 				}
 				else {
 					create();
 				}
-			}).
-			each(function(){
-				_ctx.push( this.getContext('2d') );
 			});
+			_ctx.push(canvas.getContext('2d'));
+		});
 
 		this.draggable();
 	};
@@ -139,13 +185,11 @@ define(function(require)
 	{
 		_index = _preferences.index;
 
-		this.ui.find('.slotinfo .number').text( _list.length + ' / ' + _maxSlots );
-		this.ui.find('.pageinfo .count').text( _maxSlots / 3 );
+		setText(qs('.slotinfo .number'), _list.length + ' / ' + _maxSlots);
+		setText(qs('.pageinfo .count'), _maxSlots / 3);
 
-		// Update values
 		moveCursorTo(_index);
 
-		// Start rendering
 		Renderer.render(render);
 	};
 
@@ -212,7 +256,7 @@ define(function(require)
 	 */
 	CharSelect.setInfo = function setInfo( pkt )
 	{
-		_maxSlots           = Math.floor((pkt.TotalSlotNum + pkt.PremiumStartSlot) || 9); // default 9 ?
+		_maxSlots           = Math.floor((pkt.TotalSlotNum + pkt.PremiumStartSlot) || 9);
 		_sex                = pkt.sex;
 		_slots.length       = 0;
 		_entitySlots.length = 0;
@@ -222,15 +266,12 @@ define(function(require)
 			var i, count = pkt.charInfo.length;
 			for (i = 0; i < count; ++i) {
 				CharSelect.addCharacter( pkt.charInfo[i] );
-
-				// Guess the max slot
-				// required if the client is < 20100413 and have more than 9 slots
 				_maxSlots = Math.max( _maxSlots, Math.floor(pkt.charInfo[i].CharNum / 3 + 1) * 3 );
 			}
 		}
 
-		this.ui.find('.slotinfo .number').text( _list.length + ' / ' + _maxSlots );
-		this.ui.find('.pageinfo .count').text( _maxSlots / 3 );
+		setText(qs('.slotinfo .number'), _list.length + ' / ' + _maxSlots);
+		setText(qs('.pageinfo .count'), _maxSlots / 3);
 
 		moveCursorTo( _index );
 	};
@@ -246,11 +287,9 @@ define(function(require)
 		this.on('keydown');
 
 		switch (error) {
-			// Do nothing, just re-set the keydown
 			case -2:
 				return;
 
-			// Success (clean up character)
 			case -1:
 				delete _slots[_index];
 				delete _entitySlots[_index];
@@ -268,13 +307,12 @@ define(function(require)
 					}
 				}
 
-				// Refresh UI
 				moveCursorTo( _index );
-				this.ui.find('.slotinfo .number').text( _list.length + ' / ' + _maxSlots );
+				setText(qs('.slotinfo .number'), _list.length + ' / ' + _maxSlots);
 				return;
 
-			default: // Others error ?
-			case  0: // Incorrect adress email
+			default:
+			case  0:
 				UIManager.showMessageBox( DB.getMessage(301), 'ok' );
 				break;
 		}
@@ -308,7 +346,7 @@ define(function(require)
 	CharSelect.setUIEnabled = function setUIEnabled( value )
 	{
 		_disable_UI = !value;
-	}
+	};
 
 	/**
 	 * Callback to use
@@ -407,10 +445,12 @@ define(function(require)
 	 */
 	function moveCursorTo( index )
 	{
-		var ui = CharSelect.ui;
-		var $charinfo = ui.find('.charinfo');
+		var charinfo = qs('.charinfo');
+		var boxSelect = qs('.box_select');
+		var makeBtn = qs('.make');
+		var deleteBtn = qs('.delete');
+		var okBtn = qs('.ok');
 
-		// Set the last entity to idle
 		var entity = _entitySlots[_index];
 		if (entity) {
 			entity.setAction({
@@ -421,26 +461,28 @@ define(function(require)
 			});
 		}
 
-		// Move
 		_index = (index + _maxSlots) % _maxSlots;
-		ui.find('.box_select').
-			removeClass('slot1 slot2 slot3').
-			addClass('slot' + (_index % 3 + 1));
 
-		// Set page
-		ui.find('.pageinfo .current').text( Math.floor( _index / 3) + 1 );
+		if (boxSelect) {
+			boxSelect.classList.remove('slot1', 'slot2', 'slot3');
+			boxSelect.classList.add('slot' + (_index % 3 + 1));
+		}
 
-		// Not found, just clean up.
+		setText(qs('.pageinfo .current'), Math.floor( _index / 3) + 1);
+
 		entity = _entitySlots[_index];
 		if (!entity) {
-			$charinfo.find('div').empty();
-			ui.find('.make').show();
-			ui.find('.delete').hide();
-			ui.find('.ok').hide();
+			if (charinfo) {
+				DOM.qsa(charinfo, 'div').forEach(function(div) {
+					DOM.empty(div);
+				});
+			}
+			DOM.show(makeBtn);
+			DOM.hide(deleteBtn);
+			DOM.hide(okBtn);
 			return;
 		}
 
-		// Animate the character
 		entity.setAction({
 			action: entity.ACTION.READYFIGHT,
 			frame:  0,
@@ -448,25 +490,24 @@ define(function(require)
 			repeat: true
 		});
 
-		// Bind new value
-		ui.find('.make').hide();
-		ui.find('.delete').show();
-		ui.find('.ok').show();
+		DOM.hide(makeBtn);
+		DOM.show(deleteBtn);
+		DOM.show(okBtn);
 
 		var info = _slots[_index];
-		$charinfo.find('.name').text( info.name );
-		$charinfo.find('.job').text( MonsterTable[info.job] || '' );
-		$charinfo.find('.lvl').text( info.level );
-		$charinfo.find('.exp').text( info.exp );
-		$charinfo.find('.hp').text( info.hp );
-		$charinfo.find('.sp').text( info.sp );
-		$charinfo.find('.map').text( DB.getMapName( (info.lastMap || '').replace('.gat','.rsw') ) );
-		$charinfo.find('.str').text( info.Str );
-		$charinfo.find('.agi').text( info.Agi );
-		$charinfo.find('.vit').text( info.Vit );
-		$charinfo.find('.int').text( info.Int );
-		$charinfo.find('.dex').text( info.Dex );
-		$charinfo.find('.luk').text( info.Luk );
+		setText(DOM.qs(charinfo, '.name'), info.name);
+		setText(DOM.qs(charinfo, '.job'), MonsterTable[info.job] || '');
+		setText(DOM.qs(charinfo, '.lvl'), info.level);
+		setText(DOM.qs(charinfo, '.exp'), info.exp);
+		setText(DOM.qs(charinfo, '.hp'), info.hp);
+		setText(DOM.qs(charinfo, '.sp'), info.sp);
+		setText(DOM.qs(charinfo, '.map'), DB.getMapName( (info.lastMap || '').replace('.gat','.rsw') ));
+		setText(DOM.qs(charinfo, '.str'), info.Str);
+		setText(DOM.qs(charinfo, '.agi'), info.Agi);
+		setText(DOM.qs(charinfo, '.vit'), info.Vit);
+		setText(DOM.qs(charinfo, '.int'), info.Int);
+		setText(DOM.qs(charinfo, '.dex'), info.Dex);
+		setText(DOM.qs(charinfo, '.luk'), info.Luk);
 	}
 
 
@@ -480,7 +521,6 @@ define(function(require)
 		Camera.direction = 4;
 		idx              = Math.floor(_index / 3) * 3;
 		count            = _ctx.length;
-
 
 		for (i = 0; i < count; ++i) {
 			_ctx[i].clearRect(0, 0, _ctx[i].canvas.width, _ctx[i].canvas.height);

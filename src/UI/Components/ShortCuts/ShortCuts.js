@@ -15,15 +15,16 @@
 	  * Dependencies
 	  */
 	 var DB                 = require('DB/DBManager');
-	 var jQuery             = require('Utils/jquery');
 	 var Preferences        = require('Core/Preferences');
 	 var Renderer           = require('Renderer/Renderer');
 	 var Mouse              = require('Controls/MouseEventHandler');
 	 var UIManager          = require('UI/UIManager');
 	 var UIComponent        = require('UI/UIComponent');
 	 var Emoticons          = require('UI/Components/Emoticons/Emoticons');
+	 var ItemInfo           = require('UI/Components/ItemInfo/ItemInfo');
 	 var htmlText           = require('text!./ShortCuts.html');
 	 var cssText            = require('text!./ShortCuts.css');
+	 var DOM                = require('Utils/DOM');
 	 var ChatBox      		= require('UI/Components/ChatBox/ChatBox');
 	 var Network            = require('Network/NetworkManager');
 	 var PACKET             = require('Network/PacketStructure');
@@ -99,28 +100,30 @@
 	 ShortCuts.init = function Init()
 	 {
 
-		this.ui.find('.footer button').mousedown(function(){
+		this.ui.querySelector('.footer button').addEventListener('mousedown', function(){
 			if( this.className == 'emoticons')
 				Emoticons.onShortCut({cmd: 'TOGGLE'})
 		});
 
-		this.ui.find('.close').click(onClose);
-		this.ui.find('.macro input').mousedown(function(){
+		this.ui.querySelector('.close').addEventListener('click', onClose);
+		this.ui.querySelector('.macro input').addEventListener('mousedown', function(){
 			// this.focus();
-			jQuery(".macro_").removeClass('input_macro_focus');
-			jQuery(this).addClass('input_macro_focus');
+			var _macro = document.querySelector(".macro_"); if (_macro) _macro.classList.remove('input_macro_focus');
+			this.classList.add('input_macro_focus');
 
-			jQuery(this).select();
+			this.select();
 		});
 
-		this.ui.find('input[type=text]')
-			.on('drop', onDropText)
-			.on('dragover', stopPropagation);
+		var _macroInputs = this.ui.querySelectorAll('input[type=text]');
+		_macroInputs.forEach(function(input) {
+			input.addEventListener('drop', onDropText);
+			input.addEventListener('dragover', stopPropagation);
+		});
 
 		addValuesAlt(this)
 		loadValuesAlt()
 
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 	 };
 
 
@@ -130,12 +133,12 @@
 	 ShortCuts.onAppend = function OnAppend()
 	 {
 		if (!_preferences.show) {
-			this.ui.hide();
+			this.ui.style.display = 'none';
 		}
 
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 	 };
 
@@ -145,17 +148,20 @@
 	  */
 	 ShortCuts.onRemove = function OnRemove()
 	 {
-		 this.ui.find('.container .content').empty();
+		 var content = this.ui.querySelector('.container .content');
+		 if (content) {
+			 content.innerHTML = '';
+		 }
 		 this.list.length = 0;
-		 jQuery('.ItemInfo').remove();
+		 ItemInfo.remove();
 
 		 // Save preferences
-		 _preferences.show   =  this.ui.is(':visible');
+		 _preferences.show   =  DOM.isVisible(this.ui);
 		 _preferences.reduce = !!_realSize;
-		 _preferences.y      =  parseInt(this.ui.css('top'), 10);
-		 _preferences.x      =  parseInt(this.ui.css('left'), 10);
-		 _preferences.width  =  Math.floor( (this.ui.width()  - (23 + 16 + 16 - 30)) / 32 );
-		 _preferences.height =  Math.floor( (this.ui.height() - (31 + 19 - 30     )) / 32 );
+		 _preferences.y      =  parseInt(this.ui.style.top, 10);
+		 _preferences.x      =  parseInt(this.ui.style.left, 10);
+		 _preferences.width  =  Math.floor( (this.ui.offsetWidth  - (23 + 16 + 16 - 30)) / 32 );
+		 _preferences.height =  Math.floor( (this.ui.offsetHeight - (31 + 19 - 30     )) / 32 );
 		 _preferences.magnet_top = this.magnet.TOP;
 		 _preferences.magnet_bottom = this.magnet.BOTTOM;
 		 _preferences.magnet_left = this.magnet.LEFT;
@@ -173,10 +179,10 @@
 	 {
 		switch (key.cmd) {
 			case 'TOGGLE':
-				this.ui.toggle();
+				DOM.toggleDisplay(this.ui);
 				// Remove input focus
-				jQuery(".macro_").removeClass('input_macro_focus');
-				if (this.ui.is(':visible')) {
+				var _macro = document.querySelector(".macro_"); if (_macro) _macro.classList.remove('input_macro_focus');
+				if (DOM.isVisible(this.ui)) {
 					this.focus();
 				}
 				break;
@@ -255,12 +261,11 @@
 		 width  = Math.min( Math.max(width,  6), 9);
 		 height = Math.min( Math.max(height, 2), 6);
 
-		 this.ui.find('.container .content').css({
-			 width:  width  * 32 + 13, // 13 = scrollbar
-			 height: height * 32
-		 });
+		 var content = this.ui.querySelector('.container .content');
+		 content.style.width = (width * 32 + 13) + 'px'; // 13 = scrollbar
+		 content.style.height = (height * 32) + 'px';
 
-		 this.ui.css({
+		 DOM.setCss(this.ui, {
 			 width:  23 + 16 + 16 + width  * 32,
 			 height: 31 + 19      + height * 32
 		 });
@@ -272,7 +277,7 @@
 	 */
 	function onClose()
 	{
-		ShortCuts.ui.hide();
+		ShortCuts.ui.style.display = 'none';
 	}
 
 
@@ -282,10 +287,10 @@
 	 function onResize()
 	 {
 		 var ui      = ShortCuts.ui;
-		 var content = ui.find('.container .content');
-		 var hide    = ui.find('.hide');
-		 var top     = ui.position().top;
-		 var left    = ui.position().left;
+		 var content = ui.querySelector('.container .content');
+		 var hide    = ui.querySelector('.hide');
+		 var top     = DOM.getPosition(ui).top;
+		 var left    = DOM.getPosition(ui).left;
 		 var lastWidth  = 0;
 		 var lastHeight = 0;
 		 var _Interval;
@@ -311,11 +316,11 @@
 			 lastHeight = h;
 
 			 //Show or hide scrollbar
-			 if (content.height() === content[0].scrollHeight) {
-				 hide.show();
+			 if (content.offsetHeight === content.scrollHeight) {
+				 hide.style.display = '';
 			 }
 			 else {
-				 hide.hide();
+				 hide.style.display = 'none';
 			 }
 		 }
 
@@ -323,12 +328,13 @@
 		 _Interval = setInterval( resizing, 30);
 
 		 // Stop resizing on left click
-		 jQuery(window).on('mouseup.resize', function(event){
-			 if (event.which === 1) {
-				 clearInterval(_Interval);
-				 jQuery(window).off('mouseup.resize');
-			 }
-		 });
+		 var _resizeHandler = function(event){
+			if (event.which === 1) {
+				clearInterval(_Interval);
+				window.removeEventListener('mouseup', _resizeHandler);
+			}
+		};
+		window.addEventListener('mouseup', _resizeHandler);
 	 }
 
 	 function executeCmd(value){
@@ -367,13 +373,13 @@
 		var length = (Object.keys(_MACRO_INIT).length - 3);
 		for (let index = 0; index < length; index++) {
 			var element = _MACRO_INIT[`Num_${index}`];
-			jQuery(`#macro_${index}`).val(element);
+			(document.getElementById('macro_' + index) || {}).value = element;
 		}
 	 }
 
 	 function addValuesAlt(element){
-		element.ui.find('.macro input').blur(function(){
-			var index = jQuery(this).attr('id').split("macro_")[1]
+		element.ui.querySelector('.macro input').addEventListener('blur', function(){
+			var index = this.getAttribute('id').split("macro_")[1]
 			_MACRO_INIT[`Num_${index}`] = this.value
 			_MACRO_INIT.save();
 		});
@@ -387,7 +393,7 @@
 		  event.stopImmediatePropagation();
 		  var data;
 		  try {
-			 data = JSON.parse(event.originalEvent.dataTransfer.getData('Text'));
+			 data = JSON.parse(event.dataTransfer.getData('Text'));
 		  }
 		  catch(e) {
 			  return false;
@@ -398,7 +404,7 @@
 			  return false;
 		  }
 
-		  jQuery(event.currentTarget).val(data);
+		  event.currentTarget.value = data;
 		  return false;
 	  }
 

@@ -13,7 +13,6 @@ define(function( require )
 	'use strict';
 
 	// Load dependencies
-	var jQuery        = require('Utils/jquery');
 	var Client        = require('Core/Client');
 	var MemoryManager = require('Core/MemoryManager');
 	var Graphics      = require('Preferences/Graphics');
@@ -21,6 +20,7 @@ define(function( require )
 	var Action        = require('Loaders/Action');
 	var Preferences   = require('Preferences/Controls');
 	var getModule     = require;
+	var DOM             = require('Utils/DOM');
 
 	/**
 	 * Cursor Constructor
@@ -193,9 +193,15 @@ function bindMouseEvents() {
 		.cursor { pointer-events: none; z-index: 9999; position: fixed; width: 50px; height: 50px; overflow: hidden; display: none; }
 		.cursor__sprite { position: absolute; top: 0; left: 0; }
 	`;
-	jQuery('head').append(`<style type="text/css">${cursorCSS}</style>`);
-	jQuery('body').append('<div class="cursor"></div>');
-	_selector = document.querySelector('.cursor');
+	var style = document.createElement('style');
+	style.type = 'text/css';
+	style.textContent = cursorCSS;
+	document.head.appendChild(style);
+
+	var cursorDiv = document.createElement('div');
+	cursorDiv.className = 'cursor';
+	document.body.appendChild(cursorDiv);
+	_selector = cursorDiv;
 
 	const isClickableSurface = (evt) => ['BUTTON', 'LABEL', 'SELECT'].includes(evt.target.tagName);
 	const updateCursor = (type, norepeat = false, animation = 0) => Cursor.setType(type, norepeat, animation);
@@ -354,11 +360,13 @@ function bindMouseEvents() {
 			var spriteSheetBlobURL = URL.createObjectURL(blob);
 	
 			// Append the sprite sheet to the DOM
-			var imageElem = jQuery('<img class="cursor__sprite" src="' + spriteSheetBlobURL + '">');
-			imageElem.one('load', function (e) {
+			var imageElem = document.createElement('img');
+			imageElem.className = 'cursor__sprite';
+			imageElem.src = spriteSheetBlobURL;
+			imageElem.addEventListener('load', function(e) {
 				URL.revokeObjectURL(e.target.src);
-			})
-			jQuery('.cursor').append(imageElem);
+			}, { once: true });
+			_selector.appendChild(imageElem);
 		}
 	
 		for (var i = 0; i < totalSprites; i++) {

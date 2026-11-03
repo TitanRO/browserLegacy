@@ -14,7 +14,6 @@ define(function(require)
 	 */
 	var DB                   = require('DB/DBManager');
 	var SkillInfo            = require('DB/Skills/SkillInfo');
-	var jQuery               = require('Utils/jquery');
 	var Client               = require('Core/Client');
 	var Preferences          = require('Core/Preferences');
 	var Renderer             = require('Renderer/Renderer');
@@ -25,6 +24,7 @@ define(function(require)
 	var SkillDescription     = require('UI/Components/SkillDescription/SkillDescription');
 	var htmlText             = require('text!./SkillListMH.html');
 	var cssText              = require('text!./SkillListMH.css');
+	var DOM             = require('Utils/DOM');
 
 	/**
 	 * Create Component base class
@@ -61,18 +61,18 @@ define(function(require)
 	{
 		var self = this;
 
-		this.ui.find('.titlebar .text').text(this.type === 'homunculus' ? 'Homunculus Skills' : 'Mercenary Skills');
+		this.ui.querySelector('.titlebar .text').textContent = this.type === 'homunculus' ? 'Homunculus Skills' : 'Mercenary Skills';
 
-		this.ui.find('.titlebar .base').mousedown(function(event){
+		this.ui.querySelector('.titlebar .base').addEventListener('mousedown', function(event){
 			event.stopImmediatePropagation();
 			return false;
 		});
 
-		this.ui.find('.footer .extend').mousedown(function(event){
+		this.ui.querySelector('.footer .extend').addEventListener('mousedown', function(event){
 			event.stopImmediatePropagation();
 			var ui      = self.ui;
-			var top     = ui.position().top;
-			var left    = ui.position().left;
+			var top     = DOM.getPosition(ui).top;
+			var left    = DOM.getPosition(ui).left;
 			var lastWidth  = 0;
 			var lastHeight = 0;
 			var _Interval;
@@ -93,7 +93,7 @@ define(function(require)
 					return;
 				}
 
-				self.ui.find('.content').css({
+				DOM.setCss(self.ui.querySelector('.content'), {
 					width:  w * 32,
 					height: h * 32
 				});
@@ -103,105 +103,109 @@ define(function(require)
 
 			_Interval = setInterval(resizing, 30);
 
-			jQuery(window).on('mouseup.resize', function(event){
+			var _resizeHandler = function(event) {
 				if (event.which === 1) {
 					clearInterval(_Interval);
-					jQuery(window).off('mouseup.resize');
+					window.removeEventListener('mouseup', _resizeHandler);
 				}
-			});
+			};
+			window.addEventListener('mouseup', _resizeHandler);
 		});
 
-		this.ui.find('.titlebar .close').click(function(){
-			self.ui.hide();
+		this.ui.querySelector('.titlebar .close').addEventListener('click', function(){
+			self.ui.style.display = 'none';
 		});
 
 		// Get level up button
-		this.btnIncSkill = this.ui.find('.btn.levelup').detach();
-		this.btnIncSkill.click(function(){
+		this.btnIncSkill = this.ui.querySelector('.btn.levelup');
+		DOM.detach(this.btnIncSkill);
+		this.btnIncSkill.addEventListener('click', function(){
 			var index = this.parentNode.parentNode.getAttribute('data-index');
 			self.onIncreaseSkill(parseInt(index, 10));
 		});
 
 		// Get button to open skill when level up
-		this.btnLevelUp = jQuery('#lvlup_job').detach();
-		this.btnLevelUp.click(function(){
-			self.btnLevelUp.detach();
-			self.ui.show();
-			self.ui.parent().append(self.ui);
-		}).mousedown(function(event){
-			event.stopImmediatePropagation();
-			return false;
-		});
+		this.btnLevelUp = DOM.detach(this.ui.querySelector('#lvlup_job'));
+		if (this.btnLevelUp) {
+			this.btnLevelUp.addEventListener('click', function(){
+				DOM.detach(self.btnLevelUp);
+				self.ui.style.display = '';
+				if (self.ui.parentNode) self.ui.parentNode.appendChild(self.ui);
+			});
+			this.btnLevelUp.addEventListener('mousedown', function(event){
+				event.stopImmediatePropagation();
+				return false;
+			});
+		}
 
 		// Bind skills
-		this.ui
-			.on('dblclick', '.skill .icon, .skill .name', function(){
-				var main = jQuery(this).parent();
-				if (!main.hasClass('skill')) {
-					main = main.parent();
-				}
-				self.useSkillID(parseInt(main.data('index'), 10));
-			})
-			.on('contextmenu', '.skill .icon, .skill .name', function(){
-				var main = jQuery(this).parent();
-				var skill;
+		DOM.addDelegatedEvent(this.ui, 'dblclick', '.skill .icon, .skill .name', function(){
+			var main = this.parentNode;
+			if (!main.classList.contains('skill')) {
+				main = main.parentNode;
+			}
+			self.useSkillID(parseInt(main.getAttribute('data-index'), 10));
+		});
+		DOM.addDelegatedEvent(this.ui, 'contextmenu', '.skill .icon, .skill .name', function(){
+			var main = this.parentNode;
+			var skill;
 
-				if (!main.hasClass('skill')) {
-					main = main.parent();
-				}
+			if (!main.classList.contains('skill')) {
+				main = main.parentNode;
+			}
 
-				skill = self.getSkillById(parseInt(main.data('index'), 10));
+			skill = self.getSkillById(parseInt(main.getAttribute('data-index'), 10));
 
-				// Don't add the same UI twice, remove it
-				if (SkillDescription.uid === skill.SKID) {
-					SkillDescription.remove();
-					return false;
-				}
-
-				// Add ui to window
-				SkillDescription.append();
-				SkillDescription.setSkill(skill.SKID);
-
+			// Don't add the same UI twice, remove it
+			if (SkillDescription.uid === skill.SKID) {
+				SkillDescription.remove();
 				return false;
-			})
-			.on('mousedown', '.selectable', function(){
-				var main = jQuery(this).parent();
+			}
 
-				if (!main.hasClass('skill')) {
-					main = main.parent();
-				}
+			// Add ui to window
+			SkillDescription.append();
+			SkillDescription.setSkill(skill.SKID);
 
-				self.ui.find('.skill').removeClass('selected');
-				main.addClass('selected');
-			})
-			.on('dragstart', '.skill', function(event){
-				var index = parseInt(this.getAttribute('data-index'), 10);
-				var skill = self.getSkillById(index);
+			return false;
+		});
+		DOM.addDelegatedEvent(this.ui, 'mousedown', '.selectable', function(){
+			var main = this.parentNode;
 
-				// Can't drag a passive skill (or disabled)
-				if (!skill || !skill.level || !skill.type) {
-					event.stopImmediatePropagation();
-					return false;
-				}
+			if (!main.classList.contains('skill')) {
+				main = main.parentNode;
+			}
 
-				var img = new Image();
-				img.src = this.firstChild.firstChild.src;
+			Array.from(self.ui.querySelectorAll('.skill.selected')).forEach(function(el) { el.classList.remove('selected'); });
+			main.classList.add('selected');
+		});
+		DOM.addDelegatedEvent(this.ui, 'dragstart', '.skill', function(event){
+			var index = parseInt(this.getAttribute('data-index'), 10);
+			var skill = self.getSkillById(index);
 
-				event.originalEvent.dataTransfer.setDragImage( img, 12, 12 );
-				event.originalEvent.dataTransfer.setData('Text',
-					JSON.stringify( window._OBJ_DRAG_ = {
-						type: 'skill',
-						from: 'SkillListMH',
-						data:  skill
-					})
-				);
-			})
-			.on('dragend', '.skill', function(){
-				delete window._OBJ_DRAG_;
-				this.classList.remove('hide');
-			});
+			// Can't drag a passive skill (or disabled)
+			if (!skill || !skill.level || !skill.type) {
+				event.stopImmediatePropagation();
+				return false;
+			}
 
-		this.draggable(this.ui.find('.titlebar'));
+			var img = new Image();
+			img.src = this.firstChild.firstChild.src;
+
+			event.dataTransfer.setDragImage( img, 12, 12 );
+			event.dataTransfer.setData('Text',
+				JSON.stringify( window._OBJ_DRAG_ = {
+					type: 'skill',
+					from: 'SkillListMH',
+					data:  skill
+				})
+			);
+		});
+		DOM.addDelegatedEvent(this.ui, 'dragend', '.skill', function(){
+			delete window._OBJ_DRAG_;
+			this.classList.remove('hide');
+		});
+
+		this.draggable(this.ui.querySelector('.titlebar'));
 
 		Client.loadFile( DB.INTERFACE_PATH + 'basic_interface/arw_right.bmp', function(data){
 			this.rArrow = 'url('+data+')';
@@ -219,13 +223,13 @@ define(function(require)
 	{
 		// Apply preferences
 		if (!this._preferences.show) {
-			this.ui.hide();
+			this.ui.style.display = 'none';
 		}
 
 		this.setSize(this._preferences.width, this._preferences.height);
-		this.ui.css({
-			top:  Math.min( Math.max( 0, this._preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, this._preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, this._preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, this._preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 	};
 
@@ -237,7 +241,7 @@ define(function(require)
 		width  = Math.min( Math.max(width,  8), 8);
 		height = Math.min( Math.max(height, 4), 10);
 
-		this.ui.find('.content').css({
+		DOM.setCss(this.ui.querySelector('.content'), {
 			width:  width  * 32,
 			height: height * 32
 		});
@@ -248,14 +252,14 @@ define(function(require)
 	 */
 	SkillListMH.prototype.onRemove = function onRemove()
 	{
-		this.btnLevelUp.detach();
+		DOM.detach(this.btnLevelUp);
 
 		// Save preferences
-		this._preferences.show   =  this.ui.is(':visible');
-		this._preferences.y      =  parseInt(this.ui.css('top'), 10);
-		this._preferences.x      =  parseInt(this.ui.css('left'), 10);
-		this._preferences.width  =  Math.floor( this.ui.find('.content').width()  / 32 );
-		this._preferences.height =  Math.floor( this.ui.find('.content').height() / 32 );
+		this._preferences.show   =  DOM.isVisible(this.ui);
+		this._preferences.y      =  parseInt(this.ui.style.top, 10);
+		this._preferences.x      =  parseInt(this.ui.style.left, 10);
+		this._preferences.width  =  Math.floor( this.ui.querySelector('.content').offsetWidth  / 32 );
+		this._preferences.height =  Math.floor( this.ui.querySelector('.content').offsetHeight / 32 );
 		this._preferences.save();
 	};
 
@@ -264,11 +268,11 @@ define(function(require)
 	 */
 	SkillListMH.prototype.toggle = function toggle()
 	{
-		this.ui.toggle();
+		DOM.toggleDisplay(this.ui);
 
-		if (this.ui.is(':visible')) {
+		if (DOM.isVisible(this.ui)) {
 			this.focus();
-			this.btnLevelUp.detach();
+			DOM.detach(this.btnLevelUp);
 		}
 	};
 
@@ -284,7 +288,7 @@ define(function(require)
 		}
 
 		this.list.length = 0;
-		this.ui.find('.content table').empty();
+		this.ui.querySelector('.content table').innerHTML = '';
 
 		for (i = 0, count = skills.length; i < count; ++i) {
 			this.addSkill( skills[i] );
@@ -302,21 +306,21 @@ define(function(require)
 		}
 
 		// Already in list, update it instead of duplicating it
-		if (this.ui.find('.skill.id' + skill.SKID + ':first').length) {
+		if (this.ui.querySelector('.skill.id' + skill.SKID)) {
 			this.updateSkill( skill );
 			return;
 		}
 
 		var sk        = SkillInfo[ skill.SKID ];
-		var levelup   = this.btnIncSkill.clone(true);
+		var levelup   = this.btnIncSkill.cloneNode(true);
 		var className = !skill.level ? 'disabled' : skill.type ? 'active' : 'passive';
-		var element   = jQuery(
+		var element   = DOM.createElement(
 			'<tr class="skill id' + skill.SKID + ' ' + className + '" data-index="'+ skill.SKID +'" draggable="true">' +
 				'<td class="icon"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" width="24" height="24" /></td>' +
 				'<td class="levelupcontainer"></td>' +
 				'<td class=selectable>' +
 					'<div class="name">' +
-						jQuery.escape(sk.SkillName)  +'<br/>' +
+						DOM.escapeHtml(sk.SkillName)  +'<br/>' +
 						'<span class="level">' +
 						(
 							sk.bSeperateLv ? '<button class="currentDown"></button>Lv : <span class="current">'+ skill.level + '</span> / <span class="max">' + skill.level + '</span><button class="currentUp"></button>'
@@ -336,20 +340,22 @@ define(function(require)
 		);
 
 		if (!skill.upgradable || !this.points) {
-			levelup.hide();
+			levelup.style.display = 'none';
 		}
 
-		element.find('.levelupcontainer').append( levelup );
+		element.querySelector('.levelupcontainer').appendChild( levelup );
 
-		if (this.rArrow) element.find('.level .currentUp').css('background-image', this.rArrow);
-		if (this.lArrow) element.find('.level .currentDown').css('background-image', this.lArrow);
+		if (sk.bSeperateLv) {
+			if (this.rArrow) element.querySelector('.level .currentUp').style.backgroundImage = this.rArrow;
+			if (this.lArrow) element.querySelector('.level .currentDown').style.backgroundImage = this.lArrow;
 
-		element.find('.level .currentUp').click( () => { this.skillLevelSelectUp(skill); });
-		element.find('.level .currentDown').click( () => { this.skillLevelSelectDown(skill); });
-		this.ui.find('.content table').append(element);
+			element.querySelector('.level .currentUp').addEventListener('click',  () => { this.skillLevelSelectUp(skill); });
+			element.querySelector('.level .currentDown').addEventListener('click',  () => { this.skillLevelSelectDown(skill); });
+		}
+		this.ui.querySelector('.content table').appendChild(element);
 
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + sk.Name + '.bmp', function(data){
-			element.find('.icon img').attr('src', data);
+			element.querySelector('.icon img').setAttribute('src', data);
 		});
 
 		this.list.push(skill);
@@ -386,21 +392,21 @@ define(function(require)
 		}
 
 		// Update UI
-		element = this.ui.find('.skill.id' + skill.SKID + ':first');
-		element.find('.level .current, .level .max').text(skill.level);
+		element = this.ui.querySelector('.skill.id' + skill.SKID);
+		element.querySelector('.level .current, .level .max').textContent = skill.level;
 		if(skill.selectedLevel){
-			element.find('.level .current').text(skill.selectedLevel);
+			element.querySelector('.level .current').textContent = skill.selectedLevel;
 		}
-		element.find('.spcost').text(skill.spcost);
+		element.querySelector('.spcost').textContent = skill.spcost;
 
-		element.removeClass('active passive disabled');
-		element.addClass(!skill.level ? 'disabled' : skill.type ? 'active' : 'passive');
+		element.classList.remove('active', 'passive', 'disabled');
+		element.classList.add(!skill.level ? 'disabled' : skill.type ? 'active' : 'passive');
 
 		if (skill.upgradable && this.points) {
-			element.find('.levelup').show();
+			element.querySelector('.levelup').style.display = '';
 		}
 		else {
-			element.find('.levelup').hide();
+			element.querySelector('.levelup').style.display = 'none';
 		}
 
 		this.onUpdateSkill( skill.SKID, skill.level);
@@ -445,7 +451,7 @@ define(function(require)
 	SkillListMH.prototype.setPoints = function setPoints( amount )
 	{
 		var i, count;
-		this.ui.find('.skpoints_count').text(amount);
+		this.ui.querySelector('.skpoints_count').textContent = amount;
 
 		// Do not need to update the UI
 		if ((!this.points) === (!amount)) {
@@ -458,10 +464,10 @@ define(function(require)
 
 		for (i = 0; i < count; ++i) {
 			if (this.list[i].upgradable && amount) {
-				this.ui.find('.skill.id' + this.list[i].SKID + ' .levelup').show();
+				this.ui.querySelector('.skill.id' + this.list[i].SKID + ' .levelup').style.display = '';
 			}
 			else {
-				this.ui.find('.skill.id' + this.list[i].SKID + ' .levelup').hide();
+				this.ui.querySelector('.skill.id' + this.list[i].SKID + ' .levelup').style.display = 'none';
 			}
 		}
 	};
@@ -471,7 +477,7 @@ define(function(require)
 	 */
 	SkillListMH.prototype.onLevelUp = function onLevelUp()
 	{
-		this.btnLevelUp.appendTo('body');
+		document.body.appendChild(this.btnLevelUp);
 	};
 
 	/**
@@ -495,7 +501,7 @@ define(function(require)
 	 */
 	SkillListMH.prototype.onClose = function onClose()
 	{
-		this.ui.hide();
+		this.ui.style.display = 'none';
 	};
 
 	/**
@@ -514,13 +520,13 @@ define(function(require)
 	 */
 	SkillListMH.prototype.onRequestUseSkill = function onRequestUseSkill()
 	{
-		var main  = jQuery(this).parent();
+		var main  = this.parentNode;
 
-		if (!main.hasClass('skill')) {
-			main = main.parent();
+		if (!main.classList.contains('skill')) {
+			main = main.parentNode;
 		}
 
-		this.useSkillID(parseInt(main.data('index'), 10));
+		this.useSkillID(parseInt(main.getAttribute('data-index'), 10));
 	};
 
 	/**
@@ -528,14 +534,14 @@ define(function(require)
 	 */
 	SkillListMH.prototype.onRequestSkillInfo = function onRequestSkillInfo()
 	{
-		var main = jQuery(this).parent();
+		var main = this.parentNode;
 		var skill;
 
-		if (!main.hasClass('skill')) {
-			main = main.parent();
+		if (!main.classList.contains('skill')) {
+			main = main.parentNode;
 		}
 
-		skill = this.getSkillById(parseInt(main.data('index'), 10));
+		skill = this.getSkillById(parseInt(main.getAttribute('data-index'), 10));
 
 		// Don't add the same UI twice, remove it
 		if (SkillDescription.uid === skill.SKID) {
@@ -553,14 +559,14 @@ define(function(require)
 	 */
 	SkillListMH.prototype.onSkillFocus = function onSkillFocus()
 	{
-		var main = jQuery(this).parent();
+		var main = this.parentNode;
 
-		if (!main.hasClass('skill')) {
-			main = main.parent();
+		if (!main.classList.contains('skill')) {
+			main = main.parentNode;
 		}
 
-		this.ui.find('.skill').removeClass('selected');
-		main.addClass('selected');
+		Array.from(this.ui.querySelectorAll('.skill.selected')).forEach(function(el) { el.classList.remove('selected'); });
+		main.classList.add('selected');
 	};
 
 	/**
@@ -579,8 +585,8 @@ define(function(require)
 		var img   = new Image();
 		img.src   = this.firstChild.firstChild.src;
 
-		event.originalEvent.dataTransfer.setDragImage( img, 12, 12 );
-		event.originalEvent.dataTransfer.setData('Text',
+		event.dataTransfer.setDragImage( img, 12, 12 );
+		event.dataTransfer.setData('Text',
 			JSON.stringify( window._OBJ_DRAG_ = {
 				type: 'skill',
 				from: 'SkillListMH',
@@ -602,8 +608,8 @@ define(function(require)
 		var level = skill.selectedLevel ? skill.selectedLevel : skill.level;
 		if (level < skill.level){
 			skill.selectedLevel = level + 1;
-			var element = this.ui.find('.skill.id' + skill.SKID + ':first');
-			element.find('.level .current').text(skill.selectedLevel);
+			var element = this.ui.querySelector('.skill.id' + skill.SKID + '');
+			element.querySelector('.level .current').textContent = skill.selectedLevel;
 		}
 	};
 
@@ -612,8 +618,8 @@ define(function(require)
 		var level = skill.selectedLevel ? skill.selectedLevel : skill.level;
 		if (level > 1){
 			skill.selectedLevel = level - 1;
-			var element = this.ui.find('.skill.id' + skill.SKID + ':first');
-			element.find('.level .current').text(skill.selectedLevel);
+			var element = this.ui.querySelector('.skill.id' + skill.SKID + '');
+			element.querySelector('.level .current').textContent = skill.selectedLevel;
 		}
 	};
 

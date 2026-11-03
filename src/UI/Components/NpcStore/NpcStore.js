@@ -15,7 +15,6 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
-	var jQuery       = require('Utils/jquery');
 	var DB           = require('DB/DBManager');
 	var ItemType     = require('DB/Items/ItemType');
 	var Client       = require('Core/Client');
@@ -34,6 +33,7 @@ define(function(require)
 	var Inventory    = require('UI/Components/Inventory/Inventory');
 	var htmlText     = require('text!./NpcStore.html');
 	var cssText      = require('text!./NpcStore.css');
+	var DOM          = require('Utils/DOM');
 
 
 	/**
@@ -115,59 +115,59 @@ define(function(require)
 	NpcStore.init = function init()
 	{
 		var ui           = this.ui;
-		var InputWindow  = ui.find('.InputWindow');
-		var OutputWindow = ui.find('.OutputWindow');
-		var AvailableItemsWindow = ui.find('.AvailableItemsWindow');
-		var PurchaseResult = ui.find('.PurchaseResult');
+		var InputWindow  = ui.querySelector('.InputWindow');
+		var OutputWindow = ui.querySelector('.OutputWindow');
+		var AvailableItemsWindow = ui.querySelector('.AvailableItemsWindow');
+		var PurchaseResult = ui.querySelector('.PurchaseResult');
 
 		if (PACKETVER.value >= 20131223) {
-			ui.find('.btn.cancel').click(function(){
+			ui.querySelector('.btn.cancel').addEventListener('click', function(){
 				NpcStore.closeStore();
 			});
 		} else {
-			ui.find('.btn.cancel').click(this.remove.bind(this));
+			ui.querySelector('.btn.cancel').addEventListener('click', this.remove.bind(this));
 		}
 
 		// Client do not send packet
-		ui.find('.btn.buy, .btn.sell').click(this.submit.bind(this));
-		ui.find('.selectall').mousedown(onToggleSelectAmount);
+		DOM.addDelegatedEvent(ui, 'click', '.btn.buy, .btn.sell', this.submit.bind(this));
+		ui.querySelector('.selectall').addEventListener('mousedown', onToggleSelectAmount);
 
 		// Resize
-		InputWindow.find('.resize').mousedown(function(){ onResize(InputWindow); });
-		OutputWindow.find('.resize').mousedown(function(){ onResize(OutputWindow); });
-		AvailableItemsWindow.find('.resize').mousedown(function(){ onResize(AvailableItemsWindow); });
-		PurchaseResult.find('.resize').mousedown(function(){ onResize(PurchaseResult); });
+		InputWindow.querySelector('.resize').addEventListener('mousedown', function(){ onResize(InputWindow); });
+		OutputWindow.querySelector('.resize').addEventListener('mousedown', function(){ onResize(OutputWindow); });
+		AvailableItemsWindow.querySelector('.resize').addEventListener('mousedown', function(){ onResize(AvailableItemsWindow); });
+		PurchaseResult.querySelector('.resize').addEventListener('mousedown', function(){ onResize(PurchaseResult); });
 
 		// Items options
-		ui.find('.content')
-			.on('mousewheel DOMMouseScroll', onScroll)
-			.on('contextmenu',      '.icon', onItemInfo)
-			.on('dblclick',         '.item', onItemSelected)
-			.on('mousedown',        '.item', onItemFocus)
-			.on('dragstart',        '.item', onDragStart)
-			.on('dragend',          '.item', function(){
-				delete window._OBJ_DRAG_;
-			});
+		var _npcContent = ui.querySelector('.content');
+		_npcContent.addEventListener('mousewheel', onScroll);
+		_npcContent.addEventListener('DOMMouseScroll', onScroll);
+		DOM.addDelegatedEvent(_npcContent, 'contextmenu', '.icon', onItemInfo);
+		DOM.addDelegatedEvent(_npcContent, 'dblclick', '.item', onItemSelected);
+		DOM.addDelegatedEvent(_npcContent, 'mousedown', '.item', onItemFocus);
+		DOM.addDelegatedEvent(_npcContent, 'dragstart', '.item', onDragStart);
+		DOM.addDelegatedEvent(_npcContent, 'dragend', '.item', function(){
+			delete window._OBJ_DRAG_;
+		});
 
 		// Drop items
-		ui.find('.InputWindow, .OutputWindow, .AvailableItemsWindow')
-			.on('drop', onDrop)
-			.on('dragover', function(event) {
-				event.stopImmediatePropagation();
-				return false;
-			})
-			.on('mousedown', function(){
-				NpcStore.focus();
-			});
+		function _npcStoreDrop(event) { event.stopImmediatePropagation(); return false; }
+		function _npcStoreFocus() { NpcStore.focus(); }
+		[ui.querySelector('.InputWindow'), ui.querySelector('.OutputWindow'), ui.querySelector('.AvailableItemsWindow')].forEach(function(win) {
+			if (!win) return;
+			win.addEventListener('drop', onDrop);
+			win.addEventListener('dragover', _npcStoreDrop);
+			win.addEventListener('mousedown', _npcStoreFocus);
+		});
 
 		// Hacky drag drop
-		this.draggable.call({ui: InputWindow },  InputWindow.find('.titlebar'));
-		this.draggable.call({ui: OutputWindow }, OutputWindow.find('.titlebar'));
-		this.draggable.call({ui: AvailableItemsWindow }, AvailableItemsWindow.find('.titlebar'));
-		this.draggable.call({ui: PurchaseResult }, PurchaseResult.find('.titlebar'));
+		this.draggable.call({ui: InputWindow },  InputWindow.querySelector('.titlebar'));
+		this.draggable.call({ui: OutputWindow }, OutputWindow.querySelector('.titlebar'));
+		this.draggable.call({ui: AvailableItemsWindow }, AvailableItemsWindow.querySelector('.titlebar'));
+		this.draggable.call({ui: PurchaseResult }, PurchaseResult.querySelector('.titlebar'));
 
 		// MarketShop close
-		ui.find('.btn.ok').click(function(){
+		ui.querySelector('.btn.ok').addEventListener('click', function(){
 			NpcStore.closeStore();
 		})
 	};
@@ -178,28 +178,28 @@ define(function(require)
 	 */
 	NpcStore.onAppend = function onAppend()
 	{
-		var InputWindow  = this.ui.find('.InputWindow');
-		var OutputWindow = this.ui.find('.OutputWindow');
-		var AvailableItemsWindow = this.ui.find('.AvailableItemsWindow');
-		var PurchaseResult = this.ui.find('.PurchaseResult');
+		var InputWindow  = this.ui.querySelector('.InputWindow');
+		var OutputWindow = this.ui.querySelector('.OutputWindow');
+		var AvailableItemsWindow = this.ui.querySelector('.AvailableItemsWindow');
+		var PurchaseResult = this.ui.querySelector('.PurchaseResult');
 
-		InputWindow.css({  top:  _preferences.inputWindow.y,  left: _preferences.inputWindow.x });
-		OutputWindow.css({ top:  _preferences.outputWindow.y, left: _preferences.outputWindow.x });
-		AvailableItemsWindow.css({ top:  _preferences.AvailableItemsWindow.y, left: _preferences.AvailableItemsWindow.x });
-		PurchaseResult.css({ top:  _preferences.PurchaseResult.y, left: _preferences.PurchaseResult.x });
+		DOM.setCss(InputWindow, { top: _preferences.inputWindow.y + 'px', left: _preferences.inputWindow.x + 'px' });
+		DOM.setCss(OutputWindow, { top: _preferences.outputWindow.y + 'px', left: _preferences.outputWindow.x + 'px' });
+		DOM.setCss(AvailableItemsWindow, { top: _preferences.AvailableItemsWindow.y + 'px', left: _preferences.AvailableItemsWindow.x + 'px' });
+		DOM.setCss(PurchaseResult, { top: _preferences.PurchaseResult.y + 'px', left: _preferences.PurchaseResult.x + 'px' });
 
 		Client.loadFile(DB.INTERFACE_PATH + 'checkbox_' + (_preferences.select_all ? 1 : 0) + '.bmp', function(data){
-			this.ui.find('.selectall:first').css('backgroundImage', 'url('+ data +')');
+			this.ui.querySelector('.selectall').style.backgroundImage = 'url('+ data +')';
 		}.bind(this));
 
-		resize( InputWindow.find('.content'),  _preferences.inputWindow.height );
-		resize( OutputWindow.find('.content'), _preferences.outputWindow.height );
-		resize( AvailableItemsWindow.find('.content'), _preferences.AvailableItemsWindow.height );
-		resize( PurchaseResult.find('.content'), _preferences.PurchaseResult.height );
+		resize( InputWindow.querySelector('.content'),  _preferences.inputWindow.height );
+		resize( OutputWindow.querySelector('.content'), _preferences.outputWindow.height );
+		resize( AvailableItemsWindow.querySelector('.content'), _preferences.AvailableItemsWindow.height );
+		resize( PurchaseResult.querySelector('.content'), _preferences.PurchaseResult.height );
 
 		// Seems like "EscapeWindow" is execute first, push it before.
-		var events = jQuery._data( window, 'events').keydown;
-		events.unshift( events.pop() );
+		// var events = jQuery._data removed
+		// events.unshift removed
 	};
 
 
@@ -208,35 +208,35 @@ define(function(require)
 	 */
 	NpcStore.onRemove = function onRemove()
 	{
-		var InputWindow  = this.ui.find('.InputWindow');
-		var OutputWindow = this.ui.find('.OutputWindow');
-		var AvailableItemsWindow = this.ui.find('.AvailableItemsWindow');
-		var PurchaseResult = this.ui.find('.PurchaseResult');
+		var InputWindow  = this.ui.querySelector('.InputWindow');
+		var OutputWindow = this.ui.querySelector('.OutputWindow');
+		var AvailableItemsWindow = this.ui.querySelector('.AvailableItemsWindow');
+		var PurchaseResult = this.ui.querySelector('.PurchaseResult');
 
 		_input.length    = 0;
 		_output.length   = 0;
 
-		_preferences.inputWindow.x       = parseInt( InputWindow.css('left'), 10);
-		_preferences.inputWindow.y       = parseInt( InputWindow.css('top'), 10);
-		_preferences.inputWindow.height  = InputWindow.find('.content').height() / 32 | 0;
+		_preferences.inputWindow.x       = parseInt(InputWindow.style.left, 10) || 0;
+		_preferences.inputWindow.y       = parseInt(InputWindow.style.top, 10) || 0;
+		_preferences.inputWindow.height  = InputWindow.querySelector('.content').offsetHeight / 32 | 0;
 
-		_preferences.outputWindow.x      = parseInt( OutputWindow.css('left'), 10);
-		_preferences.outputWindow.y      = parseInt( OutputWindow.css('top'), 10);
-		_preferences.outputWindow.height = OutputWindow.find('.content').height() / 32 | 0;
+		_preferences.outputWindow.x      = parseInt(OutputWindow.style.left, 10) || 0;
+		_preferences.outputWindow.y      = parseInt(OutputWindow.style.top, 10) || 0;
+		_preferences.outputWindow.height = OutputWindow.querySelector('.content').offsetHeight / 32 | 0;
 
-		_preferences.AvailableItemsWindow.x      = parseInt( AvailableItemsWindow.css('left'), 10);
-		_preferences.AvailableItemsWindow.y      = parseInt( AvailableItemsWindow.css('top'), 10);
-		_preferences.AvailableItemsWindow.height = AvailableItemsWindow.find('.content').height() / 32 | 0;
+		_preferences.AvailableItemsWindow.x      = parseInt(AvailableItemsWindow.style.left, 10) || 0;
+		_preferences.AvailableItemsWindow.y      = parseInt(AvailableItemsWindow.style.top, 10) || 0;
+		_preferences.AvailableItemsWindow.height = AvailableItemsWindow.querySelector('.content').offsetHeight / 32 | 0;
 
-		_preferences.PurchaseResult.x      = parseInt( PurchaseResult.css('left'), 10);
-		_preferences.PurchaseResult.y      = parseInt( PurchaseResult.css('top'), 10);
-		_preferences.PurchaseResult.height = PurchaseResult.find('.content').height() / 32 | 0;
+		_preferences.PurchaseResult.x      = parseInt(PurchaseResult.style.left, 10) || 0;
+		_preferences.PurchaseResult.y      = parseInt(PurchaseResult.style.top, 10) || 0;
+		_preferences.PurchaseResult.height = PurchaseResult.querySelector('.content').offsetHeight / 32 | 0;
 
 		_preferences.save();
 
-		this.ui.find('.content').empty();
-		this.ui.find('.total .result').text(0);
-		this.ui.find('.totalP .resultP').text(0);
+		this.ui.querySelector('.content').innerHTML = '';
+		this.ui.querySelector('.total .result').textContent = 0;
+		this.ui.querySelector('.totalP .resultP').textContent = 0;
 	};
 
 
@@ -272,36 +272,36 @@ define(function(require)
 		switch (type) {
 			case NpcStore.Type.BUY:
 			case NpcStore.Type.MARKETSHOP:
-				this.ui.find('.WinSell, .WinVendingStore, .WinCash, .WinBuyingStore, .AvailableItemsWindow, .PurchaseResult').hide();
-				this.ui.find('.WinBuy').show();
+				this.ui.querySelector('.WinSell, .WinVendingStore, .WinCash, .WinBuyingStore, .AvailableItemsWindow, .PurchaseResult').style.display = 'none';
+				this.ui.querySelector('.WinBuy').style.display = '';
 				break;
 
 			case NpcStore.Type.SELL:
-				this.ui.find('.WinBuy, .WinVendingStore, .WinCash, .WinBuyingStore, .AvailableItemsWindow, .PurchaseResult').hide();
-				this.ui.find('.WinSell').show();
+				this.ui.querySelector('.WinBuy, .WinVendingStore, .WinCash, .WinBuyingStore, .AvailableItemsWindow, .PurchaseResult').style.display = 'none';
+				this.ui.querySelector('.WinSell').style.display = '';
 				break;
 
 			case NpcStore.Type.VENDING_STORE:
-				this.ui.find('.WinBuy, .WinSell, .WinCash, .WinBuyingStore, .AvailableItemsWindow, .PurchaseResult').hide();
-				this.ui.find('.WinVendingStore').show();
+				this.ui.querySelector('.WinBuy, .WinSell, .WinCash, .WinBuyingStore, .AvailableItemsWindow, .PurchaseResult').style.display = 'none';
+				this.ui.querySelector('.WinVendingStore').style.display = '';
 				break;
 
 			case NpcStore.Type.BUYING_STORE:
-				this.ui.find('.WinBuy, .WinSell, .WinCash, .WinVendingStore, .PurchaseResult').hide();
-				this.ui.find('.WinBuyingStore, .AvailableItemsWindow').show();
-				this.ui.find('.content').css('height','160px');
-				this.ui.find('.contentAvailable').css('height','65px');
+				this.ui.querySelector('.WinBuy, .WinSell, .WinCash, .WinVendingStore, .PurchaseResult').style.display = 'none';
+				this.ui.querySelector('.WinBuyingStore, .AvailableItemsWindow').style.display = '';
+				this.ui.querySelector('.content').style.height = '160px';
+				this.ui.querySelector('.contentAvailable').style.height = '65px';
 				break;
 
 			case NpcStore.Type.BARTER_MARKET:
-				this.ui.find('.WinSell, .WinVendingStore, .WinCash, .WinBuyingStore, .AvailableItemsWindow, .PurchaseResult').hide();
-				this.ui.find('.WinBuy').show();
-				this.ui.find('.total').hide();
+				this.ui.querySelector('.WinSell, .WinVendingStore, .WinCash, .WinBuyingStore, .AvailableItemsWindow, .PurchaseResult').style.display = 'none';
+				this.ui.querySelector('.WinBuy').style.display = '';
+				this.ui.querySelector('.total').style.display = 'none';
 				break;
 
 			case NpcStore.Type.CASH_SHOP:
-				this.ui.find('.WinSell, .WinVendingStore, .WinBuyingStore, .AvailableItemsWindow, .PurchaseResult, .total').hide();
-				this.ui.find('.WinBuy').show();
+				this.ui.querySelector('.WinSell, .WinVendingStore, .WinBuyingStore, .AvailableItemsWindow, .PurchaseResult, .total').style.display = 'none';
+				this.ui.querySelector('.WinBuy').style.display = '';
 				break;
 		}
 
@@ -319,14 +319,14 @@ define(function(require)
 		var i, count;
 		var it, item, out, content, availableContent;
 
-		this.ui.find('.content').empty();
-		this.ui.find('.total .result').text(0);
-		this.ui.find('.totalP .resultP').text(0);
+		this.ui.querySelector('.content').innerHTML = '';
+		this.ui.querySelector('.total .result').textContent = 0;
+		this.ui.querySelector('.totalP .resultP').textContent = 0;
 
 		_input.length  = 0;
 		_output.length = 0;
-		content        = this.ui.find('.InputWindow .content');
-		availableContent = this.ui.find('.AvailableItemsWindow .content');
+		content        = this.ui.querySelector('.InputWindow .content');
+		availableContent = this.ui.querySelector('.AvailableItemsWindow .content');
 		switch (_type) {
 
 			case NpcStore.Type.BUY:
@@ -339,7 +339,7 @@ define(function(require)
 					}
 					items[i].count        = items[i].count || Infinity;
 					items[i].IsIdentified = true;
-					out                   = jQuery.extend({}, items[i]);
+					out                   = Object.assign({}, items[i]);
 					out.count             = 0;
 
 					addItem( content, items[i]);
@@ -356,20 +356,20 @@ define(function(require)
 					}
 					items[i].count        = items[i].count || Infinity;
 					items[i].IsIdentified = true;
-					out                   = jQuery.extend({}, items[i]);
+					out                   = Object.assign({}, items[i]);
 					out.count             = 0;
 
 					addItem( content, items[i]);
 					it = Inventory.getUI().getItemById(items[i].ITID);
 
 					if (it) {
-						item                 = jQuery.extend({}, it);
+						item                 = Object.assign({}, it);
 						item.ITID            = it.ITID;
 						item.price           = items[i].price;
 						item.count           = ('count' in item) ? item.count : 1;
 						item.maxCount        = isFinite(items[i].count) ? items[i].count : 0;
 
-						out                  = jQuery.extend({}, item);
+						out                  = Object.assign({}, item);
 						out.count            = 0;
 
 						addItem( availableContent, item);
@@ -387,7 +387,7 @@ define(function(require)
 					}
 					items[i].count        = items[i].count || Infinity;
 					items[i].IsIdentified = true;
-					out                   = jQuery.extend({}, items[i]);
+					out                   = Object.assign({}, items[i]);
 					out.count             = 0;
 
 					addItem( content, items[i]);
@@ -405,12 +405,12 @@ define(function(require)
 					var condition = (InventoryVersion !== 'InventoryV0') ? it && (!Inventory.getUI().npcsalelock || it.PlaceETCTab < 1) : it;
 					
 					if (condition) {
-						item                 = jQuery.extend({}, it);
+						item                 = Object.assign({}, it);
 						item.price           = items[i].price;
 						item.overchargeprice = items[i].overchargeprice;
 						item.count           = ('count' in item) ? item.count : 1;
 
-						out                  = jQuery.extend({}, item);
+						out                  = Object.assign({}, item);
 						out.count            = 0;
 
 						addItem( content, item);
@@ -428,7 +428,7 @@ define(function(require)
 		let prettyPrice = prettyZeny(price);
 		let text = DB.getMessage(1735);
 		let result = text.replace("%s", prettyPrice); // workaround
-		this.ui.find('.priceLimit').text(result);
+		this.ui.querySelector('.priceLimit').textContent = result;
 	}
 
 	/**
@@ -451,8 +451,8 @@ define(function(require)
 		NpcStore.onSubmit( output );
 
 		// work around - cashshop dont close after buy
-		this.ui.find('.OutputWindow').find('.content').empty();
-		this.ui.find('.totalP .resultP').text(0);
+		this.ui.querySelector('.OutputWindow').querySelector('.content').innerHTML = '';
+		this.ui.querySelector('.totalP .resultP').textContent = 0;
 
 		for (i = 0; i < count; ++i) {
 			if (_output[i] && _output[i].count) {
@@ -480,11 +480,11 @@ define(function(require)
 			}
 		}
 
-		this.ui.find('.total .result').text(prettyZeny(total));
-		this.ui.find('.totalP .resultP').text(prettyZeny(total))
+		this.ui.querySelector('.total .result').textContent = (prettyZeny(total));
+		this.ui.querySelector('.totalP .resultP').textContent = (prettyZeny(total))
 
 		if (_type === NpcStore.Type.BARTER_MARKET) {
-			this.ui.find('.total').hide();
+			this.ui.querySelector('.total').style.display = 'none';
 		}
 
 		return total;
@@ -556,7 +556,7 @@ define(function(require)
 	{
 		var it      = DB.getItemInfo(item.ITID);
 		var currencyit = DB.getItemInfo(item.currencyITID);
-		var element = content.find('.item[data-index='+ item.index +']:first');
+		var element = content.querySelector('.item[data-index="'+ item.index +'"]');
 		var price;
 		let amountText;
 
@@ -568,7 +568,7 @@ define(function(require)
 
 		// 0 as amount ? remove it
 		if (item.count === 0) {
-			if (element.length) {
+			if (element) {
 				element.remove();
 			}
 			return;
@@ -576,13 +576,13 @@ define(function(require)
 
 		// Already here, update it
 		// Note: just the amount can be updated ?
-		if (element.length) {
-			amountText = (_type == NpcStore.Type.BUYING_STORE && !(content.hasClass('contentAvailable'))) ? ' ea.' : '';
-			element.find('.amount').text(isFinite(item.count) ? item.count + amountText: '');
+		if (element) {
+			amountText = (_type == NpcStore.Type.BUYING_STORE && !(content.classList.contains('contentAvailable'))) ? ' ea.' : '';
+			element.querySelector('.amount').textContent = (isFinite(item.count) ? item.count + amountText: '');
 			return;
 		}
 
-		if(!(content.hasClass('contentAvailable')) && (_type !== NpcStore.Type.BARTER_MARKET)) {
+		if(!(content.classList.contains('contentAvailable')) && (_type !== NpcStore.Type.BARTER_MARKET)) {
 			price = prettyZeny(item.price, _type === NpcStore.Type.VENDING_STORE || _type === NpcStore.Type.BUYING_STORE);
 
 			// Discount price
@@ -596,42 +596,42 @@ define(function(require)
 			let buyingClass = (_type == NpcStore.Type.BUYING_STORE) ? ' amountBuying' : '';
 			amountText = (_type == NpcStore.Type.BUYING_STORE) ? ' ea.' : '';
 			// Create it
-			content.append(
+			content.insertAdjacentHTML('beforeend',
 				'<div class="item" draggable="true" data-index="'+ item.index +'">' +
 					'<div class="icon"></div>' +
 					'<div class="amount' + buyingClass + '">' + (isFinite(item.count) ? item.count : (_type === NpcStore.Type.BUYING_STORE) ? 0 : '') + amountText + '</div>' +
-					'<div class="name">'+ jQuery.escape(DB.getItemName(item)) +'</div>' +
+					'<div class="name">'+ DOM.escapeHtml(DB.getItemName(item)) +'</div>' +
 					'<div class="price">'+ price +'</div>' +
 					'<div class="unity">Z</div>' +
 				'</div>'
 			);
 		} else if (_type === NpcStore.Type.BARTER_MARKET) {
-			content.append(
+			content.insertAdjacentHTML('beforeend',
 				'<div class="item" draggable="true" data-index="'+ item.index +'" data-weight="'+ item.weight +'" data-location="'+ item.location +'" data-viewSprite="'+ item.viewSprite +'">' +
 					'<div class="icon"></div>' +
 					'<div class="amount">' + (isFinite(item.count) ? item.count : '') + '</div>' +
-					'<div class="name">'+ jQuery.escape(DB.getItemName(item)) +'</div>' +
+					'<div class="name">'+ DOM.escapeHtml(DB.getItemName(item)) +'</div>' +
 					'<div class="currency_icon" data-item="'+ item.currencyITID + '"></div>' +
 					'<div class="currency_amount">' + item.currencyamount + '</div>' +
-					'<div class="currency_nameOverlay">'+ jQuery.escape(DB.getItemName(currency_item)) +' '+ item.currencyamount +' ea</div>' +
+					'<div class="currency_nameOverlay">'+ DOM.escapeHtml(DB.getItemName(currency_item)) +' '+ item.currencyamount +' ea</div>' +
 				'</div>'
 			);
 		} else {
-			content.append(
+			content.insertAdjacentHTML('beforeend',
 				'<div class="item itemAvailable" draggable="true" data-index="'+ item.index +'">' +
 					'<div class="icon"></div>' +
 					'<div class="amount">' + (isFinite(item.count) ? item.count : '') + '</div>' +
-					'<div class="nameOverlay">'+ jQuery.escape(DB.getItemName(item)) +'</div>' +
+					'<div class="nameOverlay">'+ DOM.escapeHtml(DB.getItemName(item)) +'</div>' +
 				'</div>'
 			);
 		}
 		// Add the icon once loaded
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + (item.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName) + '.bmp', function(data){
-			content.find('.item[data-index="'+ item.index +'"] .icon').css('backgroundImage', 'url('+ data +')');
+			content.querySelector('.item[data-index="'+ item.index +'"] .icon').style.backgroundImage = 'url('+ data +')';
 		});
 
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + (item.IsIdentified ? currencyit.identifiedResourceName : currencyit.unidentifiedResourceName) + '.bmp', function(data){
-			content.find('.item[data-index="'+ item.index +'"] .currency_icon').css('backgroundImage', 'url('+ data +')');
+			content.querySelector('.item[data-index="'+ item.index +'"] .currency_icon').style.backgroundImage = 'url('+ data +')';
 		});
 	}
 
@@ -645,7 +645,7 @@ define(function(require)
 	function resize( content, height )
 	{
 		height = Math.min( Math.max(height, 2), 9);
-		content.css('height', height * 32);
+		content.style.height = height * 32;
 	}
 
 
@@ -656,8 +656,8 @@ define(function(require)
 	 */
 	function onResize( ui )
 	{
-		var top        = ui.position().top;
-		var content    = ui.find('.content:first');
+		var top = parseInt(ui.style.top, 10) || 0;
+		var content    = ui.querySelector('.content');
 		var lastHeight = 0;
 		var interval;
 
@@ -680,12 +680,13 @@ define(function(require)
 		interval = setInterval( resizing, 30);
 
 		// Stop resizing on left click
-		jQuery(window).on('mouseup.resize', function(event){
+		var _onResizeEnd = function(event){
 			if (event.which === 1) {
 				clearInterval(interval);
-				jQuery(window).off('mouseup.resize');
+				window.removeEventListener('mouseup', _onResizeEnd);
 			}
-		});
+		};
+		window.addEventListener('mouseup', _onResizeEnd);
 	}
 
 
@@ -729,10 +730,10 @@ define(function(require)
 
 				if (_type === NpcStore.Type.BARTER_MARKET) {
 					// Calculate weight
-					let inputCurrency = NpcStore.ui.find(`.InputWindow .item[data-index="${index}"]`);
-					let inputCurrencyDiv = NpcStore.ui.find(`.InputWindow .item[data-index="${index}"] .currency_amount`);
-					let currencyItemWeight = parseInt(inputCurrency.attr('data-weight'), 10);
-					let currencyAmount = parseInt(inputCurrencyDiv.text(), 10);
+					let inputCurrency = NpcStore.ui.querySelector(`.InputWindow .item[data-index="${index}"]`);
+					let inputCurrencyDiv = NpcStore.ui.querySelector(`.InputWindow .item[data-index="${index}"] .currency_amount`);
+					let currencyItemWeight = parseInt(inputCurrency.getAttribute('data-weight'), 10);
+					let currencyAmount = parseInt(inputCurrencyDiv.textContent, 10);
 					let additionalWeight = currencyItemWeight * (outputItem.count - originalCount);
 					let expectedWeight = Session.Character.weight + NpcStore.calculateWeight() + additionalWeight;
 
@@ -751,12 +752,12 @@ define(function(require)
 					addItem(toContent, outputItem);
 
 					// Then, update currency properties
-					let outputCurrencyDiv = NpcStore.ui.find(`.OutputWindow .item[data-index="${index}"] .currency_amount`);
-					let currencyItemDiv = NpcStore.ui.find(`.OutputWindow .item[data-index="${index}"] .currency_icon`);
-					let currencyItem = parseInt(currencyItemDiv.attr('data-item'), 10);
+					let outputCurrencyDiv = NpcStore.ui.querySelector(`.OutputWindow .item[data-index="${index}"] .currency_amount`);
+					let currencyItemDiv = NpcStore.ui.querySelector(`.OutputWindow .item[data-index="${index}"] .currency_icon`);
+					let currencyItem = parseInt(currencyItemDiv.getAttribute('data-item'), 10);
 					let currencyTotal = currencyAmount * outputItem.count;
 
-					outputCurrencyDiv.text(currencyTotal); // Update displayed currency total
+					outputCurrencyDiv.textContent = currencyTotal; // Update displayed currency total
 					outputItem.shopIndex = index; // Assign shop index
 					outputItem.matcurrency = currencyItem; // Assign material currency ID
 					outputItem.matcurrencyamount = currencyTotal; // Assign material currency amount
@@ -779,16 +780,16 @@ define(function(require)
 				outputItem.count -= count;
 
 				if (_type === NpcStore.Type.BARTER_MARKET) {
-					let inputCurrency = NpcStore.ui.find(`.InputWindow .item[data-index="${index}"]`);
-					let currencyItemWeight = parseInt(inputCurrency.attr('data-weight'), 10);
+					let inputCurrency = NpcStore.ui.querySelector(`.InputWindow .item[data-index="${index}"]`);
+					let currencyItemWeight = parseInt(inputCurrency.getAttribute('data-weight'), 10);
 					outputItem.total_weight = currencyItemWeight * outputItem.count;
 		
-					let inputCurrencyDiv = NpcStore.ui.find(`.InputWindow .item[data-index="${index}"] .currency_amount`);
-					let outputCurrencyDiv = NpcStore.ui.find(`.OutputWindow .item[data-index="${index}"] .currency_amount`);
-					let currencyAmount = parseInt(inputCurrencyDiv.text(), 10);
+					let inputCurrencyDiv = NpcStore.ui.querySelector(`.InputWindow .item[data-index="${index}"] .currency_amount`);
+					let outputCurrencyDiv = NpcStore.ui.querySelector(`.OutputWindow .item[data-index="${index}"] .currency_amount`);
+					let currencyAmount = parseInt(inputCurrencyDiv.textContent, 10);
 					let currencyTotal = currencyAmount * outputItem.count;
 
-					outputCurrencyDiv.text(currencyTotal);
+					outputCurrencyDiv.textContent = currencyTotal;
 					outputItem.matcurrencyamount = currencyTotal; // Update material currency amount
 				}
 
@@ -833,7 +834,7 @@ define(function(require)
 
 		// Can't buy more than one same stackable item
 		if ((_type === NpcStore.Type.BUY || _type === NpcStore.Type.VENDING_STORE) && !isStackable && isAdding) {
-			if (toContent.find('.item[data-index="'+ item.index +'"]:first').length) {
+			if (toContent.querySelector('.item[data-index="'+ item.index +'"]')) {
 				return false;
 			}
 		}
@@ -868,7 +869,7 @@ define(function(require)
 		event.stopImmediatePropagation();
 
 		try {
-			data  = JSON.parse(event.originalEvent.dataTransfer.getData('Text'));
+			data  = JSON.parse(event.dataTransfer.getData('Text'));
 		}
 		catch(e) {
 			return false;
@@ -881,8 +882,8 @@ define(function(require)
 
 		requestMoveItem(
 			data.index,
-			jQuery('.' + data.container + ' .content'),
-			jQuery(this).find('.content'),
+			NpcStore.ui.querySelector('.' + data.container + ' .content'),
+			this.querySelector('.content'),
 			this.className === 'OutputWindow'
 		);
 
@@ -929,21 +930,21 @@ define(function(require)
 			return;
 		}
 
-		input = NpcStore.ui.find('.InputWindow:first');
+		input = NpcStore.ui.querySelector('.InputWindow');
 
-		if (jQuery.contains(input.get(0), this)) {
+		if (input.contains(this)) {
 			from = input;
-			to   = NpcStore.ui.find('.OutputWindow:first');
+			to   = NpcStore.ui.querySelector('.OutputWindow');
 		}
 		else {
-			from = NpcStore.ui.find('.OutputWindow:first');
+			from = NpcStore.ui.querySelector('.OutputWindow');
 			to   = input;
 		}
 
 		requestMoveItem(
 			parseInt( this.getAttribute('data-index'), 10),
-			from.find('.content:first'),
-			to.find('.content:first'),
+			from.querySelector('.content'),
+			to.querySelector('.content'),
 			from === input
 		);
 	}
@@ -954,8 +955,8 @@ define(function(require)
 	 */
 	function onItemFocus()
 	{
-		NpcStore.ui.find('.item.selected').removeClass('selected');
-		jQuery(this).addClass('selected');
+		NpcStore.ui.querySelectorAll('.item.selected').forEach(function(el) { el.classList.remove('selected'); });
+		this.classList.add('selected');
 	}
 
 
@@ -966,14 +967,14 @@ define(function(require)
 	{
 		var delta;
 
-		if (event.originalEvent.wheelDelta) {
-			delta = event.originalEvent.wheelDelta / 120 ;
+		if (event.wheelDelta) {
+			delta = event.wheelDelta / 120 ;
 			if (window.opera) {
 				delta = -delta;
 			}
 		}
-		else if (event.originalEvent.detail) {
-			delta = -event.originalEvent.detail;
+		else if (event.detail) {
+			delta = -event.detail;
 		}
 
 		this.scrollTop = Math.floor(this.scrollTop/32) * 32 - (delta * 32);
@@ -989,17 +990,17 @@ define(function(require)
 		var container, img, url;
 		var InputWindow, OutputWindow, AvailableItemsWindow;
 
-		InputWindow  = NpcStore.ui.find('.InputWindow:first').get(0);
-		OutputWindow = NpcStore.ui.find('.OutputWindow:first').get(0);
-		AvailableItemsWindow = NpcStore.ui.find('.AvailableItemsWindow:first').get(0);
+		InputWindow  = NpcStore.ui.querySelector('.InputWindow');
+		OutputWindow = NpcStore.ui.querySelector('.OutputWindow');
+		AvailableItemsWindow = NpcStore.ui.querySelector('.AvailableItemsWindow');
 
-		container = (jQuery.contains(InputWindow, this) ? InputWindow : (jQuery.contains(AvailableItemsWindow, this)) ? AvailableItemsWindow : OutputWindow).className;
+		container = (InputWindow.contains(this) ? InputWindow : (AvailableItemsWindow.contains(this)) ? AvailableItemsWindow : OutputWindow).className;
 		img       = new Image();
 		url       = this.firstChild.style.backgroundImage.match(/\(([^\)]+)/)[1].replace(/"/g, '');
 		img.src   = url;
 
-		event.originalEvent.dataTransfer.setDragImage( img, 12, 12 );
-		event.originalEvent.dataTransfer.setData('Text',
+		event.dataTransfer.setDragImage( img, 12, 12 );
+		event.dataTransfer.setData('Text',
 			JSON.stringify( window._OBJ_DRAG_ = {
 				type:      'item',
 				from:      'NpcStore',
@@ -1028,7 +1029,7 @@ define(function(require)
 	 */
 	NpcStore.closeStore = function() {
 		NpcStore.remove();
-		this.ui.find('.total').show();
+		this.ui.querySelector('.total').style.display = '';
 
 		NpcStore.StoreClosePacket(_type);
 	};
@@ -1040,15 +1041,15 @@ define(function(require)
 	* @param {String} type - The store type (e.g., NpcStore.Type.MARKETSHOP, etc.)
 	*/
 	NpcStore.StoreClosePacket = function(type) {
-		let inputWindow  = NpcStore.ui.find('.InputWindow');
-		let outputWindow = NpcStore.ui.find('.OutputWindow');
+		let inputWindow  = NpcStore.ui.querySelector('.InputWindow');
+		let outputWindow = NpcStore.ui.querySelector('.OutputWindow');
 
 		let pkt;
 		switch(type) {
 			case NpcStore.Type.MARKETSHOP:
 				pkt = new PACKET.CZ.NPC_MARKET_CLOSE();
-				inputWindow.show();
-				outputWindow.show();
+				inputWindow.style.display = '';
+				outputWindow.style.display = '';
 				break;
 			case NpcStore.Type.BARTER_MARKET:
 				pkt = new PACKET.CZ.NPC_BARTER_MARKET_CLOSE();
@@ -1077,27 +1078,29 @@ define(function(require)
 	 * @param {Array.<PACKET.ZC.NPC_MARKET_PURCHASE_RESULT2.Item>} itemList
 	 */
 	NpcStore.onMarketShopResultUI = function(itemList) {
-		let InputWindow  = NpcStore.ui.find('.InputWindow');
-		let OutputWindow = NpcStore.ui.find('.OutputWindow');
-		let OutputWindowcontent = OutputWindow.find('.content');
-		let resultUI = NpcStore.ui.find('.PurchaseResult');
-		let resultUIcontent =  resultUI.find('.content');
+		let InputWindow  = NpcStore.ui.querySelector('.InputWindow');
+		let OutputWindow = NpcStore.ui.querySelector('.OutputWindow');
+		let OutputWindowcontent = OutputWindow.querySelector('.content');
+		let resultUI = NpcStore.ui.querySelector('.PurchaseResult');
+		let resultUIcontent =  resultUI.querySelector('.content');
 
 		// Update UI
-		InputWindow.hide();
-		OutputWindow.hide();
-		resultUI.show();
-		resultUIcontent.empty();
+		InputWindow.style.display = 'none';
+		OutputWindow.style.display = 'none';
+		resultUI.style.display = '';
+		resultUIcontent.innerHTML = '';
 
 		if (!itemList || itemList.length === 0) {
 			return;
 		}
 
 		// Hack (Using the itemList from packet rearranges the index, so clone OutputWindow instead)
-		resultUIcontent.append(OutputWindowcontent.children().clone());
+		Array.from(OutputWindowcontent.children).forEach(function(child) {
+			resultUIcontent.appendChild(child.cloneNode(true));
+		});
 
 		// Reapply resize logic for PurchaseResult
-		resultUI.find('.resize').off('mousedown').on('mousedown', function() {
+		resultUI.querySelector('.resize').addEventListener('mousedown', function() {
     		onResize(resultUI);
 		});
 	};

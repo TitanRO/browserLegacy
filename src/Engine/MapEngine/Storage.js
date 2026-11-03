@@ -14,7 +14,6 @@ define(function( require )
 	/**
 	 * Load dependencies
 	 */
-	var jQuery        = require('Utils/jquery');
 	var Network       = require('Network/NetworkManager');
 	var PACKETVER   = require('Network/PacketVerManager');
 	var PACKET        = require('Network/PacketStructure');
@@ -64,7 +63,7 @@ define(function( require )
 	 */
 	function onStorageItemAdded( pkt )
 	{
-		Storage.addItem(jQuery.extend({}, pkt));
+		Storage.addItem(Object.assign({}, pkt));
 	}
 
 

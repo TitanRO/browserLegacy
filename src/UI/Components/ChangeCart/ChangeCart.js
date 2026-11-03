@@ -15,9 +15,9 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
+	var DOM         = require('Utils/DOM');
 	var Network     = require('Network/NetworkManager');
 	var PACKET      = require('Network/PacketStructure');
-	var jQuery      = require('Utils/jquery');
 	var Client      = require('Core/Client');
 	var Preferences = require('Core/Preferences');
 	var Session     = require('Engine/SessionStorage');
@@ -38,6 +38,18 @@ define(function(require)
 	var ChangeCart = new UIComponent( 'ChangeCart', htmlText, cssText );
 
 
+	function qs(selector)
+	{
+		return DOM.qs(ChangeCart.ui, selector);
+	}
+
+
+	function qsa(selector)
+	{
+		return DOM.qsa(ChangeCart.ui, selector);
+	}
+
+
 	/**
 	 * @var {Preference} window preferences
 	 */
@@ -56,25 +68,33 @@ define(function(require)
 	 */
 	ChangeCart.init = function init()
 	{
-		var carts = this.ui.find('.cart');
-		var canvases = this.ui.find('.canvas');
+		var carts = qsa('.cart');
+		var canvases = qsa('.canvas');
 		
-		this.ui.css({
-			top:  (Renderer.height - 100) / 2.0,
-			left: (Renderer.width  - 400) / 2.0
+		DOM.setCss(this.ui, {
+			top:  (Renderer.height - 100) / 2.0 + 'px',
+			left: (Renderer.width  - 400) / 2.0 + 'px'
 		});
 
 
-		this.ui.find('.titlebar .close').click(function(){ ChangeCart.ui.hide(); });
-		this.draggable(this.ui.find('.titlebar'));
+		qs('.titlebar .close').addEventListener('click', function(){ DOM.hide(ChangeCart.ui); });
+		this.draggable(qs('.titlebar'));
 
-		carts.hide();
-		carts.addClass('event_add_cursor');
-		carts.on('click',     function(event){ onCart(event.target.getAttribute('data-id')); })
-			.on('mouseover', function(event){_models[event.target.getAttribute('data-id')].entity.action = 1;})
-			.on('mouseout',  function(event){_models[event.target.getAttribute('data-id')].entity.action = 0;});
+		carts.forEach(function(cart) {
+			DOM.hide(cart);
+			cart.classList.add('event_add_cursor');
+			cart.addEventListener('click', function(event) {
+				onCart(event.target.getAttribute('data-id'));
+			});
+			cart.addEventListener('mouseover', function(event) {
+				_models[event.target.getAttribute('data-id')].entity.action = 1;
+			});
+			cart.addEventListener('mouseout', function(event) {
+				_models[event.target.getAttribute('data-id')].entity.action = 0;
+			});
+		});
 			
-		canvases.each((idx, canvas) => {
+		canvases.forEach(function(canvas) {
 			var cartid = canvas.getAttribute("data-id");
 			var model = {
 				entity: new Entity(),
@@ -108,7 +128,7 @@ define(function(require)
 		var pkt = new PACKET.CZ.REQ_CHANGECART();
 		pkt.num = num;
 		Network.sendPacket(pkt);
-		ChangeCart.ui.hide();
+		DOM.hide(ChangeCart.ui);
 	}
 
 	/**
@@ -116,7 +136,7 @@ define(function(require)
 	 */
 	ChangeCart.onAppend = function onAppend()
 	{
-		this.ui.hide();
+		DOM.hide(this.ui);
 	};
 
 	ChangeCart.onChangeCartSkill = function onChangeCartSkill()
@@ -126,7 +146,7 @@ define(function(require)
 			return;
 		}
 
-		this.ui.show();
+		DOM.show(this.ui);
 
 		var msg = "Change Cart!!";
 
@@ -155,19 +175,21 @@ define(function(require)
 			return;
 		}
 
-		ChangeCart.ui.find('.cart').hide();
+		qsa('.cart').forEach(function(cart) {
+			DOM.hide(cart);
+		});
 		stopAllCart();
 
-		if(blvl > 131) { ChangeCart.ui.find(".cart[data-id='9']").show(); _models['9'].render = true; }
-		if(blvl > 121) { ChangeCart.ui.find(".cart[data-id='8']").show(); _models['8'].render = true; }
-		if(blvl > 111) { ChangeCart.ui.find(".cart[data-id='7']").show(); _models['7'].render = true; }
-		if(blvl > 100) { ChangeCart.ui.find(".cart[data-id='6']").show(); _models['6'].render = true; }
-       	if(blvl > 90)  { ChangeCart.ui.find(".cart[data-id='5']").show(); _models['5'].render = true; }
-		if(blvl > 80)  { ChangeCart.ui.find(".cart[data-id='4']").show(); _models['4'].render = true; }
-		if(blvl > 65)  { ChangeCart.ui.find(".cart[data-id='3']").show(); _models['3'].render = true; }
-		if(blvl > 40)  { ChangeCart.ui.find(".cart[data-id='2']").show(); _models['2'].render = true; }
+		if(blvl > 131) { DOM.show(qs(".cart[data-id='9']")); _models['9'].render = true; }
+		if(blvl > 121) { DOM.show(qs(".cart[data-id='8']")); _models['8'].render = true; }
+		if(blvl > 111) { DOM.show(qs(".cart[data-id='7']")); _models['7'].render = true; }
+		if(blvl > 100) { DOM.show(qs(".cart[data-id='6']")); _models['6'].render = true; }
+       	if(blvl > 90)  { DOM.show(qs(".cart[data-id='5']")); _models['5'].render = true; }
+		if(blvl > 80)  { DOM.show(qs(".cart[data-id='4']")); _models['4'].render = true; }
+		if(blvl > 65)  { DOM.show(qs(".cart[data-id='3']")); _models['3'].render = true; }
+		if(blvl > 40)  { DOM.show(qs(".cart[data-id='2']")); _models['2'].render = true; }
 
-		ChangeCart.ui.find(".cart[data-id='1']").show();
+		DOM.show(qs(".cart[data-id='1']"));
 		_models['1'].render = true;
 	}
 	

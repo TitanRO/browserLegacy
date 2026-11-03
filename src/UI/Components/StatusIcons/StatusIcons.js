@@ -17,7 +17,6 @@ define(function( require )
 	 */
 	var StatusTable        = require('DB/Status/StatusInfo');
 	var DB                 = require('DB/DBManager');
-	var jQuery             = require('Utils/jquery');
 	var Texture            = require('Utils/Texture');
 	var Client             = require('Core/Client');
 	var Renderer           = require('Renderer/Renderer');
@@ -66,7 +65,8 @@ define(function( require )
 	 */
 	StatusIcons.init = function init()
 	{
-		this.ui = jQuery('<div/>').attr('id', 'StatusIcons');
+		this.ui = document.createElement('div');
+		this.ui.id = 'StatusIcons';
 	};
 
 
@@ -93,7 +93,7 @@ define(function( require )
 	 */
 	StatusIcons.clean = function clean()
 	{
-		this.ui.empty();
+		this.ui.innerHTML = '';
 		_status = {};
 	};
 
@@ -158,7 +158,7 @@ define(function( require )
 	function resetElementsPosition()
 	{
 		var element, i, count, x, y;
-		var elements = StatusIcons.ui.find('.state');
+		var elements = StatusIcons.ui.querySelectorAll('.state');
 
 		count = elements.length;
 		x     = 0;
@@ -264,7 +264,7 @@ define(function( require )
 	function addElement(element)
 	{
 		var x, y, count;
-		var elements = StatusIcons.ui.find('.state');
+		var elements = StatusIcons.ui.querySelectorAll('.state');
 		var max = (Renderer.height-166) / 36 | 0;
 
 		count = elements.length;
@@ -274,7 +274,7 @@ define(function( require )
 		element.style.top      = y + 'px';
 		element.style.right    = x + 'px';
 
-		StatusIcons.ui.append(element);
+		StatusIcons.ui.appendChild(element);
 	}
 
 

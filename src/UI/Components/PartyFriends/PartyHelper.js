@@ -19,6 +19,7 @@ define(function(require)
 	var UIComponent    = require('UI/UIComponent');
 	var htmlText       = require('text!./PartyHelper.html');
 	var cssText        = require('text!./PartyHelper.css');
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -49,13 +50,13 @@ define(function(require)
 	PartyHelper.init = function init()
 	{
 		// Avoid drag drop problems
-		this.ui.find('.base').mousedown(function(event){
+		this.ui.querySelector('.base').addEventListener('mousedown', function(event){
 			event.stopImmediatePropagation();
 			return false;
 		});
 
-		this.ui.on('mousedown', '.off', function(){
-			if (PartyHelper.ui.find('.content').hasClass('disabled')) {
+		DOM.addDelegatedEvent(this.ui, 'mousedown', '.off', function(){
+			if (PartyHelper.ui.querySelector('.content').classList.contains('disabled')) {
 				return;
 			}
 
@@ -73,10 +74,10 @@ define(function(require)
 			off.style.backgroundImage = tmp;
 		});
 
-		this.ui.find('.cancel, .close').click(this.remove.bind(this));
-		this.ui.find('.ok').click(onValidate);
+		DOM.addDelegatedEvent(this.ui, 'click', '.cancel, .close', this.remove.bind(this));
+		this.ui.querySelector('.ok').addEventListener('click', onValidate);
 
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 	};
 
 
@@ -87,12 +88,12 @@ define(function(require)
 	{
 		var base = UIManager.getComponent('PartyFriends').ui;
 
-		this.ui.find('.setup, .create, .invite').hide();
-		this.ui.find('.name').val('');
+		this.ui.querySelector('.setup, .create, .invite').style.display = 'none';
+		this.ui.querySelector('.name').value = '';
 
-		this.ui.css({
-			top:  base.css('top'),
-			left: parseInt(base.css('left'), 10) + base.width() + 10
+		DOM.setCss(this.ui, {
+			top:  base.style.top,
+			left: parseInt(base.style.left, 10) + base.offsetWidth + 10
 		});
 	};
 
@@ -102,8 +103,8 @@ define(function(require)
 	 */
 	PartyHelper.onRemove = function onRemove()
 	{
-		this.ui.find('.setup, .create, .invite').hide();
-		this.ui.find('.name').val('');
+		this.ui.querySelector('.setup, .create, .invite').style.display = 'none';
+		this.ui.querySelector('.name').value = '';
 	};
 
 
@@ -114,22 +115,22 @@ define(function(require)
 	 */
 	PartyHelper.setType = function setType( type )
 	{
-		this.ui.find('.content').removeClass('disabled');
+		this.ui.querySelector('.content').classList.remove('disabled');
 
 		switch (type) {
 			case PartyHelper.Type.CREATE:
-				this.ui.find('.setup, .invite').hide();
-				this.ui.find('.create').show();
+				this.ui.querySelector('.setup, .invite').style.display = 'none';
+				this.ui.querySelector('.create').style.display = '';
 				break;
 
 			case PartyHelper.Type.INVITE:
-				this.ui.find('.setup, .create').hide();
-				this.ui.find('.invite').show();
+				this.ui.querySelector('.setup, .create').style.display = 'none';
+				this.ui.querySelector('.invite').style.display = '';
 				break;
 
 			case PartyHelper.Type.SETUP:
-				this.ui.find('.create .invite').hide();
-				this.ui.find('.setup').show();
+				this.ui.querySelector('.create .invite').style.display = 'none';
+				this.ui.querySelector('.setup').style.display = '';
 				break;
 		}
 
@@ -165,7 +166,7 @@ define(function(require)
 			if (options[list[i]] === undefined)
 				continue;
 
-			element = this.ui.find('.' + list[i]).find('.off')[0];
+			element = this.ui.querySelector('.' + list[i]).querySelector('.off');
 
 			if (options[list[i]] == element.dataset.value) {
 				swap(element);
@@ -173,10 +174,10 @@ define(function(require)
 		}
 
 		if (!editable) {
-			this.ui.find('.content').addClass('disabled');
+			this.ui.querySelector('.content').classList.add('disabled');
 		}
 		else {
-			this.ui.find('.content').removeClass('disabled');
+			this.ui.querySelector('.content').classList.remove('disabled');
 		}
 	};
 
@@ -202,18 +203,18 @@ define(function(require)
 
 		switch (_type) {
 			case PartyHelper.Type.CREATE:
-				name = PartyHelper.ui.find('.content .name').val();
+				name = PartyHelper.ui.querySelector('.content .name').value;
 				if (name.length) {
 					PartyFriends.onRequestPartyCreation(
 						name,
-						+PartyHelper.ui.find('.item_share .on').data('value'),
-						+PartyHelper.ui.find('.item_sharing_type .on').data('value')
+						+PartyHelper.ui.querySelector('.item_share .on').getAttribute('data-value'),
+						+PartyHelper.ui.querySelector('.item_sharing_type .on').getAttribute('data-value')
 					);
 				}
 				break;
 
 			case PartyHelper.Type.INVITE:
-				name = PartyHelper.ui.find('.content .name').val();
+				name = PartyHelper.ui.querySelector('.content .name').value;
 				if (name.length) {
 					PartyFriends.onRequestAddingMember(0, name);
 				}
@@ -221,9 +222,9 @@ define(function(require)
 
 			case PartyHelper.Type.SETUP:
 				PartyFriends.onRequestSettingUpdate(
-					+PartyHelper.ui.find('.exp_share .on').data('value'),
-					+PartyHelper.ui.find('.item_share .on').data('value'),
-					+PartyHelper.ui.find('.item_sharing_type .on').data('value')
+					+PartyHelper.ui.querySelector('.exp_share .on').getAttribute('data-value'),
+					+PartyHelper.ui.querySelector('.item_share .on').getAttribute('data-value'),
+					+PartyHelper.ui.querySelector('.item_sharing_type .on').getAttribute('data-value')
 				);
 				break;
 		}

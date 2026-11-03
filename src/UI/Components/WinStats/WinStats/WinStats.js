@@ -15,6 +15,7 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
+	var DOM                = require('Utils/DOM');
 	var UIComponent        = require('UI/UIComponent');
 	var UIManager          = require('UI/UIManager');
 	var Session            = require('Engine/SessionStorage');
@@ -28,6 +29,26 @@ define(function(require)
 	 * Create component
 	 */
 	var WinStats = new UIComponent( 'WinStats', htmlText, cssText );
+
+
+	function qs(selector)
+	{
+		return DOM.qs(WinStats.ui, selector);
+	}
+
+
+	function qsa(selector)
+	{
+		return DOM.qsa(WinStats.ui, selector);
+	}
+
+
+	function setText(selector, value)
+	{
+		qsa(selector).forEach(function(el) {
+			el.textContent = value;
+		});
+	}
 
 
 	/**
@@ -47,21 +68,34 @@ define(function(require)
 	{
 		this.statuspoint = 0;
 
-		this.ui.find('.up button').mousedown(function(){
-			switch (this.className) {
-				case 'str': WinStats.onRequestUpdate( 13, 1 ); break;
-				case 'agi': WinStats.onRequestUpdate( 14, 1 ); break;
-				case 'vit': WinStats.onRequestUpdate( 15, 1 ); break;
-				case 'int': WinStats.onRequestUpdate( 16, 1 ); break;
-				case 'dex': WinStats.onRequestUpdate( 17, 1 ); break;
-				case 'luk': WinStats.onRequestUpdate( 18, 1 ); break;
-			}
+		qsa('.up button').forEach(function(btn) {
+			btn.addEventListener('mousedown', function() {
+				switch (this.className) {
+					case 'str': WinStats.onRequestUpdate( 13, 1 ); break;
+					case 'agi': WinStats.onRequestUpdate( 14, 1 ); break;
+					case 'vit': WinStats.onRequestUpdate( 15, 1 ); break;
+					case 'int': WinStats.onRequestUpdate( 16, 1 ); break;
+					case 'dex': WinStats.onRequestUpdate( 17, 1 ); break;
+					case 'luk': WinStats.onRequestUpdate( 18, 1 ); break;
+				}
+			});
 		});
 
-		this.ui.find('.titlebar .mini').click(function(){ WinStats.ui.find('.panel').toggle(); });
-		this.ui.find('.titlebar .close').click(function(){ WinStats.ui.hide(); });
-		this.draggable(this.ui.find('.titlebar'));
+		var mini = qs('.titlebar .mini');
+		if (mini) {
+			mini.addEventListener('click', function() {
+				DOM.toggleDisplay(qs('.panel'));
+			});
+		}
 
+		var closeBtn = qs('.titlebar .close');
+		if (closeBtn) {
+			closeBtn.addEventListener('click', function() {
+				DOM.hide(WinStats.ui);
+			});
+		}
+
+		this.draggable(qs('.titlebar'));
 	};
 
 	/**
@@ -88,13 +122,13 @@ define(function(require)
 
 		this.stack.length = 0;
 
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight) + 'px',
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth) + 'px'
 		});
 
 		if (!_preferences.show) {
-			this.ui.hide();
+			DOM.hide(this.ui);
 		}
 
 	};
@@ -109,7 +143,7 @@ define(function(require)
 	 */
 	WinStats.update = function update( type, val )
 	{
-		var str;
+		var str, btn;
 
 		if (!this.__loaded) {
 			this.stack.push(arguments);
@@ -119,14 +153,16 @@ define(function(require)
 		switch (type) {
 			case 'statuspoint':
 				this.statuspoint = val;
-				this.ui.find('.requirements div').each(function(){
-					WinStats.ui.find('.up .'+ this.className)
-					.css({
-						'opacity': parseInt(this.textContent, 10) <= val ? 1 : 0,
-						'pointer-events': parseInt(this.textContent, 10) <= val ? 'initial' : 'none'
-					});
+				qsa('.requirements div').forEach(function(div) {
+					btn = qs('.up .' + div.className);
+					if (btn) {
+						DOM.setCss(btn, {
+							opacity: parseInt(div.textContent, 10) <= val ? 1 : 0,
+							pointerEvents: parseInt(div.textContent, 10) <= val ? 'initial' : 'none'
+						});
+					}
 				});
-				this.ui.find('.' + type).text(val);
+				setText('.' + type, val);
 				break;
 
 			case 'guildname':
@@ -137,16 +173,16 @@ define(function(require)
 			case 'hit':
 			case 'flee':
 			case 'critical':
-				this.ui.find('.' + type).text(val);
+				setText('.' + type, val);
 				break;
 
 			case 'aspd':
-				this.ui.find('.' + type).text( Math.floor(200-val/10) );
+				setText('.' + type, Math.floor(200 - val / 10));
 				break;
 
 			case 'matak2':
-				if(!Session.isRenewal){
-					this.ui.find('.' + type).text('~ '+val);
+				if (!Session.isRenewal) {
+					setText('.' + type, '~ ' + val);
 					break;
 				}
 			case 'atak2':
@@ -154,7 +190,7 @@ define(function(require)
 			case 'mdef2':
 			case 'flee2':
 				str = val < 0 ? '- ' + (-val) : '+ ' + val;
-				this.ui.find('.' + type).text(str);
+				setText('.' + type, str);
 				break;
 
 			case 'str':
@@ -163,7 +199,7 @@ define(function(require)
 			case 'int':
 			case 'dex':
 			case 'luk':
-				this.ui.find('.stats .'+ type).text(val);
+				setText('.stats .' + type, val);
 				break;
 
 			case 'str2':
@@ -173,7 +209,7 @@ define(function(require)
 			case 'dex2':
 			case 'luk2':
 				str = val < 0 ? '- ' + (-val) : val > 0 ? '+' + val : '';
-				this.ui.find('.bonus .'+ type.replace('2','')).text( str );
+				setText('.bonus .' + type.replace('2', ''), str);
 				break;
 
 			case 'str3':
@@ -182,11 +218,14 @@ define(function(require)
 			case 'int3':
 			case 'dex3':
 			case 'luk3':
-				this.ui.find('.requirements .'+ type.replace('3','')).text(val);
-				this.ui.find('.up .'+ type.replace('3','')).css({
-					'opacity': val <= this.statuspoint ? 1 : 0,
-					'pointer-events': val <= this.statuspoint ? 'initial' : 'none'
-				});
+				setText('.requirements .' + type.replace('3', ''), val);
+				btn = qs('.up .' + type.replace('3', ''));
+				if (btn) {
+					DOM.setCss(btn, {
+						opacity: val <= this.statuspoint ? 1 : 0,
+						pointerEvents: val <= this.statuspoint ? 'initial' : 'none'
+					});
+				}
 				break;
 		}
 	};
@@ -196,9 +235,9 @@ define(function(require)
 	 */
 	WinStats.toggle = function toggle()
 	{
-		this.ui.toggle();
+		DOM.toggleDisplay(this.ui);
 
-		if (this.ui.is(':visible')) {
+		if (DOM.isVisible(this.ui)) {
 			this.focus();
 		}
 	};
@@ -212,7 +251,7 @@ define(function(require)
 	{
 		switch (key.cmd) {
 			case 'TOGGLE':
-				this.ui.toggle();
+				DOM.toggleDisplay(this.ui);
 				break;
 		}
 	};
@@ -222,15 +261,18 @@ define(function(require)
 	 */
 	WinStats.onRemove = function onRemove()
 	{
+		var panel;
+
 		// Save preferences
 		if (_preferences) {
-			_preferences.show   =  this.ui.is(':visible');
-			_preferences.reduce =  this.ui.find('.panel').css('display') === 'none';
-			_preferences.y      =  parseInt(this.ui.css('top'), 10);
-			_preferences.x      =  parseInt(this.ui.css('left'), 10);
+			panel = qs('.panel');
+			_preferences.show   =  DOM.isVisible(this.ui);
+			_preferences.reduce =  panel ? panel.style.display === 'none' : false;
+			_preferences.y      =  parseInt(this.ui.style.top, 10);
+			_preferences.x      =  parseInt(this.ui.style.left, 10);
 			_preferences.save();
 		}
-	}
+	};
 
 	/**
 	 * Abstract method to define

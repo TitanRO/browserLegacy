@@ -21,7 +21,6 @@ define(function(require)
 	var UIManager          = require('UI/UIManager');
 	var UIComponent        = require('UI/UIComponent');
 	var Equipment          = require('UI/Components/Equipment/EquipmentV0/EquipmentV0');
-	var jQuery             = require('Utils/jquery');
 
 
 	/**

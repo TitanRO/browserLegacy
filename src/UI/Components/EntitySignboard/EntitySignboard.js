@@ -38,18 +38,18 @@ define(function(require)
 	 */
 	EntitySignboard.onAppend = function onAppend()
 	{
-		this.ui.find('button').dblclick(function(){
+		this.ui.querySelector('button').addEventListener('dblclick', function(){
 			if (this.onEnter) {
 				this.onEnter();
 			}
 		}.bind(this));
 
 		// Avoid player to move to the cell
-		this.ui.mousedown(function(){
+		this.ui.addEventListener('mousedown', function(){
 			return false;
 		});
 
-		this.ui.css('zIndex', 45);
+		this.ui.style.zIndex = 45;
 	};
 
 
@@ -58,8 +58,8 @@ define(function(require)
 	 */
 	EntitySignboard.onRemove = function onRemove()
 	{
-		this.ui.find('button').unbind();
-		//this.ui.find('button').removeClass('icon-only');
+		// Clean up event listeners if needed
+		//this.ui.querySelector('button').classList.remove('icon-only');
 	};
 
 
@@ -71,15 +71,15 @@ define(function(require)
 	 */
 	EntitySignboard.setTitle = function setTitle( title, url )
 	{
-		this.ui.find('button').css('backgroundImage', 'url('+ url +')');
-		this.ui.find('.title, .overlay').text(title);
-
-		const titleElement = this.ui.find('.title');
-		const overlayElement = this.ui.find('.overlay');
+		this.ui.querySelector('button').style.backgroundImage = 'url('+ url +')';
+		var titleEl = this.ui.querySelector('.title');
+		var overlayEl = this.ui.querySelector('.overlay');
+		if (titleEl) titleEl.textContent = title;
+		if (overlayEl) overlayEl.textContent = title;
 
 		// Check if the title is overflowing
-		if (!isOverflowing(titleElement[0])) {
-			overlayElement.hide(); // Hide the overlay if no overflow
+		if (titleEl && !isOverflowing(titleEl)) {
+			if (overlayEl) overlayEl.style.display = 'none'; // Hide the overlay if no overflow
 		}
 	};
 
@@ -92,10 +92,16 @@ define(function(require)
 	 */
 	EntitySignboard.setIconOnly = function setIconOnly(url)
 	{
-		this.ui.css('backgroundImage', 'none'); // Hide the background image of the entire signboard
-		this.ui.find('button').addClass('icon-only').css('backgroundImage', 'url('+ url +')');
-		this.ui.find('.title').hide();
-		this.ui.find('.overlay').hide();
+		this.ui.style.backgroundImage = 'none'; // Hide the background image of the entire signboard
+		var btn = this.ui.querySelector('button');
+		if (btn) {
+			btn.classList.add('icon-only');
+			btn.style.backgroundImage = 'url('+ url +')';
+		}
+		var titleEl = this.ui.querySelector('.title');
+		var overlayEl = this.ui.querySelector('.overlay');
+		if (titleEl) titleEl.style.display = 'none';
+		if (overlayEl) overlayEl.style.display = 'none';
 	};
 
 	// Function to check if an element's content is overflowing

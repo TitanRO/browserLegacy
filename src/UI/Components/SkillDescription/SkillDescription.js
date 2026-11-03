@@ -15,7 +15,6 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
-	var jQuery      = require('Utils/jquery');
 	var DB          = require('DB/DBManager');
 	var Renderer    = require('Renderer/Renderer');
 	var KEYS        = require('Controls/KeyEventHandler');
@@ -24,6 +23,7 @@ define(function(require)
 	var UIComponent = require('UI/UIComponent');
 	var htmlText    = require('text!./SkillDescription.html');
 	var cssText     = require('text!./SkillDescription.css');
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -58,9 +58,7 @@ define(function(require)
 	 */
 	SkillDescription.onAppend = function onAppend()
 	{
-		// Seems like "EscapeWindow" is execute first, push it before.
-		var events = jQuery._data( window, 'events').keydown;
-		events.unshift( events.pop() );
+		// Note: jQuery._data keydown reordering removed (not possible with native events)
 	};
 
 
@@ -78,7 +76,7 @@ define(function(require)
 	 */
 	SkillDescription.init = function init()
 	{
-		this.ui.find('.close').click(function(){
+		this.ui.querySelector('.close').addEventListener('click', function(){
 			this.remove();
 		}.bind(this));
 
@@ -94,11 +92,11 @@ define(function(require)
 	SkillDescription.setSkill = function setSkill( id )
 	{
 		this.uid = id;
-		this.ui.find('.content').text(DB.getSkillDescription(id));
+		this.ui.querySelector('.content').textContent = DB.getSkillDescription(id);
 
-		this.ui.css({
-			top:  Math.min( Mouse.screen.y + 10, Renderer.height - this.ui.height()),
-			left: Math.min( Mouse.screen.x + 10, Renderer.width - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Mouse.screen.y + 10, Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Mouse.screen.x + 10, Renderer.width - this.ui.offsetWidth)
 		});
 	};
 

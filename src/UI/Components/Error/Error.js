@@ -18,7 +18,6 @@ define(function( require )
 	 */
 	var _htmlText    = require('text!./Error.html');
 	var _cssText     = require('text!./Error.css');
-	var jQuery       = require('Vendors/jquery');
 
 
 	/**
@@ -32,17 +31,22 @@ define(function( require )
 	 */
 	Error.init = function init()
 	{
-		this.ui = jQuery(_htmlText);
+		var div = document.createElement('div');
+		div.innerHTML = _htmlText;
+		this.ui = div.firstElementChild || div;
 
 		// Add view to html
-		var style = jQuery('style:first');
-		if (!style.length) {
-			style = jQuery('<style type="text/css"></style>').appendTo('head');
+		var style = document.querySelector('style');
+		if (!style) {
+			style = document.createElement('style');
+			style.type = 'text/css';
+			document.head.appendChild(style);
 		}
-		style.append('\n' + _cssText);
-		jQuery('body').html(this.ui);
+		style.appendChild(document.createTextNode('\n' + _cssText));
+		document.body.innerHTML = '';
+		document.body.appendChild(this.ui);
 
-		this.ui.css('backgroundImage', 'url('+ require.toUrl('./angeling.png') +')');
+		this.ui.style.backgroundImage = 'url('+ require.toUrl('./angeling.png') +')';
 	};
 
 
@@ -66,9 +70,10 @@ define(function( require )
 			this.init();
 		}
 
-		this.ui.find('.trace').append(
-			error  + '<br />'
-		);
+		var traceEl = this.ui.querySelector('.trace');
+		if (traceEl) {
+			traceEl.innerHTML += error + '<br />';
+		}
 	};
 
 

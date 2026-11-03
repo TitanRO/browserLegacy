@@ -19,7 +19,6 @@ define(function(require)
 	var SkillInfo            = require('DB/Skills/SkillInfo');
 	var SkillTreeView        = require('DB/Skills/SkillTreeView');
 	var Session              = require('Engine/SessionStorage');
-	var jQuery               = require('Utils/jquery');
 	var Client               = require('Core/Client');
 	var Preferences          = require('Core/Preferences');
 	var Renderer             = require('Renderer/Renderer');
@@ -30,6 +29,7 @@ define(function(require)
 	var SkillDescription     = require('UI/Components/SkillDescription/SkillDescription');
 	var htmlText             = require('text!./SkillListV0.html');
 	var cssText              = require('text!./SkillListV0.css');
+	var DOM             = require('Utils/DOM');
 
 
 
@@ -93,39 +93,43 @@ define(function(require)
 	 */
 	SkillListV0.init = function init()
 	{
-		this.ui.find('.titlebar .base').mousedown(stopPropagation);
-		this.ui.find('.footer .extend').mousedown(onResize);
-		this.ui.find('.titlebar .close').click(onClose);
-		this.ui.find('.titlebar .mini').click(onMini);
-		this.ui.find('.view_skill_info').change(onToggleSkillInfo);
-		this.ui.find('.reset').click(onResetChoice);
-		this.ui.find('.apply').click(onApplyChoice);
+		this.ui.querySelector('.titlebar .base').addEventListener('mousedown', stopPropagation);
+		this.ui.querySelector('.footer .extend').addEventListener('mousedown', onResize);
+		this.ui.querySelector('.titlebar .close').addEventListener('click', onClose);
+		this.ui.querySelector('.titlebar .mini').addEventListener('click', onMini);
+		this.ui.querySelector('.view_skill_info').addEventListener('change', onToggleSkillInfo);
+		this.ui.querySelector('.reset').addEventListener('click', onResetChoice);
+		this.ui.querySelector('.apply').addEventListener('click', onApplyChoice);
 
 		// Get level up button
-		_btnIncSkill = this.ui.find('.btn.levelup').detach().click(onRequestSkillUp);
+		_btnIncSkill = this.ui.querySelector('.btn.levelup');
+		DOM.detach(_btnIncSkill);
+		_btnIncSkill.addEventListener('click', onRequestSkillUp);
 
 		// Get button to open skill when level up
-		_btnLevelUp = jQuery('#lvlup_job').detach();
-		_btnLevelUp.click(function(){
-			_btnLevelUp.detach();
-			SkillListV0.ui.show();
-			SkillListV0.ui.parent().append(SkillListV0.ui);
-		}).mousedown(stopPropagation);
+		_btnLevelUp = DOM.detach(this.ui.querySelector('#lvlup_job'));
+		if (_btnLevelUp) {
+			_btnLevelUp.addEventListener('click', function(){
+				DOM.detach(_btnLevelUp);
+				SkillListV0.ui.style.display = '';
+				if (SkillListV0.ui.parentNode) SkillListV0.ui.parentNode.appendChild(SkillListV0.ui);
+			});
+			_btnLevelUp.addEventListener('mousedown', stopPropagation);
+		}
 
 		// Bind skills
-		this.ui
-			.on('dblclick',    '.skill .icon, .skill .name', onRequestUseSkill)
-			.on('contextmenu', '.skill .icon, .skill .name', onRequestSkillInfo)
-			.on('mousedown',   '.selectable', onSkillFocus)
-			.on('mouseover',   '.skillCol .skill .icon, .skill .name', onRequestSkillInfo)
-			.on('mouseout',    '.skillCol .skill .icon, .skill .name', onSkillDescriptionRemove)
-			.on('mouseover',   '.skillCol .skill .icon, .skill .name', onNecessarySkills)
-			.on('mouseout',    '.skillCol .skill .icon, .skill .name', onNecessarySkillsRemove)
-			.on('click',       '.skillCol .skill .icon, .skill .name', onRememberChoice)
-			.on('dragstart',   '.skill',      onSkillDragStart)
-			.on('dragend',     '.skill',      onSkillDragEnd);
+		DOM.addDelegatedEvent(this.ui, 'dblclick', '.skill .icon, .skill .name', onRequestUseSkill);
+		DOM.addDelegatedEvent(this.ui, 'contextmenu', '.skill .icon, .skill .name', onRequestSkillInfo);
+		DOM.addDelegatedEvent(this.ui, 'mousedown', '.selectable', onSkillFocus);
+		DOM.addDelegatedEvent(this.ui, 'mouseover', '.skillCol .skill .icon, .skill .name', onRequestSkillInfo);
+		DOM.addDelegatedEvent(this.ui, 'mouseout', '.skillCol .skill .icon, .skill .name', onSkillDescriptionRemove);
+		DOM.addDelegatedEvent(this.ui, 'mouseover', '.skillCol .skill .icon, .skill .name', onNecessarySkills);
+		DOM.addDelegatedEvent(this.ui, 'mouseout', '.skillCol .skill .icon, .skill .name', onNecessarySkillsRemove);
+		DOM.addDelegatedEvent(this.ui, 'click', '.skillCol .skill .icon, .skill .name', onRememberChoice);
+		DOM.addDelegatedEvent(this.ui, 'dragstart', '.skill', onSkillDragStart);
+		DOM.addDelegatedEvent(this.ui, 'dragend', '.skill', onSkillDragEnd);
 
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 
 		Client.loadFile( DB.INTERFACE_PATH + 'basic_interface/arw_right.bmp', function(data){
 			rArrow = 'url('+data+')';
@@ -143,16 +147,16 @@ define(function(require)
 	{
 		// Apply preferences
 		if (!_preferences.show) {
-			this.ui.hide();
+			this.ui.style.display = 'none';
 		}
 
 		resize(_preferences.width, _preferences.height);
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 
-		this.ui.find('.view_skill_info').attr('checked', _preferences.skillInfo);
+		this.ui.querySelector('.view_skill_info').setAttribute('checked', _preferences.skillInfo);
 	};
 
 
@@ -161,14 +165,14 @@ define(function(require)
 	 */
 	SkillListV0.onRemove = function onRemove()
 	{
-		_btnLevelUp.detach();
+		DOM.detach(_btnLevelUp);
 
 		// Save preferences
-		_preferences.show   =  this.ui.is(':visible');
-		_preferences.y      =  parseInt(this.ui.css('top'), 10);
-		_preferences.x      =  parseInt(this.ui.css('left'), 10);
-		_preferences.width  =  Math.floor( this.ui.find('.content').width()  / 32 );
-		_preferences.height =  Math.floor( this.ui.find('.content').height() / 32 );
+		_preferences.show   =  DOM.isVisible(this.ui);
+		_preferences.y      =  parseInt(this.ui.style.top, 10);
+		_preferences.x      =  parseInt(this.ui.style.left, 10);
+		_preferences.width  =  Math.floor( this.ui.querySelector('.content').offsetWidth  / 32 );
+		_preferences.height =  Math.floor( this.ui.querySelector('.content').offsetHeight / 32 );
 		_preferences.save();
 	};
 
@@ -178,11 +182,11 @@ define(function(require)
 	 */
 	SkillListV0.toggle = function toggle()
 	{
-		this.ui.toggle();
+		DOM.toggleDisplay(this.ui);
 
-		if (this.ui.is(':visible')) {
+		if (DOM.isVisible(this.ui)) {
 			this.focus();
-			_btnLevelUp.detach();
+			DOM.detach(_btnLevelUp);
 		}
 	};
 
@@ -196,7 +200,7 @@ define(function(require)
 	{
 		switch (key.cmd) {
 			case 'TOGGLE':
-				this.toggle();
+				DOM.toggleDisplay(this.ui);
 				break;
 		}
 		onResetChoice();
@@ -208,7 +212,7 @@ define(function(require)
 	 */
 	SkillListV0.setSkills = function setSkills( skills )
 	{
-		SkillListV0.ui.find('.upgradable').removeClass('upgradable');
+		SkillListV0.ui.querySelectorAll('.upgradable').forEach(function(el) { el.classList.remove('upgradable'); });
 
 		skillPosition = getSkillPosition(Session.Character.job);
 		createSkillDependencyTree();
@@ -220,8 +224,8 @@ define(function(require)
 		}
 
 		_list.length = 0;
-		this.ui.find('.content table').empty();
-		this.ui.find('.skillCol').empty();
+		this.ui.querySelector('.content table').innerHTML = '';
+		this.ui.querySelector('.skillCol').innerHTML = '';
 
 		for (i = 0, count = skills.length; i < count; ++i) {
 			this.addSkill( skills[i] );
@@ -243,7 +247,7 @@ define(function(require)
 				const [skid, pos] = entry;
 
 				// skip list and beforeJob
-				if (!jQuery.isNumeric(skid)) {
+				if (isNaN(+skid)) {
 					return;
 				}
 
@@ -276,10 +280,10 @@ define(function(require)
 			var element = '<div class="counterSkill">' + count + '</div>';
 			skillPosition.forEach(function (items, list) {
 				if (items[skillId] !== undefined) {
-					var skillbox = SkillListV0.ui.find('#positionSkills' + list + ' .s' + items[skillId]);
-					if (skillbox.children().hasClass('disabled') || showAll) {
-						skillbox.addClass('needleSkill');
-						if (count !== null) skillbox.append(element);
+					var skillbox = SkillListV0.ui.querySelector('#positionSkills' + list + ' .s' + items[skillId]);
+					if (skillbox && ((skillbox.children[0] && skillbox.children[0].classList.contains('disabled')) || showAll)) {
+						skillbox.classList.add('needleSkill');
+						if (count !== null) skillbox.insertAdjacentHTML('beforeend', element);
 					}
 				}
 			});
@@ -298,12 +302,12 @@ define(function(require)
 	 */
 	function onRememberChoice()
 	{
-		var main = jQuery(this).parent();
+		var main = this.parentNode;
 
-		if (!main.hasClass('skill')) {
-			main = main.parent();
+		if (!main.classList.contains('skill')) {
+			main = main.parentNode;
 		}
-		var skillId = parseInt(main.data('index'), 10);
+		var skillId = parseInt(main.getAttribute('data-index'), 10);
 
 		rememberChoice = setRememberChoice(skillId);
 
@@ -311,18 +315,20 @@ define(function(require)
 		rememberChoice.forEach(function (item, skId) {
 			if (!rememberChoice[skId]['isQuest'] && totalCounter < _points) {
 				var sk = skillDependencyTree[skId];
-				var skillbox = SkillListV0.ui.find('#positionSkills' + sk.list + ' .s' + sk.position);
-				if (skillbox.find('.current').text() != sk.MaxLv ) {
+				var skillbox = SkillListV0.ui.querySelector('#positionSkills' + sk.list + ' .s' + sk.position);
+				if (skillbox && skillbox.querySelector('.current').textContent != sk.MaxLv ) {
 					totalCounter += rememberChoice[skId]['count'];
-					skillbox.children().removeClass('disabled');
-					skillbox.find('.level').show();
-					skillbox.find('.current').empty().append(rememberChoice[skId]['count'])
-					skillbox.find('.max').empty().append(rememberChoice[skId]['count'])
+					Array.from(skillbox.children).forEach(function(ch) { ch.classList.remove('disabled'); });
+					skillbox.querySelector('.level').style.display = '';
+					var cur = skillbox.querySelector('.current');
+					if (cur) cur.textContent = rememberChoice[skId]['count'];
+					var mx = skillbox.querySelector('.max');
+					if (mx) mx.textContent = rememberChoice[skId]['count'];
 				}
 			}
 		});
 
-		SkillListV0.ui.find('.skpoints_count').text(_points - totalCounter +'/'+_points);
+		SkillListV0.ui.querySelector('.skpoints_count').textContent = _points - totalCounter +'/'+_points;
 	}
 
 
@@ -367,7 +373,7 @@ define(function(require)
 
 			Object.entries(rememberChoice[skillId]).forEach(entry => {
 				const [key, value] = entry;
-				if (jQuery.isNumeric(key) && value.isQuest) {
+				if (!isNaN(+key) && value.isQuest) {
 					rememberChoice[skillId]['isQuest'] = value.isQuest;
 				}
 			});
@@ -408,7 +414,7 @@ define(function(require)
 		}
 
 		// Already in list, update it instead of duplicating it
-		if (this.ui.find('.skill.id' + skill.SKID).length) {
+		if (this.ui.querySelector('.skill.id' + skill.SKID)) {
 			this.updateSkill( skill );
 			return;
 		}
@@ -430,10 +436,10 @@ define(function(require)
 			var sk        = SkillInfo[ key ];
 			var className = 'disabled';
 			if (sk !== undefined) {
-				var element   = jQuery(
+				var element = DOM.createElement(
 					'<div class="skill id' + key + ' ' + className + '" data-index="'+ key +'" draggable="true">' +
 					'<div class="name">' +
-					jQuery.escape(sk.SkillName).substr(0, 7)  +'...<br/>' +
+					DOM.escapeHtml(sk.SkillName).substr(0, 7)  +'...<br/>' +
 					'</div>' +
 					'<div class="icon"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" width="24" height="24" /></div>' +
 					'<div class=selectable>' +
@@ -447,24 +453,28 @@ define(function(require)
 					'</div>'
 				);
 
-				if (rArrow) element.find('.level .currentUp').css('background-image', rArrow);
-				if (lArrow) element.find('.level .currentDown').css('background-image', lArrow);
+				if (sk.bSeperateLv) {
+					if (rArrow) element.querySelector('.level .currentUp').style.backgroundImage = rArrow;
+					if (lArrow) element.querySelector('.level .currentDown').style.backgroundImage = lArrow;
 
-				element.find('.level .currentUp').click( function(){ skillLevelSelectUp(0); } );
-				element.find('.level .currentDown').click( function(){ skillLevelSelectDown(0); } );
+					element.querySelector('.level .currentUp').addEventListener('click',  function(){ skillLevelSelectUp(0); } );
+					element.querySelector('.level .currentDown').addEventListener('click',  function(){ skillLevelSelectDown(0); } );
+				}
 
 				if (value !== undefined) {
-					var box = SkillListV0.ui.find('#positionSkills' + list + ' .s'+value);
-					// show added cells
-					if (key < 41) box.parent().show();
-					// show preview skill
-					if (box.is(':empty')) {
-						box.append(element);
+					var box = SkillListV0.ui.querySelector('#positionSkills' + list + ' .s'+value);
+					if (box) {
+						// show added cells
+						if (key < 41 && box.parentNode) box.parentNode.style.display = '';
+						// show preview skill
+						if (!box.hasChildNodes()) {
+							box.appendChild(element);
+						}
 					}
 				}
 
 				Client.loadFile( DB.INTERFACE_PATH + 'item/' + sk.Name + '.bmp', function(data){
-					element.find('.icon img').attr('src', data);
+					element.querySelector('.icon img').setAttribute('src', data);
 				});
 			}
 		});
@@ -474,12 +484,12 @@ define(function(require)
 	SkillListV0.addSkillBig = function addSkillBig( skill )
 	{
 		var sk        = SkillInfo[ skill.SKID ];
-		var levelup   = _btnIncSkill.clone(true);
+		var levelup   = _btnIncSkill.cloneNode(true);
 		var className = !skill.level ? 'disabled' : skill.type ? 'active' : 'passive';
-		var element   = jQuery(
+		var element   = DOM.createElement(
 			'<div class="skill id' + skill.SKID + ' ' + className + '" data-index="'+ skill.SKID +'" draggable="true">' +
 			'<div class="name">' +
-			jQuery.escape(sk.SkillName).substr(0, 7)  +'...<br/>' +
+			DOM.escapeHtml(sk.SkillName).substr(0, 7)  +'...<br/>' +
 			'</div>' +
 			'<div class="icon"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" width="24" height="24" /></div>' +
 			'<div class="levelupcontainer"></div>' +
@@ -494,28 +504,32 @@ define(function(require)
 			'</div>'
 		);
 
-		if (rArrow) element.find('.level .currentUp').css('background-image', rArrow);
-		if (lArrow) element.find('.level .currentDown').css('background-image', lArrow);
+		if (sk.bSeperateLv) {
+			if (rArrow) element.querySelector('.level .currentUp').style.backgroundImage = rArrow;
+			if (lArrow) element.querySelector('.level .currentDown').style.backgroundImage = lArrow;
 
-		element.find('.level .currentUp').click( function(){ skillLevelSelectUp(skill); } );
-		element.find('.level .currentDown').click( function(){ skillLevelSelectDown(skill); } );
+			element.querySelector('.level .currentUp').addEventListener('click',  function(){ skillLevelSelectUp(skill); } );
+			element.querySelector('.level .currentDown').addEventListener('click',  function(){ skillLevelSelectDown(skill); } );
+		}
 
 		skillPosition.forEach(function (items, list) {
 			if (items[skill.SKID] !== undefined) {
-				var box = SkillListV0.ui.find('#positionSkills' + list + ' .s'+items[skill.SKID]);
-				if (!box.is(':empty')) {
-					box.empty();
-				}
-				box.append(element);
+				var box = SkillListV0.ui.querySelector('#positionSkills' + list + ' .s'+items[skill.SKID]);
+				if (box) {
+					if (box.hasChildNodes()) {
+						box.innerHTML = '';
+					}
+					box.appendChild(element);
 
-				if (skill.upgradable) {
-					box.addClass('upgradable')
+					if (skill.upgradable) {
+						box.classList.add('upgradable');
+					}
 				}
 			}
 		});
 
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + sk.Name + '.bmp', function(data){
-			element.find('.icon img').attr('src', data);
+			element.querySelector('.icon img').setAttribute('src', data);
 		});
 	}
 
@@ -523,15 +537,15 @@ define(function(require)
 	SkillListV0.addSkillMini = function addSkillMini( skill )
 	{
 		var sk        = SkillInfo[ skill.SKID ];
-		var levelup   = _btnIncSkill.clone(true);
+		var levelup   = _btnIncSkill.cloneNode(true);
 		var className = !skill.level ? 'disabled' : skill.type ? 'active' : 'passive';
-		var element   = jQuery(
+		var element   = DOM.createElement(
 			'<tr class="skill id' + skill.SKID + ' ' + className + '" data-index="'+ skill.SKID +'" draggable="true">' +
 			'<td class="icon"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" width="24" height="24" /></td>' +
 			'<td class="levelupcontainer"></td>' +
 			'<td class=selectable>' +
 			'<div class="name">' +
-			jQuery.escape(sk.SkillName)  +'<br/>' +
+			DOM.escapeHtml(sk.SkillName)  +'<br/>' +
 			'<span class="level">' +
 			(
 				sk.bSeperateLv ? '<button class="currentDown"></button>Lv : <span class="current">'+ skill.level + '</span> / <span class="max">' + skill.level + '</span><button class="currentUp"></button>'
@@ -551,21 +565,24 @@ define(function(require)
 		);
 
 		if (!skill.upgradable || !_points) {
-			levelup.hide();
+			levelup.style.display = 'none';
 		}
 
-		element.find('.levelupcontainer').append( levelup );
+		element.querySelector('.levelupcontainer').appendChild( levelup );
 
-		if (rArrow) element.find('.level .currentUp').css('background-image', rArrow);
-		if (lArrow) element.find('.level .currentDown').css('background-image', lArrow);
+		if (sk.bSeperateLv) {
+			if (rArrow) element.querySelector('.level .currentUp').style.backgroundImage = rArrow;
+			if (lArrow) element.querySelector('.level .currentDown').style.backgroundImage = lArrow;
 
-		element.find('.level .currentUp').click( function(){ skillLevelSelectUp(skill);  } );
-		element.find('.level .currentDown').click( function(){ skillLevelSelectDown(skill); } );
-		SkillListV0.ui.find('.content table').append(element);
+			element.querySelector('.level .currentUp').addEventListener('click',  function(){ skillLevelSelectUp(skill);  } );
+			element.querySelector('.level .currentDown').addEventListener('click',  function(){ skillLevelSelectDown(skill); } );
+		}
+
+		SkillListV0.ui.querySelector('.content table').appendChild(element);
 		this.parseHTML.call(levelup);
 
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + sk.Name + '.bmp', function(data){
-			element.find('.icon img').attr('src', data);
+			element.querySelector('.icon img').setAttribute('src', data);
 		});
 
 		_list.push(skill);
@@ -606,21 +623,21 @@ define(function(require)
 		}
 
 		// Update UI
-		element = this.ui.find('.skill.id' + skill.SKID);
-		element.find('.level .current, .level .max').text(skill.level);
+		element = this.ui.querySelector('.skill.id' + skill.SKID);
+		element.querySelector('.level .current, .level .max').textContent = skill.level;
 		if(skill.selectedLevel){
-			element.find('.level .current').text(skill.selectedLevel);
+			element.querySelector('.level .current').textContent = skill.selectedLevel;
 		}
-		element.find('.spcost').text(skill.spcost);
+		element.querySelector('.spcost').textContent = skill.spcost;
 
-		element.removeClass('active passive disabled');
-		element.addClass(!skill.level ? 'disabled' : skill.type ? 'active' : 'passive');
+		element.classList.remove('active', 'passive', 'disabled');
+		element.classList.add(!skill.level ? 'disabled' : skill.type ? 'active' : 'passive');
 
 		if (skill.upgradable && _points) {
-			element.find('.levelup').show();
+			element.querySelector('.levelup').style.display = '';
 		}
 		else {
-			element.find('.levelup').hide();
+			element.querySelector('.levelup').style.display = 'none';
 		}
 
 		this.onUpdateSkill( skill.SKID, skill.level);
@@ -674,7 +691,7 @@ define(function(require)
 	SkillListV0.setPoints = function SetPoints( amount )
 	{
 		var i, count;
-		this.ui.find('.skpoints_count').text(amount);
+		this.ui.querySelector('.skpoints_count').textContent = amount;
 
 		// Do not need to update the UI
 		if ((!_points) === (!amount)) {
@@ -687,10 +704,10 @@ define(function(require)
 
 		for (i = 0; i < count; ++i) {
 			if (_list[i].upgradable && amount) {
-				this.ui.find('.skill.id' + _list[i].SKID + ' .levelup').show();
+				this.ui.querySelector('.skill.id' + _list[i].SKID + ' .levelup').style.display = '';
 			}
 			else {
-				this.ui.find('.skill.id' + _list[i].SKID + ' .levelup').hide();
+				this.ui.querySelector('.skill.id' + _list[i].SKID + ' .levelup').style.display = 'none';
 			}
 		}
 	};
@@ -701,7 +718,7 @@ define(function(require)
 	 */
 	SkillListV0.onLevelUp = function onLevelUp()
 	{
-		_btnLevelUp.appendTo('body');
+		document.body.appendChild(_btnLevelUp);
 	};
 
 
@@ -741,8 +758,8 @@ define(function(require)
 	function onResize()
 	{
 		var ui      = SkillListV0.ui;
-		var top     = ui.position().top;
-		var left    = ui.position().left;
+		var top     = DOM.getPosition(ui).top;
+		var left    = DOM.getPosition(ui).left;
 		var lastWidth  = 0;
 		var lastHeight = 0;
 		var _Interval;
@@ -772,12 +789,13 @@ define(function(require)
 		_Interval = setInterval(resizing, 30);
 
 		// Stop resizing on left click
-		jQuery(window).on('mouseup.resize', function(event){
+		var _resizeHandler = function(event) {
 			if (event.which === 1) {
 				clearInterval(_Interval);
-				jQuery(window).off('mouseup.resize');
+				window.removeEventListener('mouseup', _resizeHandler);
 			}
-		});
+		};
+		window.addEventListener('mouseup', _resizeHandler);
 	}
 
 
@@ -792,22 +810,22 @@ define(function(require)
 		if (_preferences.mini) {
 			width  = Math.min( Math.max(width,  8), 8);
 			height = Math.min( Math.max(height, 4), 10);
-			SkillListV0.ui.find('.extend').show();
-			SkillListV0.ui.find('.content').show();
-			SkillListV0.ui.find('.contentbig').hide();
-			SkillListV0.ui.find('.footer .btn').hide();
-			SkillListV0.ui.find('.content').css({
+			SkillListV0.ui.querySelector('.extend').style.display = '';
+			SkillListV0.ui.querySelector('.content').style.display = '';
+			SkillListV0.ui.querySelector('.contentbig').style.display = 'none';
+			SkillListV0.ui.querySelector('.footer .btn').style.display = 'none';
+			DOM.setCss(SkillListV0.ui.querySelector('.content'), {
 				width:  width  * 32,
 				height: height * 32
 			});
 		} else {
 			width  = 17;
 			height = 12;
-			SkillListV0.ui.find('.extend').hide();
-			SkillListV0.ui.find('.content').hide();
-			SkillListV0.ui.find('.contentbig').show();
-			SkillListV0.ui.find('.footer .btn').show();
-			SkillListV0.ui.find('.contentbig').css({
+			SkillListV0.ui.querySelector('.extend').style.display = 'none';
+			SkillListV0.ui.querySelector('.content').style.display = 'none';
+			SkillListV0.ui.querySelector('.contentbig').style.display = '';
+			SkillListV0.ui.querySelector('.footer .btn').style.display = '';
+			DOM.setCss(SkillListV0.ui.querySelector('.contentbig'), {
 				width:  width  * 32,
 				height: height * 32
 			});
@@ -820,7 +838,7 @@ define(function(require)
 	 */
 	function onClose()
 	{
-		SkillListV0.ui.hide();
+		SkillListV0.ui.style.display = 'none';
 	}
 
 
@@ -852,13 +870,13 @@ define(function(require)
 	 */
 	function onRequestUseSkill()
 	{
-		var main  = jQuery(this).parent();
+		var main  = this.parentNode;
 
-		if (!main.hasClass('skill')) {
-			main = main.parent();
+		if (!main.classList.contains('skill')) {
+			main = main.parentNode;
 		}
 
-		SkillListV0.useSkillID(parseInt(main.data('index'), 10));
+		SkillListV0.useSkillID(parseInt(main.getAttribute('data-index'), 10));
 	}
 
 
@@ -883,7 +901,7 @@ define(function(require)
 		})
 
 		totalCounter = 0;
-		SkillListV0.ui.find('.skpoints_count').text(_points - totalCounter);
+		SkillListV0.ui.querySelector('.skpoints_count').textContent = _points - totalCounter;
 		rememberChoice = [];
 	}
 
@@ -894,17 +912,22 @@ define(function(require)
 	function onResetChoice()
 	{
 		rememberChoice.forEach(function (count, skillId) {
-			var skillbox = SkillListV0.ui.find('.skillCol.s' + skillDependencyTree[skillId].position);
-			if (!hasSkills?.[skillId]?.level) {
-				skillbox.children().addClass('disabled');
+			var skillbox = SkillListV0.ui.querySelector('.skillCol.s' + skillDependencyTree[skillId].position);
+			if (skillbox) {
+				if (!hasSkills?.[skillId]?.level) {
+					Array.from(skillbox.children).forEach(function(ch) { ch.classList.add('disabled'); });
+				}
+				var sel = skillbox.querySelector('.selectable');
+				if (sel) sel.style.display = '';
+				var cur = skillbox.querySelector('.current');
+				if (cur) cur.textContent = hasSkills?.[skillId]?.level ?? 0;
+				var mx = skillbox.querySelector('.max');
+				if (mx) mx.textContent = hasSkills?.[skillId]?.level ?? 0;
 			}
-			skillbox.find('.selectable').show();
-			skillbox.find('.current').empty().append(hasSkills?.[skillId]?.level ?? 0)
-			skillbox.find('.max').empty().append(hasSkills?.[skillId]?.level ?? 0)
 
 		});
 		totalCounter = 0;
-		SkillListV0.ui.find('.skpoints_count').text(_points);
+		SkillListV0.ui.querySelector('.skpoints_count').textContent = _points;
 		rememberChoice = [];
 	}
 
@@ -914,12 +937,12 @@ define(function(require)
 	 */
 	function onNecessarySkills()
 	{
-		var main = jQuery(this).parent();
+		var main = this.parentNode;
 
-		if (!main.hasClass('skill')) {
-			main = main.parent();
+		if (!main.classList.contains('skill')) {
+			main = main.parentNode;
 		}
-		var skillId = parseInt(main.data('index'), 10);
+		var skillId = parseInt(main.getAttribute('data-index'), 10);
 		specifyRequirements(skillId);
 	}
 
@@ -929,8 +952,8 @@ define(function(require)
 	 */
 	function onNecessarySkillsRemove()
 	{
-		SkillListV0.ui.find('.needleSkill').removeClass('needleSkill');
-		SkillListV0.ui.find('.counterSkill').remove();
+		SkillListV0.ui.querySelectorAll('.needleSkill').forEach(function(el) { el.classList.remove('needleSkill'); });
+		SkillListV0.ui.querySelectorAll('.counterSkill').forEach(function(el) { el.remove(); });
 	}
 
 
@@ -939,13 +962,13 @@ define(function(require)
 	 */
 	function onRequestSkillInfo()
 	{
-		var main = jQuery(this).parent();
+		var main = this.parentNode;
 
-		if (!main.hasClass('skill')) {
-			main = main.parent();
+		if (!main.classList.contains('skill')) {
+			main = main.parentNode;
 		}
 
-		var id = parseInt(main.data('index'), 10);
+		var id = parseInt(main.getAttribute('data-index'), 10);
 		var skill = getSkillById(id);
 
 		var skillID = skill?.SKID ?? id;
@@ -988,14 +1011,14 @@ define(function(require)
 	 */
 	function onSkillFocus()
 	{
-		var main = jQuery(this).parent();
+		var main = this.parentNode;
 
-		if (!main.hasClass('skill')) {
-			main = main.parent();
+		if (!main.classList.contains('skill')) {
+			main = main.parentNode;
 		}
 
-		SkillListV0.ui.find('.skill').removeClass('selected');
-		main.addClass('selected');
+		Array.from(SkillListV0.ui.querySelectorAll('.skill.selected')).forEach(function(el) { el.classList.remove('selected'); });
+		main.classList.add('selected');
 	}
 
 
@@ -1013,9 +1036,9 @@ define(function(require)
 		}
 
 		var img   = new Image();
-		img.src   = jQuery(this).find('.icon img').attr('src');
-		event.originalEvent.dataTransfer.setDragImage( img, 12, 12 );
-		event.originalEvent.dataTransfer.setData('Text',
+		img.src   = this.querySelector('.icon img').getAttribute('src');
+		event.dataTransfer.setDragImage( img, 12, 12 );
+		event.dataTransfer.setData('Text',
 			JSON.stringify( window._OBJ_DRAG_ = {
 				type: 'skill',
 				from: 'SkillListV0',
@@ -1039,8 +1062,8 @@ define(function(require)
 		var level = skill.selectedLevel ? skill.selectedLevel : skill.level;
 		if (level < skill.level){
 			skill.selectedLevel = level + 1;
-			var element = SkillListV0.ui.find('.skill.id' + skill.SKID);
-			element.find('.level .current').text(skill.selectedLevel);
+			var element = SkillListV0.ui.querySelector('.skill.id' + skill.SKID);
+			if (element) element.querySelector('.level .current').textContent = skill.selectedLevel;
 		}
 	}
 
@@ -1050,8 +1073,8 @@ define(function(require)
 		var level = skill.selectedLevel ? skill.selectedLevel : skill.level;
 		if (level > 1){
 			skill.selectedLevel = level - 1;
-			var element = SkillListV0.ui.find('.skill.id' + skill.SKID);
-			element.find('.level .current').text(skill.selectedLevel);
+			var element = SkillListV0.ui.querySelector('.skill.id' + skill.SKID);
+			if (element) element.querySelector('.level .current').textContent = skill.selectedLevel;
 		}
 	}
 

@@ -14,7 +14,6 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
-	var jQuery       = require('Utils/jquery');
 	var DB           = require('DB/DBManager');
 	var Network          = require('Network/NetworkManager');
 	var PACKET           = require('Network/PacketStructure');	
@@ -36,6 +35,7 @@ define(function(require)
 	var Renderer     = require('Renderer/Renderer');
 	var Inventory    = require('UI/Components/Inventory/Inventory');
 	var BasicInfo    = require('UI/Components/BasicInfo/BasicInfo');
+	var DOM          = require('Utils/DOM');
 
 
 	/**
@@ -118,16 +118,16 @@ define(function(require)
 	Vending.init = function init()
 	{
 		var ui           = this.ui;
-		var InputWindow  = ui.find('.InputWindow');
-		var OutputWindow = ui.find('.OutputWindow');
+		var InputWindow  = ui.querySelector('.InputWindow');
+		var OutputWindow = ui.querySelector('.OutputWindow');
 
 		// Client do not send packet
-		//ui.find('.btn.cancel').click(this.remove.bind(this));
-		ui.find('.btn.sell').click(function(e){
+		//ui.querySelector('.btn.cancel').addEventListener('click', this.remove.bind(this));
+		ui.querySelector('.btn.sell').addEventListener('click', function(e){
 			e.stopImmediatePropagation();
 			Vending.onSubmit();
 		});
-		this.ui.find('.btn.cancel').click(function(e){
+		this.ui.querySelector('.btn.cancel').addEventListener('click', function(e){
 			e.stopImmediatePropagation();
 			var pkt;
 			if(_type === Vending.Type.VENDING_STORE)
@@ -139,39 +139,45 @@ define(function(require)
 			Vending.onRemove();
 		});
 		
-		InputWindow.find('.footer .extend').mousedown(onResizeInput);
+		InputWindow.querySelector('.footer .extend').addEventListener('mousedown', onResizeInput);
 
 
 		// Items options
-		ui.find('.content')
-			.on('contextmenu',      '.icon', onItemInfo)
-			.on('mousewheel DOMMouseScroll', onScroll)
-			.on('mouseover',        '.item', onItemOver)
-			.on('mouseout',         '.item', onItemOut)
-			.on('dblclick',         '.item', onItemSelected)
-			.on('mousedown',        '.item', onItemFocus)
-			.on('dragstart',        '.item', onDragStart)
-			.on('dragend',          '.item', function(){
-				delete window._OBJ_DRAG_;
-			});
+		var _vendingContent = ui.querySelector('.content');
+		DOM.addDelegatedEvent(_vendingContent, 'contextmenu', '.icon', onItemInfo);
+		_vendingContent.addEventListener('mousewheel', onScroll);
+		_vendingContent.addEventListener('DOMMouseScroll', onScroll);
+		DOM.addDelegatedEvent(_vendingContent, 'mouseover', '.item', onItemOver);
+		DOM.addDelegatedEvent(_vendingContent, 'mouseout', '.item', onItemOut);
+		DOM.addDelegatedEvent(_vendingContent, 'dblclick', '.item', onItemSelected);
+		DOM.addDelegatedEvent(_vendingContent, 'mousedown', '.item', onItemFocus);
+		DOM.addDelegatedEvent(_vendingContent, 'dragstart', '.item', onDragStart);
+		DOM.addDelegatedEvent(_vendingContent, 'dragend', '.item', function(){
+			delete window._OBJ_DRAG_;
+		});
 
 		// Drop items
-		ui.find('.InputWindow, .OutputWindow')
-			.on('drop', onDrop)
-			.on('dragover', function(event) {
-				event.stopImmediatePropagation();
-				return false;
-			})
-			.on('mousedown', function(){
-				Vending.focus();
-			});
+		var _vendingInputOutput = ui.querySelector('.InputWindow');
+		var _vendingOutputWindow = ui.querySelector('.OutputWindow');
+		function onVendingDropDragover(event) { event.stopImmediatePropagation(); return false; }
+		function onVendingFocus() { Vending.focus(); }
+		if (_vendingInputOutput) {
+			_vendingInputOutput.addEventListener('drop', onDrop);
+			_vendingInputOutput.addEventListener('dragover', onVendingDropDragover);
+			_vendingInputOutput.addEventListener('mousedown', onVendingFocus);
+		}
+		if (_vendingOutputWindow) {
+			_vendingOutputWindow.addEventListener('drop', onDrop);
+			_vendingOutputWindow.addEventListener('dragover', onVendingDropDragover);
+			_vendingOutputWindow.addEventListener('mousedown', onVendingFocus);
+		}
 
 		
 		
 
 		// Hacky drag drop
-		this.draggable.call({ui: InputWindow },  InputWindow.find('.titlebar'));
-		this.draggable.call({ui: OutputWindow }, OutputWindow.find('.titlebar'));
+		this.draggable.call({ui: InputWindow },  InputWindow.querySelector('.titlebar'));
+		this.draggable.call({ui: OutputWindow }, OutputWindow.querySelector('.titlebar'));
 
 		Client.loadFile( DB.INTERFACE_PATH + 'basic_interface/itemwin_mid.bmp', function(data){
 			Vending.itemBg = data;
@@ -184,26 +190,26 @@ define(function(require)
 	 */
 	Vending.onAppend = function onAppend()
 	{
-		var InputWindow  = this.ui.find('.InputWindow');
-		var OutputWindow = this.ui.find('.OutputWindow');
+		var InputWindow  = this.ui.querySelector('.InputWindow');
+		var OutputWindow = this.ui.querySelector('.OutputWindow');
 		
-		InputWindow.css({
-			top:  Math.min( Math.max( 0, _preferences.inputWindow.y), Renderer.height - InputWindow.find('.content').height()),
-			left: Math.min( Math.max( 0, _preferences.inputWindow.x), Renderer.width  - InputWindow.find('.content').width())
+		DOM.setCss(InputWindow, {
+			top:  Math.min( Math.max( 0, _preferences.inputWindow.y), Renderer.height - InputWindow.querySelector('.content').offsetHeight) + 'px',
+			left: Math.min( Math.max( 0, _preferences.inputWindow.x), Renderer.width  - InputWindow.querySelector('.content').offsetWidth) + 'px'
 		});
-		OutputWindow.css({
-			top:  Math.min( Math.max( 0, _preferences.outputWindow.y), Renderer.height - OutputWindow.find('.content').height()),
-			left: Math.min( Math.max( 0, _preferences.outputWindow.x), Renderer.width  - OutputWindow.find('.content').width())
+		DOM.setCss(OutputWindow, {
+			top:  Math.min( Math.max( 0, _preferences.outputWindow.y), Renderer.height - OutputWindow.querySelector('.content').offsetHeight) + 'px',
+			left: Math.min( Math.max( 0, _preferences.outputWindow.x), Renderer.width  - OutputWindow.querySelector('.content').offsetWidth) + 'px'
 		});
 
-		resize( InputWindow.find('.content'),  _preferences.inputWindow.height );
-		resize( OutputWindow.find('.content'), _preferences.outputWindow.height );
+		resize( InputWindow.querySelector('.content'),  _preferences.inputWindow.height );
+		resize( OutputWindow.querySelector('.content'), _preferences.outputWindow.height );
 
 		// Seems like "EscapeWindow" is execute first, push it before.
 		//var events = jQuery._data( window, 'events').keydown;
 		//events.unshift( events.pop() );		
 		
-		this.ui.hide();
+		this.ui.style.display = 'none';
 	};
 
 	/**
@@ -215,17 +221,17 @@ define(function(require)
 	{
 		switch (type) {
 			case Vending.Type.VENDING_STORE:
-				this.ui.find('.WinBuy').hide();
-				this.ui.find('.WinSell').show();
+				this.ui.querySelector('.WinBuy').style.display = 'none';
+				this.ui.querySelector('.WinSell').style.display = '';
 				break;
 
 			case Vending.Type.BUYING_STORE:
-				this.ui.find('.WinSell').hide();
-				this.ui.find('.WinBuy').show();
-				//this.ui.find('.content').css('height','160px');
-				this.ui.find('.zenySpan').text(prettyZeny(Session.zeny));
-				this.ui.find('.weightSpan').text(BasicInfo.getUI().weight + '/' + BasicInfo.getUI().weight_max);
-				this.ui.find('.limitZeny').val('0');
+				this.ui.querySelector('.WinSell').style.display = 'none';
+				this.ui.querySelector('.WinBuy').style.display = '';
+				//this.ui.querySelector('.content').style.height = '160px';
+				this.ui.querySelector('.zenySpan').textContent = prettyZeny(Session.zeny);
+				this.ui.querySelector('.weightSpan').textContent = BasicInfo.getUI().weight + '/' + BasicInfo.getUI().weight_max;
+				this.ui.querySelector('.limitZeny').value = '0';
 				break;
 		}
 
@@ -241,7 +247,7 @@ define(function(require)
 	function resize( content, height )
 	{
 		height = Math.min( Math.max(height, 2), 9);
-		content.css('height', height * 32);
+		content.style.height = height * 32;
 	}	
 
 
@@ -252,25 +258,25 @@ define(function(require)
 	{
 		VendingModelMessage.onRemove();//remove message if show
 
-		var InputWindow  = this.ui.find('.InputWindow');
-		var OutputWindow = this.ui.find('.OutputWindow');
+		var InputWindow  = this.ui.querySelector('.InputWindow');
+		var OutputWindow = this.ui.querySelector('.OutputWindow');
 
 		_input.length    = 0;
 		_output.length   = 0;
 
-		_preferences.inputWindow.x       = parseInt( InputWindow.css('left'), 10);
-		_preferences.inputWindow.y       = parseInt( InputWindow.css('top'), 10);
-		_preferences.inputWindow.height  = InputWindow.find('.content').height() / 32 | 0;
+		_preferences.inputWindow.x       = parseInt( InputWindow.style.left, 10) || 0;
+		_preferences.inputWindow.y       = parseInt( InputWindow.style.top, 10) || 0;
+		_preferences.inputWindow.height  = InputWindow.querySelector('.content').offsetHeight / 32 | 0;
 
-		_preferences.outputWindow.x      = parseInt( OutputWindow.css('left'), 10);
-		_preferences.outputWindow.y      = parseInt( OutputWindow.css('top'), 10);
-		_preferences.outputWindow.height = OutputWindow.find('.content').height() / 32 | 0;
+		_preferences.outputWindow.x      = parseInt( OutputWindow.style.left, 10) || 0;
+		_preferences.outputWindow.y      = parseInt( OutputWindow.style.top, 10) || 0;
+		_preferences.outputWindow.height = OutputWindow.querySelector('.content').offsetHeight / 32 | 0;
 
 		_preferences.save();
 
-		this.ui.find('.content').empty();
+		this.ui.querySelector('.content').innerHTML = '';
 		
-		this.ui.hide();		
+		this.ui.style.display = 'none';		
 	};
 
 
@@ -302,13 +308,13 @@ define(function(require)
 		var i, count;
 		var it, item, out, content;
 
-		this.ui.find('.content').empty();
+		this.ui.querySelector('.content').innerHTML = '';
 
 		_input.length  = 0;
 		_output.length = 0;
 		
 		
-		content        = this.ui.find('.InputWindow .content');
+		content        = this.ui.querySelector('.InputWindow .content');
 
 		{		
 				for (i = 0, count = items.length; i < count; ++i) {
@@ -330,7 +336,7 @@ define(function(require)
 
 					items[i].total = items[i].count; // keep track on buying store
 
-					out                   = jQuery.extend({}, items[i]);
+					out                   = Object.assign({}, items[i]);
 					out.count             = 0;
 
 					addItem( content, items[i], true);
@@ -391,24 +397,24 @@ define(function(require)
 	function addItem( content, item , isinput)
 	{
 		var it      = DB.getItemInfo(item.ITID);
-		var element = content.find('.item[data-index='+ item.index +']:first');
+		var element = content.querySelector('.item[data-index="'+ item.index +'"]');
 		var price;
-		var textPrice = DB.getMessage(1721); 
+		var textPrice = DB.getMessage(1721);
 
 		// 0 as amount ? remove it
 		if (item.count === 0) {
-			if (element.length) {
-				let parent = element.parent('.item-container');
-				element.remove();
-				parent.remove();
+			if (element) {
+				var parent = element.closest('.item-container');
+				element.parentNode && element.parentNode.removeChild(element);
+				if (parent) { parent.parentNode && parent.parentNode.removeChild(parent); }
 			}
 			return;
 		}
 
 		// Already here, update it
 		// Note: just the amount can be updated ?
-		if (element.length) {
-			element.find('.amount').text(item.IsStackable ? item.count : '');
+		if (element) {
+			element.querySelector('.amount').textContent = item.IsStackable ? item.count : '';
 			return;
 		}
 
@@ -416,45 +422,46 @@ define(function(require)
 			price = prettyZeny(item.price, true);
 		}
 
+		var itemObj;
+		var _tmp = document.createElement('div');
+
 		// Create it
 		if(isinput == true)
 		{
-			var itemObj = jQuery(
-				'<div class="item input" draggable="true" data-index="'+ item.index +'">' +
+			_tmp.innerHTML = '<div class="item input" draggable="true" data-index="'+ item.index +'">' +
 					'<div class="icon"></div>' +
 					'<div class="amount">' + (item.IsStackable ? item.count : '') + '</div>' +
-				'</div>'
-			);		
+				'</div>';
+			itemObj = _tmp.firstChild;
 		}
 		else
 		{
-			var itemObj = jQuery(
-				'<div class="item-container">' + 
+			_tmp.innerHTML = '<div class="item-container">' +
 					'<div class="item output" draggable="true" data-index="'+ item.index +'">' +
 					'<div class="icon"></div>' +
 					'<div class="amount">' + (_type === Vending.Type.BUYING_STORE ? item.total : item.IsStackable ? item.count : '') + '</div>' +
 					(_type === Vending.Type.BUYING_STORE ? '<div class="amount_">' + item.count + ' ea</div>' : '') +
-					'<div class="name">'+ jQuery.escape(DB.getItemName(item)) +'</div>' +
+					'<div class="name">'+ DOM.escapeHtml(DB.getItemName(item)) +'</div>' +
 					'<div class="price">'+textPrice+' '+ price +'</div>' +
-				'</div></div>'
-			);
+				'</div></div>';
+			itemObj = _tmp.firstChild;
 			if(_type === Vending.Type.BUYING_STORE) {
-				let limit = parseInt(Vending.ui.find('.limitZeny').val(),10);
+				let limit = parseInt(Vending.ui.querySelector('.limitZeny').value,10);
 				limit += item.count * item.price;
-				Vending.ui.find('.limitZeny').val(limit);
+				Vending.ui.querySelector('.limitZeny').value = limit;
 			}
 		}
 
 		if(item.IsDamaged){
-			itemObj.css('backgroundImage', 'url("' + Vending.itemBg + '")');
-			itemObj.addClass('damaged');
+			itemObj.style.backgroundImage = 'url("' + Vending.itemBg + '")';
+			itemObj.classList.add('damaged');
 		}
 
-		content.append(itemObj);
+		content.appendChild(itemObj);
 
 		// Add the icon once loaded
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + (item.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName) + '.bmp', function(data){
-			content.find('.item[data-index="'+ item.index +'"] .icon').css('backgroundImage', 'url('+ data +')');
+			content.querySelector('.item[data-index="'+ item.index +'"] .icon').style.backgroundImage = 'url('+ data +')';
 		});
 	}
 
@@ -483,7 +490,7 @@ define(function(require)
 				}
 
 				_output[index].count = (_type === Vending.Type.BUYING_STORE) ? count : Math.min( _output[index].count + count, _input[index].count);
-				tmpItem = jQuery.extend({}, _input[index]);
+				tmpItem = Object.assign({}, _input[index]);
 
 				// Update input ui item amount
 				tmpItem.count = (_type === Vending.Type.BUYING_STORE) ? 0 : _input[index].count - _output[index].count;
@@ -502,7 +509,7 @@ define(function(require)
 				_output[index].count = (_type === Vending.Type.BUYING_STORE) ? 0 : _output[index].count - count;
 
 				// Update input ui item amount
-				tmpItem = jQuery.extend({}, _input[index]);
+				tmpItem = Object.assign({}, _input[index]);
 				tmpItem.count = (_type === Vending.Type.BUYING_STORE) ? _input[index].total : _input[index].count + _output[index].count;
 
 				addItem( fromContent, _output[index], false);
@@ -542,7 +549,7 @@ define(function(require)
 
 		/*// Can't buy more than one same stackable item
 		if ((_type === Vending.Type.BUY || _type === Vending.Type.VENDING_STORE) && !item.IsStackable && isAdding) {
-			if (toContent.find('.item[data-index="'+ item.index +'"]:first').length) {
+			if (toContent.querySelector('.item[data-index="'+ item.index +'"]')) {
 				return false;
 			}
 		}*/
@@ -622,7 +629,7 @@ define(function(require)
 		event.stopImmediatePropagation();
 
 		try {
-			data  = JSON.parse(event.originalEvent.dataTransfer.getData('Text'));
+			data  = JSON.parse(event.dataTransfer.getData('Text'));
 		}
 		catch(e) {
 			return false;
@@ -635,8 +642,8 @@ define(function(require)
 
 		requestMoveItem(
 			data.index,
-			jQuery('.' + data.container + ' .content'),
-			jQuery(this).find('.content'),
+			Vending.ui.querySelector('.' + data.container + ' .content'),
+			this.querySelector('.content'),
 			this.className === 'OutputWindow'
 		);
 
@@ -684,21 +691,21 @@ define(function(require)
 			return;
 		}
 
-		input = Vending.ui.find('.InputWindow:first');
+		input = Vending.ui.querySelector('.InputWindow');
 
-		if (jQuery.contains(input.get(0), this)) {
+		if (input.contains(this)) {
 			from = input;
-			to   = Vending.ui.find('.OutputWindow:first');
+			to   = Vending.ui.querySelector('.OutputWindow');
 		}
 		else {
-			from = Vending.ui.find('.OutputWindow:first');
+			from = Vending.ui.querySelector('.OutputWindow');
 			to   = input;
 		}
 
 		requestMoveItem(
 			parseInt( this.getAttribute('data-index'), 10),
-			from.find('.content:first'),
-			to.find('.content:first'),
+			from.querySelector('.content'),
+			to.querySelector('.content'),
 			from === input
 		);
 	}
@@ -709,8 +716,8 @@ define(function(require)
 	 */
 	function onItemFocus()
 	{
-		Vending.ui.find('.item.selected').removeClass('selected');
-		jQuery(this).addClass('selected');
+		Vending.ui.querySelectorAll('.item.selected').forEach(function(el) { el.classList.remove('selected'); });
+		this.classList.add('selected');
 	}
 
 
@@ -721,14 +728,14 @@ define(function(require)
 	{
 		var delta;
 
-		if (event.originalEvent.wheelDelta) {
-			delta = event.originalEvent.wheelDelta / 120 ;
+		if (event.wheelDelta) {
+			delta = event.wheelDelta / 120 ;
 			if (window.opera) {
 				delta = -delta;
 			}
 		}
-		else if (event.originalEvent.detail) {
-			delta = -event.originalEvent.detail;
+		else if (event.detail) {
+			delta = -event.detail;
 		}
 
 		this.scrollTop = Math.floor(this.scrollTop/32) * 32 - (delta * 32);
@@ -744,16 +751,16 @@ define(function(require)
 		var container, img, url;
 		var InputWindow, OutputWindow;
 
-		InputWindow  = Vending.ui.find('.InputWindow:first').get(0);
-		OutputWindow = Vending.ui.find('.OutputWindow:first').get(0);
+		InputWindow  = Vending.ui.querySelector('.InputWindow');
+		OutputWindow = Vending.ui.querySelector('.OutputWindow');
 
-		container = (jQuery.contains(InputWindow, this) ? InputWindow : OutputWindow).className;
+		container = (InputWindow.contains(this) ? InputWindow : OutputWindow).className;
 		img       = new Image();
 		url       = this.firstChild.style.backgroundImage.match(/\(([^\)]+)/)[1].replace(/"/g, '');
 		img.src   = url;
 
-		event.originalEvent.dataTransfer.setDragImage( img, 12, 12 );
-		event.originalEvent.dataTransfer.setData('Text',
+		event.dataTransfer.setDragImage( img, 12, 12 );
+		event.dataTransfer.setData('Text',
 			JSON.stringify( window._OBJ_DRAG_ = {
 				type:      'item',
 				from:      'Vending',
@@ -768,10 +775,10 @@ define(function(require)
 	 */
 	function onResizeInput()
 	{
-		var InputWindow  = Vending.ui.find('.InputWindow');
-		var content = InputWindow.find('.container .content');
-		var top     = InputWindow.position().top;
-		var left    = InputWindow.position().left;
+		var InputWindow  = Vending.ui.querySelector('.InputWindow');
+		var content = InputWindow.querySelector('.container .content');
+		var top     = parseInt(InputWindow.style.top, 10) || 0;
+		var left    = parseInt(InputWindow.style.left, 10) || 0;
 		var lastHeight = 0;
 		var _Interval;
 
@@ -797,21 +804,22 @@ define(function(require)
 		_Interval = setInterval( resizing, 30);
 
 		// Stop resizing on left click
-		jQuery(window).on('mouseup.resize', function(event){
+		var _onResizeEnd = function(event){
 			if (event.which === 1) {
 				clearInterval(_Interval);
-				jQuery(window).off('mouseup.resize');
+				window.removeEventListener('mouseup', _onResizeEnd);
 			}
-		});
+		};
+		window.addEventListener('mouseup', _onResizeEnd);
 	}
 
 	Vending.onVendingSkill = function onVendingSkill(pkt)
 	{
 		_slots = pkt.itemcount;
 		this.setList(CartItems.list);
-		this.ui.find('.add_shop')[0].style.height = (32 * _slots) + 'px';
-		this.ui.find('.shopname').val('');
-		this.ui.show();
+		this.ui.querySelector('.add_shop').style.height = (32 * _slots) + 'px';
+		this.ui.querySelector('.shopname').value = '';
+		this.ui.style.display = '';
 	};
 
 	
@@ -827,9 +835,9 @@ define(function(require)
 				buyable.push(item);
 		}
 		this.setList(buyable);
-		this.ui.find('.add_shop')[0].style.height = (32 * _slots) + 'px';
-		this.ui.find('.shopname').val('');
-		this.ui.show();
+		this.ui.querySelector('.add_shop').style.height = (32 * _slots) + 'px';
+		this.ui.querySelector('.shopname').value = '';
+		this.ui.style.display = '';
 	};
 
 	Vending.onSubmit = function onSubmit()
@@ -841,7 +849,7 @@ define(function(require)
 		output = [];
 		count  = _output.length;
 		
-		shopname = this.ui.find('.shopname').val();
+		shopname = this.ui.querySelector('.shopname').value;
 		
 
 		for (i = 0; i < count; ++i) {
@@ -863,7 +871,7 @@ define(function(require)
 		}
 		else {
 			pkt = new PACKET.CZ.REQ_OPEN_BUYING_STORE();
-			limitZeny = parseInt(this.ui.find('.limitZeny').val(), 10);
+			limitZeny = parseInt(this.ui.querySelector('.limitZeny').value, 10);
 			if(limitZeny > Session.zeny) {
 				VendingModelMessage.setInit(3683);
 				return;
@@ -923,13 +931,14 @@ define(function(require)
 		}
 
 		// Get back data
-		var pos     = jQuery(this).position();
-		var overlay = Vending.ui.find('.overlay');
+		var rect    = this.getBoundingClientRect();
+		var uiRect  = Vending.ui.getBoundingClientRect();
+		var overlay = Vending.ui.querySelector('.overlay');
 
 		// Display box
-		overlay.show();
-		overlay.css({top: pos.top - 20, left:pos.left-10});
-		overlay.text(DB.getItemName(item) + ' ' + (item.count || 1) + ' ea');
+		overlay.style.display = '';
+		DOM.setCss(overlay, {top: (rect.top - uiRect.top - 20) + 'px', left: (rect.left - uiRect.left - 10) + 'px'});
+		overlay.textContent = DB.getItemName(item) + ' ' + (item.count || 1) + ' ea';
 	}
 
 
@@ -938,7 +947,7 @@ define(function(require)
 	 */
 	function onItemOut()
 	{
-		Vending.ui.find('.overlay').hide();
+		Vending.ui.querySelector('.overlay').style.display = 'none';
 	}
 
 

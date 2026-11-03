@@ -20,6 +20,7 @@ define(function(require)
 	var UIComponent = require('UI/UIComponent');
 	var htmlText    = require('text!./WinPopup.html');
 	var cssText     = require('text!./WinPopup.css');
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -33,7 +34,7 @@ define(function(require)
 	 */
 	WinPopup.init = function init()
 	{
-		this.ui.css({
+		DOM.setCss(this.ui, {
 			top:  (Renderer.height-120) / 1.5 - 120,
 			left: (Renderer.width -280) / 2.0,
 			zIndex: 100

@@ -26,6 +26,7 @@ define(function(require)
 	var ChatBox        = require('UI/Components/ChatBox/ChatBox');
 	var htmlText       = require('text!./Emoticons.html');
 	var cssText        = require('text!./Emoticons.css');
+	var DOM             = require('Utils/DOM');
 
 
 
@@ -100,26 +101,29 @@ define(function(require)
 				_sprite     = spr;
 				TOTAL_PAGES = Math.floor(EMOTICONS_COUNT / EMOTICONS_PER_PAGE);
 
-				this.ui.find('.total').text(TOTAL_PAGES + 1);
+				var totalEl = this.ui && this.ui.querySelector('.navigation .total');
+				if (totalEl) {
+					totalEl.textContent = TOTAL_PAGES + 1;
+				}
 				this.movePage(0);
 			}.bind(this)
 		);
 
-		this.ui.find('.content')
-			.on('dblclick',  'canvas', onPlayEmoticon)
-			.on('mousedown', 'canvas', onSelectEmoticon);
+		var _emoticonContent = this.ui.querySelector('.content');
+		DOM.addDelegatedEvent(_emoticonContent, 'dblclick', 'canvas', onPlayEmoticon);
+		DOM.addDelegatedEvent(_emoticonContent, 'mousedown', 'canvas', onSelectEmoticon);
 
-		this.ui.find('.base').mousedown(function(event){
+		this.ui.querySelector('.base').addEventListener('mousedown', function(event){
 			event.stopImmediatePropagation();
 			return false;
 		});
 
-		this.ui.find('.prev').addClass('disabled');
-		this.ui.find('.close').click(onClose);
-		this.ui.find('.prev').click(movePage(-1));
-		this.ui.find('.next').click(movePage(+1));
+		this.ui.querySelector('.prev').classList.add('disabled');
+		this.ui.querySelector('.close').addEventListener('click', onClose);
+		this.ui.querySelector('.prev').addEventListener('click', movePage(-1));
+		this.ui.querySelector('.next').addEventListener('click', movePage(+1));
 
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 	};
 
 
@@ -129,12 +133,12 @@ define(function(require)
 	Emoticons.onAppend = function onAppend()
 	{
 		if (!_preferences.show) {
-			this.ui.hide();
+			DOM.hide(this.ui);
 		}
 
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 	};
 
@@ -144,9 +148,9 @@ define(function(require)
 	 */
 	Emoticons.onRemove = function OnRemove()
 	{
-		_preferences.show   =  this.ui.is(':visible');
-		_preferences.y      =  parseInt(this.ui.css('top'), 10);
-		_preferences.x      =  parseInt(this.ui.css('left'), 10);
+		_preferences.show   =  DOM.isVisible(this.ui);
+		_preferences.y      =  parseInt(this.ui.style.top, 10);
+		_preferences.x      =  parseInt(this.ui.style.left, 10);
 		_preferences.save();
 	};
 
@@ -158,23 +162,28 @@ define(function(require)
 	 */
 	Emoticons.movePage = function movePage( direction )
 	{
-		this.ui.find('.prev, .next').removeClass('disabled');
+		this.ui.querySelectorAll('.prev, .next').forEach(function(button) {
+			button.classList.remove('disabled');
+		});
 
 		_page += direction;
 
 		if (_page <= 0) {
-			this.ui.find('.prev').addClass('disabled');
+			this.ui.querySelector('.prev').classList.add('disabled');
 			_page = 0;
 		}
 
 		if (_page >= TOTAL_PAGES) {
-			this.ui.find('.next').addClass('disabled');
+			this.ui.querySelector('.next').classList.add('disabled');
 			_page = TOTAL_PAGES;
 		}
 
-		this.ui.find('.current').text(_page + 1);
+		var currentEl = this.ui.querySelector('.navigation .current');
+		if (currentEl) {
+			currentEl.textContent = _page + 1;
+		}
 
-		refreshList(this.ui.find('.content'));
+		refreshList(this.ui.querySelector('.content'));
 	};
 
 
@@ -187,8 +196,8 @@ define(function(require)
 	{
 		switch (key.cmd) {
 			case 'TOGGLE':
-				this.ui.toggle();
-				if (this.ui.is(':visible')) {
+				DOM.toggleDisplay(this.ui);
+				if (DOM.isVisible(this.ui)) {
 					this.focus();
 				}
 				break;
@@ -217,7 +226,7 @@ define(function(require)
 	 */
 	function onClose()
 	{
-		Emoticons.ui.hide();
+		Emoticons.ui.style.display = 'none';
 	}
 
 
@@ -231,9 +240,9 @@ define(function(require)
 		var cmd = EmoticonsDB.names[idx];
 		var ShortCuts 	= require('UI/Components/ShortCuts/ShortCuts');
 
-		if(cmd && ShortCuts.ui.is(':visible')){
-			if(ShortCuts.ui.find('.input_alt_focus').length)
-				ShortCuts.ui.find('.input_alt_focus').val('/' + cmd).select()
+		if(cmd && DOM.isVisible(ShortCuts.ui)){
+			if(ShortCuts.ui.querySelector('.input_alt_focus'))
+				ShortCuts.ui.querySelector('.input_alt_focus').value = '/' + cmd.select()
 		}
 	}
 
@@ -246,7 +255,7 @@ define(function(require)
 		var idx = this.getAttribute('data-index');
 		var cmd = EmoticonsDB.names[idx];
 
-		ChatBox.ui.find('.input .message').val('/' + cmd);
+		ChatBox.ui.querySelector('.input .message').value = '/' + cmd;
 		ChatBox.submit();
 	}
 
@@ -267,7 +276,7 @@ define(function(require)
 		var pos   = [0, 0];
 		var emo;
 
-		content.empty();
+		content.innerHTML = '';
 
 		while (index < end) {
 			canvas        = document.createElement('canvas');

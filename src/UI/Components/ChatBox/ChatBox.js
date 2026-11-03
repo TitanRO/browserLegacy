@@ -16,7 +16,6 @@ define(function(require)
 	 * Dependencies
 	 */
 	var DB                 = require('DB/DBManager');
-	var jQuery             = require('Utils/jquery');
 	var Renderer           = require('Renderer/Renderer');
 	var Client             = require('Core/Client');
 	var Events             = require('Core/Events');
@@ -32,6 +31,7 @@ define(function(require)
 	var cssText            = require('text!./ChatBox.css');
 	var Commands     = require('Controls/ProcessCommand');
 	var ChatBoxSettings  = require('UI/Components/ChatBoxSettings/ChatBoxSettings');
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -157,16 +157,16 @@ define(function(require)
 		_heightIndex = _preferences.height - 1;
 		ChatBox.updateHeight();
 
-		this.ui.mouseover(function(){
+		this.ui.addEventListener('mouseover', function(){
 			Mouse.intersect = false;
-		})
-		.mouseout(function() {
+		});
+		this.ui.addEventListener('mouseout', function() {
 			Mouse.intersect = true;
 		});
 
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y - this.ui.height()), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y - this.ui.offsetHeight), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 
 		this.magnet.TOP = _preferences.magnet_top;
@@ -174,15 +174,17 @@ define(function(require)
 		this.magnet.LEFT = _preferences.magnet_left;
 		this.magnet.RIGHT = _preferences.magnet_right;
 
-		this.draggable( this.ui.find('.input') );
-		this.draggable( this.ui.find('.battlemode') );
+		this.draggable( this.ui.querySelector('.input') );
+		this.draggable( this.ui.querySelector('.battlemode') );
 
 		// Sorry for this un-documented code (see UIComponent for more informations)
-		this.__mouseStopBlock = this.ui.find('.input');
+		this.__mouseStopBlock = this.ui.querySelector('.input');
 
 		// Setting chatbox scrollbar
 		Client.loadFiles([DB.INTERFACE_PATH + 'basic_interface/dialscr_down.bmp', DB.INTERFACE_PATH + 'basic_interface/dialscr_up.bmp'], function( down, up ){
-			jQuery('style:first').append([
+			var _cbStyleEl = document.querySelector('style') || document.createElement('style');
+			if (!_cbStyleEl.parentNode) document.head.appendChild(_cbStyleEl);
+			_cbStyleEl.textContent += [
 				'#chatbox .content::-webkit-scrollbar { width: 10px; height: 10px;}',
 				'#chatbox .content::-webkit-scrollbar-button:vertical:start:increment,',
 				'#chatbox .content::-webkit-scrollbar-button:vertical:end:decrement { display: none;}',
@@ -194,53 +196,60 @@ define(function(require)
 				'#chatbox .content::-webkit-scrollbar-button:vertical:decrement { background: url('+ up +') no-repeat; height:10px;}',
 				'#chatbox .content::-webkit-scrollbar-track-piece:vertical { background:black; border:none;}',
 				'#chatbox .content::-webkit-scrollbar-thumb:vertical { background:grey; -webkit-border-image:none; border-color:transparent;border-width: 0px 0; }'
-			].join('\n'));
+			].join('\n');
 		});
 
 		// Input selection
-		this.ui.find('.input input').mousedown(function( event ){
+		this.ui.querySelector('.input input').addEventListener('mousedown', function( event ){
 			this.select();
 			event.stopImmediatePropagation();
 			return false;
 		});
 
-		this.ui.find('.input .message').blur(function(){
+		this.ui.querySelector('.input .message').addEventListener('blur', function(){
 			Events.setTimeout(function(){
 				if (!document.activeElement.tagName.match(/input|select|textarea/i)) {
-					this.ui.find('.input .message').focus();
+					this.ui.querySelector('.input .message').focus();
 				}
 			}.bind(this), 1);
 		}.bind(this));
 
-		this.ui.find('.input .message')[0].maxLength = MAX_LENGTH;
+		this.ui.querySelector('.input .message').maxLength = MAX_LENGTH;
 
-		this.ui.find('.input .username').blur(function(){
+		this.ui.querySelector('.input .username').addEventListener('blur', function(){
 			Events.setTimeout(function(){
 				if (!document.activeElement.tagName.match(/input|select|textarea/i)) {
-					this.ui.find('.input .username').focus();
+					this.ui.querySelector('.input .username').focus();
 				}
 			}.bind(this), 1);
 		}.bind(this));
 
 		// Validate information dragged into text field
-		this.ui.find('input[type=text]')
-			.on('drop', onDropText)
-			.on('dragover', stopPropagation)
+		var _chatTextInputs = this.ui.querySelectorAll('input[type=text]');
+		_chatTextInputs.forEach(function(input) {
+			input.addEventListener('drop', onDropText);
+			input.addEventListener('dragover', stopPropagation);
+		});
 
-		// Button change name
-		this.ui.find('.header input').dblclick(function(){
+		// Tab name inputs are created dynamically in addNewTab()
+		DOM.addDelegatedEvent(this.ui, 'dblclick', '.header input', function(){
 			this.type = 'text';
 			this.select();
-		}).blur(function(){
+		});
+		DOM.addDelegatedEvent(this.ui, 'blur', '.header input', function(){
 			this.type = 'button';
+		});
+		DOM.addDelegatedEvent(this.ui, 'keyup', '.header tr td div.on input', function(){
+			ChatBoxSettings.updateTab(ChatBox.activeTab, this.value);
 		});
 
 		// Private message selection
-		this.ui.find('.input .list').click(function(){
+		var _pmList = this.ui.querySelector('.input .list');
+		_pmList.addEventListener('click', function(){
 			var names = _historyNickName.list;
 			var i, count = names.length;
-			var pos = jQuery(this).offset();
-			var ui = ContextMenu.ui.find('.menu');
+			var pos = DOM.getOffset(this);
+			var ui = ContextMenu.ui.querySelector('.menu');
 
 			if (!count) {
 				ChatBox.addText( DB.getMessage(192), ChatBox.TYPE.ERROR, ChatBox.FILTER.PUBLIC_LOG);
@@ -255,24 +264,24 @@ define(function(require)
 			}
 
 			ContextMenu.addElement('', onPrivateMessageUserSelection(''));
-			ui.css({
-				top:  pos.top - ui.height() - 5,
-				left: pos.left - ui.width() - 5
-			});
-		}).mousedown(function(event){
+			ui.style.top = (pos.top - ui.offsetHeight - 5) + 'px';
+			ui.style.left = (pos.left - ui.offsetWidth - 5) + 'px';
+		});
+		_pmList.addEventListener('mousedown', function(event){
 			event.stopImmediatePropagation();
 			return false;
 		});
 
-		this.ui.find('.draggable').mousedown(function(event){
+		this.ui.querySelector('.draggable').addEventListener('mousedown', function(event){
 			event.stopImmediatePropagation();
 			return false;
 		});
 
 		// Send message to...
-		this.ui.find('.input .filter').click(function(){
-			var pos = jQuery(this).offset();
-			var ui = ContextMenu.ui.find('.menu');
+		var _filterBtn = this.ui.querySelector('.input .filter');
+		_filterBtn.addEventListener('click', function(){
+			var pos = DOM.getOffset(this);
+			var ui = ContextMenu.ui.querySelector('.menu');
 
 			ContextMenu.remove();
 			ContextMenu.append();
@@ -281,38 +290,38 @@ define(function(require)
 			ContextMenu.addElement(DB.getMessage(86),  onChangeTargetMessage(ChatBox.TYPE.PARTY));
 			ContextMenu.addElement(DB.getMessage(437), onChangeTargetMessage(ChatBox.TYPE.GUILD));
 
-			ui.css({
-				top:  pos.top - ui.height() - 5,
-				left: pos.left - ui.width() + 25
-			});
-		}).mousedown(function(event){
+			ui.style.top = (pos.top - ui.offsetHeight - 5) + 'px';
+			ui.style.left = (pos.left - ui.offsetWidth + 25) + 'px';
+		});
+		_filterBtn.addEventListener('mousedown', function(event){
 			event.stopImmediatePropagation();
 			return false;
 		});
 
 		// Change size
-		this.ui.find('.input .size').click(function( event ){
+		this.ui.querySelector('.input .size').addEventListener('click', function( event ){
 			ChatBox.updateHeight(true);
 			event.stopImmediatePropagation();
 			return false;
 		});
 
-		// Scroll feature should block at each line
-		this.ui.find('.content').on('mousewheel DOMMouseScroll', onScroll);
+		// Scroll feature should block at each line (.content elements are created in addNewTab)
+		DOM.addDelegatedEvent(this.ui, 'mousewheel', '.content', onScroll);
+		DOM.addDelegatedEvent(this.ui, 'DOMMouseScroll', '.content', onScroll);
 
-		this.ui.find('.battlemode .bmtoggle').click(function ( event ){
-			ChatBox.ui.find('.input').toggle();
-			ChatBox.ui.find('.battlemode').toggle();
+		this.ui.querySelector('.battlemode .bmtoggle').addEventListener('click', function ( event ){
+			DOM.toggleDisplay(ChatBox.ui.querySelector('.input'));
+			DOM.toggleDisplay(ChatBox.ui.querySelector('.battlemode'));
 		});
 
-		this.ui.find('.chat-function .battleopt2').click(function( event ){
+		this.ui.querySelector('.chat-function .battleopt2').addEventListener('click', function( event ){
 			if(ChatBox.tabCount <= 5){
 				ChatBox.addNewTab();
 				ChatBox.onAppend();
 			}
 		});
 
-		this.ui.on('click', 'table.header tr td.tab', function( event ){
+		DOM.addDelegatedEvent(this.ui, 'click', 'table.header tr td.tab', function( event ){
 			event.stopImmediatePropagation();
 			var currentElem = event.currentTarget;
 			if(ChatBox.activeTab !== currentElem.dataset.tab - 1){
@@ -320,17 +329,17 @@ define(function(require)
 			}
 		});
 
-		this.ui.find('.chat-function .wndminib').click(function(){
+		this.ui.querySelector('.chat-function .wndminib').addEventListener('click', function(){
 			if(ChatBox.tabCount > 1){
 				ChatBox.removeTab();
 			}
 		});
 
-		this.ui.find('.chat-function .chatmode').click(function(){
+		this.ui.querySelector('.chat-function .chatmode').addEventListener('click', function(){
 			ChatBox.toggleChat();
 		});
 
-		this.ui.find('.chat-function .battleopt').click(function(){
+		this.ui.querySelector('.chat-function .battleopt').addEventListener('click', function(){
 			ChatBox.toggleChatBattleOption();
 		});
 
@@ -393,7 +402,7 @@ define(function(require)
 	{
 		var matches, i, count;
 
-		matches = this.ui.find('.content').html().match(/(blob:[^"]+)/g);
+		matches = this.ui.querySelector('.content').innerHTML.match(/(blob:[^"]+)/g);
 
 		if (matches) {
 			for (i = 0, count = matches.length; i < count; ++i) {
@@ -401,27 +410,27 @@ define(function(require)
 			}
 		}
 
-		this.ui.find('.content').empty();
-		this.ui.find('.input .message').val('');
-		this.ui.find('.input .username').val('');
+		this.ui.querySelector('.content').innerHTML = '';
+		this.ui.querySelector('.input .message').value = '';
+		this.ui.querySelector('.input .username').value = '';
 
 		_historyMessage.clear();
 		_historyNickName.clear();
 	};
 
 	ChatBox.toggleChatBattleOption = function toggleChatBattleOption(){
-		var tabName = this.ui.find('.header tr td div.on input').val();
+		var tabName = this.ui.querySelector('.header tr td div.on input').value;
 		ChatBoxSettings.toggle();
 		ChatBoxSettings.updateTab(this.activeTab, tabName);
 	}
 
 	ChatBox.removeTab = function removeTab() {
-		this.ui.find('table.header tr td.tab[data-tab="'+ this.activeTab +'"]').remove();
-		this.ui.find('.body .content[data-content="'+ this.activeTab +'"]').remove();
+		this.ui.querySelector('table.header tr td.tab[data-tab="'+ this.activeTab +'"]').remove();
+		this.ui.querySelector('.body .content[data-content="'+ this.activeTab +'"]').remove();
 
 		var tabName= '';
-		var _elem = this.ui.find('table.header tr td.tab');
- 		_elem = this.ui.find('table.header tr td.tab')[_elem.length - 1];
+		var _tabs = this.ui.querySelectorAll('table.header tr td.tab');
+		var _elem = _tabs[_tabs.length - 1];
 
 		// Use delete instead of splice to avoid ID messup and make our life eastier.
 		delete ChatBoxSettings.tabOption[this.activeTab];
@@ -430,7 +439,7 @@ define(function(require)
 
 		ChatBox.switchTab(_elem.dataset.tab);
 
-		tabName = this.ui.find('.header tr td div.on input').val();
+		tabName = this.ui.querySelector('.header tr td div.on input').value;
 		ChatBoxSettings.updateTab(this.activeTab, tabName);
 	}
 
@@ -475,16 +484,18 @@ define(function(require)
 		tab.name = tabName;
 
 		// Store prev height
-		//var height = this.ui.find('.contentwrapper').height();
+		//var height = this.ui.querySelector('.contentwrapper').offsetHeight;
 
-		// Remove current active state
-		this.ui.find('table.header tr td.tab div')
-			.removeClass('on');
-		this.ui.find('.body .content')
-			.removeClass('active');
+		// Remove current active state (no tabs yet on first call — querySelectorAll is safe)
+		this.ui.querySelectorAll('table.header tr td.tab div').forEach(function(el) {
+			el.classList.remove('on');
+		});
+		this.ui.querySelectorAll('.body .content').forEach(function(el) {
+			el.classList.remove('active');
+		});
 
 		// Add new elements as active
-		this.ui.find('table.header tr .opttab').before(`
+		this.ui.querySelector('table.header tr .opttab').insertAdjacentHTML('beforebegin', `
 			<td class="tab" data-tab="${tabID}">
 				<div class="on">
 					<input type="text" value="${tabName}"/>
@@ -492,11 +503,11 @@ define(function(require)
 			</td>
 		`);
 
-		this.ui.find('table.header tr td.tab[data-tab="'+tabID+'"] div input').on('change', function(){
+		this.ui.querySelector('table.header tr td.tab[data-tab="'+tabID+'"] div input').addEventListener('change', function(){
 			ChatBox.tabs[tabID].name = this.value;
 		});
 
-		this.ui.find('.body .contentwrapper').append(
+		this.ui.querySelector('.body .contentwrapper').insertAdjacentHTML('beforeend',
 			`<div class="content active" data-content="${tabID}"></div>`
 		);
 
@@ -515,21 +526,26 @@ define(function(require)
 	ChatBox.switchTab = function switchTab(tabID){
 		var tabName = '';
 
-		this.ui.find('table.header tr td.tab div')
-			.removeClass('on');
-		this.ui.find('.body .content')
-			.removeClass('active');
+		this.ui.querySelectorAll('table.header tr td.tab div').forEach(function(el) {
+			el.classList.remove('on');
+		});
+		this.ui.querySelectorAll('.body .content').forEach(function(el) {
+			el.classList.remove('active');
+		});
 
 		this.activeTab = tabID;
 
-		this.ui.find('table.header tr td.tab[data-tab="'+ this.activeTab +'"] div')
-			.addClass('on');
-		this.ui.find('.body .content[data-content="'+ this.activeTab +'"]')
-			.addClass('active');
+		var activeTabDiv = this.ui.querySelector('table.header tr td.tab[data-tab="'+ this.activeTab +'"] div');
+		if (activeTabDiv) {
+			activeTabDiv.classList.add('on');
+		}
+		var activeContent = this.ui.querySelector('.body .content[data-content="'+ this.activeTab +'"]');
+		if (activeContent) {
+			activeContent.classList.add('active');
+			activeContent.scrollTop = activeContent.scrollHeight;
+		}
 
-		tabName = this.ui.find('.header tr td div.on input').val();
-
-		this.ui.find('.content')[tabID].scrollTop = this.ui.find('.content')[tabID].scrollHeight;
+		tabName = this.ui.querySelector('.header tr td div.on input').value;
 
 		ChatBoxSettings.updateTab(this.activeTab, tabName);
 	}
@@ -540,10 +556,10 @@ define(function(require)
 	ChatBox.onAppend = function OnAppend()
 	{
 		// Focus the input
-		this.ui.find('.input .message').focus();
+		this.ui.querySelector('.input .message').focus();
 
-		var content = this.ui.find('.content.active');
-		content[0].scrollTop = content[0].scrollHeight;
+		var content = this.ui.querySelector('.content.active');
+		content.scrollTop = content.scrollHeight;
 	};
 
 
@@ -552,10 +568,14 @@ define(function(require)
 	 */
 	ChatBox.onRemove = function OnRemove()
 	{
-		this.ui.find('.content.active').off('scroll');
+		if (this._scrollHandler && this._scrollContent) {
+			this._scrollContent.removeEventListener('scroll', this._scrollHandler);
+			this._scrollHandler = null;
+			this._scrollContent = null;
+		}
 
-		_preferences.y      = parseInt(this.ui.css('top'), 10) + this.ui.height();
-		_preferences.x      = parseInt(this.ui.css('left'), 10);
+		_preferences.y      = parseInt(this.ui.style.top, 10) + this.ui.offsetHeight;
+		_preferences.x      = parseInt(this.ui.style.left, 10);
 		_preferences.height = _heightIndex;
 		_preferences.magnet_top = this.magnet.TOP;
 		_preferences.magnet_bottom = this.magnet.BOTTOM;
@@ -582,23 +602,23 @@ define(function(require)
 	ChatBox.processBattleMode = function processBattleMode( keyId )
 	{
 		// Direct process
-		if (this.ui.find('.battlemode').is(':visible') ||
+		if (DOM.isVisible(this.ui.querySelector('.battlemode')) ||
 			KEYS.ALT || KEYS.SHIFT || KEYS.CTRL ||
 			(keyId >= KEYS.F1 && keyId <= KEYS.F24)) {
 			return BattleMode.process(keyId);
 		}
 /*
-		var messageBox = this.ui.find('.input .message');
-		var text       = messageBox.val();
+		var messageBox = this.ui.querySelector('.input .message');
+		var text       = messageBox.value;
 
-		var messageBoxUser = this.ui.find('.input .username');
-		var text2       = messageBoxUser.val();
+		var messageBoxUser = this.ui.querySelector('.input .username');
+		var text2       = messageBoxUser.value;
 
 		// Hacky, need to wait the browser to add text in the input
 		// If there is no change, send the shortcut.
 		Events.setTimeout(function(){
 			// Nothing rendered, can process the shortcut
-			if ((messageBox.val() === text) && (messageBoxUser.val() === text2)) {
+			if ((messageBox.value === text) && (messageBoxUser.value === text2)) {
 				BattleMode.process(keyId);
 			}
 		}.bind(this), 4);*/
@@ -615,11 +635,8 @@ define(function(require)
 	 */
 	ChatBox.onKeyDown = function OnKeyDown( event )
 	{
-		var messageBox = this.ui.find('.input .message');
-		var nickBox    = this.ui.find('.input .username');
-		this.ui.find('.header tr td div.on input').on('keyup', function(){
-			ChatBoxSettings.updateTab(ChatBox.activeTab, this.value);
-		});
+		var messageBox = this.ui.querySelector('.input .message');
+		var nickBox    = this.ui.querySelector('.input .username');
 		switch (event.which) {
 
 			// Battle mode system
@@ -634,27 +651,31 @@ define(function(require)
 
 			// Switch from user name, to message input
 			case KEYS.TAB:
-				if (document.activeElement === messageBox[0]) {
-					nickBox.select().focus();
+				if (document.activeElement === messageBox) {
+					nickBox.select();
+					nickBox.focus();
 					break;
 				}
 
-				if (document.activeElement === nickBox[0]) {
-					messageBox.select().focus();
+				if (document.activeElement === nickBox) {
+					messageBox.select();
+					messageBox.focus();
 					break;
 				}
 				return true;
 
 			// Get back message from history
 			case KEYS.UP:
-				if (!jQuery('#NpcMenu').length) {
-					if (document.activeElement === messageBox[0]) {
-						messageBox.val(_historyMessage.previous()).select();
+				if (!document.getElementById('NpcMenu')) {
+					if (document.activeElement === messageBox) {
+						messageBox.value = _historyMessage.previous();
+						messageBox.select();
 						break;
 					}
 
-					if (document.activeElement === nickBox[0]) {
-						nickBox.val(_historyNickName.previous()).select();
+					if (document.activeElement === nickBox) {
+						nickBox.value = _historyNickName.previous();
+						nickBox.select();
 						break;
 					}
 				}
@@ -662,14 +683,16 @@ define(function(require)
 
 			// Message from history
 			case KEYS.DOWN:
-				if (!jQuery('#NpcMenu').length) {
-					if (document.activeElement === messageBox[0]) {
-						messageBox.val(_historyMessage.next()).select();
+				if (!document.getElementById('NpcMenu')) {
+					if (document.activeElement === messageBox) {
+						messageBox.value = _historyMessage.next();
+						messageBox.select();
 						break;
 					}
 
-					if (document.activeElement === nickBox[0]) {
-						nickBox.val(_historyNickName.next()).select();
+					if (document.activeElement === nickBox) {
+						nickBox.value = _historyNickName.next();
+						nickBox.select();
 						break;
 					}
 				}
@@ -679,17 +702,20 @@ define(function(require)
 			case KEYS.F10:
 				this.updateHeight(false);
 				// scroll down when resize
-				this.ui.find('.content')[this.activeTab].scrollTop = this.ui.find('.content')[this.activeTab].scrollHeight;
+				var activeContent = this.ui.querySelector('.content[data-content="'+ this.activeTab +'"]');
+				if (activeContent) {
+					activeContent.scrollTop = activeContent.scrollHeight;
+				}
 				break;
 
 			// Send message
 			case KEYS.ENTER:
 				if (document.activeElement.tagName === 'INPUT' &&
-				    document.activeElement !== messageBox[0]) {
+				    document.activeElement !== messageBox) {
 					return true;
 				}
 
-				if (jQuery('#NpcMenu, #NpcBox').length) {
+				if (document.getElementById('NpcMenu') || document.getElementById('NpcBox')) {
 					return true;
 				}
 
@@ -703,14 +729,14 @@ define(function(require)
 	};
 
 	ChatBox.toggleChat = function toggleChat(){
-		var messageBox = this.ui.find('.input .message');
+		var messageBox = this.ui.querySelector('.input .message');
 
 		if (document.activeElement.tagName === 'INPUT' &&
-		    document.activeElement !== messageBox[0]) {
+		    document.activeElement !== messageBox) {
 			return true;
 		}
 
-		if (jQuery('#NpcMenu, #NpcBox').length) {
+		if (document.getElementById('NpcMenu') || document.getElementById('NpcBox')) {
 			return true;
 		}
 
@@ -724,25 +750,28 @@ define(function(require)
 	 */
 	ChatBox.submit = function Submit()
 	{
-		var input = this.ui.find('.input');
-		var $user = input.find('.username');
-		var $text = input.find('.message');
+		var input = this.ui.querySelector('.input');
+		var $user = input.querySelector('.username');
+		var $text = input.querySelector('.message');
 
-		var user = $user.val();
-		var text = $text.val();
+		var user = $user.value;
+		var text = $text.value;
 		var isChatOn = false;
 
 		// Battle mode
 		if (!text.length) {
-			input.toggle();
-			this.ui.find('.battlemode').toggle();
-			if (input.is(':visible')) {
+			DOM.toggleDisplay(input);
+			DOM.toggleDisplay(this.ui.querySelector('.battlemode'));
+			if (DOM.isVisible(input)) {
 				isChatOn = true;
 				$text.focus();
 			}
 			var chatmode = isChatOn ? 'on' : 'off';
 			Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/chatmode_'+chatmode+'.bmp', function( data ){
-				ChatBox.ui.find('.chat-function .chatmode').css('backgroundImage', 'url('+ data +')');
+				var chatmodeBtn = ChatBox.ui.querySelector('.chat-function .chatmode');
+				if (chatmodeBtn) {
+					chatmodeBtn.style.backgroundImage = 'url('+ data +')';
+				}
 			});
 
 			return;
@@ -759,7 +788,7 @@ define(function(require)
 		// Save in history
 		_historyMessage.push(text);
 
-		$text.val('');
+		$text.value = '';
 
 		// Command
 		if (text[0] === '/') {
@@ -788,7 +817,7 @@ define(function(require)
 		}
 
 		this.tabs.forEach((tab, TabNum) => {
-			var content = this.ui.find('.content[data-content="'+ TabNum +'"]');
+			var content = this.ui.querySelector('.content[data-content="'+ TabNum +'"]');
 			var chatTabOption = ChatBoxSettings.tabOption[TabNum];
 
 			if(!chatTabOption.includes(filterType)){
@@ -828,20 +857,23 @@ define(function(require)
 				}
 			}
 
-			content.append(
-				jQuery('<div/>').
-					css('color', color)
-					[ !override ? 'text' : 'html' ](text)
-			);
+			var div = document.createElement('div');
+			div.style.color = color;
+			if (!override) {
+				div.textContent = text;
+			} else {
+				div.innerHTML = text;
+			}
+			content.appendChild(div);
 
 
 			// If there is too many line, remove the older one
-			if (content[0].childElementCount > MAX_MSG) {
+			if (content.childElementCount > MAX_MSG) {
 				var element, matches;
 				var i, count;
 
 				//Check if theres any blob url object to be released from buffer (Check Controls/ScreenShot.js)
-				element = content[0].firstElementChild;
+				element = content.firstElementChild;
 
 				matches = element.innerHTML.match(/(blob:[^"]+)/g);
 
@@ -873,10 +905,10 @@ define(function(require)
 				return false;
 			}
 
-			const lastMessageHeight = this.ui.find('.content[data-content="'+ TabNum +'"] > div:last-child')[0].scrollHeight;
+			const lastMessageHeight = this.ui.querySelector('.content[data-content="'+ TabNum +'"] > div:last-child').scrollHeight;
 
-			if (shouldScrollDown(content[0], lastMessageHeight, content.height())) {
-				content[0].scrollTop = content[0].scrollHeight;
+			if (shouldScrollDown(content, lastMessageHeight, content.offsetHeight)) {
+				content.scrollTop = content.scrollHeight;
 			}
 		});
 	};
@@ -890,12 +922,12 @@ define(function(require)
 		var HeightList = [ 0, 0, MAGIC_NUMBER, MAGIC_NUMBER*2, MAGIC_NUMBER*3, MAGIC_NUMBER*4, MAGIC_NUMBER*5 ];
 		_heightIndex   = (_heightIndex + 1) % HeightList.length;
 
-		var content   = this.ui.find('.contentwrapper');
+		var content   = this.ui.querySelector('.contentwrapper');
 		var height     = HeightList[ _heightIndex ];
-		var top        = parseInt( this.ui.css('top'), 10);
+		var top        = parseInt(this.ui.style.top, 10);
 
-		this.ui.css('top', top - (height - content.height()) );
-		content.height(height);
+		this.ui.style.top = (top - (height - content.offsetHeight)) + 'px';
+		content.style.height = height ? height + 'px' : '';
 
 		// Don't remove UI
 		if (_heightIndex === 0 && AlwaysVisible) {
@@ -904,22 +936,25 @@ define(function(require)
 
 		switch (_heightIndex) {
 			case 0:
-				this.ui.hide();
+				this.ui.style.display = 'none';
 				break;
 
 			case 1:
-				this.ui.show();
-				this.ui.find('.header, .body').hide();
-				this.ui.find('.input').addClass('fix');
+				this.ui.style.display = '';
+				this.ui.querySelector('.header, .body').style.display = 'none';
+				this.ui.querySelector('.input').classList.add('fix');
 				break;
 
 			default:
-				this.ui.find('.input').removeClass('fix');
-				this.ui.find('.header, .body').show();
+				this.ui.querySelector('.input').classList.remove('fix');
+				this.ui.querySelector('.header, .body').style.display = '';
 				break;
 		}
 
-		content[this.activeTab].scrollTop = content[this.activeTab].scrollHeight;
+		var activeContent = this.ui.querySelector('.content[data-content="'+ this.activeTab +'"]');
+		if (activeContent) {
+			activeContent.scrollTop = activeContent.scrollHeight;
+		}
 	};
 
 
@@ -948,7 +983,7 @@ define(function(require)
 		date     = localISOTime + ' (GMT ' + (timezone > 0 ? '-' : '+') + Math.abs(timezone).toString() + ')'; //GMT
 		
 		data = '<html><head><title>Chat History</title><style> body { background-color: DarkSlateGray; } </style></head><body>'
-		data += this.ui.find('.content[data-content="'+ ChatBox.activeTab +'"]')[0].outerHTML;
+		data += this.ui.querySelector('.content[data-content="'+ ChatBox.activeTab +'"]').outerHTML;
 		data += '</body></html>';
 		
 		// We create a local file
@@ -965,14 +1000,14 @@ define(function(require)
 	{
 		var delta;
 
-		if (event.originalEvent.wheelDelta) {
-			delta = event.originalEvent.wheelDelta / 120 ;
+		if (event.wheelDelta) {
+			delta = event.wheelDelta / 120 ;
 			if (window.opera) {
 				delta = -delta;
 			}
 		}
-		else if (event.originalEvent.detail) {
-			delta = -event.originalEvent.detail;
+		else if (event.detail) {
+			delta = -event.detail;
 		}
 
 		this.scrollTop = Math.floor(this.scrollTop/14) * 14 - (delta * 14);
@@ -987,7 +1022,7 @@ define(function(require)
 		 event.stopImmediatePropagation();
 		 var data;
 		 try {
-			data = JSON.parse(event.originalEvent.dataTransfer.getData('Text'));
+			data = JSON.parse(event.dataTransfer.getData('Text'));
 		 }
 		 catch(e) {
 			 return false;
@@ -998,7 +1033,7 @@ define(function(require)
 			 return false;
 		 }
 
-		 jQuery(event.currentTarget).val(data);
+		 event.currentTarget.value = data;
 		 return true;
 	 }
 
@@ -1023,7 +1058,7 @@ define(function(require)
 	{
 		return function onPrivateMessageUserSelectionClosure()
 		{
-			ChatBox.ui.find('.input .username').val(name);
+			ChatBox.ui.querySelector('.input .username').value = name;
 		};
 	}
 
@@ -1037,15 +1072,15 @@ define(function(require)
 	{
 		return function onChangeTargetMessageClosure()
 		{
-			var $input = ChatBox.ui.find('.input .message');
+			var $input = ChatBox.ui.querySelector('.input .message');
 
-			$input.removeClass('guild party');
+			$input.classList.remove('guild party');
 
 			if (type & ChatBox.TYPE.PARTY) {
-				$input.addClass('party');
+				$input.classList.add('party');
 			}
 			else if (type & ChatBox.TYPE.GUILD) {
-				$input.addClass('guild');
+				$input.classList.add('guild');
 			}
 
 			ChatBox.sendTo = type;
@@ -1062,8 +1097,8 @@ define(function(require)
 
 			currentResizer.addEventListener('mousedown', function(e) {
 				e.preventDefault();
-				original_height = ChatBox.ui.find('.contentwrapper').height();
-				original_y = parseInt( ChatBox.ui.css('top'), 10) + original_height;
+				original_height = ChatBox.ui.querySelector('.contentwrapper').offsetHeight;
+				original_y = parseInt( ChatBox.ui.style.top, 10) + original_height;
 				original_mouse_y = e.pageY;
 				window.addEventListener('mousemove', resize);
 				window.addEventListener('mouseup', stopResize);
@@ -1073,12 +1108,14 @@ define(function(require)
 				if (currentResizer.classList.contains('draggable')) {
 					const height = fixHeight(original_height - (e.pageY - original_mouse_y));
 					if (height > MAGIC_NUMBER) {
-						ChatBox.ui.css('top', original_y - height);
-						ChatBox.ui.find('.contentwrapper').height(height);
+						ChatBox.ui.style.top = (original_y - height) + 'px';
+						ChatBox.ui.querySelector('.contentwrapper').style.height = height + 'px';
 					}
 				}
-				// scroll down when resize
-				ChatBox.ui.find('.content')[ChatBox.activeTab].scrollTop = ChatBox.ui.find('.content')[ChatBox.activeTab].scrollHeight;
+				var activeContent = ChatBox.ui.querySelector('.content[data-content="'+ ChatBox.activeTab +'"]');
+				if (activeContent) {
+					activeContent.scrollTop = activeContent.scrollHeight;
+				}
 			}
 
 			function fixHeight(height){

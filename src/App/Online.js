@@ -83,8 +83,7 @@ require( {
 	urlArgs: ROConfig.version,
 	baseUrl: '../../src/',
 	paths: {
-		text:   'Vendors/text.require',
-		jquery: 'Vendors/jquery-1.9.1'
+		text:   'Vendors/text.require'
 	}
 },
 	['Engine/GameEngine', 'Core/Context', 'Plugins/PluginManager'],

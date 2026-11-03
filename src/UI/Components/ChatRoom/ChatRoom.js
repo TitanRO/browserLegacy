@@ -16,7 +16,6 @@ define(function(require)
 	 * Dependencies
 	 */
 	var Preferences  = require('Core/Preferences');
-	var jQuery       = require('Utils/jquery');
 	var Renderer     = require('Renderer/Renderer');
 	var Session      = require('Engine/SessionStorage');
 	var Mouse        = require('Controls/MouseEventHandler');
@@ -27,6 +26,7 @@ define(function(require)
 	var htmlText     = require('text!./ChatRoom.html');
 	var cssText      = require('text!./ChatRoom.css');
 	var getModule    = require;
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -94,19 +94,19 @@ define(function(require)
 	ChatRoom.init = function init()
 	{
 		// Bindings
-		this.ui.find('.extend').mousedown(onResize);
-		this.ui.find('.close')
-			.mousedown(function(event){
-				event.stopImmediatePropagation();
-				return false;
-			})
-			.click(this.remove.bind(this));
+		this.ui.querySelector('.extend').addEventListener('mousedown', onResize);
+		var _chatRoomClose = this.ui.querySelector('.close');
+		_chatRoomClose.addEventListener('mousedown', function(event){
+			event.stopImmediatePropagation();
+			return false;
+		});
+		_chatRoomClose.addEventListener('click', this.remove.bind(this));
 
-		this.ui.find('.sendmsg').mousedown(function(event){
+		this.ui.querySelector('.sendmsg').addEventListener('mousedown', function(event){
 			event.stopImmediatePropagation();
 		});
 
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 	};
 
 
@@ -118,12 +118,12 @@ define(function(require)
 		this.isOpen = true;
 		resize( _preferences.width, _preferences.height );
 
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 
-		this.ui.find('.sendmsg').focus();
+		this.ui.querySelector('.sendmsg').focus();
 		this.updateChat();
 	};
 
@@ -141,12 +141,12 @@ define(function(require)
 		this.owner          = '';
 		this.isOpen         = false;
 
-		this.ui.find('.messages').empty();
+		this.ui.querySelector('.messages').innerHTML = '';
 
-		_preferences.y      =  parseInt(this.ui.css('top'), 10);
-		_preferences.x      =  parseInt(this.ui.css('left'), 10);
-		_preferences.width  =  Math.floor( (this.ui.width()  - (23 + 16 + 16 - 30)) / 32 );
-		_preferences.height =  Math.floor( (this.ui.height() - (-30)) / 32 );
+		_preferences.y      =  parseInt(this.ui.style.top, 10);
+		_preferences.x      =  parseInt(this.ui.style.left, 10);
+		_preferences.width  =  Math.floor( (this.ui.offsetWidth  - (23 + 16 + 16 - 30)) / 32 );
+		_preferences.height =  Math.floor( (this.ui.offsetHeight - (-30)) / 32 );
 		_preferences.save();
 
 		this.exitRoom();
@@ -161,18 +161,18 @@ define(function(require)
 		var members  = '';
 		var i, count = this.members.length;
 
-		this.ui.find('.titlebar .title').text( this.title );
-		this.ui.find('.titlebar .count').text( this.count + '/' + this.limit );
+		this.ui.querySelector('.titlebar .title').textContent =  this.title ;
+		this.ui.querySelector('.titlebar .count').textContent =  this.count + '/' + this.limit ;
 
 		for (i = 0; i < count; ++i) {
 			if (this.members[i] == this.owner) {
-				members = '<span class="owner">' + jQuery.escape(this.members[i]) + '</span><br/>' + members;
+				members = '<span class="owner">' + DOM.escapeHtml(this.members[i]) + '</span><br/>' + members;
 				continue;
 			}
-			members +=  jQuery.escape(this.members[i]) + '<br/>';
+			members +=  DOM.escapeHtml(this.members[i]) + '<br/>';
 		}
 
-		this.ui.find('.members').html( members );
+		this.ui.querySelector('.members').innerHTML =  members ;
 	};
 
 
@@ -182,7 +182,7 @@ define(function(require)
 	function sendChatMessage()
 	{
 		var ui      = ChatRoom.ui;
-		var message = ui.find('.send input[name=message]').val();
+		var message = ui.querySelector('.send input[name=message]').value;
 
 		// Nothing to submit
 		if (message.length < 1) {
@@ -192,12 +192,12 @@ define(function(require)
 		// Process commands
 		if (message[0] === '/') {
 			getModule('Controls/ProcessCommand').processCommand.call( ChatBox, message.substr(1) );
-			ui.find('.send input[name=message]').val('');
+			ui.querySelector('.send input[name=message]').value = '';
 			return true;
 		}
 
 		ChatBox.onRequestTalk('', message);
-		ui.find('.send input[name=message]').val('');
+		ui.querySelector('.send input[name=message]').value = '';
 
 		return true;
 	}
@@ -210,21 +210,21 @@ define(function(require)
 	ChatRoom.message = function displayMessage( message, type )
 	{
 		// Escape html tag
-		var element = jQuery('<div/>');
-		element.text(message);
+		var element = document.createElement('div');
+		element.textContent = message;
 
 		if (type) {
-			element.addClass(type);
+			element.classList.add(type);
 		}
 		else if (message.indexOf(Session.Entity.display.name + ' : ') === 0) {
-			element.addClass('self');
+			element.classList.add('self');
 		}
 
-		var content = this.ui.find('.messages');
+		var content = this.ui.querySelector('.messages');
 
 		// Append content, move to the bottom
 		content.append(element);
-		content[0].scrollTop = content[0].scrollHeight;
+		content.scrollTop = content.scrollHeight;
 
 		return true;
 	};
@@ -278,8 +278,8 @@ define(function(require)
 	function onResize()
 	{
 		var ui         = ChatRoom.ui;
-		var top        = ui.position().top;
-		var left       = ui.position().left;
+		var top        = DOM.getPosition(ui).top;
+		var left       = DOM.getPosition(ui).left;
 		var lastWidth  = 0;
 		var lastHeight = 0;
 		var _Interval;
@@ -309,12 +309,14 @@ define(function(require)
 		_Interval = setInterval( resizeProcess, 30);
 
 		// Stop resizing
-		jQuery(window).one('mouseup', function(event){
+		var _chatRoomResizeHandler = function(event){
 			// Only on left click
 			if ( event.which === 1 ) {
 				clearInterval(_Interval);
+				window.removeEventListener('mouseup', _chatRoomResizeHandler);
 			}
-		});
+		};
+		window.addEventListener('mouseup', _chatRoomResizeHandler);
 	}
 
 
@@ -326,8 +328,8 @@ define(function(require)
 		width  = Math.min( Math.max(width,  7), 14);
 		height = Math.min( Math.max(height, 3), 8);
 
-		ChatRoom.ui.css('width', 23 + 16 + 16 + width  * 32);
-		ChatRoom.ui.find('.resize').css('height', height * 32);
+		ChatRoom.ui.style.width = 23 + 16 + 16 + width  * 32;
+		ChatRoom.ui.querySelector('.resize').style.height = height * 32;
 	}
 
 

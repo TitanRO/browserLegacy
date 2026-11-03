@@ -27,7 +27,6 @@ require({
 	baseUrl: '../../src/',
 	paths: {
 		text:   'Vendors/text.require',
-		jquery: 'Vendors/jquery-1.9.1'
 	}
 },
    ['Core/Configs', 'Core/Thread', 'Core/Context', 'Core/Client', 'UI/Components/GrannyModelViewer/GrannyModelViewer'],

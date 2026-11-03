@@ -13,7 +13,6 @@
      /**
       * Dependencies
       */
-     var jQuery      = require('Utils/jquery');
      var DB          = require('DB/DBManager');
      var Preferences = require('Core/Preferences');
      var Mouse       = require('Controls/MouseEventHandler');
@@ -25,6 +24,7 @@
      var Inventory   = require('UI/Components/Inventory/Inventory');
      var htmlText    = require('text!./VendingModelMessage.html');
      var cssText     = require('text!./VendingModelMessage.css');
+     var DOM         = require('Utils/DOM');
      var getModule   = require;
 
      /**
@@ -38,24 +38,24 @@
      VendingModelMessage.init = function init()
      {
         // Show at center.
-        this.ui.css({
+        DOM.setCss(this.ui, {
             top:  (Renderer.height- 200)/2,
             left: (Renderer.width - 200)/2
         });
 
-        this.ui.find('.ok').click(function(e){
+        this.ui.querySelector('.ok').addEventListener('click', function(e){
 			e.stopImmediatePropagation();
 			VendingModelMessage.onRemove();
 		});
-        this.draggable(this.ui.find('.titlebar'));
+        this.draggable(this.ui.querySelector('.titlebar'));
     };
 
     VendingModelMessage.setInit = function setInit(numMessage)
     {
         VendingModelMessage.append();
-        VendingModelMessage.ui.show();
+        VendingModelMessage.ui.style.display = '';
         let messageText = DB.getMessage(numMessage);
-		VendingModelMessage.ui.find('.message').text(messageText);
+		VendingModelMessage.ui.querySelector('.message').textContent = messageText;
     }
 
     VendingModelMessage.onRemove = function onRemove()
@@ -63,7 +63,7 @@
         if (this.ui == undefined)
             return;
       
-        this.ui.hide()
+        this.ui.style.display = 'none'
     }
 
     /**

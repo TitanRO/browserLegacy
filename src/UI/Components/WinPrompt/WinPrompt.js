@@ -18,7 +18,6 @@ define(function(require)
 	var DB          = require('DB/DBManager');
 	var UIManager   = require('UI/UIManager');
 	var WinPopup    = require('UI/Components/WinPopup');
-	var jQuery      = require('Utils/jquery');
 
 
 	/**
@@ -32,7 +31,7 @@ define(function(require)
 	 */
 	WinPrompt.init = function init()
 	{
-		this.ui.draggable();
+		this.draggable();
 	};
 
 
@@ -48,39 +47,42 @@ define(function(require)
 	 */
 	WinPrompt.ask = function ask( text, btn_yes, btn_no, onYes, onNo )
 	{
-		this.ui.find('.text').text(text);
-		this.ui.find('.btns').empty().append(
+		this.ui.querySelector('.text').textContent = text;
+		var btns = this.ui.querySelector('.btns');
+		btns.innerHTML = '';
 
-			jQuery('<button/>').
-				addClass('btn').
-				data('background', DB.INTERFACE_PATH + 'btn_' + btn_yes + '.bmp').
-				data('hover',      DB.INTERFACE_PATH + 'btn_' + btn_yes + '_a.bmp').
-				data('down',       DB.INTERFACE_PATH + 'btn_' + btn_yes + '_b.bmp').
-				each( this.parseHTML ).
-				one('click',function(){
-					WinPrompt.remove();
-					if (onYes) {
-						onYes();
-					}
-				}),
+		var btnYesEl = document.createElement('button');
+		btnYesEl.classList.add('btn');
+		btnYesEl.dataset.background = DB.INTERFACE_PATH + 'btn_' + btn_yes + '.bmp';
+		btnYesEl.dataset.hover      = DB.INTERFACE_PATH + 'btn_' + btn_yes + '_a.bmp';
+		btnYesEl.dataset.down       = DB.INTERFACE_PATH + 'btn_' + btn_yes + '_b.bmp';
+		this.parseHTML.call(btnYesEl);
+		btnYesEl.addEventListener('click', function(){
+			WinPrompt.remove();
+			if (onYes) {
+				onYes();
+			}
+		}, { once: true });
 
-			jQuery('<button/>').
-				addClass('btn').
-				data('background', DB.INTERFACE_PATH + 'btn_' + btn_no + '.bmp').
-				data('hover',      DB.INTERFACE_PATH + 'btn_' + btn_no + '_a.bmp').
-				data('down',       DB.INTERFACE_PATH + 'btn_' + btn_no + '_b.bmp').
-				each( this.parseHTML ).
-				one('click',function(){
-					WinPrompt.remove();
-					if (onNo) {
-						onNo();
-					}
-				})
-		);
+		var btnNoEl = document.createElement('button');
+		btnNoEl.classList.add('btn');
+		btnNoEl.dataset.background = DB.INTERFACE_PATH + 'btn_' + btn_no + '.bmp';
+		btnNoEl.dataset.hover      = DB.INTERFACE_PATH + 'btn_' + btn_no + '_a.bmp';
+		btnNoEl.dataset.down       = DB.INTERFACE_PATH + 'btn_' + btn_no + '_b.bmp';
+		this.parseHTML.call(btnNoEl);
+		btnNoEl.addEventListener('click', function(){
+			WinPrompt.remove();
+			if (onNo) {
+				onNo();
+			}
+		}, { once: true });
+
+		btns.appendChild(btnYesEl);
+		btns.appendChild(btnNoEl);
 
 		// Parse
 		this.append();
-		this.ui.each( this.parseHTML ).find('*').each( this.parseHTML );
+		Array.from(this.ui.querySelectorAll('*')).forEach(this.parseHTML);
 	};
 
 

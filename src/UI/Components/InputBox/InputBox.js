@@ -15,7 +15,6 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
-	var jQuery             = require('Utils/jquery');
 	var Renderer           = require('Renderer/Renderer');
 	var KEYS               = require('Controls/KeyEventHandler');
 	var DB                 = require('DB/DBManager');
@@ -23,6 +22,7 @@ define(function(require)
 	var UIComponent        = require('UI/UIComponent');
 	var htmlText           = require('text!./InputBox.html');
 	var cssText            = require('text!./InputBox.css');
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -37,18 +37,18 @@ define(function(require)
 	InputBox.init = function Init()
 	{
 		this.draggable();
-		this.ui.css({ top: (Renderer.height-120)/1.5-49, left: (Renderer.width -280)/2+1 });
-		this.ui.find('button').click(validate.bind(this));
-		this.ui.find('input').mousedown(function(event) {
+		DOM.setCss(this.ui, { top: (Renderer.height-120)/1.5-49, left: (Renderer.width -280)/2+1 });
+		this.ui.querySelector('button').addEventListener('click', validate.bind(this));
+		this.ui.querySelector('input').addEventListener('mousedown', function(event) {
 			event.stopImmediatePropagation();
 		});
 
-		this.overlay = jQuery('<div/>')
-			.addClass('win_popup_overlay')
-			.css('zIndex', 30)
-			.click(function(){
-				this.remove();
-			}.bind(this));
+		this.overlay = document.createElement('div');
+		this.overlay.classList.add('win_popup_overlay');
+		this.overlay.style.zIndex = 30;
+		this.overlay.addEventListener('click', function(){
+			InputBox.remove();
+		});
 	};
 
 
@@ -64,10 +64,10 @@ define(function(require)
 	 */
 	InputBox.onRemove = function OnRemove()
 	{
-		this.ui.find('input').val('');
-		this.ui.find('.text').text('');
-		this.ui.find('input').keydown(null);
-		this.overlay.detach();
+		this.ui.querySelector('input').value = '';
+		this.ui.querySelector('.text').textContent = '';
+		this.ui.querySelector('input').addEventListener('keydown', null);
+		DOM.detach(this.overlay);
 	};
 
 
@@ -96,11 +96,11 @@ define(function(require)
 	 */
 	function validate()
 	{
-		var text = this.ui.find('input').val();
+		var text = this.ui.querySelector('input').value;
 
 		if (!this.isPersistent || text.length) {
 
-			if (this.ui.hasClass('number')) {
+			if (this.ui.classList.contains('number')) {
 				text = parseInt(text, 10) | 0;
 			}
 
@@ -126,62 +126,62 @@ define(function(require)
 
 		switch (type) {
 			case 'number':
-				this.ui.addClass('number');
-				this.ui.find('.text').text( DB.getMessage(1259) );
-				this.ui.find('input').attr('type', 'text');
+				this.ui.classList.add('number');
+				this.ui.querySelector('.text').textContent = DB.getMessage(1259);
+				this.ui.querySelector('input').setAttribute('type', 'text');
 				defaultVal = defaultVal || 0;
 				break;
 
 			case 'price':
-				this.ui.addClass('number');
-				this.ui.find('.text').text( 'Input Price' );
-				this.ui.find('input').attr('type', 'text');
+				this.ui.classList.add('number');
+				this.ui.querySelector('.text').textContent =  'Input Price' ;
+				this.ui.querySelector('input').setAttribute('type', 'text');
 				defaultVal = defaultVal || 0;
 				break;
 
 			case 'text':
-				this.ui.removeClass('number');
-				this.ui.find('.text').text('');
-				this.ui.find('input').attr('type', 'text');
+				this.ui.classList.remove('number');
+				this.ui.querySelector('.text').textContent = '';
+				this.ui.querySelector('input').setAttribute('type', 'text');
 				break;
 
 			case 'shopname':
-				this.ui.removeClass('number');
-				this.ui.find('.text').text('Input your Shop Name');
-				this.ui.find('input').attr('type', 'text');
+				this.ui.classList.remove('number');
+				this.ui.querySelector('.text').textContent = 'Input your Shop Name';
+				this.ui.querySelector('input').setAttribute('type', 'text');
 				break;
 
 			case 'pass':
-				this.ui.removeClass('number');
-				this.ui.find('.text').text('');
-				this.ui.find('input').attr('type', 'password');
+				this.ui.classList.remove('number');
+				this.ui.querySelector('.text').textContent = '';
+				this.ui.querySelector('input').setAttribute('type', 'password');
 				break;
 
 			case 'mail':
-				this.ui.removeClass('number');
-				this.ui.find('.text').text( DB.getMessage(300) );
-				this.ui.find('input').attr('type', 'password');
+				this.ui.classList.remove('number');
+				this.ui.querySelector('.text').textContent = DB.getMessage(300);
+				this.ui.querySelector('input').setAttribute('type', 'password');
 				break;
 			
 			case 'birthdate':
-				this.ui.removeClass('number');
-				this.ui.find('.text').text( DB.getMessage(1815) );
-				this.ui.find('input').attr('type', 'text');
+				this.ui.classList.remove('number');
+				this.ui.querySelector('.text').textContent = DB.getMessage(1815);
+				this.ui.querySelector('input').setAttribute('type', 'text');
 				break;
 
 			case 'item':
-				this.ui.addClass('number');
-				this.ui.find('.text').text( DB.getItemInfo(itemId).identifiedDisplayName );
-				this.ui.find('input').attr('type', 'text');
+				this.ui.classList.add('number');
+				this.ui.querySelector('.text').textContent = DB.getItemInfo(itemId).identifiedDisplayName;
+				this.ui.querySelector('input').setAttribute('type', 'text');
 				defaultVal = defaultVal || 0;
 				break;
 
 		}
 
 		if (typeof defaultVal !== 'undefined') {
-			this.ui.find('input')
-				.val( defaultVal )
-				.select();
+			var _inputEl = this.ui.querySelector('input');
+			_inputEl.value = defaultVal;
+			_inputEl.select();
 		}
 	};
 

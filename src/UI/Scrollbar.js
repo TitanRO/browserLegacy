@@ -7,8 +7,8 @@
  *
  * @author Vincent Thibault
  */
-define( ['Utils/jquery', 'Utils/Texture', 'DB/DBManager', 'Core/Client' ],
-function(       jQuery,         Texture,      DB,               Client )
+define( ['Utils/Texture', 'DB/DBManager', 'Core/Client' ],
+function(         Texture,      DB,               Client )
 {
 	'use strict';
 
@@ -60,7 +60,9 @@ function(       jQuery,         Texture,      DB,               Client )
 							ctx.drawImage( base_mid, 0, base_up.height);
 							ctx.drawImage( base_down, 0, base_up.height + base_mid.height );
 
-							jQuery('style:first').append([
+							var styleEl = document.querySelector('style');
+							if (styleEl) {
+								styleEl.textContent += [
 								'::-webkit-scrollbar { width: 13px; height: 12px; }',
 								'::-webkit-scrollbar-button:vertical:start:increment,',
 								'::-webkit-scrollbar-button:vertical:end:decrement { display: none;}',
@@ -77,7 +79,8 @@ function(       jQuery,         Texture,      DB,               Client )
 								'::-webkit-scrollbar-button:vertical:decrement { background-image: url('+ up + '); background-color: white;}',
 								'::-webkit-scrollbar-track-piece:vertical { background-image: url('+ mid +'); background-color: white;}',
 								'::-webkit-scrollbar-thumb:vertical{ -webkit-border-image: url('+ base.toDataURL() +') 4 0 4 0;}'
-							].join('\n'));
+							].join('\n');
+							}
 
 							ScrollBar.complete = true;
 						});

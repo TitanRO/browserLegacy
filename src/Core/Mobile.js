@@ -18,7 +18,6 @@ define(function( require )
 	/**
 	 * Import dependencies
 	 */
-	var jQuery    = require('Utils/jquery');
 	var Context   = require('Core/Context');
 	var Events    = require('Core/Events');
 	var Camera    = require('Renderer/Camera');
@@ -71,9 +70,9 @@ define(function( require )
 				return;
 			}
 
-			jQuery.fn.focus  = function() {};
-			jQuery.fn.select = function() {};
-			_done            = true;
+			HTMLElement.prototype.focus = function() {};
+			HTMLInputElement.prototype.select = function() {};
+			_done = true;
 		};
 	})();
 
@@ -180,7 +179,7 @@ define(function( require )
 		return function onTouchStart(event)
 		{
 			remoteAutoFocus();
-			_touches = event.originalEvent.touches;
+			_touches = event.touches;
 			event.stopImmediatePropagation();
 
 			// Delayed click (to detect gesture)
@@ -245,7 +244,7 @@ define(function( require )
 	{
 		event.stopImmediatePropagation();
 
-		var touches = event.originalEvent.touches;
+		var touches = event.touches;
 
 		Mouse.screen.x = touches[0].pageX;
 		Mouse.screen.y = touches[0].pageY;
@@ -278,7 +277,7 @@ define(function( require )
 	// Add full screen on mobile (sux to have the browser title bar)
 	if (Math.max(screen.availHeight,screen.availWidth) <= 800) {
 		// Fullscreen on action
-		jQuery(window).on('touchstart', function(){
+		window.addEventListener('touchstart', function(){
 			if (!Context.isFullScreen()) {
 				Context.requestFullScreen();
 			}
@@ -286,7 +285,7 @@ define(function( require )
 	}
 	
 	//Add mobile UI on touch
-	jQuery(window).one('touchstart', touchDevice);
+	window.addEventListener('touchstart', touchDevice, { once: true });
 	
 	function touchDevice(){
 		Session.isTouchDevice = true;
@@ -299,10 +298,9 @@ define(function( require )
 
 
 	// Touch controls
-	jQuery(window)
-		.on('touchstart', onTouchStart)
-		.on('touchend',   onTouchEnd)
-		.on('touchmove',  onTouchMove);
+	window.addEventListener('touchstart', onTouchStart);
+	window.addEventListener('touchend', onTouchEnd);
+	window.addEventListener('touchmove', onTouchMove);
 
 
 	/**

@@ -16,7 +16,6 @@ define(function( require )
 	 * Load dependencies
 	 */
 	var WebGL         = require('Utils/WebGL');
-	var jQuery        = require('Utils/jquery');
 	var glMatrix      = require('Utils/gl-matrix');
 	var Configs       = require('Core/Configs');
 	var GraphicsSettings = require('Preferences/Graphics');
@@ -137,11 +136,11 @@ define(function( require )
 
 			this.gl = WebGL.getContext( this.canvas, param );
 
-			jQuery(window)
-				.resize(this.onResize.bind(this))
-				.on('contextmenu',function(){
-					return false;
-				});
+			window.addEventListener('resize', this.onResize.bind(this));
+			window.addEventListener('contextmenu', function(event){
+				event.preventDefault();
+				return false;
+			});
 
 			this.render(null);
 			this.resize();

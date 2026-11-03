@@ -10,7 +10,6 @@ define(function(require)
 {
 	'use strict';
 	
-	var jQuery			= require('Utils/jquery');
 	var Context			= require('Core/Context');
 	var UIManager		= require('UI/UIManager');
 	var UIComponent		= require('UI/UIComponent');
@@ -26,6 +25,7 @@ define(function(require)
 	var Events          = require('Core/Events');
 	var htmlText		= require('text!./MobileUI.html');
 	var cssText			= require('text!./MobileUI.css');
+	var DOM             = require('Utils/DOM');
 	
 	/**
 	 * Create Component
@@ -52,23 +52,23 @@ define(function(require)
 	 * Initialize UI
 	 */
 	MobileUI.init = function init() {
-		this.ui.find('#toggleUIButton').click(			function(e){ toggleButtons();			stopPropagation(e);});
-		this.ui.find('#fullscreenButton').click(		function(e){ toggleFullScreen();		stopPropagation(e);});
-		this.ui.find('#f10Button').click(				function(e){ keyPress(121);				stopPropagation(e);});
-		this.ui.find('#f12Button').click(				function(e){ keyPress(123);				stopPropagation(e);});
-		this.ui.find('#insButton').click(				function(e){ keyPress(45);				stopPropagation(e);});
+		this.ui.querySelector('#toggleUIButton').addEventListener('click', 			function(e){ toggleButtons();			stopPropagation(e);});
+		this.ui.querySelector('#fullscreenButton').addEventListener('click', 		function(e){ toggleFullScreen();		stopPropagation(e);});
+		this.ui.querySelector('#f10Button').addEventListener('click', 				function(e){ keyPress(121);				stopPropagation(e);});
+		this.ui.querySelector('#f12Button').addEventListener('click', 				function(e){ keyPress(123);				stopPropagation(e);});
+		this.ui.querySelector('#insButton').addEventListener('click', 				function(e){ keyPress(45);				stopPropagation(e);});
 		
-		this.ui.find('#toggleTargetingButton').click(	function(e){ toggleTouchTargeting();	stopPropagation(e);});
-		this.ui.find('#toggleAutoFollowButton').click(	function(e){ toggleAutoFollow();		stopPropagation(e);});
-		this.ui.find('#toggleAutoTargetButton').click(	function(e){ toggleAutoTargeting();		stopPropagation(e);});
+		this.ui.querySelector('#toggleTargetingButton').addEventListener('click', 	function(e){ toggleTouchTargeting();	stopPropagation(e);});
+		this.ui.querySelector('#toggleAutoFollowButton').addEventListener('click', 	function(e){ toggleAutoFollow();		stopPropagation(e);});
+		this.ui.querySelector('#toggleAutoTargetButton').addEventListener('click', 	function(e){ toggleAutoTargeting();		stopPropagation(e);});
 		
-		this.ui.find('#attackButton').click(			function(e){ attackTargeted();			stopPropagation(e);});
+		this.ui.querySelector('#attackButton').addEventListener('click', 			function(e){ attackTargeted();			stopPropagation(e);});
 		
-		this.ui.find('.buttons')
-			.on('mousedown',	function(e){ jQuery(e.target).addClass('pressed'); })
-			.on('touchstart',	function(e){ jQuery(e.target).addClass('pressed'); })
-			.on('mouseup',		function(e){ jQuery(e.target).removeClass('pressed'); })
-			.on('touchend',		function(e){ jQuery(e.target).removeClass('pressed'); });
+		var _mobileButtons = this.ui.querySelector('.buttons');
+		_mobileButtons.addEventListener('mousedown', function(e){ e.target.classList.add('pressed'); });
+		_mobileButtons.addEventListener('touchstart', function(e){ e.target.classList.add('pressed'); });
+		_mobileButtons.addEventListener('mouseup', function(e){ e.target.classList.remove('pressed'); });
+		_mobileButtons.addEventListener('touchend', function(e){ e.target.classList.remove('pressed'); });
 		
 	}
 	
@@ -104,9 +104,9 @@ define(function(require)
 	function toggleButtons(){
 		if(showButtons){
 			
-			MobileUI.ui.find('#topBar').addClass('disabled');
-			MobileUI.ui.find('#leftBar').addClass('disabled');
-			MobileUI.ui.find('#rightBar').addClass('disabled');
+			MobileUI.ui.querySelector('#topBar').classList.add('disabled');
+			MobileUI.ui.querySelector('#leftBar').classList.add('disabled');
+			MobileUI.ui.querySelector('#rightBar').classList.add('disabled');
 			
 			if(Session.TouchTargeting){
 				toggleTouchTargeting();
@@ -115,9 +115,9 @@ define(function(require)
 			showButtons = false;
 		} else {
 			
-			MobileUI.ui.find('#topBar').removeClass('disabled');
-			MobileUI.ui.find('#leftBar').removeClass('disabled');
-			MobileUI.ui.find('#rightBar').removeClass('disabled');
+			MobileUI.ui.querySelector('#topBar').classList.remove('disabled');
+			MobileUI.ui.querySelector('#leftBar').classList.remove('disabled');
+			MobileUI.ui.querySelector('#rightBar').classList.remove('disabled');
 			
 			showButtons = true;
 		}
@@ -129,11 +129,11 @@ define(function(require)
 	function toggleTouchTargeting(){
 		if(Session.TouchTargeting){
 			
-			MobileUI.ui.find('#toggleTargetingButton').removeClass('active');
+			MobileUI.ui.querySelector('#toggleTargetingButton').classList.remove('active');
 			
-			MobileUI.ui.find('#toggleAutoFollowButton').addClass('disabled');
-			MobileUI.ui.find('#toggleAutoTargetButton').addClass('disabled');
-			MobileUI.ui.find('#attackButton').addClass('disabled');
+			MobileUI.ui.querySelector('#toggleAutoFollowButton').classList.add('disabled');
+			MobileUI.ui.querySelector('#toggleAutoTargetButton').classList.add('disabled');
+			MobileUI.ui.querySelector('#attackButton').classList.add('disabled');
 			
 			if(Session.AutoTargeting){
 				toggleAutoTargeting();
@@ -142,11 +142,11 @@ define(function(require)
 			Session.TouchTargeting = false;
 		} else {
 
-			MobileUI.ui.find('#toggleTargetingButton').addClass('active');
+			MobileUI.ui.querySelector('#toggleTargetingButton').classList.add('active');
 			
-			MobileUI.ui.find('#toggleAutoFollowButton').removeClass('disabled');
-			MobileUI.ui.find('#toggleAutoTargetButton').removeClass('disabled');
-			MobileUI.ui.find('#attackButton').removeClass('disabled');
+			MobileUI.ui.querySelector('#toggleAutoFollowButton').classList.remove('disabled');
+			MobileUI.ui.querySelector('#toggleAutoTargetButton').classList.remove('disabled');
+			MobileUI.ui.querySelector('#attackButton').classList.remove('disabled');
 			
 			Session.TouchTargeting = true;
 		}
@@ -157,10 +157,10 @@ define(function(require)
 	 */
 	function toggleAutoTargeting(){
 		if(Session.AutoTargeting){
-			MobileUI.ui.find('#toggleAutoTargetButton').removeClass('active');
+			MobileUI.ui.querySelector('#toggleAutoTargetButton').classList.remove('active');
 			Session.AutoTargeting = false;
 		} else {
-			MobileUI.ui.find('#toggleAutoTargetButton').addClass('active');
+			MobileUI.ui.querySelector('#toggleAutoTargetButton').classList.add('active');
 			Session.AutoTargeting = true;
 			autoTarget();
 		}
@@ -171,12 +171,12 @@ define(function(require)
 	 */
 	function toggleAutoFollow(){
 		if(Session.autoFollow){
-			MobileUI.ui.find('#toggleAutoFollowButton').removeClass('active');
+			MobileUI.ui.querySelector('#toggleAutoFollowButton').classList.remove('active');
 			Session.autoFollow = false;
 		} else {
 			var entityFocus = EntityManager.getFocusEntity();
 			if(entityFocus){
-				MobileUI.ui.find('#toggleAutoFollowButton').addClass('active');
+				MobileUI.ui.querySelector('#toggleAutoFollowButton').classList.add('active');
 				Session.autoFollow = true;
 				Session.autoFollowTarget = entityFocus;
 				onAutoFollow();
@@ -326,7 +326,7 @@ define(function(require)
 			
 			Events.setTimeout( onAutoFollow, 500);
 		} else {
-			MobileUI.ui.find('#toggleAutoFollowButton').removeClass('active');
+			MobileUI.ui.querySelector('#toggleAutoFollowButton').classList.remove('active');
 		}
 	}
 
@@ -397,12 +397,12 @@ define(function(require)
 	MobileUI.onAppend = function onAppend() {
 		// Apply preferences
 		if (Session.isTouchDevice) {
-			this.ui.show();
+			this.ui.style.display = '';
 		} else {
-			this.ui.hide();
+			this.ui.style.display = 'none';
 		}
 
-		this.ui.css({
+		DOM.setCss(this.ui, {
 			top: 0,
 			left: 0,
 			zIndex: 1000,
@@ -421,7 +421,7 @@ define(function(require)
 		switch (key.cmd) {
 			case 'SHOW':
 				Session.isTouchDevice = true; // Fake it to make it :D
-				this.show();
+				DOM.show(this.ui);
 				break;
 			case 'TOGGLE':
 				toggleButtons();
@@ -460,7 +460,7 @@ define(function(require)
 	 * Shows MobileUI
 	 */
 	MobileUI.show = function show() {
-		this.ui.show();
+		this.ui.style.display = '';
 	};
 	
 	/**

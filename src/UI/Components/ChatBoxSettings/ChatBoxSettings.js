@@ -15,7 +15,6 @@ define(function(require)
 	 */
 	var DB           = require('DB/DBManager');
 	var Preferences  = require('Core/Preferences');
-	var jQuery       = require('Utils/jquery');
 	var Renderer     = require('Renderer/Renderer');
 	var Client       = require('Core/Client');
 	var Mouse        = require('Controls/MouseEventHandler');
@@ -23,6 +22,7 @@ define(function(require)
 	var UIComponent  = require('UI/UIComponent');
 	var htmlText     = require('text!./ChatBoxSettings.html');
 	var cssText      = require('text!./ChatBoxSettings.css');
+	var DOM             = require('Utils/DOM');
 	/**
 	 * Create Component
 	 */
@@ -54,16 +54,17 @@ define(function(require)
 	 */
 	ChatBoxSettings.init = function init()
 	{
-		// Bindings
-		this.ui.find('.extend').mousedown(onResize);
-		this.ui.find('.close').click(function(){
-			ChatBoxSettings.ui.hide();
+		var extendBtn = this.ui.querySelector('.extend');
+		if (extendBtn) {
+			extendBtn.addEventListener('mousedown', onResize);
+		}
+
+		this.ui.querySelector('.close').addEventListener('click', function(){
+			ChatBoxSettings.ui.style.display = 'none';
 		});
-		
-		var list = this.ui.find('.listoption');
-		
-		this.ui.on('click', '.content .listoption button', onClickOption);
-		this.draggable(this.ui.find('.titlebar'));
+
+		DOM.addDelegatedEvent(this.ui, 'click', '.content .listoption button', onClickOption);
+		this.draggable(this.ui.querySelector('.titlebar'));
 	};
 
 
@@ -74,9 +75,9 @@ define(function(require)
 	{
 		//resize( _preferences.width, _preferences.height );
 
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 	};
 
@@ -89,26 +90,26 @@ define(function(require)
 	ChatBoxSettings.onKeyDown = function onKeyDown( event ){};
 
 	function onClickOption(evt){
-		var _elem = jQuery(evt.currentTarget);
-		var _dataId = _elem.data('id');
+		var _elem = evt.currentTarget;
+		var _dataId = _elem.getAttribute('data-id');
 		var isOn = false;
 		
 		if(!_elem){
 			return;
 		}
 
-		isOn = _elem.hasClass('on');
+		isOn = _elem.classList.contains('on');
 
 		if(isOn){
-			_elem.removeClass('on');
+			_elem.classList.remove('on');
 			isOn = false;
 		}else{
-			_elem.addClass('on');
+			_elem.classList.add('on');
 			isOn = true;
 		}
 
 		Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/grp_'+(isOn?'online':'offline')+'.bmp', function( data ){
-			_elem.css('backgroundImage', 'url('+ data +')');
+			_elem.style.backgroundImage = 'url(' + data + ')';
 		});
 
 		if(!isNaN(_dataId)){
@@ -129,8 +130,8 @@ define(function(require)
 	function onResize()
 	{
 		var ui         = ChatBoxSettings.ui;
-		var top        = ui.position().top;
-		var left       = ui.position().left;
+		var top        = DOM.getPosition(ui).top;
+		var left       = DOM.getPosition(ui).left;
 		var lastWidth  = 0;
 		var lastHeight = 0;
 		var _Interval;
@@ -160,44 +161,42 @@ define(function(require)
 		_Interval = setInterval( resizeProcess, 30);
 
 		// Stop resizing
-		jQuery(window).one('mouseup', function(event){
+		var _cbsResizeHandler = function(event){
 			// Only on left click
 			if ( event.which === 1 ) {
 				clearInterval(_Interval);
+				window.removeEventListener('mouseup', _cbsResizeHandler);
 			}
-		});
+		};
+		window.addEventListener('mouseup', _cbsResizeHandler);
 	}
 
 	ChatBoxSettings.toggle = function toggle(){
-		if(this.ui.is(':visible')){
-			this.ui.hide();
-		} else {
-			this.ui.show();
-		}
+		DOM.toggleDisplay(this.ui);
 	};
 	
 	ChatBoxSettings.updateTab = function updateTab(tabID, tabName){
 		var optList = ChatBoxSettings.tabOption[tabID];
-		var elems = this.ui.find('.content .listoption button');
-		
-		this.activeTab = tabID;
-		
-		this.ui.find('.tabname').html(tabName);
 
-		elems.removeClass('on');
-		Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/grp_offline.bmp', function( data ){
-			elems.css('backgroundImage', 'url('+ data +')');
+		this.activeTab = tabID;
+
+		this.ui.querySelector('.tabname').innerHTML = tabName;
+
+		Array.prototype.forEach.call(this.ui.querySelectorAll('.content .listoption button'), function(_elem) {
+			_elem.classList.remove('on');
+			Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/grp_offline.bmp', function( data ){
+				_elem.style.backgroundImage = 'url(' + data + ')';
+			});
 		});
 
-		this.ui.find('.content .listoption button').each(function(){
-			var _elem 	= jQuery(this);
-			var id 		= _elem.data('id');
+		Array.prototype.forEach.call(this.ui.querySelectorAll('.content .listoption button'), function(_elem){
+			var id = _elem.getAttribute('data-id');
 
 			if(optList.includes(id)){
 				Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/grp_online.bmp', function( data ){
-					_elem.css('backgroundImage', 'url('+ data +')');
+					_elem.style.backgroundImage = 'url(' + data + ')';
 				});
-				_elem.addClass('on');
+				_elem.classList.add('on');
 			}
 		});
 		
@@ -212,8 +211,11 @@ define(function(require)
 		width  = Math.min( Math.max(width,  7), 14);
 		height = Math.min( Math.max(height, 3), 8);
 
-		ChatBoxSettings.ui.css('width', 23 + 16 + 16 + width  * 32);
-		ChatBoxSettings.ui.find('.resize').css('height', height * 32);
+		ChatBoxSettings.ui.style.width = 23 + 16 + 16 + width  * 32;
+		var content = ChatBoxSettings.ui.querySelector('.content');
+		if (content) {
+			content.style.height = (height * 32) + 'px';
+		}
 	}
 
 

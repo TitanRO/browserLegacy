@@ -11,11 +11,11 @@ define(function(require)
 {
 	'use strict';
 
+	var DOM       = require('Utils/DOM');
 
 	/**
 	 * Dependencies
 	 */
-	var jQuery      = require('Utils/jquery');
 	var KEYS        = require('Controls/KeyEventHandler');
 	var UIManager   = require('UI/UIManager');
 	var UIComponent = require('UI/UIComponent');
@@ -74,104 +74,106 @@ define(function(require)
 		preloadImages();
 
 		// About page
-		ui.find('.btn_about')
-			.mousedown(function(){
-				var $about =  ui.find('.overlay.about');
+		ui.querySelector('.btn_about')
+			.addEventListener('mousedown', function(){
+				var $about =  ui.querySelector('.overlay.about');
 				$about
-					.show()
+					.style.display = ''
 					.animate({opacity:1}, 200)
-					.click(function(){
+					.addEventListener('click', function(){
 						$about.animate({opacity:0}, 200, function(){
-							$about.hide();
+							$about.style.display = 'none';
 						});
 					});
 			});
 
 		// Settings page
-		ui.find('.btn_settings')
-			.mousedown(function(){
+		ui.querySelector('.btn_settings')
+			.addEventListener('mousedown', function(){
 				Preferences.load( ui );
 
-				ui.find('.overlay.settings')
-					.show()
+				ui.querySelector('.overlay.settings')
+					.style.display = ''
 					.animate({opacity:1}, 200);
 			});
 
 		// Box to set files
-		ui.find('.box')
-			.mouseover(function(){
-				jQuery(this).addClass('over');
-			})
-			.mouseout(function(){
-				jQuery(this).removeClass('over');
-			})
-			.click(function(){
-				ui.find('input[type="file"]').click();
-			})
-			.on('drop', process )
-			.on('dragover', function(){
-				jQuery(this).addClass('over');
-				return false;
-			})
-			.on('dragleave', function(){
-				jQuery(this).removeClass('over');
-				return false;
-			});
+		var _fileBox = ui.querySelector('.box');
+		_fileBox.addEventListener('mouseover', function(){
+			this.classList.add('over');
+		});
+		_fileBox.addEventListener('mouseout', function(){
+			this.classList.remove('over');
+		});
+		_fileBox.addEventListener('click', function(){
+			ui.querySelector('input[type="file"]').click();
+		});
+		_fileBox.addEventListener('drop', process);
+		_fileBox.addEventListener('dragover', function(){
+			this.classList.add('over');
+			return false;
+		});
+		_fileBox.addEventListener('dragleave', function(){
+			this.classList.remove('over');
+			return false;
+		});
 
 		// Set file by clicking the box
-		ui.find('input[type="file"]')
-			.on('change', process );
+		ui.querySelector('input[type="file"]')
+			.addEventListener('change', process );
 
 		// Modify quality
-		ui.find('.quality')
-			.on('change', function(){
-				ui.find('.quality_result').text( this.value + '%' );
+		ui.querySelector('.quality')
+			.addEventListener('change', function(){
+				ui.querySelector('.quality_result').textContent =  this.value + '%' ;
 			});
 
 		// Clean cache
-		ui.find('.clean')
-			.click(function(){
-				var parent = jQuery(this).hide().parent();
-				parent.append(
+		ui.querySelector('.clean')
+			.addEventListener('click', function(){
+				var parent = this.style.display = 'none'.parentNode;
+				parent.insertAdjacentHTML('beforeend',
 					'<span><img src="'+ require.toUrl('./images/loading.gif')  +'"/> <i>Cleaning cache...</i></span>'
 				);
 
 				FileSystem.cleanup(function(){
-					parent.find('span').remove();
-					Intro.ui.find('.msg').text('');
+					var loading = parent.querySelector('span');
+					if (loading) {
+						loading.remove();
+					}
+					Intro.ui.querySelector('.msg').textContent = '';
 				});
 			});
 
 		// Stop propagation in overlay to avoid hiding the page
-		ui.find('.overlay')
-			.on('click', 'input[type="text"], a, button', function( event ){
-				if (this.nodeName === 'INPUT') {
-					this.select();
-				}
-				event.stopImmediatePropagation();
-			});
+		DOM.addDelegatedEvent(ui.querySelector('.overlay'), 'click', 'input[type="text"], a, button', function( event ){
+			if (this.nodeName === 'INPUT') {
+				this.select();
+			}
+			event.stopImmediatePropagation();
+		});
 
 		// Not allow to edit server list
 		if (!Configs.get('_serverEditMode')) {
-			ui.find('.serveredit').hide();
+			ui.querySelector('.serveredit').style.display = 'none';
 		}
 
 		// Modify volume
-		ui.find('.bgmvol')
-			.on('change', function(){
-				ui.find('.bgmvol_result').text( this.value + '%' );
+		ui.querySelector('.bgmvol')
+			.addEventListener('change', function(){
+				ui.querySelector('.bgmvol_result').textContent =  this.value + '%' ;
 			});
-		ui.find('.soundvol')
-			.on('change', function(){
-				ui.find('.soundvol_result').text( this.value + '%' );
+		ui.querySelector('.soundvol')
+			.addEventListener('change', function(){
+				ui.querySelector('.soundvol_result').textContent =  this.value + '%' ;
 			});
 
 		// Add Server
-		ui.find('.btn_add')
-			.on('click', function(){
-				var $serverlist = ui.find('.servers');
-				var count = $serverlist.find('tr').length;
-				$serverlist.append(
+		ui.querySelector('.btn_add')
+			.addEventListener('click', function(){
+				var $serverlist = ui.querySelector('.servers');
+				var count = $serverlist.querySelector('tr');
+				$serverlist.insertAdjacentHTML('beforeend',
 					'<tr>' +
 					'	<td><input type="text" class="display" value="Server '+ count +'"/></td>' +
 					'	<td><input type="text" class="address" value="127.0.0.1:6900"/></td>' +
@@ -182,28 +184,28 @@ define(function(require)
 					'</tr>'
 				);
 
-				$serverlist.find('tr :eq('+ count +') input:first').focus();
+				$serverlist.querySelectorAll('tr  input')[count].focus();
 			});
 
-		ui.find('.btn_save')
-			.on('click', function(){
+		ui.querySelector('.btn_save')
+			.addEventListener('click', function(){
 				Preferences.save( ui );
-				ui.find('.overlay')
+				ui.querySelector('.overlay')
 					.animate({opacity:0}, 200, function(){
-						ui.find('.overlay').hide();
+						ui.querySelector('.overlay').style.display = 'none';
 					});
 			});
 
-		ui.find('.serverlist tbody')
-			.on('click', '.btn_delete', function(){
-				jQuery(this).parent().parent().remove();
-			});
+		DOM.addDelegatedEvent(ui.querySelector('.serverlist tbody'), 'click', '.btn_delete', function(){
+			var row = this.parentNode && this.parentNode.parentNode;
+			if (row) row.remove();
+		});
 
 		// Start roBrowser
-		ui.find('.btn_play')
-			.click(function(){
-				ui.find('.overlay.loading')
-					.show()
+		ui.querySelector('.btn_play')
+			.addEventListener('click', function(){
+				ui.querySelector('.overlay.loading')
+					.style.display = ''
 					.animate({opacity:1}, 200);
 
 				Intro.onFilesSubmit( Intro.files );
@@ -218,11 +220,11 @@ define(function(require)
 	{
 		// Can't resize the window if it's not a popup/App
 		if (!Context.Is.POPUP) {
-			this.ui.find('.resolution').hide();
+			this.ui.querySelector('.resolution').style.display = 'none';
 		}
 
 		// Show content saved
-		this.ui.find('.clean').hide();
+		this.ui.querySelector('.clean').style.display = 'none';
 		FileSystem.getSize(function(used){
 			var msg = '';
 
@@ -237,28 +239,25 @@ define(function(require)
 					msg = (used / 1024).toFixed(2) + ' KiB saved';
 				}
 
-				this.ui.find('.msg').text(msg);
-				this.ui.find('.clean').show();
+				this.ui.querySelector('.msg').textContent = msg;
+				this.ui.querySelector('.clean').style.display = '';
 			}
 		}.bind(this));
 
 		// Hook resize
-		var $window = jQuery(window);
-		var $intro  = this.ui.find('.intro');
-		$window.on('resize.intro',function(){
-			$intro.css(
-				'transform',
-				'scale('+
-					$window.width()  / $intro.width()  +
-					',' +
-					$window.height() / $intro.height() +
-				')'
-			);
-		});
-		$window.trigger('resize.intro');
+		var $intro  = this.ui.querySelector('.intro');
+		var _introResizeHandler = function(){
+			$intro.style.transform = 'scale('+
+				window.innerWidth  / $intro.offsetWidth  +
+				',' +
+				window.innerHeight / $intro.offsetHeight +
+			')';
+		};
+		window.addEventListener('resize', _introResizeHandler);
+		_introResizeHandler(); // trigger initial
 
 		// Initialize window and particle
-		Particle.init( 100, this.ui.find('canvas')[0] );
+		Particle.init( 100, this.ui.querySelector('canvas') );
 	};
 
 
@@ -267,9 +266,9 @@ define(function(require)
 	 */
 	Intro.onRemove = function onRemove()
 	{
-		jQuery(window).off('resize.intro');
+		window.removeEventListener('resize', _introResizeHandler);
 		Particle.stop();
-		this.ui.find('.overlay').hide();
+		this.ui.querySelector('.overlay').style.display = 'none';
 	};
 
 
@@ -279,7 +278,8 @@ define(function(require)
 	function preloadImages()
 	{
 		// Background images
-		jQuery('style:first').append([
+		var _styleEl = document.querySelector('style') || document.head.appendChild(document.createElement('style'));
+		_styleEl.textContent += [
 			'#intro .intro { background-image:url(' + require.toUrl('./images/background.jpg') + '); }',
 			'#intro .ribbon { background-image:url(' + require.toUrl('./images/ribbon.png') + '); }',
 			'#intro .box { background-image:url(' + require.toUrl('./images/box.jpg') + '); }',
@@ -288,12 +288,12 @@ define(function(require)
 			'#intro .btn_add { background-image:url('+ require.toUrl('./images/add-server.jpg') +'); }',
 			'#intro .btn_save { background-image:url('+ require.toUrl('./images/save.jpg') + '); }',
 			'#intro .btn_delete { background-image:url('+ require.toUrl('./images/delete.png') + '); }'
-		].join('\n'));
+		].join('\n');
 
 		// Add images to IMG tag
-		Intro.ui.find('.icon img').attr('src', require.toUrl('./images/icon.png') );
-		Intro.ui.find('.btn_about img').attr('src', require.toUrl('./images/about.png') );
-		Intro.ui.find('.btn_settings img').attr('src', require.toUrl('./images/settings.png') );
+		Intro.ui.querySelector('.icon img').setAttribute('src', require.toUrl('./images/icon.png') );
+		Intro.ui.querySelector('.btn_about img').setAttribute('src', require.toUrl('./images/about.png') );
+		Intro.ui.querySelector('.btn_settings img').setAttribute('src', require.toUrl('./images/settings.png') );
 
 		// Preload image
 		(new Image()).src = require.toUrl('./images/play-down.png');
@@ -316,12 +316,12 @@ define(function(require)
 		var _files       = [];
 
 		event.stopImmediatePropagation();
-		jQuery(this).removeClass('over');
+		this.classList.remove('over');
 
 		function processing(files) {
 			if (files.length) {
 				Intro.files.push.apply( Intro.files, files );
-				Intro.ui.find('.msg').text( Intro.files.length + ' files selected' );
+				Intro.ui.querySelector('.msg').textContent =  Intro.files.length + ' files selected' ;
 			}
 		}
 
@@ -374,8 +374,8 @@ define(function(require)
 		}
 
 		// drag drop
-		if (event.originalEvent.dataTransfer) {
-			var data = event.originalEvent.dataTransfer;
+		if (event.dataTransfer) {
+			var data = event.dataTransfer;
 
 			// Read directory content
 			if (data.items && data.items.length && data.items[0].webkitGetAsEntry) {

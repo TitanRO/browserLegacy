@@ -13,7 +13,6 @@ define(function (require) {
 	/**
 	 * Dependencies
 	 */
-	var jQuery = require("Utils/jquery");
 	var KEYS = require("Controls/KeyEventHandler");
 	var Renderer = require("Renderer/Renderer");
 	var UIManager = require("UI/UIManager");
@@ -26,6 +25,7 @@ define(function (require) {
 	var cssText = require("text!./Navigation.css");
 	var MapPathFinder = require("./MapPathFinder");
 	var getModule = require;
+	var DOM             = require('Utils/DOM');
 
 	/**
 	 * Create Navigation component
@@ -360,9 +360,9 @@ define(function (require) {
 			walkableType: Altitude.TYPE.WALKABLE,
 		};
 
-		this.ui.css({
-			top: Math.max(0, Math.min(Renderer.height - this.ui.height(), 200)),
-			left: Math.max(0, Math.min(Renderer.width - this.ui.width(), 200)),
+		DOM.setCss(this.ui, {
+			top: Math.max(0, Math.min(Renderer.height - this.ui.offsetHeight, 200)),
+			left: Math.max(0, Math.min(Renderer.width - this.ui.offsetWidth, 200)),
 		});
 
 		// Get canvas context
@@ -370,7 +370,7 @@ define(function (require) {
 		canvas.width = 280;
 		canvas.height = 230;
 		_ctx = canvas.getContext("2d");
-		this.ui.find(".map-display").append(canvas);
+		this.ui.querySelector(".map-display").append(canvas);
 
 		// Load arrow image
 		Client.loadFile(DB.INTERFACE_PATH + "map/map_arrow.bmp", function (dataURI) {
@@ -401,9 +401,9 @@ define(function (require) {
 		});
 
 		// Bind events
-		this.ui.find(".close").click(this.hide.bind(this));
-		this.ui.find(".search-button").click(this.onSearch.bind(this));
-		this.ui.find(".search-input").keypress(
+		this.ui.querySelector(".close").addEventListener('click', this.hide.bind(this));
+		this.ui.querySelector(".search-button").addEventListener('click', this.onSearch.bind(this));
+		this.ui.querySelector(".search-input").addEventListener('keypress', 
 			function (e) {
 				if (e.which === KEYS.ENTER) {
 					this.onSearch();
@@ -412,38 +412,39 @@ define(function (require) {
 		);
 
 		// Focus handling for search input
-		this.ui.find(".search-input").focus(
+		this.ui.querySelector(".search-input").addEventListener('focus', 
 			function () {
 				// If there are search results, show them when focusing the input
-				var resultsContainer = this.ui.find(".search-results");
-				if (resultsContainer.length > 0 && resultsContainer.children().length > 0) {
-					resultsContainer.show();
+				var resultsContainer = this.ui.querySelector(".search-results");
+				if (resultsContainer && resultsContainer.children.length > 0) {
+					resultsContainer.style.display = '';
 				}
 			}.bind(this),
 		);
 
 		// Hide search results when clicking outside
-		jQuery(document).click(
+		document.addEventListener('click',
 			function (e) {
-				if (!jQuery(e.target).closest(".search-results, .search-input, .search-button, .search-type").length) {
-					this.ui.find(".search-results").hide();
+				if (!e.target.closest(".search-results, .search-input, .search-button, .search-type")) {
+					var _sr = this.ui.querySelector(".search-results");
+					if (_sr) _sr.style.display = 'none';
 				}
 			}.bind(this),
 		);
 
 		// Map click event for navigation
-		this.ui.find(".map-display").click(this.onMapClick.bind(this));
+		this.ui.querySelector(".map-display").addEventListener('click', this.onMapClick.bind(this));
 
 		// Mouse move event for displaying coordinates
-		this.ui.find(".map-display").mousemove(this.onMapMouseMove.bind(this));
+		this.ui.querySelector(".map-display").addEventListener('mousemove', this.onMapMouseMove.bind(this));
 
 		// Mouse leave event to reset coordinates display
-		this.ui.find(".map-display").mouseleave(this.onMapMouseLeave.bind(this));
+		this.ui.querySelector(".map-display").addEventListener('mouseleave', this.onMapMouseLeave.bind(this));
 
-		this.draggable(this.ui.find(".titlebar"));
+		this.draggable(this.ui.querySelector(".titlebar"));
 
 		// Hide the UI initially
-		this.ui.hide();
+		this.ui.style.display = 'none';
 	};
 
 	/**
@@ -453,9 +454,7 @@ define(function (require) {
 		// Clear path for clean render
 		this.clearPath();
 
-		// Seems like "EscapeWindow" is execute first, push it before.
-		var events = jQuery._data(window, "events").keydown;
-		events.unshift(events.pop());
+		// Note: jQuery._data keydown reordering removed (not possible with native events)
 
 		// Start rendering
 		Renderer.render(this.render.bind(this));
@@ -493,8 +492,8 @@ define(function (require) {
 	 * Handle search button click
 	 */
 	Navigation.onSearch = function onSearch() {
-		var query = this.ui.find(".search-input").val().trim();
-		var type = this.ui.find(".search-type").val();
+		var query = this.ui.querySelector(".search-input").value.trim();
+		var type = this.ui.querySelector(".search-type").value;
 
 		if (query.length < 2) {
 			return;
@@ -514,56 +513,56 @@ define(function (require) {
 	 */
 	Navigation.displaySearchResults = function displaySearchResults(results) {
 		// Clear any existing results
-		var resultsContainer = this.ui.find(".search-results");
-		if (resultsContainer.length === 0) {
+		var resultsContainer = this.ui.querySelector(".search-results");
+		if (!resultsContainer) {
 			// Create results container if it doesn't exist
-			resultsContainer = jQuery('<div class="search-results"></div>');
-			this.ui.find(".content").append(resultsContainer);
+			resultsContainer = DOM.createElement('<div class="search-results"></div>');
+			this.ui.querySelector(".content").append(resultsContainer);
 		} else {
-			resultsContainer.empty();
+			resultsContainer.innerHTML = '';
 		}
 
 		// If no results, show a message
 		if (results.length === 0) {
-			resultsContainer.append('<div class="no-results">No results found</div>');
-			resultsContainer.show();
+			resultsContainer.insertAdjacentHTML('beforeend', '<div class="no-results">No results found</div>');
+			resultsContainer.style.display = '';
 			return;
 		}
 
 		// Create results list
-		var resultsList = jQuery('<ul class="results-list"></ul>');
-		resultsContainer.append(resultsList);
+		var resultsList = DOM.createElement('<ul class="results-list"></ul>');
+		resultsContainer.appendChild(resultsList);
 
 		// Add each result to the list
 		for (var i = 0; i < results.length; i++) {
 			var result = results[i];
-			var resultItem = jQuery('<li class="result-item"></li>');
+			var resultItem = DOM.createElement('<li class="result-item"></li>');
 
 			// Add type icon (NPC or MOB)
 			var typeIcon = result.type === "NPC" ? "npc_icon" : "mob_icon";
-			resultItem.append('<span class="result-type ' + typeIcon + '">' + result.type + "</span>");
+			resultItem.insertAdjacentHTML('beforeend', '<span class="result-type ' + typeIcon + '">' + result.type + "</span>");
 
 			// Add result name
-			resultItem.append('<span class="result-name">' + result.name + "</span>");
+			resultItem.insertAdjacentHTML('beforeend', '<span class="result-name">' + result.name + "</span>");
 
 			// Add map name
-			resultItem.append('<span class="result-map">' + result.mapName + "</span>");
+			resultItem.insertAdjacentHTML('beforeend', '<span class="result-map">' + result.mapName + "</span>");
 
 			// Store result data for navigation
-			resultItem.data("result", result);
+			resultItem.setAttribute('data-result', result);
 
 			// Add click handler using a closure to capture the current result
 			(function (self, currentResult) {
-				resultItem.on("click", function () {
+				resultItem.addEventListener("click", function () {
 					self.navigateToSearchResult(currentResult);
 				});
 			})(this, result);
 
-			resultsList.append(resultItem);
+			resultsList.appendChild(resultItem);
 		}
 
 		// Show the results container
-		resultsContainer.show();
+		resultsContainer.style.display = '';
 	};
 
 	/**
@@ -597,7 +596,7 @@ define(function (require) {
 		});
 
 		// Hide the search results
-		this.ui.find(".search-results").hide();
+		this.ui.querySelector(".search-results").style.display = 'none';
 	};
 
 	/**
@@ -673,8 +672,8 @@ define(function (require) {
 	 * @param {Object} event - Mouse event
 	 */
 	Navigation.onMapClick = function onMapClick(event) {
-		var mapDisplay = this.ui.find(".map-display");
-		var offset = mapDisplay.offset();
+		var mapDisplay = this.ui.querySelector(".map-display");
+		var offset = DOM.getOffset(mapDisplay);
 		var x = Math.floor(event.pageX - offset.left);
 		var y = Math.floor(event.pageY - offset.top);
 
@@ -784,7 +783,7 @@ define(function (require) {
 		_isMapClickTarget = false;
 
 		// Hide the target coordinates display
-		this.ui.find(".target-info").hide();
+		this.ui.querySelector(".target-info").style.display = 'none';
 
 		// Update location title with current map name
 		var currentMap = getCurrentMap();
@@ -820,7 +819,7 @@ define(function (require) {
 	 * Render the map and markers
 	 */
 	Navigation.render = function render(tick) {
-		if (!this.ui.is(":visible")) {
+		if (!DOM.isVisible(this.ui)) {
 			return;
 		}
 
@@ -1022,7 +1021,7 @@ define(function (require) {
 	 * @param {boolean} noPathFound - Whether to show "no path found" message
 	 */
 	Navigation.updateTargetText = function updateTargetText(noPathFound) {
-		this.ui.find(".target-info").show();
+		this.ui.querySelector(".target-info").style.display = '';
 
 		// Use the existing setTargetCoordinatesText function with the noPathFound option
 		// This will properly format the text using formatTargetCoordinates
@@ -1045,24 +1044,24 @@ define(function (require) {
 		if (!this.ui) return;
 
 		var text = formatTargetCoordinates(x, y, options);
-		this.ui.find(".target-coordinates").text(text);
-		this.ui.find(".target-coordinates").show();
-		this.ui.find(".target-info").show();
+		this.ui.querySelector(".target-coordinates").textContent = text;
+		this.ui.querySelector(".target-coordinates").style.display = '';
+		this.ui.querySelector(".target-info").style.display = '';
 	};
 
 	Navigation.setTargetCoordinatesBlinking = function setTargetCoordinatesBlinking(blinking) {
 		if (!this.ui) return;
 
-		var targetCoordinates = this.ui.find(".target-coordinates");
+		var targetCoordinates = this.ui.querySelector(".target-coordinates");
 
 		if (blinking) {
 			// Start blinking effect if not already blinking
-			if (!targetCoordinates.data("blinking")) {
-				targetCoordinates.data("blinking", true);
+			if (!targetCoordinates.getAttribute('data-blinking')) {
+				targetCoordinates.setAttribute('data-blinking', true);
 
 				// Store original color
-				var originalColor = targetCoordinates.css("color") || "#ffffff";
-				targetCoordinates.data("originalColor", originalColor);
+				var originalColor = targetCoordinates.style.color || "#ffffff";
+				targetCoordinates.setAttribute('data-original-color', originalColor);
 
 				// Set up interval for fading effect
 				var fadeStep = 0;
@@ -1078,19 +1077,19 @@ define(function (require) {
 					}
 
 					// Apply opacity
-					targetCoordinates.css("opacity", fadeStep);
+					targetCoordinates.style.opacity = fadeStep;
 				}, 50); // Update every 50ms for smooth animation
 
 				// Store interval ID for later cleanup
-				targetCoordinates.data("fadeInterval", fadeInterval);
+				targetCoordinates.setAttribute('data-fade-interval', fadeInterval);
 			}
 		} else {
 			// Stop fading effect
-			if (targetCoordinates.data("blinking")) {
-				clearInterval(targetCoordinates.data("fadeInterval"));
-				targetCoordinates.css("opacity", 1); // Restore full opacity
-				targetCoordinates.css("color", targetCoordinates.data("originalColor"));
-				targetCoordinates.data("blinking", false);
+			if (targetCoordinates.getAttribute('data-blinking')) {
+				clearInterval(targetCoordinates.getAttribute('data-fade-interval'));
+				targetCoordinates.style.opacity = 1; // Restore full opacity
+				targetCoordinates.style.color = targetCoordinates.getAttribute('data-original-color');
+				targetCoordinates.setAttribute('data-blinking', false);
 			}
 		}
 	}
@@ -1106,7 +1105,7 @@ define(function (require) {
 		if (!this.ui) return;
 
 		var title = formatLocationTitle(currentMap, targetMap, displayName);
-		this.ui.find(".location-title").text(title);
+		this.ui.querySelector(".location-title").textContent = title;
 	};
 
 	/**
@@ -1120,7 +1119,7 @@ define(function (require) {
 		if (!this.ui) return;
 
 		var text = formatCoordinates(x, y, options);
-		this.ui.find(".coordinates").text(text);
+		this.ui.querySelector(".coordinates").textContent = text;
 	};
 
 	/**
@@ -1132,7 +1131,7 @@ define(function (require) {
 	Navigation.setMapNameText = function setMapNameText(mapName) {
 		if (!this.ui) return;
 
-		this.ui.find(".map-name").text(normalizeMapName(mapName));
+		this.ui.querySelector(".map-name").textContent = normalizeMapName(mapName);
 	};
 
 	/**
@@ -1146,7 +1145,7 @@ define(function (require) {
 		if (!this.ui) return;
 
 		var text = formatCoordinates(x, y, options);
-		this.ui.find(".mouse-coordinates").text(text);
+		this.ui.querySelector(".mouse-coordinates").textContent = text;
 	};
 
 	/**
@@ -1211,10 +1210,10 @@ define(function (require) {
 	 * Toggle the navigation window (show/hide)
 	 */
 	Navigation.toggle = function toggle() {
-		if (this.ui.is(":visible")) {
-			this.hide();
+		if (DOM.isVisible(this.ui)) {
+			this.ui.style.display = 'none';
 		} else {
-			this.show();
+			this.ui.style.display = '';
 		}
 	};
 
@@ -1227,8 +1226,8 @@ define(function (require) {
 		initializePathFindingWorker();
 
 		// Hide coordinate displays initially
-		this.ui.find(".mouse-info").hide();
-		this.ui.find(".target-info").hide();
+		this.ui.querySelector(".mouse-info").style.display = 'none';
+		this.ui.querySelector(".target-info").style.display = 'none';
 
 		// Get current map name and player position
 		var mapName = getCurrentMap();
@@ -1251,11 +1250,11 @@ define(function (require) {
 		this.setMapNameText(mapName);
 
 		// Set the location title if not already set
-		if (!this.ui.find(".location-title").text()) {
+		if (!this.ui.querySelector(".location-title").textContent) {
 			this.setLocationTitle(mapName, null);
 		}
 
-		this.ui.show();
+		this.ui.style.display = '';
 	};
 
 	/**
@@ -1263,7 +1262,7 @@ define(function (require) {
 	 */
 	Navigation.hide = function hide() {
 		// Don't clear any data, just hide the UI
-		this.ui.hide();
+		this.ui.style.display = 'none';
 		terminatePathFindingWorker();
 	};
 
@@ -1273,8 +1272,8 @@ define(function (require) {
 	 * @param {MouseEvent} event - The mouse event
 	 */
 	Navigation.onMapMouseMove = function onMapMouseMove(event) {
-		var mapDisplay = this.ui.find(".map-display");
-		var offset = mapDisplay.offset();
+		var mapDisplay = this.ui.querySelector(".map-display");
+		var offset = DOM.getOffset(mapDisplay);
 		var x = Math.floor(event.pageX - offset.left);
 		var y = Math.floor(event.pageY - offset.top);
 
@@ -1284,7 +1283,7 @@ define(function (require) {
 		var mapY = Math.floor(mapCoords.y);
 
 		// Update the mouse coordinates display
-		this.ui.find(".mouse-info").show();
+		this.ui.querySelector(".mouse-info").style.display = '';
 		this.setMouseCoordinatesText(mapX, mapY);
 	};
 
@@ -1293,7 +1292,7 @@ define(function (require) {
 	 */
 	Navigation.onMapMouseLeave = function onMapMouseLeave() {
 		// Hide the mouse coordinates display
-		this.ui.find(".mouse-info").hide();
+		this.ui.querySelector(".mouse-info").style.display = 'none';
 	};
 
 	/**
@@ -1314,7 +1313,7 @@ define(function (require) {
 		var y = parseInt(parts[2], 10);
 
 		// Clear the search input
-		this.ui.find(".search-input").val("");
+		this.ui.querySelector(".search-input").value = "";
 		_isMapClickTarget = false;
 
 		// Get current map and position
@@ -1385,7 +1384,7 @@ define(function (require) {
 
 		// Get warp types based on Services checkbox
 		var warpTypes = [200, 201]; // Default warp types (free)
-		if (this.ui.find('.services-toggle').is(':checked')) {
+		if (this.ui.querySelector('.services-toggle').checked) {
 			warpTypes = [200, 201, 202, 203, 204, 205]; // Include service warps (includes paid warps)
 		}
 

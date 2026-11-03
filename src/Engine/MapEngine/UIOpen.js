@@ -10,6 +10,7 @@
 define(function (require) {
     'use strict';
 
+    var DOM              = require('Utils/DOM');
     var Configs          = require('Core/Configs');
     var Network = require('Network/NetworkManager');
     var PACKET = require('Network/PacketStructure');
@@ -47,7 +48,7 @@ define(function (require) {
                     CheckAttendance.setData(pkt.data);
                     CheckAttendance.cleanUI();
                     CheckAttendance.append();
-                    CheckAttendance.ui.show();
+                    DOM.show(CheckAttendance.ui);
                     CheckAttendance.ui.focus();
                 }
                 break;

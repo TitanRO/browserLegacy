@@ -16,6 +16,7 @@ define(function(require)
 	 * Dependencies
 	 */
 	var DB           	   = require('DB/DBManager');
+	var DOM                = require('Utils/DOM');
 	var Renderer           = require('Renderer/Renderer');
 	var KEYS               = require('Controls/KeyEventHandler');
 	var Entity             = require('Renderer/Entity/Entity');
@@ -33,11 +34,18 @@ define(function(require)
 	var CharCreatev3 = new UIComponent( 'CharCreatev3', htmlText, cssText );
 
 
-	/**
-	 * @var {boolean} account sex
-	 */
-	var _accountSex = 0;
-	
+	function qs(selector)
+	{
+		return DOM.qs(CharCreatev3.ui, selector);
+	}
+
+
+	function setFormattedText(el, value)
+	{
+		DOM.setFormattedText(el, value, DB.getItemInfo.bind(DB));
+	}
+
+
 	const TYPE = {
 		RACE:			1,
 		GENDER:			2,
@@ -94,6 +102,12 @@ define(function(require)
 
 
 	/**
+	 * @var {boolean} account sex
+	 */
+	var _accountSex = 0;
+
+
+	/**
 	 * @var {object} chargen info
 	 */
 	var _human = {
@@ -129,14 +143,14 @@ define(function(require)
 	CharCreatev3.init = function init()
 	{
 
-		_human.ctx = this.ui.find('#canvas_human')[0].getContext('2d');
-		_doram.ctx = this.ui.find('#canvas_doram')[0].getContext('2d');
-		_model.ctx = this.ui.find('#canvas_model')[0].getContext('2d');
+		_human.ctx = qs('#canvas_human').getContext('2d');
+		_doram.ctx = qs('#canvas_doram').getContext('2d');
+		_model.ctx = qs('#canvas_model').getContext('2d');
 
 		// Setup GUI
-		this.ui.css({
-			top: (Renderer.height-342)/2,
-			left: (Renderer.width-576)/2
+		DOM.setCss(this.ui, {
+			top: (Renderer.height-342)/2 + 'px',
+			left: (Renderer.width-576)/2 + 'px'
 		});
 
 		this.draggable();
@@ -155,38 +169,38 @@ define(function(require)
 
 		// Bind Events
 		
-		this.ui.find('.race_select #human').click(function(){ updateCharacter(TYPE.RACE, RACE.HUMAN); });
-		this.ui.find('.race_select #doram').click(function(){ updateCharacter(TYPE.RACE, RACE.DORAM); });
+		qs('.race_select #human').addEventListener('click', function(){ updateCharacter(TYPE.RACE, RACE.HUMAN); });
+		qs('.race_select #doram').addEventListener('click', function(){ updateCharacter(TYPE.RACE, RACE.DORAM); });
 		
-		this.ui.find('#style .rot_left').click(function(){ updateCharacter(TYPE.DIRECTION, DIRECTION.LEFT); });
-		this.ui.find('#style .rot_right').click(function(){ updateCharacter(TYPE.DIRECTION, DIRECTION.RIGHT); });
+		qs('#style .rot_left').addEventListener('click', function(){ updateCharacter(TYPE.DIRECTION, DIRECTION.LEFT); });
+		qs('#style .rot_right').addEventListener('click', function(){ updateCharacter(TYPE.DIRECTION, DIRECTION.RIGHT); });
 		
-		this.ui.find('#style .gender .button.male').click(function(){ updateCharacter(TYPE.GENDER, GENDER.MALE); });
-		this.ui.find('#style .gender .button.female').click(function(){ updateCharacter(TYPE.GENDER, GENDER.FEMALE); });
+		qs('#style .gender .button.male').addEventListener('click', function(){ updateCharacter(TYPE.GENDER, GENDER.MALE); });
+		qs('#style .gender .button.female').addEventListener('click', function(){ updateCharacter(TYPE.GENDER, GENDER.FEMALE); });
 
-		this.ui.find('#style .hairstyle .left').click(function(){ updateCharacter(TYPE.HEAD, VALUE.DECREASE); });
-		this.ui.find('#style .hairstyle .right').click(function(){ updateCharacter(TYPE.HEAD, VALUE.INCREASE); });
+		qs('#style .hairstyle .left').addEventListener('click', function(){ updateCharacter(TYPE.HEAD, VALUE.DECREASE); });
+		qs('#style .hairstyle .right').addEventListener('click', function(){ updateCharacter(TYPE.HEAD, VALUE.INCREASE); });
 		
-		this.ui.find('#style .haircolor .left').click(function(){ updateCharacter(TYPE.HEADPALETTE, VALUE.DECREASE); });
-		this.ui.find('#style .haircolor .right').click(function(){ updateCharacter(TYPE.HEADPALETTE, VALUE.INCREASE); });
+		qs('#style .haircolor .left').addEventListener('click', function(){ updateCharacter(TYPE.HEADPALETTE, VALUE.DECREASE); });
+		qs('#style .haircolor .right').addEventListener('click', function(){ updateCharacter(TYPE.HEADPALETTE, VALUE.INCREASE); });
 		
 
-		this.ui.find('#char_name').click(function(event){
+		qs('#char_name').addEventListener('click', function(event){
 			this.focus();
 			event.stopImmediatePropagation();
 		});
 
-		this.ui.find('.button.close').click(cancel);
-		this.ui.find('.button.make').click(create);
+		qs('.button.close').addEventListener('click', cancel);
+		qs('.button.make').addEventListener('click', create);
 
 		/* Msgstring Texts */
-		this.ui.find('.race_select .human .title').text( DB.getMessage( 3017 - 1) );
-		this.ui.find('.race_select .human .desc').text( DB.getMessage( 3021 - 1) );
-		this.ui.find('.race_select .human .jobs').text( DB.getMessage( 3018 - 1) );
+		setFormattedText(qs('.race_select .human .title'), DB.getMessage( 3017 - 1) );
+		setFormattedText(qs('.race_select .human .desc'), DB.getMessage( 3021 - 1) );
+		setFormattedText(qs('.race_select .human .jobs'), DB.getMessage( 3018 - 1) );
 
-		this.ui.find('.race_select .doram .title').text( DB.getMessage( 3019 - 1) );
-		this.ui.find('.race_select .doram .desc').text( DB.getMessage( 3022 - 1) );
-		this.ui.find('.race_select .doram .jobs').text( DB.getMessage( 3020 - 1) );
+		setFormattedText(qs('.race_select .doram .title'), DB.getMessage( 3019 - 1) );
+		setFormattedText(qs('.race_select .doram .desc'), DB.getMessage( 3022 - 1) );
+		setFormattedText(qs('.race_select .doram .jobs'), DB.getMessage( 3020 - 1) );
 	};
 
 	/**
@@ -232,7 +246,11 @@ define(function(require)
 		});
 		_model.render = true;
 
-		this.ui.find('#char_name').val('').focus();
+		var nameInput = qs('#char_name');
+		if (nameInput) {
+			nameInput.value = '';
+			nameInput.focus();
+		}
 
 		// Set default race and gender
 		setDefault();
@@ -272,23 +290,23 @@ define(function(require)
 	 * Update model race
 	 */
 	function updateRace (){
-		var select = CharCreatev3.ui.find('.race_select .race input.radio').filter(':checked');
+		var select = qs('.race_select .race input.radio:checked');
 		var type = TYPE.RACE;
 		var race = RACE.HUMAN;
 		var marker = DB.INTERFACE_PATH + "make_character/select_mark_cha_create.bmp";
 
-		if (select[0].id === "human") {
+		if (select && select.id === "human") {
 			Client.loadFile( marker, function(dataURI) {
-				CharCreatev3.ui.find('.race_select .human label').css('backgroundImage', 'url(' + dataURI + ')');
+				DOM.setCss(qs('.race_select .human label'), 'backgroundImage', 'url(' + dataURI + ')');
             });
-			CharCreatev3.ui.find('.race_select .doram label').css('backgroundImage', 'none');
+			DOM.setCss(qs('.race_select .doram label'), 'backgroundImage', 'none');
 			race = RACE.HUMAN;
 		}
 		
-		if (select[0].id === "doram") {
-			CharCreatev3.ui.find('.race_select .human label').css('backgroundImage', 'none');
+		if (select && select.id === "doram") {
+			DOM.setCss(qs('.race_select .human label'), 'backgroundImage', 'none');
 			Client.loadFile( marker, function(dataURI) {
-				CharCreatev3.ui.find('.race_select .doram label').css('backgroundImage', 'url(' + dataURI + ')');
+				DOM.setCss(qs('.race_select .doram label'), 'backgroundImage', 'url(' + dataURI + ')');
             });
 			race = RACE.DORAM;
 		}
@@ -302,10 +320,10 @@ define(function(require)
 	 */
 	function create()
 	{
-		var charname = CharCreatev3.ui.find('#char_name').val();
+		var nameInput = qs('#char_name');
 
 		CharCreatev3.onCharCreationRequest(
-			charname,
+			nameInput ? nameInput.value : '',
 			1,
 			1,
 			1,
@@ -348,17 +366,17 @@ define(function(require)
 				
 				if(_model.entity.sex == GENDER.MALE){
 					Client.loadFile( DB.INTERFACE_PATH + "make_character/btn_gender_m_press.bmp", function(dataURI) {
-						CharCreatev3.ui.find('#male_container').css('backgroundImage', 'url(' + dataURI + ')');
+						DOM.setCss(qs('#male_container'), 'backgroundImage', 'url(' + dataURI + ')');
 					});
 					Client.loadFile( DB.INTERFACE_PATH + "make_character/btn_gender_f_out.bmp", function(dataURI) {
-						CharCreatev3.ui.find('#female_container').css('backgroundImage', 'url(' + dataURI + ')');
+						DOM.setCss(qs('#female_container'), 'backgroundImage', 'url(' + dataURI + ')');
 					});
 				} else {
 					Client.loadFile( DB.INTERFACE_PATH + "make_character/btn_gender_m_out.bmp", function(dataURI) {
-						CharCreatev3.ui.find('#male_container').css('backgroundImage', 'url(' + dataURI + ')');
+						DOM.setCss(qs('#male_container'), 'backgroundImage', 'url(' + dataURI + ')');
 					});
 					Client.loadFile( DB.INTERFACE_PATH + "make_character/btn_gender_f_press.bmp", function(dataURI) {
-						CharCreatev3.ui.find('#female_container').css('backgroundImage', 'url(' + dataURI + ')');
+						DOM.setCss(qs('#female_container'), 'backgroundImage', 'url(' + dataURI + ')');
 					});
 				}
 				break;
@@ -369,13 +387,13 @@ define(function(require)
 				
 				if (_model.entity.job === RACE.HUMAN) {
 					Client.loadFile( RACE_MARK, function(dataURI) {
-						CharCreatev3.ui.find('.race_select .human label').css('backgroundImage', 'url(' + dataURI + ')');
+						DOM.setCss(qs('.race_select .human label'), 'backgroundImage', 'url(' + dataURI + ')');
 					});
-					CharCreatev3.ui.find('.race_select .doram label').css('backgroundImage', 'none');
+					DOM.setCss(qs('.race_select .doram label'), 'backgroundImage', 'none');
 				} else {
-					CharCreatev3.ui.find('.race_select .human label').css('backgroundImage', 'none');
+					DOM.setCss(qs('.race_select .human label'), 'backgroundImage', 'none');
 					Client.loadFile( RACE_MARK, function(dataURI) {
-						CharCreatev3.ui.find('.race_select .doram label').css('backgroundImage', 'url(' + dataURI + ')');
+						DOM.setCss(qs('.race_select .doram label'), 'backgroundImage', 'url(' + dataURI + ')');
 					});
 				}
 				
@@ -450,7 +468,10 @@ define(function(require)
 		_model.entity.renderEntity();
 	
 		// Need this to persist, rendering resets them?
-		CharCreatev3.ui.find('#char_name').focus();
+		var nameInput = qs('#char_name');
+		if (nameInput) {
+			nameInput.focus();
+		}
 	}
 
 

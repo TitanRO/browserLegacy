@@ -22,7 +22,6 @@ define(function(require)
 	var PACKETVER          = require('Network/PacketVerManager');
 	var PACKET             = require('Network/PacketStructure');
 	var ItemType           = require('DB/Items/ItemType');
-	var jQuery             = require('Utils/jquery');
 	var Client             = require('Core/Client');
 	var Preferences        = require('Core/Preferences');
 	var Session            = require('Engine/SessionStorage');
@@ -39,6 +38,7 @@ define(function(require)
 	var htmlText           = require('text!./EquipmentV3.html');
 	var cssText            = require('text!./EquipmentV3.css');
 	var getModule          = require;
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -102,8 +102,9 @@ define(function(require)
 	 */
 	EquipmentV3.init = function init()
 	{
-		_ctx.push(this.ui.find('canvas')[0].getContext('2d'));
-		_ctx.push(this.ui.find('canvas')[1].getContext('2d'));
+		var canvases = this.ui.querySelectorAll('canvas');
+		_ctx.push(canvases[0].getContext('2d'));
+		_ctx.push(canvases[1].getContext('2d'));
 
 		// Grab the tab links and content divs from the page
 		var tabListItems = document.getElementById('tabs').childNodes;
@@ -141,51 +142,52 @@ define(function(require)
 
 		if (UIVersionManager.getEquipmentVersion() > 0) {
 			// Get button to open skill when level up
-			_btnLevelUp = jQuery('#lvlup_base')
-				.detach()
-				.mousedown(stopPropagation)
-				.click(function () {
-					_btnLevelUp.detach();
-					EquipmentV3.ui.show();
-					EquipmentV3.ui.parent().append(EquipmentV3.ui);
+			_btnLevelUp = DOM.detach(this.ui.querySelector('#lvlup_base'));
+			if (_btnLevelUp) {
+				_btnLevelUp.addEventListener('mousedown', stopPropagation);
+				_btnLevelUp.addEventListener('click', function () {
+					DOM.detach(_btnLevelUp);
+					EquipmentV3.ui.style.display = '';
+					if (EquipmentV3.ui.parentNode) EquipmentV3.ui.parentNode.appendChild(EquipmentV3.ui);
 
-					if (EquipmentV3.ui.is(':visible')) {
+					if (DOM.isVisible(EquipmentV3.ui)) {
 						Renderer.render(renderCharacter);
 					}
 				});
+			}
 		} else {
-			this.ui.find('#equipment_footer').remove();
-			this.ui.addClass('equipmentV0');
-			this.ui.find('#lvlup_base').remove();
+			this.ui.querySelector('#equipment_footer').remove();
+			this.ui.classList.add('equipmentV0');
+			this.ui.querySelector('#lvlup_base').remove();
 		}
 		// Don't activate drag drop when clicking on buttons
-		this.ui.find('.titlebar .base').mousedown(stopPropagation);
-		this.ui.find('.titlebar .mini').click(function(){ EquipmentV3.ui.find('.panel').toggle(); });
-		this.ui.find('.titlebar .close').click(function(){ EquipmentV3.ui.hide(); });
+		this.ui.querySelector('.titlebar .base').addEventListener('mousedown', stopPropagation);
+		this.ui.querySelector('.titlebar .mini').addEventListener('click', function(){ DOM.toggleDisplay(EquipmentV3.ui.querySelector('.panel')); });
+		this.ui.querySelector('.titlebar .close').addEventListener('click', function(){ EquipmentV3.ui.style.display = 'none'; });
 
-		this.ui.find('.removeOption').mousedown(onRemoveOption);
-		this.ui.find('.view_status').mousedown(toggleStatus);
-		this.ui.find('.show_equip').mousedown(toggleEquip);
+		this.ui.querySelector('.removeOption').addEventListener('mousedown', onRemoveOption);
+		this.ui.querySelector('.view_status').addEventListener('mousedown', toggleStatus);
+		this.ui.querySelector('.show_equip').addEventListener('mousedown', toggleEquip);
 
-		this.ui.find('.cartitems').click(onCartItems);
+		this.ui.querySelector('.cartitems').addEventListener('click', onCartItems);
 
-		this.ui.find('.switch_equip').click(onSwtichEquip);
+		this.ui.querySelector('.switch_equip').addEventListener('click', onSwtichEquip);
 
 		// drag, drop items
-		this.ui.on('dragover', onDragOver);
-		this.ui.on('dragleave', onDragLeave);
-		this.ui.on('drop', onDrop);
+		this.ui.addEventListener('dragover', onDragOver);
+		this.ui.addEventListener('dragleave', onDragLeave);
+		this.ui.addEventListener('drop', onDrop);
 
 		// Bind items
-		this.ui.find('.content')
-			.on('contextmenu', '.item',  onEquipmentInfo)
-			.on('dblclick',    '.item',  onEquipmentUnEquip)
-			.on('mouseover',   'button', onEquipmentOver)
-			.on('mouseout',    'button', onEquipmentOut);
+		var _content = this.ui.querySelector('.content');
+		DOM.addDelegatedEvent(_content, 'contextmenu', '.item', onEquipmentInfo);
+		DOM.addDelegatedEvent(_content, 'dblclick', '.item', onEquipmentUnEquip);
+		DOM.addDelegatedEvent(_content, 'mouseover', 'button', onEquipmentOver);
+		DOM.addDelegatedEvent(_content, 'mouseout', 'button', onEquipmentOut);
 
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 
-		switchappend = this.ui.find('.footer');
+		switchappend = this.ui.querySelector('.footer');
 	};
 
 
@@ -218,15 +220,15 @@ define(function(require)
 
 		if (currentTabId === 'title') {
 			if (SwitchEquip.ui) {
-				switchUIopen = SwitchEquip.ui.is(':visible');
-				SwitchEquip.ui.hide();
+				switchUIopen = DOM.isVisible(SwitchEquip.ui);
+				SwitchEquip.ui.style.display = 'none';
 			}
-			EquipmentV3.ui.find('.switch_equip').hide();
+			EquipmentV3.ui.querySelector('.switch_equip').style.display = 'none';
 		} else {
 			if (SwitchEquip.ui && switchUIopen) {
-				SwitchEquip.ui.show();
+				SwitchEquip.ui.style.display = '';
 			}
-			EquipmentV3.ui.find('.switch_equip').show();
+			EquipmentV3.ui.querySelector('.switch_equip').style.display = '';
 		}
 
 		// Stop the browser following the link
@@ -282,7 +284,7 @@ define(function(require)
 		{
 			return;
 		}
-		CartItems.ui.toggle();
+		DOM.toggleDisplay(CartItems.ui);
 	};
 
 
@@ -299,37 +301,37 @@ define(function(require)
 	EquipmentV3.onAppend = function onAppend()
 	{
 		// Apply preferences
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 
 		// Hide window ?
 		if (!_preferences.show) {
-			this.ui.hide();
+			this.ui.style.display = 'none';
 		}
 
 		// Reduce window ?
 		if (_preferences.reduce) {
-			this.ui.find('.panel').hide();
+			this.ui.querySelector('.panel').style.display = 'none';
 		}
 
 		// Show status window ?
 		if (UIVersionManager.getEquipmentVersion() > 0) {
 			if (!_preferences.stats) {
-				this.ui.find('.status_component').hide();
+				this.ui.querySelector('.status_component').style.display = 'none';
 				Client.loadFile( DB.INTERFACE_PATH + 'basic_interface/viewon.bmp', function(data){
-					this.ui.find('.view_status').css('backgroundImage', 'url(' + data + ')');
+					this.ui.querySelector('.view_status').style.backgroundImage = 'url(' + data + ')';
 				}.bind(this));
 			}
 		}
 
-		if (this.ui.find('canvas').is(':visible')) {
+		if (DOM.isVisible(this.ui.querySelector('canvas'))) {
 			Renderer.render(renderCharacter);
 		}
 
 		SwitchEquip.append(switchappend);
-		SwitchEquip.ui.hide();
+		SwitchEquip.ui.style.display = 'none';
 	};
 
 
@@ -339,7 +341,7 @@ define(function(require)
 	EquipmentV3.onRemove = function onRemove()
 	{
 		if (UIVersionManager.getEquipmentVersion() > 0) {
-			_btnLevelUp.detach();
+			DOM.detach(_btnLevelUp);
 		}
 
 		// Stop rendering
@@ -347,14 +349,14 @@ define(function(require)
 
 		// Clean equipments
 		EquipmentV3._itemlist = {};
-		this.ui.find('.col1, .col3, .ammo').empty();
+		this.ui.querySelector('.col1, .col3, .ammo').innerHTML = '';
 
 		// Save preferences
-		_preferences.show   =  this.ui.is(':visible');
-		_preferences.reduce =  this.ui.find('.panel').css('display') === 'none';
-		_preferences.stats  =  this.ui.find('.status_component').css('display') !== 'none';
-		_preferences.y      =  parseInt(this.ui.css('top'), 10);
-		_preferences.x      =  parseInt(this.ui.css('left'), 10);
+		_preferences.show   =  DOM.isVisible(this.ui);
+		_preferences.reduce =  this.ui.querySelector('.panel').style.display === 'none';
+		_preferences.stats  =  this.ui.querySelector('.status_component').style.display !== 'none';
+		_preferences.y      =  parseInt(this.ui.style.top, 10);
+		_preferences.x      =  parseInt(this.ui.style.left, 10);
 		_preferences.save();
 	};
 
@@ -364,12 +366,12 @@ define(function(require)
 	 */
 	EquipmentV3.toggle = function toggle()
 	{
-		this.ui.toggle();
+		DOM.toggleDisplay(this.ui);
 
-		if (this.ui.is(':visible')) {
+		if (DOM.isVisible(this.ui)) {
 			Renderer.render(renderCharacter);
 			if (UIVersionManager.getEquipmentVersion() > 0) {
-				_btnLevelUp.detach();
+				DOM.detach(_btnLevelUp);
 			}
 			this.focus();
 		}
@@ -388,7 +390,7 @@ define(function(require)
 	{
 		switch (key.cmd) {
 			case 'TOGGLE':
-				this.toggle();
+				DOM.toggleDisplay(this.ui);
 				break;
 		}
 	};
@@ -404,7 +406,7 @@ define(function(require)
 		_showEquip = on;
 
 		Client.loadFile( DB.INTERFACE_PATH + 'checkbox_' + (on ? '1' : '0') + '.bmp', function(data){
-			EquipmentV3.ui.find('.show_equip').css('backgroundImage', 'url(' + data + ')');
+			EquipmentV3.ui.querySelector('.show_equip').style.backgroundImage = 'url(' + data + ')';
 		});
 	};
 
@@ -428,20 +430,20 @@ define(function(require)
 			return string;
 		}
 
-		this.ui.find(getSelectorFromLocation(location)).html(
+		this.ui.querySelector(getSelectorFromLocation(location)).innerHTML = (
 			'<div class="item" data-index="'+ item.index +'">' +
 				'<button><div class="grade"></div></button>' +
-				'<span class="itemName">' + add3Dots(jQuery.escape(DB.getItemName(item, {showItemGrade: false, showItemSlots: false, showItemOptions: false})), 19) + '</span>' +
+				'<span class="itemName">' + add3Dots(DOM.escapeHtml(DB.getItemName(item, {showItemGrade: false, showItemSlots: false, showItemOptions: false})), 19) + '</span>' +
 			'</div>'
 		);
 
 		Client.loadFile( DB.INTERFACE_PATH + 'item/' + it.identifiedResourceName + '.bmp', function(data){
-			this.ui.find('.item[data-index="'+ item.index +'"] button').css('backgroundImage', 'url('+ data +')');
+			this.ui.querySelector('.item[data-index="'+ item.index +'"] button').style.backgroundImage = 'url('+ data +')';
 		}.bind(this));
 
 		if (item.enchantgrade) {
 			Client.loadFile(DB.INTERFACE_PATH + 'grade_enchant/grade_icon' + item.enchantgrade + '.bmp', function(data){
-				this.ui.find('.item[data-index="'+ item.index +'"] .grade').css('backgroundImage', 'url('+ data +')');
+				this.ui.querySelector('.item[data-index="'+ item.index +'"] .grade').style.backgroundImage = 'url('+ data +')';
 			}.bind(this));
 		}
 
@@ -471,7 +473,7 @@ define(function(require)
 		var item     = EquipmentV3._itemlist[ index ];
 		item.equipped = 0;
 
-		this.ui.find( selector ).empty();
+		this.ui.querySelector( selector ).innerHTML = '';
 		delete EquipmentV3._itemlist[ index ];
 
 		return item;
@@ -484,7 +486,7 @@ define(function(require)
 	EquipmentV3.onLevelUp = function onLevelUp()
 	{
 		if (UIVersionManager.getEquipmentVersion() > 0) {
-			_btnLevelUp.appendTo('body');
+			document.body.appendChild(_btnLevelUp);
 		}
 	};
 
@@ -519,14 +521,14 @@ define(function(require)
 	 */
 	function toggleStatus()
 	{
-		var self   = EquipmentV3.ui.find('.view_status');
+		var self   = EquipmentV3.ui.querySelector('.view_status');
 		var status = WinStats.getUI().ui;
-		var state  = status.is(':visible') ? 'on' : 'off';
+		var state  = DOM.isVisible(status) ? 'on' : 'off';
 
-		status.toggle();
+		DOM.toggleDisplay(status);
 
 		Client.loadFile( DB.INTERFACE_PATH + 'basic_interface/view' + state + '.bmp', function(data){
-			self.css('backgroundImage', 'url(' + data + ')');
+			self.style.backgroundImage = 'url(' + data + ')';
 		});
 		
 	};
@@ -606,17 +608,17 @@ define(function(require)
 				_hasCart   = Session.Entity.hasCart;
 
 				if (_lastState & HasAttachmentState  || _hasCart) {
-					EquipmentV3.ui.find('.removeOption').show();
+					EquipmentV3.ui.querySelector('.removeOption').style.display = '';
 				}
 				else {
-					EquipmentV3.ui.find('.removeOption').hide();
+					EquipmentV3.ui.querySelector('.removeOption').style.display = 'none';
 				}
 
 				if (_lastState & HasCartState || _hasCart) {
-					EquipmentV3.ui.find('.cartitems').show();
+					EquipmentV3.ui.querySelector('.cartitems').style.display = '';
 				}
 				else {
-					EquipmentV3.ui.find('.cartitems').hide();
+					EquipmentV3.ui.querySelector('.cartitems').style.display = 'none';
 				}
 			}
 
@@ -710,10 +712,10 @@ define(function(require)
 				if ((item.type === ItemType.WEAPON || item.type === ItemType.ARMOR || item.type === ItemType.SHADOWGEAR) &&
 				    item.IsIdentified && !item.IsDamaged) {
 					selector = getSelectorFromLocation( 'location' in item ? item.location : item.WearLocation);
-					ui       = EquipmentV3.ui.find(selector);
+					ui       = EquipmentV3.ui.querySelector(selector);
 
 					Client.loadFile( DB.INTERFACE_PATH + 'basic_interface/item_invert.bmp', function(data){
-						ui.css('backgroundImage', 'url('+ data + ')');
+						ui.style.backgroundImage = 'url('+ data + ')';
 					});
 				}
 			}
@@ -729,7 +731,7 @@ define(function(require)
 	 */
 	function onDragLeave( event )
 	{
-		EquipmentV3.ui.find('td').css('backgroundImage', 'none');
+		EquipmentV3.ui.querySelector('td').style.backgroundImage = 'none';
 		event.stopImmediatePropagation();
 		return false;
 	};
@@ -744,7 +746,7 @@ define(function(require)
 
 		try {
 			data = JSON.parse(
-				event.originalEvent.dataTransfer.getData('Text')
+				event.dataTransfer.getData('Text')
 			);
 		}
 		catch(e) {}
@@ -755,7 +757,7 @@ define(function(require)
 
 			if ((item.type === ItemType.WEAPON || item.type === ItemType.ARMOR || item.type === ItemType.AMMO || item.type === ItemType.SHADOWGEAR) &&
 			    item.IsIdentified && !item.IsDamaged) {
-			    EquipmentV3.ui.find('td').css('backgroundImage','none');
+			    EquipmentV3.ui.querySelector('td').style.backgroundImage = 'none';
 				EquipmentV3.onEquipItem( item.index, 'location' in item ? item.location : item.WearState );
 			}
 		}
@@ -800,7 +802,7 @@ define(function(require)
 	{
 		var index = parseInt(this.getAttribute('data-index'), 10);
 		EquipmentV3.onUnEquip( index );
-		EquipmentV3.ui.find('.overlay').hide();
+		EquipmentV3.ui.querySelector('.overlay').style.display = 'none';
 	};
 
 
@@ -817,8 +819,8 @@ define(function(require)
 		}
 
 		// Get back data
-		var overlay = EquipmentV3.ui.find('.overlay');
-		var pos     = jQuery(this).position();
+		var overlay = EquipmentV3.ui.querySelector('.overlay');
+		var pos     = DOM.getPosition(this);
 
 		// Possible jquery error
 		if (!pos.top && !pos.left) {
@@ -826,9 +828,9 @@ define(function(require)
 		}
 
 		// Display box
-		overlay.show();
-		overlay.css({top: pos.top-22, left:pos.left-22});
-		overlay.text(DB.getItemName(item));
+		overlay.style.display = '';
+		DOM.setCss(overlay, {top: pos.top-22, left:pos.left-22});
+		overlay.textContent = DB.getItemName(item);
 	};
 
 
@@ -837,7 +839,7 @@ define(function(require)
 	 */
 	function onEquipmentOut()
 	{
-		EquipmentV3.ui.find('.overlay').hide();
+		EquipmentV3.ui.querySelector('.overlay').style.display = 'none';
 	};
 
 
@@ -848,7 +850,8 @@ define(function(require)
 		for (var index in EquipmentV3._itemlist) {
 			var item = EquipmentV3._itemlist[index];
 			if(item.slot && [0x00FF, 0x00FE, 0xFF00].includes(item.slot.card1)){
-				EquipmentV3.ui.find('.item[data-index="'+ index +'"] .itemName').text( jQuery.escape(DB.getItemName(item)) );
+				var itemNameEl = EquipmentV3.ui.querySelector('.item[data-index="'+ index +'"] .itemName');
+			if (itemNameEl) itemNameEl.textContent = DB.getItemName(item);
 			}
 		}
 	};
@@ -874,10 +877,10 @@ define(function(require)
 	 * Toggles the SwitchEquip UI and positions it absolutely to overlap with the footer.
 	 */
 	function onSwtichEquip(){
-		SwitchEquip.toggle();
+		DOM.toggleDisplay(SwitchEquip.ui);
 
 		// Position SwitchEquip UI absolutely to overlap with the footer
-		SwitchEquip.ui.css({
+		DOM.setCss(SwitchEquip.ui, {
 			position: 'absolute',
 			top: 0,
 			left: 0,

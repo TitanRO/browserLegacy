@@ -19,7 +19,6 @@ define(function(require)
 	var Network            = require('Network/NetworkManager');
 	var PACKET             = require('Network/PacketStructure');
 	var KEYS               = require('Controls/KeyEventHandler');
-	var jQuery      	   = require('Utils/jquery');
 	var Preferences        = require('Core/Preferences');
 	var Session            = require('Engine/SessionStorage');
 	var Renderer           = require('Renderer/Renderer');
@@ -28,6 +27,7 @@ define(function(require)
 	var htmlText           = require('text!./Bank.html');
 	var cssText            = require('text!./Bank.css');
 	var ChatBox      	   = require('UI/Components/ChatBox/ChatBox');
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -55,10 +55,10 @@ define(function(require)
 	{
 		this.draggable();
 
-		const inputDepo = document.querySelector('.depo');
+		const inputDepo = this.ui.querySelector('.depo');
 		let isMax = false; // Flag to track if the value is set to MAX
 
-		document.querySelector('.plus').addEventListener('click', function() {
+		this.ui.querySelector('.plus').addEventListener('click', function() {
 			if (isMax || inputDepo.value === '')
 				inputDepo.value = ( 0 + 1);	// reset input value to 0
 			else
@@ -67,7 +67,7 @@ define(function(require)
 			inputDepo.select();
 		});
 
-		document.querySelector('.minus').addEventListener('click', function() {
+		this.ui.querySelector('.minus').addEventListener('click', function() {
 			if (isMax || inputDepo.value === '')
 				inputDepo.value = Math.max( 0 - 1, 0); // reset input value to 0
 			else
@@ -76,25 +76,25 @@ define(function(require)
 			inputDepo.select();
 		});
 
-		document.querySelector('.max').addEventListener('click', function() {
+		this.ui.querySelector('.max').addEventListener('click', function() {
 			isMax = true;
 			inputDepo.value = 'MAX';
 			inputDepo.select();
 		});
 
-		document.querySelector('.tenmil').addEventListener('click', function() {
+		this.ui.querySelector('.tenmil').addEventListener('click', function() {
 			isMax = false;
 			inputDepo.value = addValueToInput(inputDepo.value, 10000000);
 			inputDepo.select();
 		});
 
-		document.querySelector('.onemil').addEventListener('click', function() {
+		this.ui.querySelector('.onemil').addEventListener('click', function() {
 			isMax = false;
 			inputDepo.value = addValueToInput(inputDepo.value, 1000000);
 			inputDepo.select();
 		});
 
-		document.querySelector('.hundtsn').addEventListener('click', function() {
+		this.ui.querySelector('.hundtsn').addEventListener('click', function() {
 			isMax = false;
 			inputDepo.value = addValueToInput(inputDepo.value, 100000);
 			inputDepo.select();
@@ -111,17 +111,17 @@ define(function(require)
 				return (currentValue + addValue);
 		}
 		
-		document.querySelector('.deposit').addEventListener('click', function() {
+		this.ui.querySelector('.deposit').addEventListener('click', function() {
 			sendDepositRequest(inputDepo.value);
 		});
 
-		document.querySelector('.withdraw').addEventListener('click', function() {
+		this.ui.querySelector('.withdraw').addEventListener('click', function() {
 			sendWithdrawRequest(inputDepo.value);
 		});
 
-		this.ui.find('.close').click(reqCloseBank);
-		this.ui.find('.depo').click(selectAllText);
-		this.ui.find('.depo').focus();
+		this.ui.querySelector('.close').addEventListener('click', reqCloseBank);
+		this.ui.querySelector('.depo').addEventListener('click', selectAllText);
+		this.ui.querySelector('.depo').focus();
 	};
 
 	/**
@@ -129,7 +129,7 @@ define(function(require)
 	*/
 	function selectAllText ()
 	{
-		var input = Bank.ui.find('.depo');
+		var input = Bank.ui.querySelector('.depo');
 		input.select();
 	}
 
@@ -139,32 +139,32 @@ define(function(require)
 	*/
 	function CheckValue ( value )
 	{
-		var error = Bank.ui.find('.errorupdate');
+		var error = Bank.ui.querySelector('.errorupdate');
 				
 		if (value === '') {	// Input is blank
 			if (error)
-				error.text ( DB.getMessage(2781) );
+				error.textContent = DB.getMessage(2781);
 			ChatBox.addText( DB.getMessage(2779), ChatBox.TYPE.ERROR, ChatBox.FILTER.PUBLIC_LOG );
 			return false;
 		}
 
 		if (typeof value === 'string' && value !== 'MAX' && !/^\d+$/.test(value)) {	// Input is string other than MAX
 			if (error)
-				error.text ( DB.getMessage(2782) );
+				error.textContent = DB.getMessage(2782);
 			ChatBox.addText( DB.getMessage(2488), ChatBox.TYPE.ERROR, ChatBox.FILTER.PUBLIC_LOG );
 			return false;
 		}
 
 		if (parseInt(value) <= 0) { // Input is equal or less than 0
 			if (error)
-				error.text ( DB.getMessage(2784) );
+				error.textContent = DB.getMessage(2784);
 			ChatBox.addText( DB.getMessage(2769), ChatBox.TYPE.ERROR, ChatBox.FILTER.PUBLIC_LOG );
 			return false;
 		}
 
 		if (parseInt(value) > maxInt) {	// Input is higher than max int value
 			if (error)
-				error.text ( DB.getMessage(2783) );
+				error.textContent = DB.getMessage(2783);
 			ChatBox.addText( DB.getMessage(2768), ChatBox.TYPE.ERROR, ChatBox.FILTER.PUBLIC_LOG );
 			return false;
 		}
@@ -177,25 +177,25 @@ define(function(require)
 	*/
 	function sendDepositRequest ( value )
 	{
-		var input = Bank.ui.find('.depo');
+		var input = Bank.ui.querySelector('.depo');
 
 		if ( CheckValue(value) === false) {
-			input.val('');
+			input.value = '';
 			return;
 		}
 
 		if (value === 'MAX') {	// Input is MAX (Deposit max zeny value)
-			var inbank = Bank.ui.find('.inbank.currency').text();
+			var inbank = Bank.ui.querySelector('.inbank.currency').textContent;
 			var getval = parseInt(getIntValueFromFormattedString(inbank));
 			if (Session.zeny + getval > maxInt && getval < maxInt)
 				value = (parseInt(maxInt) - getval);
 			else {
 				if (Session.zeny === 0) {
-					var error =  Bank.ui.find('.errorupdate');
+					var error =  Bank.ui.querySelector('.errorupdate');
 					if (error)
-						error.text( DB.getMessage(2785) );
+						error.textContent = DB.getMessage(2785) ;
 					ChatBox.addText( DB.getMessage(2770), ChatBox.TYPE.ERROR, ChatBox.FILTER.PUBLIC_LOG );
-					input.val('');
+					input.value = '';
 					return;
 				} 
 				else {
@@ -209,7 +209,7 @@ define(function(require)
 		pkt.money = value;
 		Network.sendPacket( pkt );
 
-		input.val('');
+		input.value = '';
 	}
 
 	/**
@@ -217,24 +217,24 @@ define(function(require)
 	*/
 	function sendWithdrawRequest ( value )
 	{
-		var input = Bank.ui.find('.depo');
-		var error =  Bank.ui.find('.errorupdate');
+		var input = Bank.ui.querySelector('.depo');
+		var error =  Bank.ui.querySelector('.errorupdate');
 
 		if ( CheckValue(value) === false) {
-			input.val('');
+			input.value = '';
 			return;
 		}
 
 		if (value === 'MAX') {
-			var inbank = Bank.ui.find('.inbank.currency').text();
+			var inbank = Bank.ui.querySelector('.inbank.currency').textContent;
 			var getval = parseInt(getIntValueFromFormattedString(inbank));
 			if (Session.zeny + getval > maxInt && Session.zeny < maxInt)
 				value = (parseInt(maxInt) - Session.zeny);
 			else if (getval === 0) {
 				if (error)
-					error.text( DB.getMessage(2785) );
+					error.textContent = DB.getMessage(2785) ;
 				ChatBox.addText( DB.getMessage(2770), ChatBox.TYPE.ERROR, ChatBox.FILTER.PUBLIC_LOG );
-				input.val('');
+				input.value = '';
 				return;
 			}
 			else {
@@ -244,9 +244,9 @@ define(function(require)
 
 		if (parseInt(Session.zeny) + parseInt(value) > parseInt(maxInt)) {
 			if (error)
-				error.text( DB.getMessage(2787) );
+				error.textContent = DB.getMessage(2787) ;
 			ChatBox.addText( DB.getMessage(2459), ChatBox.TYPE.ERROR, ChatBox.FILTER.PUBLIC_LOG );
-			input.val('');
+			input.value = '';
 			return;
 		}
 
@@ -255,7 +255,7 @@ define(function(require)
 		pkt.money = value;
 		Network.sendPacket( pkt );
 
-		input.val('');
+		input.value = '';
 	}
 
 	/**
@@ -282,18 +282,16 @@ define(function(require)
 	 */
 	Bank.onAppend = function onAppend()
 	{
-		// Seems like "EscapeWindow" is execute first, push it before.
-		var events = jQuery._data( window, 'events').keydown;
-		events.unshift( events.pop() );
+		// Note: jQuery._data keydown reordering removed (not possible with native events)
 
 		// Apply preferences
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 		
-		var input = Bank.ui.find('.depo');
-		input.val('');
+		var input = Bank.ui.querySelector('.depo');
+		input.value = '';
 		input.focus();
 	};
 
@@ -323,7 +321,7 @@ define(function(require)
 	{
 		switch (key.cmd) {
 			case 'TOGGLE':
-				this.toggle();
+				DOM.toggleDisplay(this.ui);
 				break;
 		}
 	};
@@ -366,13 +364,13 @@ define(function(require)
 	Bank.onRemove = function OnRemove()
 	{
 		// Save preferences
-		_preferences.y      =  parseInt(this.ui.css('top'), 10);
-		_preferences.x      =  parseInt(this.ui.css('left'), 10);
+		_preferences.y      =  parseInt(this.ui.style.top, 10);
+		_preferences.x      =  parseInt(this.ui.style.left, 10);
 		_preferences.save();
 
 		//Cleanup
-		var error = Bank.ui.find('.errorupdate');
-		error.empty();
+		var error = Bank.ui.querySelector('.errorupdate');
+		error.innerHTML = '';
 	};
 
 	/**

@@ -135,7 +135,7 @@ define(function( require )
 	 */
 	Room.prototype.render = function render( matrix )
 	{
-		var ui = this.node.ui[0];
+		var ui = this.node.ui;
 		var z;
 
 		// Cast position

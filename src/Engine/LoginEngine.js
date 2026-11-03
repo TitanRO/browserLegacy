@@ -32,6 +32,7 @@ define(function( require )
 	var WinList      = require('UI/Components/WinList/WinList');
 	var WinPopup     = require('UI/Components/WinPopup/WinPopup');
 	var Queue        = require('Utils/Queue');
+	var DOM          = require('Utils/DOM');
 	var Background  = require('UI/Background');
 	var MD5          = require('Vendors/spark-md5.min');
 	var getModule    = require;
@@ -44,8 +45,12 @@ define(function( require )
 	 */
 	var WinLoading = WinPopup.clone('WinLoading');
 	WinLoading.init = function(){
-		this.ui.css({ top: (Renderer.height - 120) / 1.5, left: (Renderer.width - 280) / 2.0 });
-		this.ui.find('.text').text( DB.getMessage(121) );
+		this.ui.style.top = ((Renderer.height - 120) / 1.5) + 'px';
+		this.ui.style.left = ((Renderer.width - 280) / 2.0) + 'px';
+		var textEl = this.ui.querySelector('.text');
+		if (textEl) {
+			DOM.setFormattedText(textEl, DB.getMessage(121), DB.getItemInfo);
+		}
 	};
 	UIManager.addComponent(WinLoading);
 

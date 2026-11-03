@@ -15,6 +15,7 @@ define(function(require)
 	/**
 	 * Dependencies
 	 */
+	var DOM                = require('Utils/DOM');
 	var UIComponent        = require('UI/UIComponent');
 	var UIManager          = require('UI/UIManager');
 	var Session            = require('Engine/SessionStorage');
@@ -28,6 +29,26 @@ define(function(require)
 	var WinStatsV1 = new UIComponent( 'WinStatsV1', htmlText, cssText );
 
 
+	function qs(selector)
+	{
+		return DOM.qs(WinStatsV1.ui, selector);
+	}
+
+
+	function qsa(selector)
+	{
+		return DOM.qsa(WinStatsV1.ui, selector);
+	}
+
+
+	function setText(selector, value)
+	{
+		qsa(selector).forEach(function(el) {
+			el.textContent = value;
+		});
+	}
+
+
 	/**
 	 * Initialize UI
 	 */
@@ -35,17 +56,18 @@ define(function(require)
 	{
 		this.statuspoint = 0;
 
-		this.ui.find('.up button').mousedown(function(){
-			switch (this.className) {
-				case 'str': WinStatsV1.onRequestUpdate( 13, 1 ); break;
-				case 'agi': WinStatsV1.onRequestUpdate( 14, 1 ); break;
-				case 'vit': WinStatsV1.onRequestUpdate( 15, 1 ); break;
-				case 'int': WinStatsV1.onRequestUpdate( 16, 1 ); break;
-				case 'dex': WinStatsV1.onRequestUpdate( 17, 1 ); break;
-				case 'luk': WinStatsV1.onRequestUpdate( 18, 1 ); break;
-			}
+		qsa('.up button').forEach(function(btn) {
+			btn.addEventListener('mousedown', function() {
+				switch (this.className) {
+					case 'str': WinStatsV1.onRequestUpdate( 13, 1 ); break;
+					case 'agi': WinStatsV1.onRequestUpdate( 14, 1 ); break;
+					case 'vit': WinStatsV1.onRequestUpdate( 15, 1 ); break;
+					case 'int': WinStatsV1.onRequestUpdate( 16, 1 ); break;
+					case 'dex': WinStatsV1.onRequestUpdate( 17, 1 ); break;
+					case 'luk': WinStatsV1.onRequestUpdate( 18, 1 ); break;
+				}
+			});
 		});
-
 	};
 
 	/**
@@ -66,7 +88,6 @@ define(function(require)
 		}
 
 		this.stack.length = 0;
-
 	};
 
 
@@ -79,7 +100,7 @@ define(function(require)
 	 */
 	WinStatsV1.update = function update( type, val )
 	{
-		var str;
+		var str, btn;
 
 		if (!this.__loaded) {
 			this.stack.push(arguments);
@@ -89,14 +110,16 @@ define(function(require)
 		switch (type) {
 			case 'statuspoint':
 				this.statuspoint = val;
-				this.ui.find('.requirements div').each(function(){
-					WinStatsV1.ui.find('.up .'+ this.className)
-					.css({
-						'opacity': parseInt(this.textContent, 10) <= val ? 1 : 0,
-						'pointer-events': parseInt(this.textContent, 10) <= val ? 'initial' : 'none'
-					});
+				qsa('.requirements div').forEach(function(div) {
+					btn = qs('.up .' + div.className);
+					if (btn) {
+						DOM.setCss(btn, {
+							opacity: parseInt(div.textContent, 10) <= val ? 1 : 0,
+							pointerEvents: parseInt(div.textContent, 10) <= val ? 'initial' : 'none'
+						});
+					}
 				});
-				this.ui.find('.' + type).text(val);
+				setText('.' + type, val);
 				break;
 
 			case 'guildname':
@@ -107,16 +130,16 @@ define(function(require)
 			case 'hit':
 			case 'flee':
 			case 'critical':
-				this.ui.find('.' + type).text(val);
+				setText('.' + type, val);
 				break;
 
 			case 'aspd':
-				this.ui.find('.' + type).text( Math.floor(200-val/10) );
+				setText('.' + type, Math.floor(200 - val / 10));
 				break;
 
 			case 'matak2':
-				if(!Session.isRenewal){
-					this.ui.find('.' + type).text('~ '+val);
+				if (!Session.isRenewal) {
+					setText('.' + type, '~ ' + val);
 					break;
 				}
 			case 'atak2':
@@ -124,7 +147,7 @@ define(function(require)
 			case 'mdef2':
 			case 'flee2':
 				str = val < 0 ? '- ' + (-val) : '+ ' + val;
-				this.ui.find('.' + type).text(str);
+				setText('.' + type, str);
 				break;
 
 			case 'str':
@@ -133,7 +156,7 @@ define(function(require)
 			case 'int':
 			case 'dex':
 			case 'luk':
-				this.ui.find('.stats .'+ type).text(val);
+				setText('.stats .' + type, val);
 				break;
 
 			case 'str2':
@@ -143,7 +166,7 @@ define(function(require)
 			case 'dex2':
 			case 'luk2':
 				str = val < 0 ? '- ' + (-val) : val > 0 ? '+' + val : '';
-				this.ui.find('.bonus .'+ type.replace('2','')).text( str );
+				setText('.bonus .' + type.replace('2', ''), str);
 				break;
 
 			case 'str3':
@@ -152,11 +175,14 @@ define(function(require)
 			case 'int3':
 			case 'dex3':
 			case 'luk3':
-				this.ui.find('.requirements .'+ type.replace('3','')).text(val);
-				this.ui.find('.up .'+ type.replace('3','')).css({
-					'opacity': val && this.t_statuspoint > 1 ? 1 : 0,
-					'pointer-events': val && this.t_statuspoint > 1 ? 'initial' : 'none'
-				});
+				setText('.requirements .' + type.replace('3', ''), val);
+				btn = qs('.up .' + type.replace('3', ''));
+				if (btn) {
+					DOM.setCss(btn, {
+						opacity: val && WinStatsV1.t_statuspoint > 1 ? 1 : 0,
+						pointerEvents: val && WinStatsV1.t_statuspoint > 1 ? 'initial' : 'none'
+					});
+				}
 				break;
 		}
 	};

@@ -25,6 +25,7 @@ define(function(require)
 	var AIDriver         = require('Core/AIDriver');
 	var htmlText         = require('text!./MercenaryInformations.html');
 	var cssText          = require('text!./MercenaryInformations.css');
+	var DOM             = require('Utils/DOM');
 
 	/**
 	 * Create Component
@@ -47,24 +48,24 @@ define(function(require)
 	 */
 	MercenaryInformations.init = function init()
 	{
-		this.draggable(this.ui.find('.content'));
+		this.draggable(this.ui.querySelector('.content'));
 
 		// Avoid drag drop problems
-		this.ui.find('.content').mousedown(stopPropagation);
-		this.ui.find('.content .base').mousedown(stopPropagation);
-		this.ui.find('.close').click(onClose);
-		this.ui.find('.dismiss').click(onDelete);
+		this.ui.querySelector('.content').addEventListener('mousedown', stopPropagation);
+		this.ui.querySelector('.content .base').addEventListener('mousedown', stopPropagation);
+		this.ui.querySelector('.close').addEventListener('click', onClose);
+		this.ui.querySelector('.dismiss').addEventListener('click', onDelete);
 
 		if (!_preferences.show) {
-			this.ui.hide();
+			DOM.hide(this.ui);
 		}
 
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 
-        this.ui.find('.skill').mousedown(function () {
+        this.ui.querySelector('.skill').addEventListener('mousedown', function () {
             SkillListMH.mercenary.toggle();
         });
 
@@ -81,7 +82,7 @@ define(function(require)
 	{
 		// Set preferences
 		if (!_preferences.show) {
-			this.ui.hide();
+			DOM.hide(this.ui);
 		}
 	};
 
@@ -90,9 +91,9 @@ define(function(require)
 	 */
 	MercenaryInformations.onRemove = function onRemove()
 	{
-		_preferences.show   = this.ui.is(':visible');
-		_preferences.y      = parseInt(this.ui.css('top'), 10);
-		_preferences.x      = parseInt(this.ui.css('left'), 10);
+		_preferences.show   = DOM.isVisible(this.ui);
+		_preferences.y      = parseInt(this.ui.style.top, 10);
+		_preferences.x      = parseInt(this.ui.style.left, 10);
 		_preferences.save();
 		this.stopAI();
 	};
@@ -112,16 +113,16 @@ define(function(require)
 		switch (key.cmd) {
 			case 'TOGGLE':
 				if (Session.mercId) {
-					this.ui.toggle();
-					if (this.ui.is(':visible')) {
+					DOM.toggleDisplay(this.ui);
+					if (DOM.isVisible(this.ui)) {
 						this.focus();
 					}
-					if (!this.ui.is(':visible')) {
-						SkillListMH.mercenary.ui.hide();
+					if (!DOM.isVisible(this.ui)) {
+						DOM.hide(SkillListMH.mercenary.ui);
 					}
 				} else {
-					SkillListMH.mercenary.ui.hide();
-					this.ui.hide();
+					DOM.hide(SkillListMH.mercenary.ui);
+					DOM.hide(this.ui);
 				}
 				break;
 			case 'AGGRESSIVE':
@@ -144,8 +145,8 @@ define(function(require)
 	 */
 	function onClose()
 	{
-		MercenaryInformations.ui.hide();
-        SkillListMH.mercenary.ui.hide();
+		MercenaryInformations.ui.style.display = 'none';
+        SkillListMH.mercenary.ui.style.display = 'none';
 	}
 
 	/**
@@ -182,7 +183,7 @@ define(function(require)
 	MercenaryInformations.setTimeLeft = function setTimeLeft(timestamp)
 	{
 		if (!timestamp) {
-			this.ui.find('.block2 .timeleft').text('0');
+			this.ui.querySelector('.block2 .timeleft').textContent = '0';
 			return;
 		}
 
@@ -192,10 +193,10 @@ define(function(require)
 		var time_per = remaining / TOTAL_DURATION;
 
 		// Update text
-		this.ui.find('.block2 .timeleft').text(this.formatExpireDate(timestamp));
+		this.ui.querySelector('.block2 .timeleft').textContent = this.formatExpireDate(timestamp);
 
 		// Update bar
-		var canvas = this.ui.find('canvas.life.title_timeleft')[0];
+		var canvas = this.ui.querySelector('canvas.life.title_timeleft');
 		var ctx = canvas.getContext('2d');
 		var width = 60, height = 5;
 
@@ -214,15 +215,15 @@ define(function(require)
 	MercenaryInformations.setKills = function setKills(kills)
 	{
 		if (kills === undefined) {
-			this.ui.find('.block2 .kills').text('0');
+			this.ui.querySelector('.block2 .kills').textContent = '0';
 			return;
 		}
 
 		// Update text
-		this.ui.find('.block2 .kills').text(kills);
+		this.ui.querySelector('.block2 .kills').textContent = kills;
 
 		// Update bar
-		var canvas = this.ui.find('canvas.life.title_kills')[0];
+		var canvas = this.ui.querySelector('canvas.life.title_kills');
 		var ctx = canvas.getContext('2d');
 		var width = 60, height = 5;
 		var kills_per = kills%50 / 50;
@@ -240,18 +241,18 @@ define(function(require)
 	 */
 	MercenaryInformations.setInformations = function setInformations(info)
 	{
-		this.ui.find('.name').text(info.name || '');
-		this.ui.find('.level').text(info.level || '');
+		this.ui.querySelector('.name').textContent = info.name || '';
+		this.ui.querySelector('.level').textContent = info.level || '';
 
 		// Stats
-		this.ui.find('.stats .atk').text(info.atk || 0);
-		this.ui.find('.stats .Matk').text(info.Matk || 0);
-		this.ui.find('.stats .hit').text(info.hit || 0);
-		this.ui.find('.stats .critical').text(info.critical || 0);
-		this.ui.find('.stats .def').text(info.def || 0);
-		this.ui.find('.stats .Mdef').text(info.Mdef || 0);
-		this.ui.find('.stats .flee').text(info.flee || 0);
-		this.ui.find('.stats .aspd').text(info.aspd || 0);
+		this.ui.querySelector('.stats .atk').textContent = info.atk || 0;
+		this.ui.querySelector('.stats .Matk').textContent = info.Matk || 0;
+		this.ui.querySelector('.stats .hit').textContent = info.hit || 0;
+		this.ui.querySelector('.stats .critical').textContent = info.critical || 0;
+		this.ui.querySelector('.stats .def').textContent = info.def || 0;
+		this.ui.querySelector('.stats .Mdef').textContent = info.Mdef || 0;
+		this.ui.querySelector('.stats .flee').textContent = info.flee || 0;
+		this.ui.querySelector('.stats .aspd').textContent = info.aspd || 0;
 
 		// HP/SP
 		this.setHpSpBar('hp', info.hp, info.maxHP);
@@ -273,26 +274,24 @@ define(function(require)
 		var perc = Math.floor(val * 100 / val2);
 		var color = perc < 25 ? 'red' : 'blue';
 
-		this.ui.find('.' + type + '_bar_perc .'+type+'_value').text(val);
-		this.ui.find('.' + type + '_bar_perc .'+type+'_max_value').text(val2);
-		this.ui.find('.' + type + '2').text(val + ' / ' + val2);
+		this.ui.querySelector('.' + type + '_bar_perc .'+type+'_value').textContent = val;
+		this.ui.querySelector('.' + type + '_bar_perc .'+type+'_max_value').textContent = val2;
+		this.ui.querySelector('.' + type + '2').textContent = val + ' / ' + val2;
 
 		Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/gze' + color + '_left.bmp', function (url) {
-			this.ui.find('.' + type + '_bar_left').css('backgroundImage', 'url(' + url + ')');
+			this.ui.querySelector('.' + type + '_bar_left').style.backgroundImage = 'url(' + url + ')';
 		}.bind(this));
 
 		Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/gze' + color + '_mid.bmp', function (url) {
-			this.ui.find('.' + type + '_bar_middle').css({
-				backgroundImage: 'url(' + url + ')',
-				width: Math.floor(Math.min(perc, 100) * 0.75) + 'px'
-			});
+			var el = this.ui.querySelector('.' + type + '_bar_middle');
+			el.style.backgroundImage = 'url(' + url + ')';
+			el.style.width = Math.floor(Math.min(perc, 100) * 0.75) + 'px';
 		}.bind(this));
 
 		Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/gze' + color + '_right.bmp', function (url) {
-			this.ui.find('.' + type + '_bar_right').css({
-				backgroundImage: 'url(' + url + ')',
-				left: Math.floor(Math.min(perc, 100) * 1.27) + 'px'
-			});
+			var el = this.ui.querySelector('.' + type + '_bar_right');
+			el.style.backgroundImage = 'url(' + url + ')';
+			el.style.left = Math.floor(Math.min(perc, 100) * 1.27) + 'px';
 		}.bind(this));
 	};
 
@@ -359,7 +358,7 @@ define(function(require)
 	 */
 	MercenaryInformations.setFaith = function setFaith(faith)
 	{
-		this.ui.find('.block2 .faith').text(faith);
+		this.ui.querySelector('.block2 .faith').textContent = faith;
 	};
 
 	/**

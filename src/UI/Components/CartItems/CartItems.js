@@ -19,7 +19,6 @@ define(function(require)
 	 */
 	var DB                 = require('DB/DBManager');
 	var ItemType           = require('DB/Items/ItemType');
-	var jQuery             = require('Utils/jquery');
 	var Client             = require('Core/Client');
 	var Preferences        = require('Core/Preferences');
 	var Renderer           = require('Renderer/Renderer');
@@ -33,6 +32,7 @@ define(function(require)
 	var htmlText           = require('text!./CartItems.html');
 	var cssText            = require('text!./CartItems.css');
 	var getModule          = require;
+	var DOM             = require('Utils/DOM');
 
 
 	/**
@@ -73,29 +73,28 @@ define(function(require)
 	CartItems.init = function Init()
 	{
 		// Bind buttons
-		this.ui.find('.titlebar .base').mousedown(stopPropagation);
-		this.ui.find('.titlebar .mini').click(onToggleReduction);
-		this.ui.find('.footer .extend').mousedown(onResize);
-		this.ui.find('.titlebar .close').click(function(){
-			CartItems.ui.hide();
+		this.ui.querySelector('.titlebar .base').addEventListener('mousedown', stopPropagation);
+		this.ui.querySelector('.titlebar .mini').addEventListener('click', onToggleReduction);
+		this.ui.querySelector('.footer .extend').addEventListener('mousedown', onResize);
+		this.ui.querySelector('.titlebar .close').addEventListener('click', function(){
+			CartItems.ui.style.display = 'none';
 		});
 
 		// on drop item
-		this.ui
-			.on('drop',     onDrop)
-			.on('dragover', stopPropagation)
-
+		this.ui.addEventListener('drop', onDrop);
+		this.ui.addEventListener('dragover', stopPropagation);
 		// Items event
-			.find('.container .content')
-				.on('mousewheel DOMMouseScroll', onScroll)
-				.on('mouseover',   '.item', onItemOver)
-				.on('mouseout',    '.item', onItemOut)
-				.on('dragstart',   '.item', onItemDragStart)
-				.on('dragend',     '.item', onItemDragEnd)
-				.on('contextmenu', '.item', onItemInfo)
-				.on('dblclick',    '.item', onItemUsed);
+		var _cartContent = this.ui.querySelector('.container .content');
+		_cartContent.addEventListener('mousewheel', onScroll);
+		_cartContent.addEventListener('DOMMouseScroll', onScroll);
+		DOM.addDelegatedEvent(_cartContent, 'mouseover', '.item', onItemOver);
+		DOM.addDelegatedEvent(_cartContent, 'mouseout', '.item', onItemOut);
+		DOM.addDelegatedEvent(_cartContent, 'dragstart', '.item', onItemDragStart);
+		DOM.addDelegatedEvent(_cartContent, 'dragend', '.item', onItemDragEnd);
+		DOM.addDelegatedEvent(_cartContent, 'contextmenu', '.item', onItemInfo);
+		DOM.addDelegatedEvent(_cartContent, 'dblclick', '.item', onItemUsed);
 
-		this.draggable(this.ui.find('.titlebar'));
+		this.draggable(this.ui.querySelector('.titlebar'));
 	};
 
 
@@ -106,27 +105,27 @@ define(function(require)
 	{
 		if(Session.Entity.hasCart ==  false)
 		{
-			this.ui.hide();
+			this.ui.style.display = 'none';
 		}
 
 		// Apply preferences
 		if (!_preferences.show) {
-			this.ui.hide();
+			this.ui.style.display = 'none';
 		}
 
 		/*Client.loadFile( DB.INTERFACE_PATH + 'basic_interface/tab_itm_0'+ (_preferences.tab+1) +'.bmp', function(data){
-			CartItems.ui.find('.tabs').css('backgroundImage', 'url("' + data + '")');
+			CartItems.ui.querySelector('.tabs').style.backgroundImage = 'url("' + data + '")';
 		});*/
 
 		this.resize( _preferences.width, _preferences.height );
 
-		this.ui.css({
-			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.height()),
-			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.width())
+		DOM.setCss(this.ui, {
+			top:  Math.min( Math.max( 0, _preferences.y), Renderer.height - this.ui.offsetHeight),
+			left: Math.min( Math.max( 0, _preferences.x), Renderer.width  - this.ui.offsetWidth)
 		});
 
-		_realSize = _preferences.reduce ? 0 : this.ui.height();
-		this.ui.find('.titlebar .mini').trigger('mousedown');
+		_realSize = _preferences.reduce ? 0 : this.ui.offsetHeight;
+		DOM.trigger(this.ui.querySelector('.titlebar .mini'), 'mousedown');
 	};
 
 
@@ -135,17 +134,17 @@ define(function(require)
 	 */
 	CartItems.onRemove = function OnRemove()
 	{
-		this.ui.find('.container .content').empty();
+		this.ui.querySelector('.container .content').innerHTML = '';
 		this.list.length = 0;
-		jQuery('.ItemInfo').remove();
+		ItemInfo.remove();
 
 		// Save preferences
-		_preferences.show   =  this.ui.is(':visible');
+		_preferences.show   =  DOM.isVisible(this.ui);
 		_preferences.reduce = !!_realSize;
-		_preferences.y      =  parseInt(this.ui.css('top'), 10);
-		_preferences.x      =  parseInt(this.ui.css('left'), 10);
-		_preferences.width  =  Math.floor( (this.ui.width()  - (23 + 16 + 16 - 30)) / 32 );
-		_preferences.height =  Math.floor( (this.ui.height() - (31 + 19 - 30     )) / 32 );
+		_preferences.y      =  parseInt(this.ui.style.top, 10);
+		_preferences.x      =  parseInt(this.ui.style.left, 10);
+		_preferences.width  =  Math.floor( (this.ui.offsetWidth  - (23 + 16 + 16 - 30)) / 32 );
+		_preferences.height =  Math.floor( (this.ui.offsetHeight - (31 + 19 - 30     )) / 32 );
 		_preferences.save();
 	};
 
@@ -164,8 +163,8 @@ define(function(require)
 
 		switch (key.cmd) {
 			case 'TOGGLE':
-				this.ui.toggle();
-				if (this.ui.is(':visible')) {
+				DOM.toggleDisplay(this.ui);
+				if (DOM.isVisible(this.ui)) {
 					this.focus();
 				}
 				else {
@@ -174,7 +173,7 @@ define(function(require)
 					// the item disapear, if you don't move the mouse and
 					// triggered ALT+E then, the window disapear and you
 					// can't trigger the scene anymore
-					this.ui.trigger('mouseleave');
+					this.ui.dispatchEvent(new CustomEvent('mouseleave'));
 				}
 				break;
 		}
@@ -192,12 +191,11 @@ define(function(require)
 		width  = Math.min( Math.max(width,  6), 9);
 		height = Math.min( Math.max(height, 2), 6);
 
-		this.ui.find('.container .content').css({
-			width:  width  * 32 + 13, // 13 = scrollbar
-			height: height * 32
-		});
+		var content = this.ui.querySelector('.container .content');
+		content.style.width = (width * 32 + 13) + 'px'; // 13 = scrollbar
+		content.style.height = (height * 32) + 'px';
 
-		this.ui.css({
+		DOM.setCss(this.ui, {
 			width:  16 + 39 + width  * 32,
 			height: 31 + 19      + height * 32
 		});
@@ -271,10 +269,10 @@ define(function(require)
 
 	CartItems.setCartInfo = function SetCartInfo(curCount, maxCount, curWeight, maxWeight)
 	{
-		this.ui.find('.ncnt').text(curCount);
-		this.ui.find('.mcnt').text(maxCount);
-		this.ui.find('.nwt').text(curWeight/10);
-		this.ui.find('.mwt').text(maxWeight/10);
+		this.ui.querySelector('.ncnt').textContent = curCount;
+		this.ui.querySelector('.mcnt').textContent = maxCount;
+		this.ui.querySelector('.nwt').textContent = curWeight/10;
+		this.ui.querySelector('.mwt').textContent = maxWeight/10;
 	};
 
 
@@ -289,11 +287,11 @@ define(function(require)
 
 		if (object) {
 			object.count += item.count;
-			this.ui.find('.item[data-index="'+ item.index +'"] .count').text( object.count );
+			this.ui.querySelector('.item[data-index="'+ item.index +'"] .count').textContent =  object.count ;
 			return;
 		}
 
-		object = jQuery.extend({}, item);
+		object = Object.assign({}, item);
 		if (this.addItemSub(object)) {
 			this.list.push(object);
 		}
@@ -314,9 +312,9 @@ define(function(require)
 		}
 
 			var it      = DB.getItemInfo( item.ITID );
-			var content = this.ui.find('.container .content');
+			var content = this.ui.querySelector('.container .content');
 
-			content.append(
+			content.insertAdjacentHTML('beforeend',
 				'<div class="item" data-index="'+ item.index +'" draggable="true">' +
 					'<div class="icon"></div>' +
 					'<div class="grade"></div>' +
@@ -324,21 +322,21 @@ define(function(require)
 				'</div>'
 			);
 
-			if (content.height() < content[0].scrollHeight) {
-				this.ui.find('.hide').hide();
+			if (content.offsetHeight < content.scrollHeight) {
+				this.ui.querySelector('.hide').style.display = 'none';
 			}
 			else {
-				this.ui.find('.hide').show();
+				this.ui.querySelector('.hide').style.display = '';
 			}
 
 			Client.loadFile( DB.INTERFACE_PATH + 'item/' + ( item.IsIdentified ? it.identifiedResourceName : it.unidentifiedResourceName ) + '.bmp', function(data){
-				content.find('.item[data-index="'+ item.index +'"] .icon').css('backgroundImage', 'url('+ data +')');
+				content.querySelector('.item[data-index="'+ item.index +'"] .icon').style.backgroundImage = 'url('+ data +')';
 			});
 
 			/* Grade System */
 			if (item.enchantgrade) {
 				Client.loadFile(DB.INTERFACE_PATH + 'grade_enchant/grade_icon' + item.enchantgrade + '.bmp', function(data){
-					content.find('.item[data-index="'+ item.index +'"] .grade').css('backgroundImage', 'url('+ data +')');
+					content.querySelector('.item[data-index="'+ item.index +'"] .grade').style.backgroundImage = 'url('+ data +')';
 				});
 			}
 
@@ -367,17 +365,17 @@ define(function(require)
 			item.count -= count;
 
 			if (item.count > 0) {
-				this.ui.find('.item[data-index="'+ item.index +'"] .count').text( item.count );
+				this.ui.querySelector('.item[data-index="'+ item.index +'"] .count').textContent =  item.count ;
 				return item;
 			}
 		}
 
 		this.list.splice( this.list.indexOf(item), 1 );
-		this.ui.find('.item[data-index="'+ item.index +'"]').remove();
+		this.ui.querySelector('.item[data-index="'+ item.index +'"]').remove();
 
-		var content = this.ui.find('.container .content');
-		if (content.height() === content[0].scrollHeight) {
-			this.ui.find('.hide').show();
+		var content = this.ui.querySelector('.container .content');
+		if (content.offsetHeight === content.scrollHeight) {
+			this.ui.querySelector('.hide').style.display = '';
 		}
 
 		return item;
@@ -402,17 +400,17 @@ define(function(require)
 
 		// Update quantity
 		if (item.count > 0) {
-			this.ui.find('.item[data-index="'+ item.index +'"] .count').text( item.count );
+			this.ui.querySelector('.item[data-index="'+ item.index +'"] .count').textContent =  item.count ;
 			return;
 		}
 
 		// no quantity, remove
 		this.list.splice( this.list.indexOf(item), 1 );
-		this.ui.find('.item[data-index="'+ item.index +'"]').remove();
+		this.ui.querySelector('.item[data-index="'+ item.index +'"]').remove();
 
-		var content = this.ui.find('.container .content');
-		if (content.height() === content[0].scrollHeight) {
-			this.ui.find('.hide').show();
+		var content = this.ui.querySelector('.container .content');
+		if (content.offsetHeight === content.scrollHeight) {
+			this.ui.querySelector('.hide').style.display = '';
 		}
 	};
 
@@ -434,10 +432,10 @@ define(function(require)
 	function onResize()
 	{
 		var ui      = CartItems.ui;
-		var content = ui.find('.container .content');
-		var hide    = ui.find('.hide');
-		var top     = ui.position().top;
-		var left    = ui.position().left;
+		var content = ui.querySelector('.container .content');
+		var hide    = ui.querySelector('.hide');
+		var top     = DOM.getPosition(ui).top;
+		var left    = DOM.getPosition(ui).left;
 		var lastWidth  = 0;
 		var lastHeight = 0;
 		var _Interval;
@@ -463,11 +461,11 @@ define(function(require)
 			lastHeight = h;
 
 			//Show or hide scrollbar
-			if (content.height() === content[0].scrollHeight) {
-				hide.show();
+			if (content.offsetHeight === content.scrollHeight) {
+				hide.style.display = '';
 			}
 			else {
-				hide.hide();
+				hide.style.display = 'none';
 			}
 		}
 
@@ -475,12 +473,13 @@ define(function(require)
 		_Interval = setInterval( resizing, 30);
 
 		// Stop resizing on left click
-		jQuery(window).on('mouseup.resize', function(event){
+		var _cartResizeHandler = function(event){
 			if (event.which === 1) {
 				clearInterval(_Interval);
-				jQuery(window).off('mouseup.resize');
+				window.removeEventListener('mouseup', _cartResizeHandler);
 			}
-		});
+		};
+		window.addEventListener('mouseup', _cartResizeHandler);
 	}
 
 
@@ -493,14 +492,14 @@ define(function(require)
 		var ui = CartItems.ui;
 
 		if (_realSize) {
-			ui.find('.panel').show();
-			ui.height(_realSize);
+			ui.querySelector('.panel').style.display = '';
+			ui.style.height = _realSize + "px";
 			_realSize = 0;
 		}
 		else {
-			_realSize = ui.height();
-			ui.height(17);
-			ui.find('.panel').hide();
+			_realSize = ui.offsetHeight;
+			ui.style.height = 17 + "px";
+			ui.querySelector('.panel').style.display = 'none';
 		}
 	}
 
@@ -510,7 +509,7 @@ define(function(require)
 	 */
 	function requestFilter()
 	{
-		CartItems.ui.find('.container .content').empty();
+		CartItems.ui.querySelector('.container .content').innerHTML = '';
 
 		var list = CartItems.list;
 		var i, count;
@@ -532,7 +531,7 @@ define(function(require)
 		event.stopImmediatePropagation();
 
 		try {
-			data = JSON.parse(event.originalEvent.dataTransfer.getData('Text'));
+			data = JSON.parse(event.dataTransfer.getData('Text'));
 			item = data.data;
 		}
 		catch(e) {
@@ -594,14 +593,14 @@ define(function(require)
 	{
 		var delta;
 
-		if (event.originalEvent.wheelDelta) {
-			delta = event.originalEvent.wheelDelta / 120 ;
+		if (event.wheelDelta) {
+			delta = event.wheelDelta / 120 ;
 			if (window.opera) {
 				delta = -delta;
 			}
 		}
-		else if (event.originalEvent.detail) {
-			delta = -event.originalEvent.detail;
+		else if (event.detail) {
+			delta = -event.detail;
 		}
 
 		this.scrollTop = Math.floor(this.scrollTop/32) * 32 - (delta * 32);
@@ -630,19 +629,19 @@ define(function(require)
 		}
 
 		// Get back data
-		var pos     = jQuery(this).position();
-		var overlay = CartItems.ui.find('.overlay');
+		var pos     = DOM.getPosition(this);
+		var overlay = CartItems.ui.querySelector('.overlay');
 
 		// Display box
-		overlay.show();
-		overlay.css({top: pos.top, left:pos.left+35});
-		overlay.text(DB.getItemName(item) + ': ' + (item.count || 1) + quantity);
+		overlay.style.display = '';
+		overlay.style.top = pos.top; overlay.style.left = pos.left+35;
+		overlay.textContent = DB.getItemName(item) + ': ' + (item.count || 1) + quantity;
 
 		if (item.IsIdentified) {
-			overlay.removeClass('grey');
+			overlay.classList.remove('grey');
 		}
 		else {
-			overlay.addClass('grey');
+			overlay.classList.add('grey');
 		}
 	}
 
@@ -652,7 +651,7 @@ define(function(require)
 	 */
 	function onItemOut()
 	{
-		CartItems.ui.find('.overlay').hide();
+		CartItems.ui.querySelector('.overlay').style.display = 'none';
 	}
 
 
@@ -673,8 +672,8 @@ define(function(require)
 		var url   = this.firstChild.style.backgroundImage.match(/\(([^\)]+)/)[1];
 		img.src   = url.replace(/^\"/, '').replace(/\"$/, '');
 
-		event.originalEvent.dataTransfer.setDragImage( img, 12, 12 );
-		event.originalEvent.dataTransfer.setData('Text',
+		event.dataTransfer.setDragImage( img, 12, 12 );
+		event.dataTransfer.setData('Text',
 			JSON.stringify( window._OBJ_DRAG_ = {
 				type: 'item',
 				from: 'CartItems',
@@ -760,8 +759,8 @@ define(function(require)
 	{
 		var Inventory = getModule('UI/Components/Inventory/Inventory');
 		var Storage = getModule('UI/Components/Storage/Storage');
-		var isStorageOpen = Storage.ui ? Storage.ui.is(':visible') : false;
-		var isInventoryOpen = Inventory.getUI().ui ? Inventory.getUI().ui.is(':visible') : false;
+		var isStorageOpen = Storage.ui ? DOM.isVisible(Storage.ui) : false;
+		var isInventoryOpen = Inventory.getUI().ui ? DOM.isVisible(Inventory.getUI().ui) : false;
 
 		if (!item) {
 			return false;

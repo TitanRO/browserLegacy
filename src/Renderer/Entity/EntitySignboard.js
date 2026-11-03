@@ -103,7 +103,7 @@ define(function( require )
      * @param {mat4} matrix
      */
     Signboard.prototype.render = function(matrix) {
-        var ui = this.node.ui[0];
+        var ui = this.node.ui;
         var z;
 
         // Cast position

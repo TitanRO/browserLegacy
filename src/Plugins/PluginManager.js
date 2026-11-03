@@ -31,6 +31,21 @@
 import Configs from 'Core/Configs.js';
 
 /**
+ * Plugins found under src/Plugins at build time, keyed by path ('./Name/Name.js' -> lazy loader).
+ *
+ * Vite bundles these into the build (they are only evaluated when a configured plugin imports them), so a plugin
+ * can import client modules with the usual aliases ('Core/Preferences.js'). A plugin loaded at runtime from a
+ * separate file can't: the browser can't resolve those bare specifiers, and it would get its own module copies.
+ * Without Vite (native ES modules) import.meta.glob doesn't exist, and every plugin falls back to a runtime import.
+ */
+let _bundled = {};
+try {
+	_bundled = import.meta.glob(['./**/*.js', './**/*.mjs', '!./PluginManager.js', '!./**/*.test.js']);
+} catch (_e) {
+	_bundled = {};
+}
+
+/**
  * Plugin namespace
  */
 const Plugins = {};
@@ -87,7 +102,9 @@ Plugins.init = function init(context) {
 		if (!resolvedPath.endsWith('.js') && !resolvedPath.endsWith('.mjs')) {
 			resolvedPath += '.js';
 		}
-		import(/* @vite-ignore */ resolvedPath)
+		// Prefer the bundled copy; fall back to loading the file at runtime (plugins added after the build)
+		const load = _bundled[resolvedPath] || (() => import(/* @vite-ignore */ resolvedPath));
+		load()
 			.then(module => {
 				const plugin = module.default || module;
 				if (typeof plugin === 'function') {

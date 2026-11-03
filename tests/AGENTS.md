@@ -19,7 +19,7 @@
 | --- | --- |
 | `bench/`| `paletteConvert.bench.js`, `spriteCompile.bench.js`, `spriteFrame.bench.js`, `targa.bench.js`, `gameFileDecrypt.bench.js`|
 | `controls/`| `ProcessCommand.perf.test.js`, `ProcessCommand.test.js` |
-| `core/`| `FileManager.cacheReject.test.js`, `FileSystem.storedNames.test.js`, `LuaModuleLoader.test.js`, `PerfProbe.test.js` |
+| `core/`| `FileManager.cacheReject.test.js`, `FileSystem.storedNames.test.js`, `LuaModuleLoader.test.js`, `PerfProbe.test.js`, `PluginManager.test.js` |
 | `db/`| `BodyPalPath.test.js`, `Emotions.test.js`, `EmotionsConst.test.js`, `EquipmentLocation.test.js`, `IsShield.test.js`, `ItemType.test.js`, `JobConst.test.js`, `SkillAction.test.js`, `SkillConst.test.js`, `SkillTreeMerge.test.js`, `StatusConst.test.js`, `TownInfo.test.js`, `WeaponType.test.js` |
 | `engine/`| `CharEngine.reload.test.js`, `LoginEngine.ban.test.js`, `MapEngine.Guild.test.js`, `MapEngine.Item.Equip.test.js`, `MapEngine.Item.inventory.test.js`, `MapEngine.Pet.test.js`, `MapEngine.PrivateMessage.test.js`, `OffhandWeapon.test.js` |
 | `fixtures/`| `defaultAIfs.js`, `guildMembers.js`, `README.md` |

@@ -353,7 +353,7 @@ TODO: improve this flow (important!)
 
 # 6. Adding Custom Plugins
 
-- copy your custom plugins into `src\Plugins`
+- copy your custom plugins into `src\Plugins` before building: plugins there are bundled into the build, so they can import client modules (e.g. `Core/Preferences.js`). A plugin added after the build is loaded from its own file and must not import client modules.
 
 Some examples: https://github.com/MrAntares/roBrowserLegacy-plugins
 

@@ -6,7 +6,7 @@ Instructions for the client plugin loader and its configuration-driven lifecycle
 
 | File               | Responsibility                                                                                                 |
 | ------------------ | -------------------------------------------------------------------------------------------------------------- |
-| `PluginManager.js` | Reads `ROConfig.plugins`, resolves configured plugin paths, dynamically imports modules, and initializes them. |
+| `PluginManager.js` | Reads `ROConfig.plugins`, resolves configured plugin paths, loads modules (bundled via `import.meta.glob`, else a runtime `import()`), and initializes them. |
 
 ## Invariants
 
@@ -14,3 +14,4 @@ Instructions for the client plugin loader and its configuration-driven lifecycle
 - Plugins are dynamically imported as ES modules and may initialize global client state. Preserve the one-time initialization guard and report load/initialization failures explicitly.
 - Plugin state is not scoped to a server selection and may not be reversible; consider cross-server effects before changing lifecycle or reload behavior.
 - Preserve path resolution for browser builds and native ES module loading, including the `.js` / `.mjs` extension behavior.
+- Plugins present under `src/Plugins/` at build time are bundled, so they may import client modules by alias (`Core/Preferences.js`). A plugin loaded at runtime from a separate file can't: browsers can't resolve those bare specifiers (and it would get separate module instances), so runtime-only plugins must be self-contained.

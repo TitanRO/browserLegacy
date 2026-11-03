@@ -6,6 +6,8 @@
 /dist/
 /node_modules/
 /src/Plugins/*/
+# TitanRO plugins (committed; bundled into the build by PluginManager)
+!/src/Plugins/DefaultSettings/
 /index.html
 Config.local.js
 /package-lock.json

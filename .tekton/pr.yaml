@@ -4,7 +4,7 @@
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
-    generateName: robrowserlegacy-pr-
+    name: robrowserlegacy-pr
     annotations:
         pipelinesascode.tekton.dev/on-event: '[pull_request]'
         pipelinesascode.tekton.dev/on-target-branch: '[master]'

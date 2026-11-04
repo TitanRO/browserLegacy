@@ -1,0 +1,26 @@
+# syntax=docker/dockerfile:experimental
+# TitanRO image (upstream's Dockerfile is left untouched for their docker-compose setups).
+# DOCKER_BUILDKIT=1 docker build --ssh default -f Dockerfile.titanro -t registry.digitalocean.com/titanro-docr/robrowserlegacy . && docker image push registry.digitalocean.com/titanro-docr/robrowserlegacy
+
+FROM node:24.22.2 AS node
+
+WORKDIR /usr/app
+COPY ./ ./
+
+RUN npm install
+RUN npm run build -- -O -T -H
+
+
+FROM php:8-apache
+
+RUN apt-get update -y && apt-get install -y libpng-dev
+RUN docker-php-ext-install pdo pdo_mysql mysqli gd
+RUN a2enmod rewrite
+
+# dist/Web: index.html, Config.js (upstream defaults), Online.js, ThreadEventHandler.js, PathFindingWorker.js.
+# Plugins in src/Plugins are bundled into Online.js. Config.local.js holds our settings (merged over Config.js).
+COPY --from=node /usr/app/dist/Web /var/www/html
+COPY ./Config.local.js /var/www/html/
+
+RUN chown -R www-data:www-data /var/www/html
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"

@@ -10,6 +10,8 @@
 !/src/Plugins/DefaultSettings/
 /index.html
 Config.local.js
+# TitanRO config, baked into our image (see Dockerfile)
+!/Config.local.js
 /package-lock.json
 /GrannyModelViewer.js
 /GrfViewer.js

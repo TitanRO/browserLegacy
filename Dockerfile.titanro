@@ -8,15 +8,16 @@ FROM node:24.22.2 AS node
 WORKDIR /usr/app
 
 # Dependencies first, so the npm install layer stays cached until package.json changes
-# (package-lock.json is gitignored upstream; the glob picks it up if one is ever committed).
+# package-lock.json is committed here (TitanRO; upstream ignores it), and npm ci installs exactly it.
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY ./ ./
 RUN npm run build -- -O -T -H
 
 
-FROM php:8-apache
+# Pinned (was the floating php:8-apache): the version the deployed image already ran.
+FROM php:8.5.12-apache
 
 RUN apt-get update -y && apt-get install -y libpng-dev
 RUN docker-php-ext-install pdo pdo_mysql mysqli gd

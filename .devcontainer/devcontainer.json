@@ -7,7 +7,7 @@
 
 	"runArgs": ["--init"],
 
-	"mounts": [ "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind" ],
+	"mounts": ["source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"],
 
 	"customizations": {
 		"vscode": {
@@ -43,5 +43,4 @@
 		"DO_TOKEN": "${localEnv:DEVCONTAINER_DO_TOKEN}",
 		"LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}"
 	}
-
 }

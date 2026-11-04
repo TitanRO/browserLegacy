@@ -21,7 +21,7 @@ spec:
         - { name: git-revision, value: '{{ revision }}' }
         - { name: context, value: . }
         - { name: dockerfile, value: Dockerfile.titanro }
-        - { name: image, value: registry.digitalocean.com/titanro-docr/robrowserlegacy }
+        - { name: image, value: registry.digitalocean.com/titanro-nyc/robrowserlegacy }
         - { name: image-name, value: robrowser }
         - { name: sysops-path, value: 'argo/prod-season/robrowser argo/test-season/robrowser' }
     taskRunTemplate:

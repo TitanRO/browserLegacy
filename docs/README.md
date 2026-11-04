@@ -425,6 +425,7 @@ var ROConfig = {
 			renewal: true, // Must match your game server's type (true/false). When using clientinfo.xml you can add the <renewal>true</renewal> custom tag.
 			packetKeys: false, // Packet encryption keys ( not implemented?? )
 			socketProxy: 'ws://127.0.0.1:5999/', // The websocket proxy's address you set up previously for robrowser (wsproxy)
+			// socketUrl: 'wss://ws.example.com/{port}', // Instead of socketProxy: when the game servers accept WebSocket clients themselves (e.g. TitanRO's client_transport plugin behind an HTTPS edge). {host} and {port} are replaced with the server's address and port.
 			adminList: [2000000], // List admins' account IDs here like: [2000000, 2000001, 2000002 .... etc]
 			aura: { defaultLv: 99 } // optional aura levels
 		}

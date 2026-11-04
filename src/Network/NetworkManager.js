@@ -46,7 +46,7 @@ function defaultSocketFactory(host, port) {
 	if (NodeSocket.isSupported()) {
 		return new NodeSocket(host, port, proxy);
 	}
-	return new WebSocket(host, port, proxy);
+	return new WebSocket(host, port, proxy, Configs.get('socketUrl', null));
 }
 
 /**

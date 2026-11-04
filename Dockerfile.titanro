@@ -6,9 +6,13 @@
 FROM node:24.22.2 AS node
 
 WORKDIR /usr/app
-COPY ./ ./
 
+# Dependencies first, so the npm install layer stays cached until package.json changes
+# (package-lock.json is gitignored upstream; the glob picks it up if one is ever committed).
+COPY package*.json ./
 RUN npm install
+
+COPY ./ ./
 RUN npm run build -- -O -T -H
 
 

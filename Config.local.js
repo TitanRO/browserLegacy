@@ -20,7 +20,9 @@ window.ROConfigLocal = {
 			langtype: 1,
 			packetver: 20151029,
 			renewal: true,
-			forceUseAddress: false,
+			// Connect char/map to play.titanro.net:<advertised port>: wsProxy only allows these host:port targets
+			// (-a play.titanro.net:...), and the servers advertise the edge IP.
+			forceUseAddress: true,
 			socketProxy: 'wss://ws.titanro.net/',
 			packetKeys: true
 		}

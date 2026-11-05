@@ -240,114 +240,122 @@ function onConnectionRequest(username, password) {
 	_loginID = username;
 
 	// Try to connect
-	Network.connect(_server.address, _server.port, success => {
-		// Fail to connect...
-		if (!success) {
-			UIManager.showMessageBox(
-				DB.getMessage(1),
-				'ok',
-				() => {
-					UIManager.removeComponents();
-					WinLogin.append();
-				},
-				true
-			);
-			return;
-		}
-
-		let pkt;
-		let hash = false;
-
-		// Get client hash
-		if (Configs.get('calculateHash') && !Configs.get('development')) {
-			// Calucalte hash from files (slower, more "secure")
-			const files = Configs.get('hashFiles');
-			let fileStatus = 0;
-			const fileContents = [];
-
-			for (let i = 0; i < files.length; i++) {
-				const jsonFile = new XMLHttpRequest();
-				jsonFile.open('GET', files[i], true);
-				jsonFile.send();
-
-				jsonFile.onreadystatechange = function () {
-					if (jsonFile.readyState == 4 && jsonFile.status == 200) {
-						fileContents[i] = jsonFile.responseText;
-						fileStatus++;
-					}
-
-					if (fileStatus == files.length) {
-						const contentString = fileContents.join('\r\n'); // Join strings with carrige return & newline
-						hash = MD5.hash(contentString); // Just hash the whole array
-						sendLogin();
-					}
-				};
-			}
-		} else {
-			// Just use the predefined value (faster, less "secure")
-			hash = Configs.get('clientHash');
-			sendLogin();
-		}
-
-		function sendLogin() {
-			if (hash) {
-				// Convert hexadecimal hash to binary
-				if (/^[a-f0-9]+$/i.test(hash)) {
-					let str = '';
-					let i;
-					const count = hash.length;
-
-					for (i = 0; i < count; i += 2) {
-						str += String.fromCharCode(parseInt(hash.substr(i, 2), 16));
-					}
-
-					hash = str;
-				}
-
-				pkt = new PACKET.CA.EXE_HASHCHECK();
-				pkt.HashValue = hash;
-				Network.sendPacket(pkt);
-			}
-
-			if (Configs.get('loginMode') == 'han') {
-				// password is encrypted with rijndael
-				const paddedPassword = new Uint8Array(24);
-				for (let i = 0; i < password.length; i++) {
-					paddedPassword[i] = password.charCodeAt(i);
-				}
-				const encryptedPassword = Rijndael.encrypt(
-					paddedPassword,
-					Configs.get('rijndaelKey'),
-					Configs.get('rijndaelChain'),
-					24,
-					'ecb'
+	Network.connect(
+		_server.address,
+		_server.port,
+		success => {
+			// Fail to connect...
+			if (!success) {
+				UIManager.showMessageBox(
+					DB.getMessage(1),
+					'ok',
+					() => {
+						UIManager.removeComponents();
+						WinLogin.append();
+					},
+					true
 				);
+				return;
+			}
 
-				if (!encryptedPassword) {
-					UIManager.showErrorBox('Rijndael encryption failed. Check rijndaelKey and rijndaelChain config.');
-					return;
+			let pkt;
+			let hash = false;
+
+			// Get client hash
+			if (Configs.get('calculateHash') && !Configs.get('development')) {
+				// Calucalte hash from files (slower, more "secure")
+				const files = Configs.get('hashFiles');
+				let fileStatus = 0;
+				const fileContents = [];
+
+				for (let i = 0; i < files.length; i++) {
+					const jsonFile = new XMLHttpRequest();
+					jsonFile.open('GET', files[i], true);
+					jsonFile.send();
+
+					jsonFile.onreadystatechange = function () {
+						if (jsonFile.readyState == 4 && jsonFile.status == 200) {
+							fileContents[i] = jsonFile.responseText;
+							fileStatus++;
+						}
+
+						if (fileStatus == files.length) {
+							const contentString = fileContents.join('\r\n'); // Join strings with carrige return & newline
+							hash = MD5.hash(contentString); // Just hash the whole array
+							sendLogin();
+						}
+					};
+				}
+			} else {
+				// Just use the predefined value (faster, less "secure")
+				hash = Configs.get('clientHash');
+				sendLogin();
+			}
+
+			function sendLogin() {
+				if (hash) {
+					// Convert hexadecimal hash to binary
+					if (/^[a-f0-9]+$/i.test(hash)) {
+						let str = '';
+						let i;
+						const count = hash.length;
+
+						for (i = 0; i < count; i += 2) {
+							str += String.fromCharCode(parseInt(hash.substr(i, 2), 16));
+						}
+
+						hash = str;
+					}
+
+					pkt = new PACKET.CA.EXE_HASHCHECK();
+					pkt.HashValue = hash;
+					Network.sendPacket(pkt);
 				}
 
-				pkt = new PACKET.CA.LOGIN_HAN();
-				pkt.ID = username;
-				pkt.Passwd = String.fromCharCode(...encryptedPassword);
-				pkt.Version = parseInt(_server.version, 10);
-				pkt.clienttype = parseInt(_server.langtype, 10);
-				pkt.m_szIP = '192.168.0.1'; // dummy
-				pkt.m_szMacAddr = '00:1A:2B:3C:4D:5E'; // dummy
-				pkt.isHanGameUser = 0;
-				Network.sendPacket(pkt);
-			} else {
-				// Try to connect
-				pkt = new PACKET.CA.LOGIN();
-				pkt.ID = username;
-				pkt.Passwd = password;
-				pkt.Version = parseInt(_server.version, 10);
-				pkt.clienttype = parseInt(_server.langtype, 10);
-				Network.sendPacket(pkt);
+				if (Configs.get('loginMode') == 'han') {
+					// password is encrypted with rijndael
+					const paddedPassword = new Uint8Array(24);
+					for (let i = 0; i < password.length; i++) {
+						paddedPassword[i] = password.charCodeAt(i);
+					}
+					const encryptedPassword = Rijndael.encrypt(
+						paddedPassword,
+						Configs.get('rijndaelKey'),
+						Configs.get('rijndaelChain'),
+						24,
+						'ecb'
+					);
+
+					if (!encryptedPassword) {
+						UIManager.showErrorBox(
+							'Rijndael encryption failed. Check rijndaelKey and rijndaelChain config.'
+						);
+						return;
+					}
+
+					pkt = new PACKET.CA.LOGIN_HAN();
+					pkt.ID = username;
+					pkt.Passwd = String.fromCharCode(...encryptedPassword);
+					pkt.Version = parseInt(_server.version, 10);
+					pkt.clienttype = parseInt(_server.langtype, 10);
+					pkt.m_szIP = '192.168.0.1'; // dummy
+					pkt.m_szMacAddr = '00:1A:2B:3C:4D:5E'; // dummy
+					pkt.isHanGameUser = 0;
+					Network.sendPacket(pkt);
+				} else {
+					// Try to connect
+					pkt = new PACKET.CA.LOGIN();
+					pkt.ID = username;
+					pkt.Passwd = password;
+					pkt.Version = parseInt(_server.version, 10);
+					pkt.clienttype = parseInt(_server.langtype, 10);
+					Network.sendPacket(pkt);
+				}
 			}
-		}
-	});
+		},
+		false,
+		'login'
+	);
 }
 
 /**

@@ -38,15 +38,16 @@ let _socketFactory = null;
  *
  * @param {string} host
  * @param {number} port
+ * @param {string} [role] - 'login', 'char' or 'map'
  * @return {Socket}
  */
-function defaultSocketFactory(host, port) {
+function defaultSocketFactory(host, port, role) {
 	const proxy = Configs.get('socketProxy', null);
 
 	if (NodeSocket.isSupported()) {
 		return new NodeSocket(host, port, proxy);
 	}
-	return new WebSocket(host, port, proxy, Configs.get('socketUrl', null));
+	return new WebSocket(host, port, proxy, Configs.get('socketUrl', null), role);
 }
 
 /**
@@ -217,9 +218,11 @@ Packets.list = [];
  * @param {number} port
  * @param {function} callback once connected or not
  * @param {boolean} is zone server ?
+ * @param {string} [role] - 'login', 'char' or 'map' (default 'map' for a zone server); fills {role} in socketUrl
  */
-function connect(host, port, callback, isZone) {
-	const socket = _socketFactory ? _socketFactory(host, port) : defaultSocketFactory(host, port);
+function connect(host, port, callback, isZone, role) {
+	role = role || (isZone ? 'map' : undefined);
+	const socket = _socketFactory ? _socketFactory(host, port, role) : defaultSocketFactory(host, port, role);
 
 	socket.isZone = !!isZone;
 	socket.onClose = onClose;

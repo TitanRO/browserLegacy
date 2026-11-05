@@ -233,7 +233,8 @@ class MapEngine {
 
 				Session.Playing = true;
 			},
-			true
+			true,
+			'map'
 		);
 
 		// Select UI version when needed

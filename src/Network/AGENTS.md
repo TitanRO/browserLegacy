@@ -18,7 +18,7 @@ Instructions for working on packet structures, opcode registration, packet lengt
     - Do not infer protocol behavior from packet names alone. Trace the packet definition, version mapping, length table entry, and engine handler across the target `PACKETVER` range.
     - Verify that changes to `PacketStructure.js`, `PacketVersions.js`, or `PacketLength.js` target the exact `PACKETVER` date range and do not regress earlier or later client versions.
 3. **Keep Browser and Electron Socket Implementations Compatible:**
-    - Browser connections use `src/Network/SocketHelpers/WebSocket.js`: through a `wsProxy` (`socketProxy`, TCP-to-WebSocket translation), or straight to game servers that accept WebSocket clients themselves (`socketUrl`, a URL template with `{host}`/`{port}`).
+    - Browser connections use `src/Network/SocketHelpers/WebSocket.js`: through a `wsProxy` (`socketProxy`, TCP-to-WebSocket translation), or straight to game servers that accept WebSocket clients themselves (`socketUrl`, a URL template with `{role}`/`{host}`/`{port}`).
     - Electron connections use `src/Network/SocketHelpers/NodeSocket.js`, communicating over direct TCP via the Electron preload `contextBridge`.
     - Replay playback uses `src/Engine/Replay/ReplaySocket.js`.
     - All socket implementations must satisfy the shared contract expected by `NetworkManager.js`.

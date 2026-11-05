@@ -2,6 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { buildUrl } from '../../src/Network/SocketHelpers/WebSocket.js';
 
 describe('WebSocket buildUrl', () => {
+	it('fills {role} in a socketUrl template', () => {
+		expect(buildUrl('play.example.net', 6901, null, 'wss://ws.example.net/{role}', 'login')).toBe('wss://ws.example.net/login');
+		expect(buildUrl('play.example.net', 5122, null, 'wss://ws.example.net/{role}/{port}', 'map')).toBe(
+			'wss://ws.example.net/map/5122'
+		);
+	});
+
 	it('fills {host} and {port} in a socketUrl template', () => {
 		expect(buildUrl('play.example.net', 6122, null, 'wss://ws.example.net/{port}')).toBe('wss://ws.example.net/6122');
 		expect(buildUrl('play.example.net', 6122, null, 'wss://ws.example.net/{host}/{port}')).toBe(

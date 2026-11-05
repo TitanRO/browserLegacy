@@ -14,10 +14,11 @@
  * @param {string} host
  * @param {number} port
  * @param {?string} proxy - wsProxy URL (server option `socketProxy`)
- * @param {?string} urlTemplate - direct WebSocket URL with {host}/{port} (server option `socketUrl`)
+ * @param {?string} urlTemplate - direct WebSocket URL with {role}/{host}/{port} (server option `socketUrl`)
+ * @param {?string} role - 'login', 'char' or 'map'
  */
-function Socket(host, port, proxy, urlTemplate) {
-	const url = buildUrl(host, port, proxy, urlTemplate);
+function Socket(host, port, proxy, urlTemplate, role) {
+	const url = buildUrl(host, port, proxy, urlTemplate, role);
 	const self = this;
 	this.connected = false;
 
@@ -74,8 +75,9 @@ Socket.prototype.close = function Close() {
 /**
  * WebSocket URL for a game server at host:port.
  *
- * - urlTemplate (server option `socketUrl`): the game servers accept WebSocket clients themselves; `{host}` and
- *   `{port}` are replaced, e.g. 'wss://ws.example.com/{port}' when an HTTPS edge routes each path to a server.
+ * - urlTemplate (server option `socketUrl`): the game servers accept WebSocket clients themselves; `{role}`
+ *   ('login', 'char' or 'map'), `{host}` and `{port}` are replaced, e.g. 'wss://ws.example.com/{role}' when an
+ *   HTTPS edge routes each path to a server.
  * - proxy (server option `socketProxy`): a wsProxy; the target goes in the path, e.g. 'wss://proxy/host:port'.
  * - neither: the server itself, ws://host:port/.
  *
@@ -83,11 +85,15 @@ Socket.prototype.close = function Close() {
  * @param {number} port
  * @param {?string} proxy
  * @param {?string} urlTemplate
+ * @param {?string} [role]
  * @return {string}
  */
-export function buildUrl(host, port, proxy, urlTemplate) {
+export function buildUrl(host, port, proxy, urlTemplate, role) {
 	if (urlTemplate) {
-		return urlTemplate.replace(/\{host\}/g, host).replace(/\{port\}/g, String(port));
+		return urlTemplate
+			.replace(/\{role\}/g, role || '')
+			.replace(/\{host\}/g, host)
+			.replace(/\{port\}/g, String(port));
 	}
 	if (proxy) {
 		return proxy + (proxy.match(/\/$/) ? '' : '/') + host + ':' + port;

@@ -20,9 +20,9 @@ window.ROConfigLocal = {
 			langtype: 1,
 			packetver: 20151029,
 			renewal: true,
-			// Connect straight to the game servers: the edge routes wss://ws.titanro.net/<port> (the port each server
-			// advertises) to login/char/map, which accept WebSocket clients themselves (client_transport plugin).
-			socketUrl: 'wss://ws.titanro.net/{port}',
+			// Connect straight to the game servers: the edge routes wss://ws.titanro.net/login, /char and /map to those
+			// servers, which accept WebSocket clients themselves (client_transport plugin).
+			socketUrl: 'wss://ws.titanro.net/{role}',
 			packetKeys: true
 		}
 	],

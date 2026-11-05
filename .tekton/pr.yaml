@@ -54,12 +54,12 @@ spec:
                   - { name: git-url, value: $(params.git-url) }
                   - { name: git-revision, value: $(params.git-revision) }
                   - { name: image, value: 'node:24.22.2-alpine3.24' }
-                  # Two vitest workers: one per host CPU would exceed the task's 2 GiB memory limit.
+                  # Four vitest workers (about 1.3 GiB at peak): one per host CPU would exceed the task's 2 GiB memory limit.
                   - name: script
                     value: |
                         npm ci --no-audit --no-fund
                         status=0
-                        npx vitest run --maxWorkers=2 || status=1
+                        npx vitest run --maxWorkers=4 || status=1
                         npm run lint || status=1
                         npm run format:check || status=1
                         exit $status

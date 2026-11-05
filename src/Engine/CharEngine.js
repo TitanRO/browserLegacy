@@ -61,6 +61,21 @@ let _resettingPincode = false;
  */
 let _creatingPincode = false;
 
+/**
+ * @type {Array} characters of the current char list, for a selection the char-server makes by itself
+ */
+const _characters = [];
+
+/**
+ * @type {?number} timer that shows the char list after all when Session.ServerSelectsChar is set but no selection came
+ */
+let _serverSelectFallback = null;
+
+/**
+ * How long to wait for the char-server's own selection before showing the char list
+ */
+const SERVER_SELECT_WAIT = 5000;
+
 class CharEngine {
 	/*
 	 * Connect to char server
@@ -155,13 +170,29 @@ function onExitRequest() {
 }
 
 /**
+ * Keeps a char list entry for a selection the char-server makes by itself. The char list window fills in the account's
+ * sex when a packet leaves it out; do the same, since that window may never open.
+ *
+ * @param {object} character - char list entry
+ */
+function keepCharacter(character) {
+	if (!('sex' in character) || character.sex === 99) {
+		character.sex = Session.Sex;
+	}
+	_characters.push(character);
+}
+
+/**
  * Server send character list chunk
  *
  * @param {object} pkt - PACKET.HC.ACCEPT_ENTER_NEO_UNION_LIST or PACKET.HC.ACCEPT_ENTER_NEO_UNION_LIST2
  */
 function onCharacterListChunk(pkt) {
 	pkt.charInfo.forEach(charInfo => {
-		CharSelect.addCharacter(charInfo);
+		keepCharacter(charInfo);
+		if (_serverSelectFallback === null) {
+			CharSelect.addCharacter(charInfo);
+		}
 	});
 }
 
@@ -186,6 +217,10 @@ function onConnectionAccepted(pkt) {
 
 	// Reset the active player for the new char-select session
 	Session.Entity = null;
+	_characters.length = 0;
+	if (pkt.charInfo) {
+		pkt.charInfo.forEach(keepCharacter);
+	}
 
 	// Reset Announcement component
 	const Announce = UIManager.getComponent('Announce');
@@ -200,8 +235,6 @@ function onConnectionAccepted(pkt) {
 		MapName.resetState();
 	}
 
-	UIManager.getComponent('WinLoading').remove();
-
 	// Initialize window
 	CharSelect.onExitRequest = onExitRequest;
 	CharSelect.onConnectRequest = onConnectRequest;
@@ -209,6 +242,24 @@ function onConnectionAccepted(pkt) {
 	CharSelect.onDeleteRequest = onDeleteRequest;
 	CharSelect.onDeleteReqDelay = onDeleteReqDelay;
 	CharSelect.onCancelDeleteRequest = onCancelDeleteRequest;
+
+	// The char-server selects the character itself (Session.ServerSelectsChar, set by the Quickstart plugin's guest
+	// login): keep the loading window up instead of a char list nobody needs to click, and show the list only if no
+	// selection follows.
+	clearTimeout(_serverSelectFallback);
+	_serverSelectFallback = null;
+	if (Session.ServerSelectsChar) {
+		_serverSelectFallback = setTimeout(() => {
+			_serverSelectFallback = null;
+			Session.ServerSelectsChar = false;
+			UIManager.getComponent('WinLoading').remove();
+			CharSelect.append();
+			CharSelect.setInfo({ ...pkt, charInfo: _characters.slice() });
+		}, SERVER_SELECT_WAIT);
+		return;
+	}
+
+	UIManager.getComponent('WinLoading').remove();
 	CharSelect.append();
 	CharSelect.setInfo(pkt);
 
@@ -844,6 +895,26 @@ function onReceiveMapInfo(pkt) {
 	}
 	DB.startedLazyInit = false;
 	retryCount = 0;
+
+	// The char-server can select the character itself, with no click on the char list (the Quickstart plugin's
+	// guest login): build the player here, as onConnectRequest does for a click.
+	clearTimeout(_serverSelectFallback);
+	_serverSelectFallback = null;
+	Session.ServerSelectsChar = false;
+	if (!Session.Entity) {
+		const character = _characters.find(c => c.GID === pkt.GID);
+		if (character) {
+			if (CharSelect.__active) {
+				CharSelect.remove();
+			}
+			const WinLoading = UIManager.getComponent('WinLoading');
+			if (!WinLoading.__active) {
+				WinLoading.append();
+			}
+			Session.Entity = new Player(character);
+		}
+	}
+
 	Session.GID = pkt.GID;
 	MapEngine.init(pkt.addr.ip, pkt.addr.port, pkt.mapName);
 }

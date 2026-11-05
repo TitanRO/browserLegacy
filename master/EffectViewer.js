@@ -205269,7 +205269,7 @@ var init_PacketRegister = __esmMin((() => {
 /**
 * Initialize to get keys for packet encryption
 */
-function Init$13() {
+function Init$14() {
 	_available = false;
 	const packetKeys = Configs.get("packetKeys");
 	if (!packetKeys) return;
@@ -207570,7 +207570,7 @@ var init_PacketCrypt = __esmMin((() => {
 		return al * bl + (ah * bl + al * bh << 16 >>> 0) | 0;
 	};
 	PacketCrypt_default = {
-		init: Init$13,
+		init: Init$14,
 		process: Process,
 		reset: Reset
 	};
@@ -317698,7 +317698,7 @@ var init_Trade$1 = __esmMin((() => {
 /**
 * Export
 */
-function Init$12() {
+function Init$13() {
 	this.onMouseOver = EntityControl.onMouseOver;
 	this.onMouseOut = EntityControl.onMouseOut;
 	this.onMouseDown = EntityControl.onMouseDown;
@@ -318194,7 +318194,7 @@ function setAction(option) {
 /**
 * Initialize Entity action
 */
-function Init$11() {
+function Init$12() {
 	this.ACTION = new Action();
 	this.animation = new Animation();
 	this.setAction = setAction;
@@ -318350,7 +318350,7 @@ var init_EntityOverlay = __esmMin((() => {
 /**
 * Export
 */
-function Init$10() {
+function Init$11() {
 	this.cast = new Cast();
 }
 var vec4$5, _pos$5, _size$5, Cast;
@@ -318458,7 +318458,7 @@ var init_EntityCast = __esmMin((() => {
 /**
 * Export
 */
-function Init$9() {
+function Init$10() {
 	this.life = new Life();
 	this.life.entity = this;
 }
@@ -318592,7 +318592,7 @@ function multiShadow(ctx, text, x, y, offsetX, offsetY, blur) {
 /**
 * Export ing
 */
-function Init$8() {
+function Init$9() {
 	this.display = new Display();
 }
 var vec4$3, _pos$3, _size$3, dpr, procCanvas, procCtx, _isUglyShadow, Display;
@@ -318837,7 +318837,7 @@ function roundRect(ctx, x, y, width, height, radius) {
 /**
 * Export
 */
-function Init$7() {
+function Init$8() {
 	this.dialog = new Dialog();
 }
 var vec4$2, _pos$2, _size$2, Dialog;
@@ -319720,7 +319720,7 @@ function UpdateBody(job) {
 		}
 		if (objecttype !== this.objecttype) {
 			this.objecttype = objecttype;
-			Init$11.call(this);
+			Init$12.call(this);
 		}
 	}
 	if (job === 111 || job === 139 || job === 45) {
@@ -320061,7 +320061,7 @@ function onTransformationChange() {
 /**
 * Hooking, export
 */
-function Init$6() {
+function Init$7() {
 	this.files = new View();
 	Object.defineProperty(this, "sex", {
 		get: function() {
@@ -320830,7 +320830,7 @@ function distance(entity1, entity2) {
 /**
 * Initialize and export methods
 */
-function Init$5() {
+function Init$6() {
 	this.onWalkEnd = function onWalkEnd() {};
 	this._preserveDirection = false;
 	this.isFastMoving = false;
@@ -321256,7 +321256,7 @@ function renderLayer(layer, spr, pal, size, pos, type, isBlendModeOne) {
 /**
 * Export
 */
-function Init$4() {
+function Init$5() {
 	this.render = render$6;
 	this.renderLayer = renderLayer;
 	this.renderEntity = renderEntity;
@@ -321644,7 +321644,7 @@ var init_EntityRoom$1 = __esmMin((() => {
 /**
 * Export
 */
-function Init$3() {
+function Init$4() {
 	this.room = new Room(this);
 }
 var vec4$1, _pos$1, _size$1, Room;
@@ -322063,7 +322063,7 @@ function isDead() {
 /**
 * Hooking, export
 */
-function Init$2() {
+function Init$3() {
 	this._bodyStateColor = new Float32Array([
 		1,
 		1,
@@ -322576,7 +322576,7 @@ var init_EntityDropEffect = __esmMin((() => {
 /**
 * Export
 */
-function Init$1() {
+function Init$2() {
 	this.emblem = new Emblem();
 	this.emblem.entity = this;
 }
@@ -322768,23 +322768,23 @@ var init_Entity$1 = __esmMin((() => {
 			this.gr2 = null;
 			this.gr2Model = null;
 			this.culled = false;
+			Init$13.call(this);
 			Init$12.call(this);
 			Init$11.call(this);
 			Init$10.call(this);
 			Init$9.call(this);
 			Init$8.call(this);
-			Init$7.call(this);
 			init$6.call(this);
+			Init$7.call(this);
 			Init$6.call(this);
 			Init$5.call(this);
 			Init$4.call(this);
 			Init$3.call(this);
-			Init$2.call(this);
 			init$5.call(this);
 			init$4.call(this);
 			init$3.call(this);
 			init$2.call(this);
-			Init$1.call(this);
+			Init$2.call(this);
 			if (data) {
 				this.clean();
 				this.set(data);
@@ -322826,7 +322826,7 @@ var init_Entity$1 = __esmMin((() => {
 			for (i = 0; i < count; ++i) switch (keys[i]) {
 				case "objecttype":
 					this.objecttype = unit.job === 45 ? Entity.TYPE_WARP : unit.objecttype;
-					Init$11.call(this);
+					Init$12.call(this);
 					break;
 				case "sex":
 				case "job": break;
@@ -334915,8 +334915,8 @@ var init_Clan$1 = __esmMin((() => {
 	Clan_default = UIManager.addComponent(Clan);
 }));
 // src/Plugins/DefaultSettings/DefaultSettings.js
-var DefaultSettings_exports = /* @__PURE__ */ __exportAll({ default: () => Init });
-function Init() {
+var DefaultSettings_exports = /* @__PURE__ */ __exportAll({ default: () => Init$1 });
+function Init$1() {
 	const customAudio = Preferences.get("Audio", {
 		BGM: { volume: .1 },
 		Sound: { volume: .1 }
@@ -334934,6 +334934,2714 @@ var init_DefaultSettings = __esmMin((() => {
 	init_SoundManager();
 	init_Map();
 }));
+// src/UI/Components/WinLogin/WinLogin/WinLogin.html?raw
+var WinLogin_default$2;
+var init_WinLogin$3 = __esmMin((() => {
+	WinLogin_default$2 = "<div id=\"WinLogin\">\r\n	<ui-image src=\"login_interface/win_login.bmp\"></ui-image>\r\n	<!-- User Auth -->\r\n	<input class=\"user\" type=\"text\" value=\"\" />\r\n	<input class=\"pass\" type=\"password\" value=\"\" />\r\n	<button\r\n		class=\"save\"\r\n		type=\"button\"\r\n		data-background=\"login_interface/chk_saveoff.bmp\"\r\n		data-preload=\"login_interface/chk_saveon.bmp\"\r\n	></button>\r\n\r\n	<!-- Buttons -->\r\n	<button\r\n		class=\"btn signup\"\r\n		type=\"button\"\r\n		data-background=\"login_interface/btn_request.bmp\"\r\n		data-hover=\"login_interface/btn_request_a.bmp\"\r\n		data-down=\"login_interface/btn_request_b.bmp\"\r\n	></button>\r\n	<button\r\n		class=\"btn connect\"\r\n		type=\"submit\"\r\n		data-background=\"login_interface/btn_connect.bmp\"\r\n		data-hover=\"login_interface/btn_connect_a.bmp\"\r\n		data-down=\"login_interface/btn_connect_b.bmp\"\r\n	></button>\r\n	<button\r\n		class=\"btn exit\"\r\n		type=\"button\"\r\n		data-background=\"login_interface/btn_exit.bmp\"\r\n		data-hover=\"login_interface/btn_exit_a.bmp\"\r\n		data-down=\"login_interface/btn_exit_b.bmp\"\r\n	></button>\r\n</div>\r\n";
+}));
+// src/UI/Components/WinLogin/WinLogin/WinLogin.css?raw
+var WinLogin_default$1;
+var init_WinLogin$2 = __esmMin((() => {
+	WinLogin_default$1 = ":host {\r\n	width: 280px;\r\n	height: 120px;\r\n	top: 60%;\r\n	left: calc(50% - 140px);\r\n}\r\n\r\n#WinLogin {\r\n	position: absolute;\r\n	width: 280px;\r\n	height: 120px;\r\n}\r\n#WinLogin input {\r\n	position: absolute;\r\n	left: 91px;\r\n	height: 18px;\r\n	width: 127px;\r\n	border: none;\r\n	background-color: transparent;\r\n	padding-left: 2px;\r\n	outline: none;\r\n}\r\n#WinLogin input.user {\r\n	top: 29px;\r\n}\r\n#WinLogin input.pass {\r\n	top: 61px;\r\n}\r\n#WinLogin .save {\r\n	position: absolute;\r\n	top: 32px;\r\n	right: 10px;\r\n	display: block;\r\n	width: 38px;\r\n	height: 10px;\r\n	border: none;\r\n	background-color: transparent;\r\n	background-repeat: no-repeat;\r\n}\r\n#WinLogin .btn {\r\n	position: absolute;\r\n	border: 0;\r\n	width: 42px;\r\n	height: 20px;\r\n	bottom: 4px;\r\n	background-color: transparent;\r\n}\r\n#WinLogin .btn.connect {\r\n	right: 50px;\r\n}\r\n#WinLogin .btn.signup {\r\n	left: 5px;\r\n}\r\n#WinLogin .btn.exit {\r\n	right: 5px;\r\n}\r\n\r\n/* Override browser autofill styles */\r\n#WinLogin input:-webkit-autofill,\r\n#WinLogin input:-webkit-autofill:hover,\r\n#WinLogin input:-webkit-autofill:focus,\r\n#WinLogin input:-webkit-autofill:active,\r\n#WinLogin input:-internal-autofill-selected,\r\n#WinLogin input:-internal-autofill-previewed {\r\n	-webkit-background-clip: text;\r\n	transition: background-color 5000sease-in-out 0s;\r\n	box-shadow: inset 0 0 20px 20px #ffffff00;\r\n}\r\n";
+}));
+// src/Renderer/Entity/Player.js
+var Player;
+var init_Player = __esmMin((() => {
+	init_Entity$1();
+	Player = class extends Entity {};
+}));
+// src/Engine/Replay/ReplayTypes.js
+/**
+* Informational replay logging, only emitted in development builds.
+* Warnings and errors are reported unconditionally.
+*
+* @param {...*} args
+*/
+function replayLog(...args) {
+	if (Configs.get("development", false)) console.log(...args);
+}
+var ContainerType, ReplayEventSubOpCode, ContainerTypeNames, ItemChunkKind, ItemRecordTag, ReplayOpCodes, ReplayOpCodeName, ReplayState, WindowIdToComponent;
+var init_ReplayTypes = __esmMin((() => {
+	init_Configs();
+	ContainerType = {
+		None: 0,
+		PacketStream: 1,
+		ReplayData: 2,
+		Session: 3,
+		Status: 4,
+		Quests: 6,
+		GroupAndFriends: 7,
+		Items: 8,
+		Companions: 9,
+		MemorialDungeon: 10,
+		Unused11: 11,
+		EntryQueue: 12,
+		Hotkeys: 13,
+		InitialPackets: 14,
+		InitialEntities: 15,
+		InitialFloorItems: 16,
+		SkillGroundUnits: 17,
+		EfstList: 18,
+		OpenWindows: 19,
+		WindowDragAll: 20,
+		EntitiesInfo: 21,
+		ActorNames: 22,
+		QuestFlag: 23,
+		Navigation: 24
+	};
+	ReplayEventSubOpCode = {
+		WINDOW_MOVE: 900,
+		ITEM_DESC: 901,
+		WINDOW_MSG: 902,
+		SET_TARGET: 903,
+		SET_MAP_INFO: 904,
+		MAP_TRANSITION: 905,
+		SET_BGM_AMBIENT: 906,
+		SET_SESSION_TEXT: 907,
+		NAVIGATION_MSG: 908,
+		MAKE_WINDOW: 909,
+		NAVI_PATH: 910,
+		NAVI_WAYPOINT: 911,
+		NAVI_TARGET: 912,
+		NAVIGATION_PATH: 910,
+		NAVIGATION_ARROW: 911,
+		NAVIGATION_ACTIVE: 912,
+		WINDOW_ACTION: 913,
+		CLOSE_WINDOW: 914
+	};
+	ContainerTypeNames = {};
+	for (const [name, code] of Object.entries(ContainerType)) ContainerTypeNames[code] = name;
+	ItemChunkKind = {
+		INVENTORY: 4510,
+		CART: 4516,
+		CART_MIRROR: 4518,
+		EQUIPPED: 4601,
+		EQUIPPED_COSTUME: 4603,
+		STORAGE: 4701,
+		GUILD_STORAGE: 4702
+	};
+	ItemRecordTag = {
+		START_CHAIN: 281,
+		END_CHAIN: 282,
+		POS: 285,
+		WEAR_STATE: 286,
+		QTY: 287,
+		CARDS: 290,
+		NAMEID: 291,
+		REFINE: 295,
+		SPRITE: 298,
+		GRADE: 299,
+		OPTIONS_COUNT: 300,
+		OPTIONS: 301
+	};
+	ReplayOpCodes = {
+		ZC_ROOM_NEWENTRY: 201,
+		ZC_STORE_ENTRY: 202,
+		ZC_PROGRESS: 203,
+		ZC_BUYING_STORE_ENTRY: 204,
+		ZC_SKILL_POST_ENTRY: 205,
+		ZC_SKILL_GROUND_UNIT: 206,
+		ZC_ITEM_ENTRY: 207,
+		ZC_NOTIFY_MOVEENTRY8: 208,
+		ZC_NOTIFY_STANDENTRY7: 210,
+		ZC_NOTIFY_NEWENTRY5: 212,
+		ZC_NOTIFY_ACTENTRY: 213,
+		ZC_NOTIFY_MOVEENTRY11: 214,
+		ZC_NOTIFY_STANDENTRY10: 215,
+		ZC_NOTIFY_MOVEENTRY10: 216,
+		ZC_NOTIFY_STANDENTRY11: 217,
+		ZC_NOTIFY_MOVEENTRY: 218,
+		ZC_NPC_CHAT: 401,
+		Begin_950: 950,
+		End_950: 951,
+		TailMagic: 960,
+		Region: 961,
+		Service: 962,
+		ServerType: 963,
+		Sex: 963,
+		Charactername: 964,
+		Mapname: 965,
+		Maptype: 966,
+		PosX: 967,
+		PosY: 968,
+		Direction: 969,
+		TotalTimeMs: 970,
+		Length: 970,
+		PacketCount: 971,
+		EndFileOffset: 972,
+		SaveUiOptions: 973,
+		Begin_1000: 1e3,
+		End_1000: 1001,
+		Aid: 1010,
+		Gid: 1011,
+		Job: 1014,
+		Exp: 1015,
+		Level: 1016,
+		JobPoint: 1017,
+		NextExp: 1018,
+		JobLevel: 1019,
+		SkillPoint: 1020,
+		Str: 1024,
+		Agi: 1025,
+		Vit: 1026,
+		Int: 1027,
+		Dex: 1028,
+		Luk: 1029,
+		PlusStr: 1030,
+		PlusAgi: 1031,
+		PlusVit: 1032,
+		PlusInt: 1033,
+		PlusDex: 1034,
+		PlusLuk: 1035,
+		ASPD: 1036,
+		AttackPower: 1037,
+		MDefPower: 1038,
+		PlusASPD: 1039,
+		ItemDefPower: 1040,
+		PlusDefPower: 1041,
+		RefiningPower: 1042,
+		MaxMattPower: 1043,
+		MinMattPower: 1044,
+		PlusMDefPower: 1045,
+		HitSuccessValue: 1046,
+		AvoidSuccessValue: 1047,
+		CriticalSuccessValue: 1048,
+		PlusAvoidSuccessValue: 1049,
+		EquipArrowIndex: 1050,
+		Money: 1051,
+		Speed: 1052,
+		Honor: 1053,
+		NextJobExp: 1054,
+		JobExp: 1055,
+		Virtue: 1056,
+		Head: 1060,
+		Weapon: 1061,
+		Shield: 1062,
+		BodyPalette: 1063,
+		HeadPalette: 1064,
+		Accessory: 1065,
+		Accessory2: 1066,
+		Accessory3: 1067,
+		EffectState: 1070,
+		RobePalette: 1071,
+		CartCurCount: 1086,
+		CartMaxCount: 1087,
+		CartCurWeight: 1088,
+		CartMaxWeight: 1089,
+		Begin_2000: 2e3,
+		End_2000: 2001,
+		BonusStr: 2010,
+		BonusAgi: 2011,
+		BonusVit: 2012,
+		BonusInt: 2013,
+		BonusDex: 2014,
+		BonusLuk: 2015,
+		CurWeight: 2017,
+		MaxWeight: 2018,
+		Hp: 2029,
+		MaxHp: 2030,
+		Sp: 2031,
+		MaxSp: 2032,
+		Begin_3500: 3500,
+		End_3500: 3501,
+		QuestInfo: 3510,
+		Begin_4000: 4e3,
+		End_4000: 4001,
+		GroupName: 4014,
+		GroupInfo: 4015,
+		FriendInfo: 4016,
+		Begin_4500: 4500,
+		End_4500: 4501,
+		InventoryItems: 4510,
+		CartItems: 4516,
+		CartMirrorItems: 4518,
+		EquippedItems: 4601,
+		EquippedShadowItems: 4603,
+		StorageItems: 4701,
+		GuildStorageItems: 4702,
+		Begin_5000: 5e3,
+		End_5000: 5001,
+		HomunGid: 5101,
+		HomunName: 5102,
+		HomunJob: 5103,
+		HomunLevel: 5104,
+		HomunFullness: 5105,
+		HomunRelation: 5106,
+		HomunHp: 5107,
+		HomunMaxHp: 5108,
+		HomunSp: 5109,
+		HomunMaxSp: 5110,
+		HomunAtk: 5111,
+		HomunMatk: 5112,
+		HomunHit: 5113,
+		HomunCritical: 5114,
+		HomunDef: 5115,
+		HomunMdef: 5116,
+		HomunFlee: 5117,
+		HomunAspd: 5118,
+		HomunExp: 5119,
+		HomunNextExp: 5120,
+		HomunSkillPoint: 5121,
+		HomunOldFullness: 5122,
+		HomunOldRelation: 5123,
+		HomunIsModified: 5124,
+		HomunIsModifiedName: 5125,
+		HomunState: 5126,
+		HomunAtkRange: 5127,
+		HomunClass: 5128,
+		HomunEvolution: 5129,
+		HomunEvolutionCost: 5130,
+		HomunBaseLevel: 5131,
+		HomunMaxLevel: 5132,
+		HomunAutoFeed: 5133,
+		HomunFoodId: 5134,
+		MercenaryGid: 5201,
+		MercenaryName: 5202,
+		MercenaryJob: 5203,
+		MercenaryLevel: 5204,
+		MercenaryHp: 5205,
+		MercenaryMaxHp: 5206,
+		MercenarySp: 5207,
+		MercenaryMaxSp: 5208,
+		MercenaryAtk: 5209,
+		MercenaryMatk: 5210,
+		MercenaryHit: 5211,
+		MercenaryCritical: 5212,
+		MercenaryDef: 5213,
+		MercenaryMdef: 5214,
+		MercenaryFlee: 5215,
+		MercenaryAspd: 5216,
+		MercenaryRemainTime: 5217,
+		MercenaryCalls: 5218,
+		MercenaryKillCount: 5219,
+		MercenaryState: 5220,
+		MercenaryAtkRange: 5221,
+		MercenaryClass: 5222,
+		MercenaryType: 5223,
+		MercenaryEndurance: 5224,
+		MercenarySkillPoint: 5225,
+		MercenaryContractTime: 5226,
+		MercenaryProperty: 5227,
+		MercenaryPropertyLevel: 5228,
+		MercenaryOldFullness: 5229,
+		Begin_5300: 5300,
+		PetGid: 5301,
+		PetIsNameModified: 5302,
+		PetName: 5303,
+		PetAccessory: 5304,
+		PetJob: 5305,
+		PetLevel: 5306,
+		PetFullness: 5307,
+		PetRelation: 5308,
+		PetEggIndex: 5309,
+		PetOldFullness: 5310,
+		ElementalGid: 5401,
+		ElementalName: 5402,
+		ElementalJob: 5403,
+		ElementalLevel: 5404,
+		ElementalRemainTime: 5405,
+		Begin_5500: 5500,
+		End_5500: 5501,
+		MemorialDungeonIsOpen: 5510,
+		MemorialDungeonWndX: 5511,
+		MemorialDungeonWndY: 5512,
+		MemorialDungeonFactor: 5513,
+		MemorialDungeonEnterTime: 5514,
+		MemorialDungeonName: 5515,
+		MemorialDungeonDestroyTime: 5516,
+		MemorialDungeonReEnterTime: 5517,
+		MemorialDungeonState: 5518,
+		Begin_6500: 6500,
+		End_6500: 6501,
+		EntryQueueSelected: 6511,
+		EntryQueueState: 6512,
+		EntryQueueInfo: 6513,
+		EntryQueueApply: 6514,
+		EntryQueueWnd: 6515,
+		EntryQueueStandByWnd: 6516,
+		EntryQueueParam1: 6517,
+		EntryQueueParam2: 6518,
+		Begin_7000: 7e3,
+		End_7000: 7001,
+		HotkeyBar1: 7100,
+		HotkeyBar2: 7101,
+		Begin_7500: 7500,
+		End_7500: 7501,
+		SkillNameEntry: 7502,
+		SkillItem: 7504,
+		SkillTreeItem: 7505,
+		Begin_8000: 8e3,
+		End_8000: 8001,
+		NaviAutoSearch: 8002,
+		NaviFindDistance: 8003,
+		NaviShowDistance: 8004,
+		NaviDrawNpcIcon: 8005,
+		NaviRoutePath: 8006,
+		NaviStartNode: 8007,
+		NaviEndNode: 8008,
+		NaviStartX: 8009,
+		NaviStartY: 8010,
+		NaviEndX: 8011,
+		NaviEndY: 8012,
+		NaviTargetGid: 8013,
+		NaviTargetType: 8014,
+		NaviStartMap: 8015,
+		NaviDestMap: 8016,
+		NaviRouteCost: 8017,
+		NaviScrollState: 8018,
+		NaviActiveTab: 8019,
+		NaviFilterState: 8020,
+		NaviWorldInfo: 8021,
+		NaviWaypointList: 8022,
+		NaviIsPathActive: 8023,
+		Begin_10000: 1e4,
+		End_10000: 10001,
+		Begin_13000: 13e3,
+		End_13000: 13001,
+		ActorNameList: 13002,
+		GuildNameList: 13003,
+		GuildEmblemId: 13004,
+		GuildEmblemData: 13005,
+		Begin_14000: 14e3,
+		End_14000: 14001,
+		IsOnQuest: 14011,
+		Begin_15000: 15e3,
+		End_15000: 15001,
+		Begin_17000: 17e3,
+		End_17000: 17001,
+		Begin_19000: 19e3,
+		End_19000: 19001,
+		EfstInfo: 19011,
+		Begin_20000: 2e4,
+		End_20000: 20001,
+		OpenWindow_Base: 20100,
+		Begin_25000: 25e3,
+		End_25000: 25001,
+		IsDragAll: 25010,
+		Begin_26000: 26e3,
+		End_26000: 26001
+	};
+	ReplayOpCodeName = {};
+	for (const [name, code] of Object.entries(ReplayOpCodes)) ReplayOpCodeName[code] = name;
+	ReplayState = {
+		IDLE: "IDLE",
+		LOADING_REPLAY: "LOADING_REPLAY",
+		APPLYING_SESSION: "APPLYING_SESSION",
+		LOADING_MAP: "LOADING_MAP",
+		PLAYING_INITIAL_DATA: "PLAYING_INITIAL_DATA",
+		INITIAL_DATA_COMPLETE: "INITIAL_DATA_COMPLETE",
+		PLAYING_PACKET_STREAM: "PLAYING_PACKET_STREAM",
+		REPLAY_FINISHED: "REPLAY_FINISHED"
+	};
+	WindowIdToComponent = {
+		0: "BasicInfo",
+		1: "ItemInfo",
+		2: "ItemSelection",
+		3: "Inventory",
+		4: "Equipment",
+		5: "WinStats",
+		6: "SkillList",
+		7: "ChatBox",
+		8: "ChatRoom",
+		9: "MiniMap",
+		10: "PartyFriends",
+		11: "Guild",
+		12: "Emoticons",
+		13: "ShortCut",
+		14: "GraphicsOption",
+		15: "Escape",
+		16: "Quest",
+		17: "NpcStore",
+		18: "PetInformations",
+		19: "HomunInformations",
+		20: "MercenaryInformations",
+		21: "CartItems",
+		22: "Storage",
+		23: "WorldMap",
+		24: "Navigation"
+	};
+}));
+// src/Engine/Replay/ReplayParser.js
+var HEADER_BYTES, DESCRIPTOR_BYTES, DESCRIPTOR_COUNT, ReplayParser;
+var init_ReplayParser = __esmMin((() => {
+	init_BinaryReader();
+	init_ItemType();
+	init_EquipmentLocation();
+	init_ReplayTypes();
+	HEADER_BYTES = 112;
+	DESCRIPTOR_BYTES = 10;
+	DESCRIPTOR_COUNT = 24;
+	ReplayParser = class {
+		constructor(fileBuffer) {
+			this.fp = new BinaryReader(fileBuffer);
+			this.header = {};
+			this.containers = [];
+			this.size = fileBuffer.byteLength;
+		}
+		parse() {
+			this.readHeader();
+			replayLog("[ReplayParser] Header parsed:", this.header);
+			if (this.header.version === 5) this.readContainersV5();
+			else console.warn(`[ReplayParser] Unsupported version: ${this.header.version}`);
+			return this.buildBuffers();
+		}
+		readHeader() {
+			if (this.size < HEADER_BYTES) throw new Error(`Replay file is truncated: ${this.size} bytes, expected at least ${HEADER_BYTES}`);
+			this.fp.seek(0, 0);
+			this.header.rawPrefix = this.fp.readBinaryString(100);
+			this.header.version = this.fp.readUByte();
+			this.header.sig = this.fp.readBinaryString(3);
+			this.header.recordedAt = {
+				year: this.fp.readShort(),
+				month: this.fp.readUByte(),
+				day: this.fp.readUByte()
+			};
+			this.header.dateUnused = this.fp.readUByte();
+			this.header.recordedAt.hour = this.fp.readUByte();
+			this.header.recordedAt.minute = this.fp.readUByte();
+			this.header.recordedAt.second = this.fp.readUByte();
+			this.header.date = this.header.recordedAt;
+			this.keys = this.deriveKeys(this.header.recordedAt);
+		}
+		deriveKeys(d) {
+			const view = /* @__PURE__ */ new DataView(/* @__PURE__ */ new ArrayBuffer(4));
+			view.setInt16(0, d.year, true);
+			view.setUint8(2, d.month);
+			view.setUint8(3, d.day);
+			const k1 = view.getInt32(0, true) >> 5;
+			view.setUint8(0, 0);
+			view.setUint8(1, d.hour);
+			view.setUint8(2, d.minute);
+			view.setUint8(3, d.second);
+			return {
+				k1,
+				k2: view.getInt32(0, true) >> 3
+			};
+		}
+		decryptChunk(data, size) {
+			const out = new Uint8Array(data.length);
+			out.set(data);
+			const view = new DataView(out.buffer, out.byteOffset, out.byteLength);
+			const wordCount = Math.floor(size / 4);
+			for (let cursor = 0; cursor < wordCount; cursor++) {
+				const old = view.getInt32(cursor * 4, true);
+				const xorVal = Math.imul(this.keys.k1 + cursor + 1, this.keys.k2);
+				view.setInt32(cursor * 4, old ^ xorVal, true);
+			}
+			return out;
+		}
+		readContainersV5() {
+			const tableOffset = HEADER_BYTES;
+			const tableEnd = 352;
+			if (this.size < tableEnd) throw new Error(`Replay descriptor table is truncated: ${this.size} bytes, expected at least ${tableEnd}`);
+			for (let i = 0; i < DESCRIPTOR_COUNT; i++) {
+				this.fp.seek(tableOffset + i * DESCRIPTOR_BYTES, 0);
+				const type = this.fp.readUShort();
+				const declaredLength = this.fp.readLong();
+				const offset = this.fp.readLong();
+				let realLength = declaredLength;
+				if (realLength === 0 && offset > 0) realLength = this.size - offset;
+				const container = {
+					type,
+					declaredLength,
+					offset,
+					realLength,
+					data: []
+				};
+				this.containers.push(container);
+				if (offset === 0 && declaredLength === 0) continue;
+				if (offset < 0 || offset >= this.size || realLength <= 0 || offset + realLength > this.size) {
+					console.warn(`[ReplayParser] Skipping out of bounds container ${ContainerTypeNames[type] || type} at ${offset} (${realLength} bytes)`);
+					continue;
+				}
+				this.fp.seek(offset, 0);
+				const body = new Uint8Array(this.fp.buffer, offset, realLength);
+				if (type === ContainerType.PacketStream) this.parsePacketStream(container, body);
+				else this.parseGenericContainer(container, body, declaredLength);
+			}
+		}
+		parsePacketStream(container, body) {
+			const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
+			let ptr = 0;
+			while (ptr + 10 <= body.byteLength) {
+				const id = view.getInt32(ptr, true);
+				const time = view.getInt32(ptr + 4, true);
+				const length = view.getUint16(ptr + 8, true);
+				const dataStart = ptr + 10;
+				const dataEnd = dataStart + length;
+				if (dataEnd > body.byteLength) break;
+				const encrypted = body.subarray(dataStart, dataEnd);
+				const decrypted = this.decryptChunk(encrypted, length);
+				const packetId = decrypted.length >= 2 ? decrypted[0] | decrypted[1] << 8 : 0;
+				container.data.push({
+					id,
+					time,
+					length,
+					data: decrypted,
+					packetId
+				});
+				ptr = dataEnd;
+			}
+		}
+		parseGenericContainer(container, body, declaredLength) {
+			if (declaredLength <= 0) return;
+			const decrypted = this.decryptChunk(body, declaredLength);
+			const view = new DataView(decrypted.buffer, decrypted.byteOffset, decrypted.byteLength);
+			let ptr = 0;
+			while (ptr + 6 <= declaredLength) {
+				const id = view.getInt16(ptr, true);
+				const length = view.getInt32(ptr + 2, true);
+				const dataStart = ptr + 6;
+				const dataEnd = dataStart + length;
+				if (length < 0 || dataEnd > decrypted.byteLength) break;
+				const data = decrypted.subarray(dataStart, dataEnd);
+				container.data.push({
+					id,
+					length,
+					data
+				});
+				ptr = dataEnd;
+			}
+		}
+		buildBuffers() {
+			const sessionBuffer = this.buildSessionBuffer();
+			const itemsBuffer = this.buildItemsBuffer();
+			const companionsBuffer = this.buildCompanionsBuffer();
+			const petBuffer = companionsBuffer.pet;
+			const homunBuffer = companionsBuffer.homunculus;
+			const mercenaryBuffer = companionsBuffer.mercenary;
+			const elementalBuffer = companionsBuffer.elemental;
+			const statusBuffer = this.buildStatusBuffer();
+			const efstListBuffer = this.buildEfstListBuffer();
+			const hotkeysBuffer = this.buildHotkeysBuffer();
+			const questsBuffer = this.buildQuestsBuffer();
+			const groupAndFriendsBuffer = this.buildGroupAndFriendsBuffer();
+			const memorialDungeonBuffer = this.buildMemorialDungeonBuffer();
+			const entryQueueBuffer = this.buildEntryQueueBuffer();
+			const navigationBuffer = this.buildNavigationBuffer();
+			const actorNamesBuffer = this.buildActorNamesBuffer();
+			const openWindowsBuffer = this.buildOpenWindowsBuffer();
+			const windowDragAllBuffer = this.buildWindowDragAllBuffer();
+			Object.assign(sessionBuffer, statusBuffer);
+			if (petBuffer) sessionBuffer.pet = petBuffer;
+			if (homunBuffer) sessionBuffer.homun = homunBuffer;
+			if (mercenaryBuffer) sessionBuffer.mercenary = mercenaryBuffer;
+			if (elementalBuffer) sessionBuffer.elemental = elementalBuffer;
+			if (questsBuffer.isOnQuest !== void 0) sessionBuffer.isOnQuest = questsBuffer.isOnQuest;
+			const initialBuffer = [];
+			const initialTypes = [
+				ContainerType.InitialPackets,
+				ContainerType.InitialEntities,
+				ContainerType.InitialFloorItems,
+				ContainerType.SkillGroundUnits
+			];
+			for (const container of this.containers) {
+				if (!initialTypes.includes(container.type)) continue;
+				if (container.data.length === 0) continue;
+				const typeName = ContainerTypeNames[container.type] || `Unknown(${container.type})`;
+				const chunks = container.data.filter((chunk) => chunk.data && chunk.data.byteLength > 0).map((chunk) => chunk.data);
+				if (chunks.length > 0) {
+					initialBuffer.push({
+						type: container.type,
+						typeName,
+						chunks
+					});
+					replayLog(`[Replay] Loaded ${typeName} (${container.type}): ${chunks.length} packets`);
+				}
+			}
+			const packetStreamContainer = this.containers.find((c) => c.type === ContainerType.PacketStream);
+			const packetStreamBuffer = packetStreamContainer ? packetStreamContainer.data : [];
+			replayLog(`[Replay] Packet stream loaded: ${packetStreamBuffer.length} chunks`);
+			let lastPacketTime = 0;
+			if (packetStreamBuffer.length > 0) lastPacketTime = packetStreamBuffer[packetStreamBuffer.length - 1].time || 0;
+			const durationMs = Math.max(sessionBuffer.durationMs || 0, lastPacketTime);
+			sessionBuffer.durationMs = durationMs;
+			return {
+				header: this.header,
+				sessionBuffer,
+				itemsBuffer,
+				companionsBuffer,
+				petBuffer,
+				homunBuffer,
+				mercenaryBuffer,
+				elementalBuffer,
+				statusBuffer,
+				efstListBuffer,
+				hotkeysBuffer,
+				questsBuffer,
+				groupAndFriendsBuffer,
+				memorialDungeonBuffer,
+				entryQueueBuffer,
+				navigationBuffer,
+				actorNamesBuffer,
+				openWindowsBuffer,
+				windowDragAllBuffer,
+				initialBuffer,
+				packetStreamBuffer,
+				durationMs
+			};
+		}
+		buildSessionBuffer() {
+			const buf = {};
+			const readU8 = (chunk) => new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength).getUint8(0);
+			const readU16 = (chunk) => new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength).getUint16(0, true);
+			const readU32 = (chunk) => new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength).getUint32(0, true);
+			const readStringById = (container, id) => {
+				const ch = container.data.find((c) => c.id === id);
+				if (!ch || ch.data.byteLength === 0) return null;
+				return this.readString(ch.data);
+			};
+			const readU32ById = (container, id) => {
+				const ch = container.data.find((c) => c.id === id);
+				if (!ch || ch.data.byteLength < 4) return null;
+				return readU32(ch);
+			};
+			const readU16ById = (container, id) => {
+				const ch = container.data.find((c) => c.id === id);
+				if (!ch || ch.data.byteLength < 2) return null;
+				return readU16(ch);
+			};
+			const readU8ById = (container, id) => {
+				const ch = container.data.find((c) => c.id === id);
+				if (!ch || ch.data.byteLength < 1) return null;
+				return readU8(ch);
+			};
+			const replayData = this.containers.find((c) => c.type === ContainerType.ReplayData);
+			if (replayData) {
+				const sexVal = readU32ById(replayData, 963) ?? readU8ById(replayData, 963);
+				if (sexVal !== null) buf.sex = sexVal === 0 || sexVal === 1 ? sexVal : 0;
+				let name = readStringById(replayData, 964);
+				if (!name && replayData.data.length > 4 && replayData.data[4].data?.byteLength > 0) name = this.readString(replayData.data[4].data);
+				if (name) buf.characterName = name;
+				let mapName = readStringById(replayData, 965);
+				if (!mapName && replayData.data.length > 5 && replayData.data[5].data?.byteLength > 0) mapName = this.readString(replayData.data[5].data);
+				if (mapName) {
+					if (!mapName.endsWith(".rsw")) mapName += ".rsw";
+					buf.mapName = mapName;
+				}
+				const gx = readU32ById(replayData, 967);
+				if (gx !== null) buf.startX = gx;
+				const gy = readU32ById(replayData, 968);
+				if (gy !== null) buf.startY = gy;
+				const dir = readU32ById(replayData, 969) ?? readU8ById(replayData, 969);
+				if (dir !== null) buf.startDir = dir;
+				const lengthMs = readU32ById(replayData, 970);
+				if (lengthMs !== null) buf.durationMs = lengthMs;
+				const tailMagic = readU32ById(replayData, ReplayOpCodes.TailMagic);
+				if (tailMagic !== null) buf.tailMagic = tailMagic;
+				const region = readU32ById(replayData, ReplayOpCodes.Region) ?? readU8ById(replayData, ReplayOpCodes.Region);
+				if (region !== null) buf.region = region;
+				const service = readU32ById(replayData, ReplayOpCodes.Service) ?? readU8ById(replayData, ReplayOpCodes.Service);
+				if (service !== null) buf.service = service;
+				const serverType = readU32ById(replayData, ReplayOpCodes.ServerType) ?? readU8ById(replayData, ReplayOpCodes.ServerType);
+				if (serverType !== null) buf.serverType = serverType;
+				const mapType = readU32ById(replayData, ReplayOpCodes.Maptype) ?? readU8ById(replayData, ReplayOpCodes.Maptype);
+				if (mapType !== null) buf.mapType = mapType;
+				const packetCount = readU32ById(replayData, ReplayOpCodes.PacketCount);
+				if (packetCount !== null) buf.packetCount = packetCount;
+				const endFileOffset = readU32ById(replayData, ReplayOpCodes.EndFileOffset);
+				if (endFileOffset !== null) buf.endFileOffset = endFileOffset;
+				const saveUiOptions = readU32ById(replayData, ReplayOpCodes.SaveUiOptions) ?? readU8ById(replayData, ReplayOpCodes.SaveUiOptions);
+				if (saveUiOptions !== null) buf.saveUiOptions = saveUiOptions;
+			}
+			const sessionContainer = this.containers.find((c) => c.type === ContainerType.Session);
+			if (sessionContainer) {
+				if (!buf.characterName) {
+					const charName = readStringById(sessionContainer, 964);
+					if (charName) buf.characterName = charName;
+				}
+				const aid = readU32ById(sessionContainer, 1010);
+				if (aid !== null) {
+					buf.AID = aid;
+					buf.GID = aid;
+				}
+				const gid = readU32ById(sessionContainer, 1011);
+				if (gid !== null) buf.GID = gid;
+				const job = readU32ById(sessionContainer, 1014);
+				if (job !== null) buf.job = job;
+				const exp = readU32ById(sessionContainer, 1015);
+				if (exp !== null) buf.exp = exp;
+				const level = readU32ById(sessionContainer, 1016);
+				if (level !== null) {
+					buf.level = level;
+					buf.clevel = level;
+				}
+				const jobPoint = readU32ById(sessionContainer, 1017);
+				if (jobPoint !== null) buf.jobPoint = jobPoint;
+				const nextExp = readU32ById(sessionContainer, 1018);
+				if (nextExp !== null) buf.exp_next = nextExp;
+				const jobLevel = readU32ById(sessionContainer, 1019);
+				if (jobLevel !== null) buf.joblevel = jobLevel;
+				const skillPoint = readU32ById(sessionContainer, 1020);
+				if (skillPoint !== null) buf.skillPoint = skillPoint;
+				const str = readU32ById(sessionContainer, 1024);
+				if (str !== null) buf.str = str;
+				const agi = readU32ById(sessionContainer, 1025);
+				if (agi !== null) buf.agi = agi;
+				const vit = readU32ById(sessionContainer, 1026);
+				if (vit !== null) buf.vit = vit;
+				const intVal = readU32ById(sessionContainer, 1027);
+				if (intVal !== null) buf.int = intVal;
+				const dex = readU32ById(sessionContainer, 1028);
+				if (dex !== null) buf.dex = dex;
+				const luk = readU32ById(sessionContainer, 1029);
+				if (luk !== null) buf.luk = luk;
+				const plusStr = readU32ById(sessionContainer, 1030);
+				if (plusStr !== null) {
+					buf.plusStr = plusStr;
+					buf.str_bonus = plusStr;
+				}
+				const plusAgi = readU32ById(sessionContainer, 1031);
+				if (plusAgi !== null) {
+					buf.plusAgi = plusAgi;
+					buf.agi_bonus = plusAgi;
+				}
+				const plusVit = readU32ById(sessionContainer, 1032);
+				if (plusVit !== null) {
+					buf.plusVit = plusVit;
+					buf.vit_bonus = plusVit;
+				}
+				const plusInt = readU32ById(sessionContainer, 1033);
+				if (plusInt !== null) {
+					buf.plusInt = plusInt;
+					buf.int_bonus = plusInt;
+				}
+				const plusDex = readU32ById(sessionContainer, 1034);
+				if (plusDex !== null) {
+					buf.plusDex = plusDex;
+					buf.dex_bonus = plusDex;
+				}
+				const plusLuk = readU32ById(sessionContainer, 1035);
+				if (plusLuk !== null) {
+					buf.plusLuk = plusLuk;
+					buf.luk_bonus = plusLuk;
+				}
+				const aspd = readU32ById(sessionContainer, 1036);
+				if (aspd !== null) {
+					buf.aspd = aspd;
+					buf.attack_speed = aspd;
+				}
+				const atk = readU32ById(sessionContainer, 1037);
+				if (atk !== null) buf.atk = atk;
+				const mdef = readU32ById(sessionContainer, 1038);
+				if (mdef !== null) buf.mdef = mdef;
+				const plusAspd = readU32ById(sessionContainer, 1039);
+				if (plusAspd !== null) buf.plusAspd = plusAspd;
+				const def = readU32ById(sessionContainer, 1040);
+				if (def !== null) buf.def = def;
+				const plusDef = readU32ById(sessionContainer, 1041);
+				if (plusDef !== null) buf.plusDef = plusDef;
+				const refiningPower = readU32ById(sessionContainer, 1042);
+				if (refiningPower !== null) buf.refiningPower = refiningPower;
+				const maxMatk = readU32ById(sessionContainer, 1043);
+				if (maxMatk !== null) buf.maxMatk = maxMatk;
+				const minMatk = readU32ById(sessionContainer, 1044);
+				if (minMatk !== null) buf.minMatk = minMatk;
+				const plusMdef = readU32ById(sessionContainer, 1045);
+				if (plusMdef !== null) buf.plusMdef = plusMdef;
+				const hit = readU32ById(sessionContainer, 1046);
+				if (hit !== null) buf.hit = hit;
+				const flee = readU32ById(sessionContainer, 1047);
+				if (flee !== null) buf.flee = flee;
+				const crit = readU32ById(sessionContainer, 1048);
+				if (crit !== null) buf.crit = crit;
+				const plusFlee = readU32ById(sessionContainer, 1049);
+				if (plusFlee !== null) buf.plusFlee = plusFlee;
+				const equipArrowIndex = readU16ById(sessionContainer, 1050);
+				if (equipArrowIndex !== null) buf.equipArrowIndex = equipArrowIndex;
+				const money = readU32ById(sessionContainer, 1051);
+				if (money !== null) buf.money = money;
+				const speed = readU32ById(sessionContainer, 1052);
+				if (speed !== null) buf.speed = speed;
+				const honor = readU32ById(sessionContainer, 1053);
+				if (honor !== null) buf.honor = honor;
+				const nextJobExp = readU32ById(sessionContainer, 1054);
+				if (nextJobExp !== null) buf.job_exp_next = nextJobExp;
+				const jobExp = readU32ById(sessionContainer, 1055);
+				if (jobExp !== null) buf.job_exp = jobExp;
+				const virtue = readU32ById(sessionContainer, 1056);
+				if (virtue !== null) buf.virtue = virtue;
+				const hairStyle = readU32ById(sessionContainer, 1060);
+				if (hairStyle !== null) buf.head = hairStyle;
+				const weapon = readU32ById(sessionContainer, 1061);
+				if (weapon !== null) buf.weapon = weapon;
+				const shield = readU32ById(sessionContainer, 1062);
+				if (shield !== null) buf.shield = shield;
+				const clothesColor = readU32ById(sessionContainer, 1063);
+				if (clothesColor !== null) buf.bodypalette = clothesColor;
+				const hairColor = readU32ById(sessionContainer, 1064);
+				if (hairColor !== null) buf.headpalette = hairColor;
+				const accessory = readU32ById(sessionContainer, 1065);
+				if (accessory !== null) buf.accessory = accessory;
+				const accessory2 = readU32ById(sessionContainer, 1066);
+				if (accessory2 !== null) buf.accessory2 = accessory2;
+				const accessory3 = readU32ById(sessionContainer, 1067);
+				if (accessory3 !== null) buf.accessory3 = accessory3;
+				const option = readU32ById(sessionContainer, 1070);
+				if (option !== null) {
+					buf.effectState = option;
+					buf.option = option;
+				}
+				const robe = readU32ById(sessionContainer, 1071);
+				if (robe !== null) buf.robe = robe;
+				const cartCurCount = readU16ById(sessionContainer, 1086);
+				if (cartCurCount !== null) buf.cartCurCount = cartCurCount;
+				const cartMaxCount = readU16ById(sessionContainer, 1087);
+				if (cartMaxCount !== null) buf.cartMaxCount = cartMaxCount;
+				const cartCurWeight = readU32ById(sessionContainer, 1088);
+				if (cartCurWeight !== null) buf.cartCurWeight = cartCurWeight;
+				const cartMaxWeight = readU32ById(sessionContainer, 1089);
+				if (cartMaxWeight !== null) buf.cartMaxWeight = cartMaxWeight;
+				buf.hasCart = (buf.cartMaxCount || 0) > 0 || (buf.cartMaxWeight || 0) > 0;
+			}
+			return buf;
+		}
+		buildStatusBuffer() {
+			const buf = {};
+			const statusContainer = this.containers.find((c) => c.type === ContainerType.Status);
+			if (!statusContainer) return buf;
+			const readU32 = (chunk) => new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength).getUint32(0, true);
+			const readU32ById = (container, id) => {
+				const ch = container.data.find((c) => c.id === id);
+				if (!ch || ch.data.byteLength < 4) return null;
+				return readU32(ch);
+			};
+			const bonusStr = readU32ById(statusContainer, 2010);
+			if (bonusStr !== null) buf.str_bonus = bonusStr;
+			const bonusAgi = readU32ById(statusContainer, 2011);
+			if (bonusAgi !== null) buf.agi_bonus = bonusAgi;
+			const bonusVit = readU32ById(statusContainer, 2012);
+			if (bonusVit !== null) buf.vit_bonus = bonusVit;
+			const bonusInt = readU32ById(statusContainer, 2013);
+			if (bonusInt !== null) buf.int_bonus = bonusInt;
+			const bonusDex = readU32ById(statusContainer, 2014);
+			if (bonusDex !== null) buf.dex_bonus = bonusDex;
+			const bonusLuk = readU32ById(statusContainer, 2015);
+			if (bonusLuk !== null) buf.luk_bonus = bonusLuk;
+			const curWeight = readU32ById(statusContainer, 2017);
+			if (curWeight !== null) buf.weight = curWeight;
+			const maxWeight = readU32ById(statusContainer, 2018);
+			if (maxWeight !== null) buf.max_weight = maxWeight;
+			const hp = readU32ById(statusContainer, 2029);
+			if (hp !== null) buf.hp = hp;
+			const maxHp = readU32ById(statusContainer, 2030);
+			if (maxHp !== null) buf.maxHp = maxHp;
+			const sp = readU32ById(statusContainer, 2031);
+			if (sp !== null) buf.sp = sp;
+			const maxSp = readU32ById(statusContainer, 2032);
+			if (maxSp !== null) buf.maxSp = maxSp;
+			return buf;
+		}
+		buildCompanionsBuffer() {
+			const compContainer = this.containers.find((c) => c.type === ContainerType.Companions);
+			if (!compContainer) return {
+				pet: null,
+				homunculus: null,
+				mercenary: null,
+				elemental: null
+			};
+			const readU32 = (chunk) => new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength).getUint32(0, true);
+			const readU8 = (chunk) => new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength).getUint8(0);
+			const readU32ById = (id) => {
+				const ch = compContainer.data.find((c) => c.id === id);
+				if (!ch || ch.data.byteLength < 4) return null;
+				return readU32(ch);
+			};
+			const readU8ById = (id) => {
+				const ch = compContainer.data.find((c) => c.id === id);
+				if (!ch || ch.data.byteLength < 1) return null;
+				return readU8(ch);
+			};
+			const readStringById = (id) => {
+				const ch = compContainer.data.find((c) => c.id === id);
+				if (!ch || ch.data.byteLength === 0) return "";
+				return this.readString(ch.data);
+			};
+			let pet = null;
+			const petAid = readU32ById(ReplayOpCodes.PetGid);
+			if (petAid) {
+				const name = readStringById(ReplayOpCodes.PetName);
+				const viewRaw = readU32ById(ReplayOpCodes.PetJob) ?? 0;
+				const level = readU32ById(ReplayOpCodes.PetLevel) ?? 1;
+				const hunger = readU32ById(ReplayOpCodes.PetFullness) ?? 0;
+				const intimacy = readU32ById(ReplayOpCodes.PetRelation) ?? 0;
+				const accessory = readU32ById(ReplayOpCodes.PetAccessory) ?? 0;
+				const isNameModified = readU32ById(ReplayOpCodes.PetIsNameModified) ?? readU8ById(ReplayOpCodes.PetIsNameModified) ?? 0;
+				const eggIndex = readU32ById(ReplayOpCodes.PetEggIndex) ?? 0;
+				const oldFullness = readU32ById(ReplayOpCodes.PetOldFullness) ?? 0;
+				pet = {
+					aid: petAid,
+					name,
+					szName: name,
+					view: viewRaw === 4294967295 ? -1 : viewRaw,
+					job: viewRaw === 4294967295 ? -1 : viewRaw,
+					level,
+					nLevel: level,
+					hunger,
+					nFullness: hunger,
+					intimacy,
+					nRelationship: intimacy,
+					accessory,
+					ITID: accessory,
+					bModified: isNameModified,
+					eggIndex,
+					oldFullness
+				};
+			}
+			let homunculus = null;
+			const homunGid = readU32ById(ReplayOpCodes.HomunGid);
+			if (homunGid) {
+				const szName = readStringById(ReplayOpCodes.HomunName) || "";
+				const level = readU32ById(ReplayOpCodes.HomunLevel) ?? 1;
+				const fullness = readU32ById(ReplayOpCodes.HomunFullness) ?? 0;
+				const relation = readU32ById(ReplayOpCodes.HomunRelation) ?? 0;
+				const hp = readU32ById(ReplayOpCodes.HomunHp) ?? 0;
+				const maxHp = readU32ById(ReplayOpCodes.HomunMaxHp) ?? 0;
+				const sp = readU32ById(ReplayOpCodes.HomunSp) ?? 0;
+				const maxSp = readU32ById(ReplayOpCodes.HomunMaxSp) ?? 0;
+				const exp = readU32ById(ReplayOpCodes.HomunExp) ?? 0;
+				const nextExp = readU32ById(ReplayOpCodes.HomunNextExp) ?? 0;
+				homunculus = {
+					gid: homunGid,
+					szName,
+					name: szName,
+					job: readU32ById(ReplayOpCodes.HomunJob) ?? 0,
+					nLevel: level,
+					level,
+					nFullness: fullness,
+					hunger: fullness,
+					nRelationship: relation,
+					intimacy: relation,
+					hp,
+					maxHP: maxHp,
+					sp,
+					maxSP: maxSp,
+					atk: readU32ById(ReplayOpCodes.HomunAtk) ?? 0,
+					Matk: readU32ById(ReplayOpCodes.HomunMatk) ?? 0,
+					hit: readU32ById(ReplayOpCodes.HomunHit) ?? 0,
+					critical: readU32ById(ReplayOpCodes.HomunCritical) ?? 0,
+					def: readU32ById(ReplayOpCodes.HomunDef) ?? 0,
+					Mdef: readU32ById(ReplayOpCodes.HomunMdef) ?? 0,
+					flee: readU32ById(ReplayOpCodes.HomunFlee) ?? 0,
+					aspd: readU32ById(ReplayOpCodes.HomunAspd) ?? 0,
+					exp,
+					maxEXP: nextExp,
+					skillPoint: readU32ById(ReplayOpCodes.HomunSkillPoint) ?? 0,
+					oldFullness: readU32ById(ReplayOpCodes.HomunOldFullness) ?? 0,
+					oldRelation: readU32ById(ReplayOpCodes.HomunOldRelation) ?? 0,
+					bModified: readU32ById(ReplayOpCodes.HomunIsModified) ?? 0,
+					state: readU32ById(ReplayOpCodes.HomunState) ?? 0,
+					atkRange: readU32ById(ReplayOpCodes.HomunAtkRange) ?? 0,
+					class_: readU32ById(ReplayOpCodes.HomunClass) ?? 0,
+					evolution: readU32ById(ReplayOpCodes.HomunEvolution) ?? 0,
+					evolutionCost: readU32ById(ReplayOpCodes.HomunEvolutionCost) ?? 0,
+					autoFeed: readU32ById(ReplayOpCodes.HomunAutoFeed) ?? 0,
+					foodId: readU32ById(ReplayOpCodes.HomunFoodId) ?? 0
+				};
+			}
+			let mercenary = null;
+			const mercGid = readU32ById(ReplayOpCodes.MercenaryGid);
+			if (mercGid) {
+				const name = readStringById(ReplayOpCodes.MercenaryName) || "";
+				const level = readU32ById(ReplayOpCodes.MercenaryLevel) ?? 1;
+				const hp = readU32ById(ReplayOpCodes.MercenaryHp) ?? 0;
+				const maxHp = readU32ById(ReplayOpCodes.MercenaryMaxHp) ?? 0;
+				const sp = readU32ById(ReplayOpCodes.MercenarySp) ?? 0;
+				const maxSp = readU32ById(ReplayOpCodes.MercenaryMaxSp) ?? 0;
+				mercenary = {
+					gid: mercGid,
+					name,
+					job: readU32ById(ReplayOpCodes.MercenaryJob) ?? 0,
+					level,
+					hp,
+					maxHP: maxHp,
+					sp,
+					maxSP: maxSp,
+					atk: readU32ById(ReplayOpCodes.MercenaryAtk) ?? 0,
+					Matk: readU32ById(ReplayOpCodes.MercenaryMatk) ?? 0,
+					hit: readU32ById(ReplayOpCodes.MercenaryHit) ?? 0,
+					critical: readU32ById(ReplayOpCodes.MercenaryCritical) ?? 0,
+					def: readU32ById(ReplayOpCodes.MercenaryDef) ?? 0,
+					Mdef: readU32ById(ReplayOpCodes.MercenaryMdef) ?? 0,
+					flee: readU32ById(ReplayOpCodes.MercenaryFlee) ?? 0,
+					aspd: readU32ById(ReplayOpCodes.MercenaryAspd) ?? 0,
+					ExpireDate: readU32ById(ReplayOpCodes.MercenaryRemainTime) ?? 0,
+					remainTime: readU32ById(ReplayOpCodes.MercenaryRemainTime) ?? 0,
+					calls: readU32ById(ReplayOpCodes.MercenaryCalls) ?? 0,
+					approval_monster_kill_counter: readU32ById(ReplayOpCodes.MercenaryKillCount) ?? 0,
+					killCount: readU32ById(ReplayOpCodes.MercenaryKillCount) ?? 0,
+					state: readU32ById(ReplayOpCodes.MercenaryState) ?? 0,
+					atkRange: readU32ById(ReplayOpCodes.MercenaryAtkRange) ?? 0,
+					class_: readU32ById(ReplayOpCodes.MercenaryClass) ?? 0,
+					type: readU32ById(ReplayOpCodes.MercenaryType) ?? 0,
+					faith: readU32ById(ReplayOpCodes.MercenaryEndurance) ?? 0,
+					endurance: readU32ById(ReplayOpCodes.MercenaryEndurance) ?? 0,
+					SKPoint: readU32ById(ReplayOpCodes.MercenarySkillPoint) ?? 0,
+					contractTime: readU32ById(ReplayOpCodes.MercenaryContractTime) ?? 0,
+					property: readU32ById(ReplayOpCodes.MercenaryProperty) ?? 0,
+					propertyLevel: readU32ById(ReplayOpCodes.MercenaryPropertyLevel) ?? 0,
+					oldFullness: readU32ById(ReplayOpCodes.MercenaryOldFullness) ?? 0
+				};
+			}
+			let elemental = null;
+			const elemGid = readU32ById(ReplayOpCodes.ElementalGid);
+			if (elemGid) elemental = {
+				gid: elemGid,
+				name: readStringById(ReplayOpCodes.ElementalName) || "",
+				job: readU32ById(ReplayOpCodes.ElementalJob) ?? 0,
+				level: readU32ById(ReplayOpCodes.ElementalLevel) ?? 1,
+				remainTime: readU32ById(ReplayOpCodes.ElementalRemainTime) ?? 0
+			};
+			return {
+				pet,
+				homunculus,
+				mercenary,
+				elemental
+			};
+		}
+		buildPetBuffer() {
+			return this.buildCompanionsBuffer().pet;
+		}
+		buildHotkeysBuffer() {
+			const hotkeysContainer = this.containers.find((c) => c.type === ContainerType.Hotkeys);
+			if (!hotkeysContainer) return [];
+			const list = [];
+			for (const chunk of hotkeysContainer.data) {
+				if (!chunk.data || chunk.data.byteLength < 7) continue;
+				const view = new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength);
+				const count = Math.floor(chunk.data.byteLength / 7);
+				for (let i = 0; i < count; i++) {
+					const offset = i * 7;
+					const isSkill = view.getUint8(offset) === 1;
+					const id = view.getUint32(offset + 1, true);
+					const countVal = view.getUint16(offset + 5, true);
+					list.push({
+						isSkill,
+						ID: id,
+						count: countVal
+					});
+				}
+			}
+			return list;
+		}
+		buildQuestsBuffer() {
+			const questsContainer = this.containers.find((c) => c.type === ContainerType.Quests);
+			const questFlagContainer = this.containers.find((c) => c.type === ContainerType.QuestFlag);
+			let isOnQuest = false;
+			if (questFlagContainer) {
+				const flagChunk = questFlagContainer.data.find((c) => c.id === ReplayOpCodes.IsOnQuest);
+				if (flagChunk && flagChunk.data.byteLength > 0) isOnQuest = flagChunk.data[0] !== 0;
+			}
+			const quests = [];
+			if (questsContainer) for (const chunk of questsContainer.data) {
+				if (!chunk.data || chunk.data.byteLength === 0) continue;
+				const view = new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength);
+				if (chunk.data.byteLength >= 4) {
+					const questId = view.getUint32(0, true);
+					const active = chunk.data.byteLength > 4 ? chunk.data[4] !== 0 : true;
+					quests.push({
+						questID: questId,
+						active,
+						data: chunk.data
+					});
+				}
+			}
+			return {
+				isOnQuest,
+				quests
+			};
+		}
+		buildGroupAndFriendsBuffer() {
+			const groupContainer = this.containers.find((c) => c.type === ContainerType.GroupAndFriends);
+			if (!groupContainer) return {
+				groupName: "",
+				groupInfo: [],
+				friendInfo: []
+			};
+			let groupName = "";
+			const nameChunk = groupContainer.data.find((c) => c.id === ReplayOpCodes.GroupName);
+			if (nameChunk && nameChunk.data?.byteLength > 0) groupName = this.readString(nameChunk.data);
+			const groupInfo = [];
+			const groupInfoChunk = groupContainer.data.find((c) => c.id === ReplayOpCodes.GroupInfo);
+			if (groupInfoChunk && groupInfoChunk.data?.byteLength >= 46) {
+				const data = groupInfoChunk.data;
+				const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+				const count = Math.floor(data.byteLength / 46);
+				for (let i = 0; i < count; i++) {
+					const offset = i * 46;
+					const aid = view.getUint32(offset, true);
+					const charName = this.readString(data.subarray(offset + 4, offset + 28));
+					const mapName = this.readString(data.subarray(offset + 28, offset + 44));
+					const role = view.getUint8(offset + 44);
+					const state = view.getUint8(offset + 45);
+					groupInfo.push({
+						AID: aid,
+						characterName: charName,
+						mapName,
+						role,
+						state
+					});
+				}
+			}
+			const friendInfo = [];
+			const friendInfoChunk = groupContainer.data.find((c) => c.id === ReplayOpCodes.FriendInfo);
+			if (friendInfoChunk && friendInfoChunk.data?.byteLength >= 32) {
+				const data = friendInfoChunk.data;
+				const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+				const count = Math.floor(data.byteLength / 32);
+				for (let i = 0; i < count; i++) {
+					const offset = i * 32;
+					const aid = view.getUint32(offset, true);
+					const gid = view.getUint32(offset + 4, true);
+					const name = this.readString(data.subarray(offset + 8, offset + 32));
+					friendInfo.push({
+						AID: aid,
+						GID: gid,
+						Name: name
+					});
+				}
+			}
+			return {
+				groupName,
+				groupInfo,
+				friendInfo
+			};
+		}
+		buildMemorialDungeonBuffer() {
+			const mdContainer = this.containers.find((c) => c.type === ContainerType.MemorialDungeon);
+			if (!mdContainer) return null;
+			const readU32ById = (id) => {
+				const ch = mdContainer.data.find((c) => c.id === id);
+				return ch && ch.data.byteLength >= 4 ? new DataView(ch.data.buffer, ch.data.byteOffset, ch.data.byteLength).getUint32(0, true) : null;
+			};
+			const readStringById = (id) => {
+				const ch = mdContainer.data.find((c) => c.id === id);
+				return ch && ch.data.byteLength > 0 ? this.readString(ch.data) : "";
+			};
+			return {
+				isOpen: (readU32ById(ReplayOpCodes.MemorialDungeonIsOpen) ?? 0) !== 0,
+				name: readStringById(ReplayOpCodes.MemorialDungeonName),
+				wndX: readU32ById(ReplayOpCodes.MemorialDungeonWndX) ?? 0,
+				wndY: readU32ById(ReplayOpCodes.MemorialDungeonWndY) ?? 0,
+				factor: readU32ById(ReplayOpCodes.MemorialDungeonFactor) ?? 0,
+				enterTime: readU32ById(ReplayOpCodes.MemorialDungeonEnterTime) ?? 0,
+				destroyTime: readU32ById(ReplayOpCodes.MemorialDungeonDestroyTime) ?? 0,
+				reEnterTime: readU32ById(ReplayOpCodes.MemorialDungeonReEnterTime) ?? 0,
+				state: readU32ById(ReplayOpCodes.MemorialDungeonState) ?? 0
+			};
+		}
+		buildEntryQueueBuffer() {
+			const eqContainer = this.containers.find((c) => c.type === ContainerType.EntryQueue);
+			if (!eqContainer) return null;
+			const readU32ById = (id) => {
+				const ch = eqContainer.data.find((c) => c.id === id);
+				return ch && ch.data.byteLength >= 4 ? new DataView(ch.data.buffer, ch.data.byteOffset, ch.data.byteLength).getUint32(0, true) : null;
+			};
+			return {
+				selected: readU32ById(ReplayOpCodes.EntryQueueSelected) ?? 0,
+				state: readU32ById(ReplayOpCodes.EntryQueueState) ?? 0,
+				info: readU32ById(ReplayOpCodes.EntryQueueInfo) ?? 0,
+				apply: readU32ById(ReplayOpCodes.EntryQueueApply) ?? 0,
+				wnd: readU32ById(ReplayOpCodes.EntryQueueWnd) ?? 0,
+				standByWnd: readU32ById(ReplayOpCodes.EntryQueueStandByWnd) ?? 0,
+				param1: readU32ById(ReplayOpCodes.EntryQueueParam1) ?? 0,
+				param2: readU32ById(ReplayOpCodes.EntryQueueParam2) ?? 0
+			};
+		}
+		buildNavigationBuffer() {
+			const navContainer = this.containers.find((c) => c.type === ContainerType.Navigation);
+			if (!navContainer) return null;
+			const readU32ById = (id) => {
+				const ch = navContainer.data.find((c) => c.id === id);
+				return ch && ch.data.byteLength >= 4 ? new DataView(ch.data.buffer, ch.data.byteOffset, ch.data.byteLength).getUint32(0, true) : null;
+			};
+			const readStringById = (id) => {
+				const ch = navContainer.data.find((c) => c.id === id);
+				return ch && ch.data.byteLength > 0 ? this.readString(ch.data) : "";
+			};
+			return {
+				autoSearch: (readU32ById(ReplayOpCodes.NaviAutoSearch) ?? 0) !== 0,
+				findDistance: readU32ById(ReplayOpCodes.NaviFindDistance) ?? 0,
+				showDistance: readU32ById(ReplayOpCodes.NaviShowDistance) ?? 0,
+				drawNpcIcon: (readU32ById(ReplayOpCodes.NaviDrawNpcIcon) ?? 0) !== 0,
+				startNode: readU32ById(ReplayOpCodes.NaviStartNode) ?? 0,
+				endNode: readU32ById(ReplayOpCodes.NaviEndNode) ?? 0,
+				startX: readU32ById(ReplayOpCodes.NaviStartX) ?? 0,
+				startY: readU32ById(ReplayOpCodes.NaviStartY) ?? 0,
+				endX: readU32ById(ReplayOpCodes.NaviEndX) ?? 0,
+				endY: readU32ById(ReplayOpCodes.NaviEndY) ?? 0,
+				x: readU32ById(ReplayOpCodes.NaviEndX) ?? 0,
+				y: readU32ById(ReplayOpCodes.NaviEndY) ?? 0,
+				targetGid: readU32ById(ReplayOpCodes.NaviTargetGid) ?? 0,
+				targetType: readU32ById(ReplayOpCodes.NaviTargetType) ?? 0,
+				startMap: readStringById(ReplayOpCodes.NaviStartMap),
+				destMap: readStringById(ReplayOpCodes.NaviDestMap),
+				routeCost: readU32ById(ReplayOpCodes.NaviRouteCost) ?? 0,
+				isPathActive: (readU32ById(ReplayOpCodes.NaviIsPathActive) ?? 0) !== 0
+			};
+		}
+		buildActorNamesBuffer() {
+			const namesContainer = this.containers.find((c) => c.type === ContainerType.ActorNames);
+			if (!namesContainer) return {
+				actorNames: [],
+				guildNames: []
+			};
+			const actorNames = [];
+			const actorChunk = namesContainer.data.find((c) => c.id === ReplayOpCodes.ActorNameList);
+			if (actorChunk && actorChunk.data?.byteLength >= 28) {
+				const data = actorChunk.data;
+				const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+				const count = Math.floor(data.byteLength / 28);
+				for (let i = 0; i < count; i++) {
+					const offset = i * 28;
+					const gid = view.getUint32(offset, true);
+					const name = this.readString(data.subarray(offset + 4, offset + 28));
+					actorNames.push({
+						gid,
+						name
+					});
+				}
+			}
+			const guildNames = [];
+			const guildChunk = namesContainer.data.find((c) => c.id === ReplayOpCodes.GuildNameList);
+			if (guildChunk && guildChunk.data?.byteLength >= 28) {
+				const data = guildChunk.data;
+				const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+				const count = Math.floor(data.byteLength / 28);
+				for (let i = 0; i < count; i++) {
+					const offset = i * 28;
+					const guildId = view.getUint32(offset, true);
+					const name = this.readString(data.subarray(offset + 4, offset + 28));
+					guildNames.push({
+						guildId,
+						name
+					});
+				}
+			}
+			return {
+				actorNames,
+				actors: actorNames,
+				guildNames
+			};
+		}
+		buildOpenWindowsBuffer() {
+			const winContainer = this.containers.find((c) => c.type === ContainerType.OpenWindows);
+			if (!winContainer) return [];
+			const openWindows = [];
+			for (const chunk of winContainer.data) if (chunk.id >= ReplayOpCodes.OpenWindow_Base && chunk.id < 20500) {
+				const windowId = chunk.id - ReplayOpCodes.OpenWindow_Base;
+				let x = null;
+				let y = null;
+				if (chunk.data && chunk.data.byteLength >= 4) {
+					const view = new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength);
+					x = view.getInt16(0, true);
+					y = view.getInt16(2, true);
+				}
+				openWindows.push({
+					windowId,
+					x,
+					y
+				});
+			}
+			return openWindows;
+		}
+		buildWindowDragAllBuffer() {
+			const dragContainer = this.containers.find((c) => c.type === ContainerType.WindowDragAll);
+			if (!dragContainer) return false;
+			const ch = dragContainer.data.find((c) => c.id === ReplayOpCodes.IsDragAll);
+			return ch && ch.data?.byteLength > 0 ? ch.data[0] !== 0 : false;
+		}
+		buildEfstListBuffer() {
+			const efstContainer = this.containers.find((c) => c.type === ContainerType.EfstList);
+			if (!efstContainer) return [];
+			const result = [];
+			for (const chunk of efstContainer.data) {
+				if (!chunk.data || chunk.data.byteLength < 4) continue;
+				const efstId = new DataView(chunk.data.buffer, chunk.data.byteOffset, 4).getUint32(0, true);
+				if (efstId > 0 && efstId <= 3e3) result.push(efstId);
+			}
+			return result;
+		}
+		buildItemsBuffer() {
+			const itemsContainer = this.containers.find((c) => c.type === ContainerType.Items);
+			if (!itemsContainer) return {
+				inventory: [],
+				cart: [],
+				equipped: [],
+				equippedCostume: []
+			};
+			const out = {
+				inventory: [],
+				cart: [],
+				cartMirror: [],
+				equipped: [],
+				equippedCostume: [],
+				storage: [],
+				guildStorage: []
+			};
+			const SKIP_CHUNKS = /* @__PURE__ */ new Set([
+				4602,
+				4604,
+				4605,
+				4606
+			]);
+			const RECORD_SIZES = [221, 172];
+			const NAMEID_OFFSET = 104;
+			const detectRecordSize = (view, byteLength) => {
+				const plausible = (id) => id > 0 && id < 5e6;
+				for (const size of RECORD_SIZES) {
+					if (byteLength < size || byteLength % size !== 0) continue;
+					let anyValid = false;
+					let ok = true;
+					for (let r = 0; r < byteLength / size; r++) {
+						const id = view.getInt32(r * size + NAMEID_OFFSET, true);
+						if (id === 0) continue;
+						if (!plausible(id)) {
+							ok = false;
+							break;
+						}
+						anyValid = true;
+					}
+					if (ok && anyValid) return size;
+				}
+				return 0;
+			};
+			const readTlvFields = (view, base, recordSize) => {
+				const fields = /* @__PURE__ */ new Map();
+				let o = 0;
+				while (o + 6 <= recordSize) {
+					const tag = view.getUint16(base + o, true);
+					const length = view.getUint32(base + o + 2, true);
+					if (o + 6 + length > recordSize) return null;
+					fields.set(tag, {
+						offset: o + 6,
+						length
+					});
+					o += 6 + length;
+				}
+				return o === recordSize ? fields : null;
+			};
+			const readTlvNumber = (view, base, fields, tag, fallback = 0) => {
+				const field = fields.get(tag);
+				if (!field) return fallback;
+				switch (field.length) {
+					case 1: return view.getUint8(base + field.offset);
+					case 2: return view.getUint16(base + field.offset, true);
+					case 4: return view.getInt32(base + field.offset, true);
+					default: return fallback;
+				}
+			};
+			const parseItemChunk = (chunk, targetArray) => {
+				if (!chunk.data || chunk.data.byteLength === 0) return;
+				const view = new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength);
+				const recordSize = detectRecordSize(view, chunk.data.byteLength);
+				if (recordSize === 0) {
+					console.warn(`[ReplayParser] Unrecognized item record layout in chunk ${chunk.id} (${chunk.data.byteLength} bytes), items skipped`);
+					return;
+				}
+				const recordCount = Math.floor(chunk.data.byteLength / recordSize);
+				for (let r = 0; r < recordCount; r++) {
+					const base = r * recordSize;
+					const fields = readTlvFields(view, base, recordSize);
+					let slot = 0;
+					let equipped = 0;
+					let qty = 0;
+					let itemId = 0;
+					let refine = 0;
+					let grade = 0;
+					const cards = [
+						0,
+						0,
+						0,
+						0
+					];
+					const options = [];
+					if (fields) {
+						slot = readTlvNumber(view, base, fields, ItemRecordTag.POS, 0);
+						equipped = readTlvNumber(view, base, fields, ItemRecordTag.WEAR_STATE, 0);
+						qty = readTlvNumber(view, base, fields, ItemRecordTag.QTY, 0);
+						itemId = readTlvNumber(view, base, fields, ItemRecordTag.NAMEID, 0);
+						refine = readTlvNumber(view, base, fields, ItemRecordTag.REFINE, 0);
+						grade = readTlvNumber(view, base, fields, ItemRecordTag.GRADE, 0);
+						const cardsField = fields.get(ItemRecordTag.CARDS);
+						if (cardsField && cardsField.length >= 16) for (let c = 0; c < 4; c++) cards[c] = view.getInt32(base + cardsField.offset + c * 4, true);
+						const optField = fields.get(ItemRecordTag.OPTIONS);
+						if (optField && optField.length >= 5) {
+							const optCount = Math.min(5, Math.floor(optField.length / 5));
+							for (let o = 0; o < optCount; o++) {
+								const optOffset = base + optField.offset + o * 5;
+								const optId = view.getUint16(optOffset, true);
+								if (optId > 0) {
+									const optVal = view.getInt16(optOffset + 2, true);
+									const optParam = view.getUint8(optOffset + 4);
+									options.push({
+										id: optId,
+										value: optVal,
+										param: optParam
+									});
+								}
+							}
+						}
+					} else {
+						slot = view.getInt16(base + 22, true);
+						equipped = view.getInt32(base + 42, true);
+						qty = view.getInt16(base + 52, true);
+						for (let c = 0; c < 4; c++) cards[c] = view.getInt32(base + 82 + c * 4, true);
+						itemId = view.getInt32(base + 104, true);
+						refine = view.getUint8(base + 134);
+						if (recordSize >= 221) for (let o = 0; o < 5; o++) {
+							const optOffset = base + 190 + o * 5;
+							const optId = view.getUint16(optOffset, true);
+							if (optId > 0) {
+								const optVal = view.getInt16(optOffset + 2, true);
+								const optParam = view.getUint8(optOffset + 4);
+								options.push({
+									id: optId,
+									value: optVal,
+									param: optParam
+								});
+							}
+						}
+					}
+					if (itemId > 0) {
+						let itemType = ItemType_default.ETC;
+						if (chunk.id === ItemChunkKind.EQUIPPED_COSTUME || chunk.id === ReplayOpCodes.EquippedShadowItems || equipped & (EquipmentLocation_default.COSTUME_HEAD_TOP | EquipmentLocation_default.COSTUME_HEAD_MID | EquipmentLocation_default.COSTUME_HEAD_BOTTOM | EquipmentLocation_default.COSTUME_ROBE | EquipmentLocation_default.COSTUME_FLOOR | EquipmentLocation_default.SHADOW_ARMOR | EquipmentLocation_default.SHADOW_WEAPON | EquipmentLocation_default.SHADOW_SHIELD | EquipmentLocation_default.SHADOW_SHOES | EquipmentLocation_default.SHADOW_R_ACCESSORY_SHADOW | EquipmentLocation_default.SHADOW_L_ACCESSORY_SHADOW)) itemType = ItemType_default.SHADOWGEAR;
+						else if (equipped & EquipmentLocation_default.WEAPON) itemType = ItemType_default.WEAPON;
+						else if (equipped & EquipmentLocation_default.AMMO) itemType = ItemType_default.AMMO;
+						else if (equipped > 0) itemType = ItemType_default.ARMOR;
+						else if (refine > 0 || grade > 0) itemType = ItemType_default.ARMOR;
+						else if (itemId >= 501 && itemId <= 600) itemType = ItemType_default.HEALING;
+						else if (itemId >= 601 && itemId <= 700) itemType = ItemType_default.USABLE;
+						else if (itemId >= 4001 && itemId <= 4700) itemType = ItemType_default.CARD;
+						else if (itemId >= 1101 && itemId <= 2100) itemType = ItemType_default.WEAPON;
+						else if (itemId >= 2101 && itemId <= 2999) itemType = ItemType_default.ARMOR;
+						targetArray.push({
+							index: slot + 2,
+							ITID: itemId,
+							count: qty > 0 ? qty : 1,
+							type: itemType,
+							IsIdentified: true,
+							IsDamaged: false,
+							PlaceETCTab: false,
+							WearState: equipped,
+							location: equipped,
+							RefiningLevel: refine,
+							enchantgrade: grade,
+							slot: {
+								card1: cards[0] || 0,
+								card2: cards[1] || 0,
+								card3: cards[2] || 0,
+								card4: cards[3] || 0
+							},
+							cards: [
+								cards[0] || 0,
+								cards[1] || 0,
+								cards[2] || 0,
+								cards[3] || 0
+							],
+							Options: options.map((opt) => ({
+								index: opt.id,
+								value: opt.value,
+								param: opt.param
+							})),
+							HireExpireDate: 0,
+							bindOnEquipType: 0,
+							wItemSpriteNumber: 0,
+							itemId,
+							qty: qty > 0 ? qty : 1,
+							slotIndex: slot,
+							refine,
+							grade,
+							options
+						});
+					}
+				}
+			};
+			for (const chunk of itemsContainer.data) {
+				if (SKIP_CHUNKS.has(chunk.id)) continue;
+				switch (chunk.id) {
+					case ItemChunkKind.INVENTORY:
+						parseItemChunk(chunk, out.inventory);
+						break;
+					case ItemChunkKind.CART:
+						parseItemChunk(chunk, out.cart);
+						break;
+					case ItemChunkKind.CART_MIRROR:
+						parseItemChunk(chunk, out.cartMirror);
+						if (out.cart.length === 0) parseItemChunk(chunk, out.cart);
+						break;
+					case ItemChunkKind.EQUIPPED:
+						parseItemChunk(chunk, out.equipped);
+						break;
+					case ItemChunkKind.EQUIPPED_COSTUME:
+					case ReplayOpCodes.EquippedShadowItems:
+						parseItemChunk(chunk, out.equippedCostume);
+						break;
+					case ItemChunkKind.STORAGE:
+					case ReplayOpCodes.StorageItems:
+						parseItemChunk(chunk, out.storage);
+						break;
+					case ItemChunkKind.GUILD_STORAGE:
+					case ReplayOpCodes.GuildStorageItems: parseItemChunk(chunk, out.guildStorage);
+				}
+			}
+			return out;
+		}
+		toNetworkPacket(chunk) {
+			return chunk.data;
+		}
+		readString(uint8array) {
+			let length = 0;
+			while (length < uint8array.length && uint8array[length] !== 0) length++;
+			return new TextDecoder("euc-kr").decode(uint8array.subarray(0, length));
+		}
+		dumpContainers() {
+			console.log("=== REPLAY CONTAINERS DUMP ===");
+			for (let i = 0; i < this.containers.length; i++) {
+				const container = this.containers[i];
+				const containerName = ContainerTypeNames[container.type] || `Unknown(${container.type})`;
+				console.log(`\n--- Container [${i}] Type: ${container.type} (${containerName}) | DeclaredLen: ${container.declaredLength} | Offset: ${container.offset} | RealLen: ${container.realLength} | Chunks: ${container.data.length} ---`);
+				container.data.forEach((chunk, index) => {
+					const data = chunk.data;
+					const size = data ? data.byteLength : 0;
+					const opName = chunk.id !== void 0 ? ReplayOpCodeName[chunk.id] || "" : "";
+					const packetInfo = chunk.packetId !== void 0 ? ` | PacketID: 0x${chunk.packetId.toString(16).padStart(4, "0")} (${chunk.packetId})` : "";
+					const chunkHeader = `Chunk [${index}] ID: ${chunk.id ?? "N/A"}${opName ? ` (${opName})` : ""}${packetInfo}${chunk.time !== void 0 ? ` | Time: ${chunk.time}` : ""} | Data Size: ${size}`;
+					console.log(chunkHeader);
+					if (!data || size === 0) {
+						console.log("  [Empty Content]");
+						return;
+					}
+					if (size === 1) {
+						const val = new DataView(data.buffer, data.byteOffset, data.byteLength).getUint8(0);
+						console.log(`  Char: ${val} (0x${val.toString(16).padStart(2, "0")})`);
+					} else if (size === 2) {
+						const val = new DataView(data.buffer, data.byteOffset, data.byteLength).getUint16(0, true);
+						console.log(`  uint16: ${val} (0x${val.toString(16).padStart(4, "0")})`);
+					} else if (size === 4) {
+						const val = new DataView(data.buffer, data.byteOffset, data.byteLength).getUint32(0, true);
+						console.log(`  uint32: ${val} (0x${val.toString(16).padStart(8, "0")})`);
+					} else if (size === 8) {
+						const val = new DataView(data.buffer, data.byteOffset, data.byteLength).getBigUint64(0, true);
+						console.log(`  uint64: ${val} (0x${val.toString(16).padStart(16, "0")})`);
+					}
+					this.dumpHex(data);
+				});
+			}
+			console.log("=== END OF REPLAY CONTAINERS DUMP ===");
+		}
+		dumpHex(uint8Array) {
+			const lines = [];
+			for (let offset = 0; offset < uint8Array.length; offset += 16) {
+				const chunk = uint8Array.subarray(offset, offset + 16);
+				const hexParts = [];
+				const asciiParts = [];
+				for (let i = 0; i < 16; i++) if (i < chunk.length) {
+					const byte = chunk[i];
+					hexParts.push(byte.toString(16).padStart(2, "0"));
+					asciiParts.push(byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : ".");
+				} else {
+					hexParts.push("  ");
+					asciiParts.push(" ");
+				}
+				const hexStr = hexParts.slice(0, 8).join(" ") + "  " + hexParts.slice(8, 16).join(" ");
+				const asciiStr = asciiParts.join("");
+				const offsetStr = offset.toString(16).padStart(4, "0");
+				lines.push(`  ${offsetStr}: ${hexStr}  |${asciiStr}|`);
+			}
+			console.log(lines.join("\n"));
+		}
+	};
+}));
+// src/Engine/Replay/ReplaySocket.js
+var ReplaySocket;
+var init_ReplaySocket = __esmMin((() => {
+	ReplaySocket = class {
+		constructor(host, port) {
+			this.host = host;
+			this.port = port;
+			this.connected = false;
+			this.onMessage = null;
+			this.onClose = null;
+			this.onError = null;
+			this.onComplete = null;
+			setTimeout(() => {
+				this.connected = true;
+				if (this.onComplete) this.onComplete(true);
+			}, 10);
+		}
+		send(buffer) {}
+		close() {
+			this.connected = false;
+			if (this.onClose) this.onClose();
+		}
+		/**
+		* Feed data into NetworkManager
+		* @param {Uint8Array|ArrayBuffer} data
+		*/
+		push(data) {
+			if (!this.connected || !this.onMessage || !data) return;
+			let buffer;
+			if (data instanceof Uint8Array) buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+			else if (data instanceof ArrayBuffer) buffer = data;
+			else return;
+			this.onMessage(buffer);
+		}
+	};
+}));
+// src/Engine/Replay/ReplayPlayer.js
+var ReplayPlayer_exports = /* @__PURE__ */ __exportAll({ default: () => ReplayPlayer });
+var ReplayPlayer;
+var init_ReplayPlayer = __esmMin((() => {
+	init_DBManager();
+	init_NetworkManager();
+	init_MapRenderer();
+	init_SessionStorage();
+	init_MapEngine();
+	init_Player();
+	init_BasicInfo();
+	init_WinStats();
+	init_Inventory();
+	init_CartItems();
+	init_ShortCut();
+	init_Storage$1();
+	init_PartyFriends();
+	init_Quest$1();
+	init_HomunInformations();
+	init_MercenaryInformations();
+	init_PetInformations();
+	init_Navigation();
+	init_ItemInfo();
+	init_ChatBox();
+	init_BGM();
+	init_EntityManager();
+	init_UIManager();
+	init_BinaryReader();
+	init_ReplayTypes();
+	init_ReplayParser();
+	init_ReplaySocket();
+	ReplayPlayer = class {
+		constructor() {
+			this.parser = null;
+			this.socket = null;
+			this.playing = false;
+			this.speed = 1;
+			this.startTime = 0;
+			this.lastTickTime = 0;
+			this.durationMs = 0;
+			this._state = ReplayState.IDLE;
+			this._sessionData = null;
+			this._itemsBuffer = null;
+			this._petBuffer = null;
+			this._homunBuffer = null;
+			this._mercenaryBuffer = null;
+			this._elementalBuffer = null;
+			this._statusBuffer = null;
+			this._efstListBuffer = [];
+			this._hotkeysBuffer = [];
+			this._questsBuffer = null;
+			this._groupAndFriendsBuffer = null;
+			this._memorialDungeonBuffer = null;
+			this._entryQueueBuffer = null;
+			this._navigationBuffer = null;
+			this._actorNamesBuffer = null;
+			this._openWindowsBuffer = [];
+			this._windowDragAll = null;
+			this._initialBuffer = [];
+			this._packetStreamBuffer = [];
+			this._initialGroupIndex = 0;
+			this._initialChunkIndex = 0;
+			this._streamChunkIndex = 0;
+			this._firstStreamTime = 0;
+			this._logicalTime = 0;
+			this._onTick = this.tick.bind(this);
+			this._animate = false;
+			this._retryCount = 0;
+		}
+		async load(file) {
+			this._setState(ReplayState.LOADING_REPLAY);
+			replayLog("[Replay] Loading RRF...");
+			const buffer = await file.arrayBuffer();
+			this.parser = new ReplayParser(buffer);
+			const result = this.parser.parse();
+			this._sessionData = result.sessionBuffer;
+			this._itemsBuffer = result.itemsBuffer;
+			this._petBuffer = result.petBuffer;
+			this._homunBuffer = result.homunBuffer;
+			this._mercenaryBuffer = result.mercenaryBuffer;
+			this._elementalBuffer = result.elementalBuffer;
+			this._statusBuffer = result.statusBuffer;
+			this._efstListBuffer = result.efstListBuffer || [];
+			this._hotkeysBuffer = result.hotkeysBuffer || [];
+			this._questsBuffer = result.questsBuffer || null;
+			this._groupAndFriendsBuffer = result.groupAndFriendsBuffer || null;
+			this._memorialDungeonBuffer = result.memorialDungeonBuffer || null;
+			this._entryQueueBuffer = result.entryQueueBuffer || null;
+			this._navigationBuffer = result.navigationBuffer || null;
+			this._actorNamesBuffer = result.actorNamesBuffer || null;
+			this._openWindowsBuffer = result.openWindowsBuffer || [];
+			this._windowDragAll = result.windowDragAll;
+			this._initialBuffer = result.initialBuffer;
+			this._packetStreamBuffer = result.packetStreamBuffer;
+			this.durationMs = result.durationMs || 0;
+			this._setState(ReplayState.IDLE);
+			if (this._packetStreamBuffer.length === 0) throw new Error("The replay contains no recorded packets, the file is truncated or corrupt.");
+		}
+		start() {
+			if (!this.parser || !this._sessionData) {
+				console.error("[ReplayPlayer] No replay loaded");
+				throw new Error("No replay loaded");
+			}
+			if (!DB.isLoaded) {
+				if (!DB.startedLazyInit) {
+					DB.lazyInit();
+					DB.startedLazyInit = true;
+				}
+				this._retryCount = (this._retryCount || 0) + 1;
+				if (this._retryCount > 600) {
+					console.error("[Replay] Failed loading databases.");
+					this._retryCount = 0;
+					DB.startedLazyInit = false;
+					return;
+				}
+				setTimeout(() => this.start(), 100);
+				return;
+			}
+			this._retryCount = 0;
+			DB.startedLazyInit = false;
+			this._initialGroupIndex = 0;
+			this._initialChunkIndex = 0;
+			this._streamChunkIndex = 0;
+			this.playing = true;
+			this.startTime = 0;
+			this.lastTickTime = Date.now();
+			Network.setSocketFactory((host, port) => {
+				this.socket = new ReplaySocket(host, port);
+				return this.socket;
+			});
+			Network.close();
+			this._applySession();
+		}
+		pause() {
+			this.playing = false;
+		}
+		resume() {
+			this.playing = true;
+			this._syncTimeOrigin();
+		}
+		stop() {
+			this.playing = false;
+			this._animate = false;
+			Network.setSocketFactory(null);
+			if (this.socket) {
+				Network.close();
+				this.socket = null;
+			}
+			if (this._state !== ReplayState.REPLAY_FINISHED) this._setState(ReplayState.IDLE);
+		}
+		setSpeed(speed) {
+			this.speed = speed;
+			this._syncTimeOrigin();
+		}
+		/**
+		* Recompute the wall clock origin so playback continues from the logical time
+		* reached so far. Inverse of the formula used in _tickPacketStream().
+		*/
+		_syncTimeOrigin() {
+			const firstStreamTime = this._firstStreamTime || 0;
+			const logicalTime = Math.max(this._logicalTime || 0, firstStreamTime);
+			this.startTime = Date.now() - (logicalTime - firstStreamTime) / this.speed;
+		}
+		_setState(newState) {
+			this._state = newState;
+		}
+		/**
+		* Applies session data directly to Session and Session.Entity.
+		* Called BEFORE MapEngine.init so map name and character are available.
+		*/
+		_applySession() {
+			this._setState(ReplayState.APPLYING_SESSION);
+			const s = this._sessionData;
+			const charName = s.characterName || "Replay";
+			const sex = s.sex === 0 || s.sex === 1 ? s.sex : 0;
+			const aid = s.AID || 0;
+			const gid = s.GID || aid;
+			const playerInitData = {
+				name: charName,
+				sex,
+				job: s.job !== void 0 ? s.job : 0,
+				clevel: s.level !== void 0 ? s.level : s.clevel || 1,
+				joblevel: s.joblevel !== void 0 ? s.joblevel : 1,
+				exp: s.exp || 0,
+				exp_next: s.exp_next || 0,
+				job_exp: s.job_exp || 0,
+				job_exp_next: s.job_exp_next || 0,
+				str: s.str || 1,
+				agi: s.agi || 1,
+				vit: s.vit || 1,
+				int: s.int || 1,
+				dex: s.dex || 1,
+				luk: s.luk || 1,
+				str_bonus: s.str_bonus || s.plusStr || 0,
+				agi_bonus: s.agi_bonus || s.plusAgi || 0,
+				vit_bonus: s.vit_bonus || s.plusVit || 0,
+				int_bonus: s.int_bonus || s.plusInt || 0,
+				dex_bonus: s.dex_bonus || s.plusDex || 0,
+				luk_bonus: s.luk_bonus || s.plusLuk || 0,
+				money: s.money || 0,
+				weight: s.weight || 0,
+				max_weight: s.max_weight || 0,
+				speed: s.speed || 150,
+				attack_speed: s.attack_speed || s.aspd || 300,
+				head: s.head || 0,
+				weapon: s.weapon || 0,
+				shield: s.shield || 0,
+				bodypalette: s.bodypalette || 0,
+				headpalette: s.headpalette || 0,
+				accessory: s.accessory || 0,
+				accessory2: s.accessory2 || 0,
+				accessory3: s.accessory3 || 0,
+				robe: s.robe || 0,
+				AID: aid,
+				GID: gid
+			};
+			SessionStorage_default.AID = aid;
+			SessionStorage_default.GID = gid;
+			SessionStorage_default.Sex = sex;
+			SessionStorage_default.zeny = s.money || 0;
+			SessionStorage_default.hasCart = s.hasCart || false;
+			SessionStorage_default.CartNum = s.CartNum || 0;
+			if (s.pet && s.pet.aid) {
+				SessionStorage_default.petId = s.pet.aid;
+				SessionStorage_default.pet = s.pet;
+			} else {
+				SessionStorage_default.petId = 0;
+				SessionStorage_default.pet = {};
+			}
+			if (s.homun && s.homun.gid) {
+				SessionStorage_default.homunId = s.homun.gid;
+				SessionStorage_default.homun = s.homun;
+			} else {
+				SessionStorage_default.homunId = 0;
+				SessionStorage_default.homun = {};
+			}
+			if (s.mercenary && (s.mercenary.gid || s.mercenary.GID)) {
+				const mercId = s.mercenary.gid || s.mercenary.GID;
+				SessionStorage_default.mercId = mercId;
+				SessionStorage_default.mercenaryId = mercId;
+				SessionStorage_default.mercenary = s.mercenary;
+			} else {
+				SessionStorage_default.mercId = 0;
+				SessionStorage_default.mercenaryId = 0;
+				SessionStorage_default.mercenary = {};
+			}
+			if (s.elemental && s.elemental.gid) {
+				SessionStorage_default.elementalId = s.elemental.gid;
+				SessionStorage_default.elemental = s.elemental;
+			} else {
+				SessionStorage_default.elementalId = 0;
+				SessionStorage_default.elemental = {};
+			}
+			if (s.tailMagic || s.region !== void 0 || s.service !== void 0 || s.serverType !== void 0) SessionStorage_default.replayMeta = {
+				tailMagic: s.tailMagic,
+				region: s.region,
+				service: s.service,
+				serverType: s.serverType,
+				mapType: s.mapType,
+				packetCount: s.packetCount,
+				endFileOffset: s.endFileOffset,
+				saveUiOptions: s.saveUiOptions
+			};
+			SessionStorage_default.Entity = new Player(playerInitData);
+			SessionStorage_default.Entity.display.name = charName;
+			SessionStorage_default.Entity.sex = sex;
+			SessionStorage_default.Entity._sex = sex;
+			SessionStorage_default.Entity.job = playerInitData.job;
+			SessionStorage_default.Entity._job = playerInitData.job;
+			SessionStorage_default.Entity.clevel = playerInitData.clevel;
+			SessionStorage_default.Entity.level = playerInitData.clevel;
+			SessionStorage_default.Entity.joblevel = playerInitData.joblevel;
+			SessionStorage_default.Entity.money = playerInitData.money;
+			SessionStorage_default.Entity.weight = playerInitData.weight;
+			SessionStorage_default.Entity.max_weight = playerInitData.max_weight;
+			SessionStorage_default.Entity.speed = playerInitData.speed;
+			SessionStorage_default.Entity.attack_speed = playerInitData.attack_speed;
+			SessionStorage_default.Entity.str = playerInitData.str;
+			SessionStorage_default.Entity.agi = playerInitData.agi;
+			SessionStorage_default.Entity.vit = playerInitData.vit;
+			SessionStorage_default.Entity.int = playerInitData.int;
+			SessionStorage_default.Entity.dex = playerInitData.dex;
+			SessionStorage_default.Entity.luk = playerInitData.luk;
+			SessionStorage_default.Entity.str_bonus = playerInitData.str_bonus;
+			SessionStorage_default.Entity.agi_bonus = playerInitData.agi_bonus;
+			SessionStorage_default.Entity.vit_bonus = playerInitData.vit_bonus;
+			SessionStorage_default.Entity.int_bonus = playerInitData.int_bonus;
+			SessionStorage_default.Entity.dex_bonus = playerInitData.dex_bonus;
+			SessionStorage_default.Entity.luk_bonus = playerInitData.luk_bonus;
+			SessionStorage_default.Entity.head = playerInitData.head;
+			SessionStorage_default.Entity._head = playerInitData.head;
+			SessionStorage_default.Entity.headpalette = playerInitData.headpalette;
+			SessionStorage_default.Entity._headpalette = playerInitData.headpalette;
+			SessionStorage_default.Entity.bodypalette = playerInitData.bodypalette;
+			SessionStorage_default.Entity._bodypalette = playerInitData.bodypalette;
+			SessionStorage_default.Entity.weapon = playerInitData.weapon;
+			SessionStorage_default.Entity._weapon = playerInitData.weapon;
+			SessionStorage_default.Entity.shield = playerInitData.shield;
+			SessionStorage_default.Entity._shield = playerInitData.shield;
+			SessionStorage_default.Entity.accessory = playerInitData.accessory;
+			SessionStorage_default.Entity._accessory = playerInitData.accessory;
+			SessionStorage_default.Entity.accessory2 = playerInitData.accessory2;
+			SessionStorage_default.Entity._accessory2 = playerInitData.accessory2;
+			SessionStorage_default.Entity.accessory3 = playerInitData.accessory3;
+			SessionStorage_default.Entity._accessory3 = playerInitData.accessory3;
+			SessionStorage_default.Entity.robe = playerInitData.robe;
+			const hp = s.hp !== void 0 ? s.hp : s.maxHp !== void 0 ? s.maxHp : 100;
+			const maxHp = s.maxHp !== void 0 ? s.maxHp : hp;
+			const sp = s.sp !== void 0 ? s.sp : s.maxSp !== void 0 ? s.maxSp : 100;
+			const maxSp = s.maxSp !== void 0 ? s.maxSp : sp;
+			SessionStorage_default.Entity.life.hp = hp;
+			SessionStorage_default.Entity.life.hp_max = maxHp;
+			SessionStorage_default.Entity.life.sp = sp;
+			SessionStorage_default.Entity.life.sp_max = maxSp;
+			const option = s.effectState !== void 0 ? s.effectState : s.option || 0;
+			SessionStorage_default.Entity.effectState = option;
+			SessionStorage_default.Entity._effectState = option;
+			SessionStorage_default.Entity.option = option;
+			SessionStorage_default.Entity.hasCart = SessionStorage_default.hasCart;
+			SessionStorage_default.Entity.CartNum = SessionStorage_default.CartNum;
+			this._mapName = s.mapName || "prontera.rsw";
+			this._startX = s.startX || 0;
+			this._startY = s.startY || 0;
+			this._startDir = s.startDir !== void 0 ? s.startDir : 4;
+			SessionStorage_default.Entity.position[0] = this._startX;
+			SessionStorage_default.Entity.position[1] = this._startY;
+			SessionStorage_default.Entity.position[2] = 0;
+			SessionStorage_default.Entity.direction = this._startDir;
+			replayLog(`[Replay] Session applied — name: ${charName}, sex: ${SessionStorage_default.Entity.sex}, head: ${SessionStorage_default.Entity.head}, job: ${SessionStorage_default.Entity.job}, map: ${this._mapName}, HP: ${hp}/${maxHp}, SP: ${sp}/${maxSp}`);
+			this._loadMap();
+		}
+		_loadMap() {
+			this._setState(ReplayState.LOADING_MAP);
+			this._acceptEnterSent = false;
+			this._mapLoadStarted = false;
+			MapEngine.init("127.0.0.1", 6900, this._mapName);
+			this._animate = true;
+			this.lastTickTime = Date.now();
+			this._onTick();
+		}
+		/**
+		* Synthesizes the ZC_ACCEPT_ENTER (0x0073) packet that MapEngine needs
+		* to register the player entity and trigger the full map initialisation sequence.
+		*/
+		_sendAcceptEnter() {
+			const pkt = /* @__PURE__ */ new Uint8Array(11);
+			const view = new DataView(pkt.buffer);
+			view.setUint16(0, 115, true);
+			view.setUint32(2, Date.now(), true);
+			const x = this._startX;
+			const y = this._startY;
+			const dir = this._startDir;
+			const p = x << 14 | y << 4 | dir & 15;
+			view.setUint8(6, p >> 16 & 255);
+			view.setUint8(7, p >> 8 & 255);
+			view.setUint8(8, p & 255);
+			this._pushPacket(pkt);
+		}
+		/**
+		* Synthesizes a ZC_MSG_STATE_CHANGE (0x0196) packet for an active EFST buff.
+		*/
+		_sendStateChange(statusId, isOn = true) {
+			const pkt = /* @__PURE__ */ new Uint8Array(9);
+			const view = new DataView(pkt.buffer);
+			view.setUint16(0, 406, true);
+			view.setUint16(2, statusId, true);
+			view.setUint32(4, SessionStorage_default.AID, true);
+			view.setUint8(8, isOn ? 1 : 0);
+			this._pushPacket(pkt);
+		}
+		tick() {
+			if (this._animate) requestAnimationFrame(this._onTick);
+			if (!this.playing || !this.socket || !this.socket.connected) {
+				this.lastTickTime = Date.now();
+				return;
+			}
+			const now = Date.now();
+			switch (this._state) {
+				case ReplayState.LOADING_MAP:
+					if (!this._acceptEnterSent) {
+						MapRenderer.currentMap = "";
+						this._sendAcceptEnter();
+						this._acceptEnterSent = true;
+						this._mapLoadStarted = false;
+					}
+					if (this._acceptEnterSent && MapRenderer.loading) this._mapLoadStarted = true;
+					if (this._mapLoadStarted && !MapRenderer.loading) {
+						this._mapLoadStarted = false;
+						this._setState(ReplayState.PLAYING_INITIAL_DATA);
+					}
+					this.startTime += now - this.lastTickTime;
+					this.lastTickTime = now;
+					break;
+				case ReplayState.PLAYING_INITIAL_DATA:
+					this.lastTickTime = now;
+					this._tickInitialData();
+					break;
+				case ReplayState.INITIAL_DATA_COMPLETE:
+					this._setState(ReplayState.PLAYING_PACKET_STREAM);
+					this.startTime = Date.now();
+					this.lastTickTime = now;
+					this._firstStreamTime = this._packetStreamBuffer.length > 0 ? this._packetStreamBuffer[0].time : 0;
+					this._logicalTime = this._firstStreamTime;
+					break;
+				case ReplayState.PLAYING_PACKET_STREAM:
+					this.lastTickTime = now;
+					this._tickPacketStream(now);
+					break;
+				default: this.lastTickTime = now;
+			}
+		}
+		/**
+		* Drains initial data (InitialPackets → InitialEntities → InitialFloorItems)
+		* and applies initial Efst buffs, items, and UI stat updates.
+		*/
+		_tickInitialData() {
+			for (const group of this._initialBuffer) for (const chunk of group.chunks) {
+				const data = chunk.data || chunk;
+				this._pushPacket(data);
+			}
+			if (this._efstListBuffer && this._efstListBuffer.length > 0) for (const efstId of this._efstListBuffer) this._sendStateChange(efstId, true);
+			if (this._itemsBuffer) {
+				const inventoryUI = InventoryController?.getUI ? InventoryController : null;
+				if (inventoryUI && typeof inventoryUI.addItem === "function") {
+					if (inventoryUI.list) inventoryUI.list.length = 0;
+					if (inventoryUI.equippedItems) inventoryUI.equippedItems.length = 0;
+					if (this._itemsBuffer.inventory?.length > 0) for (const item of this._itemsBuffer.inventory) inventoryUI.addItem(item);
+					if (this._itemsBuffer.equipped?.length > 0) for (const item of this._itemsBuffer.equipped) inventoryUI.addItem(item);
+					if (this._itemsBuffer.equippedCostume?.length > 0) for (const item of this._itemsBuffer.equippedCostume) inventoryUI.addItem(item);
+				}
+				const cartUI = CartItems_default?.getUI ? CartItems_default : null;
+				if (cartUI && this._itemsBuffer.cart?.length > 0) {
+					if (typeof cartUI.addItem === "function") {
+						if (cartUI.list) cartUI.list.length = 0;
+						for (const item of this._itemsBuffer.cart) cartUI.addItem(item);
+					} else if (typeof cartUI.setItems === "function") cartUI.setItems(this._itemsBuffer.cart);
+				}
+				const storageUI = StorageController?.getUI ? StorageController.getUI() || StorageController : StorageController;
+				if (storageUI && this._itemsBuffer.storage?.length > 0) {
+					if (typeof storageUI.prepare === "function" && !storageUI.__loaded) storageUI.prepare();
+					if (typeof storageUI.setItems === "function") storageUI.setItems(this._itemsBuffer.storage);
+				}
+			}
+			if (this._sessionData?.pet) {
+				const petId = this._sessionData.pet.aid || this._sessionData.pet.AID;
+				if (petId) {
+					SessionStorage_default.petId = petId;
+					SessionStorage_default.pet = this._sessionData.pet;
+				}
+			}
+			if (this._sessionData?.homun) {
+				const homunId = this._sessionData.homun.gid || this._sessionData.homun.GID;
+				if (homunId) {
+					SessionStorage_default.homunId = homunId;
+					SessionStorage_default.homun = this._sessionData.homun;
+				}
+			}
+			if (this._sessionData?.mercenary) {
+				const mercId = this._sessionData.mercenary.gid || this._sessionData.mercenary.GID;
+				if (mercId) {
+					SessionStorage_default.mercId = mercId;
+					SessionStorage_default.mercenaryId = mercId;
+					SessionStorage_default.mercenary = this._sessionData.mercenary;
+				}
+			}
+			if (this._sessionData?.elemental) {
+				const eleId = this._sessionData.elemental.gid || this._sessionData.elemental.GID;
+				if (eleId) {
+					SessionStorage_default.elementalId = eleId;
+					SessionStorage_default.elemental = this._sessionData.elemental;
+				}
+			}
+			if (this._homunBuffer && typeof HomunInformations_default?.setInformations === "function") HomunInformations_default.setInformations(this._homunBuffer);
+			if (this._mercenaryBuffer && typeof MercenaryInformations_default?.setInformations === "function") MercenaryInformations_default.setInformations(this._mercenaryBuffer);
+			if (this._petBuffer && typeof PetInformations_default?.setInformations === "function") PetInformations_default.setInformations(this._petBuffer);
+			if (this._hotkeysBuffer?.length > 0 && typeof ShortCut_default?.setList === "function") ShortCut_default.setList(this._hotkeysBuffer);
+			if (this._groupAndFriendsBuffer) {
+				if (this._groupAndFriendsBuffer.groupInfo?.length > 0 && typeof controller?.setParty === "function") controller.setParty(this._groupAndFriendsBuffer.groupName || "", this._groupAndFriendsBuffer.groupInfo);
+				if (this._groupAndFriendsBuffer.friendInfo?.length > 0 && typeof controller?.setFriends === "function") controller.setFriends(this._groupAndFriendsBuffer.friendInfo);
+			}
+			if (this._questsBuffer) {
+				const quests = this._questsBuffer.quests || this._questsBuffer.questInfo;
+				if (Array.isArray(quests) && quests.length > 0 && typeof Controller$3?.setQuestList === "function") {
+					const questList = {};
+					for (const q of quests) {
+						const questId = q.questID || q.id || q;
+						const questInfo = DB.getQuestInfo(questId) || {};
+						questList[questId] = {
+							questID: questId,
+							title: questInfo.Title || "",
+							summary: questInfo.Summary || "",
+							description: questInfo.Description || "",
+							icon: questInfo.IconName || "ico_nq.bmp",
+							npc_spr: questInfo.NpcSpr || null,
+							npc_navi: questInfo.NpcNavi || null,
+							npc_pos_x: questInfo.NpcPosX || null,
+							npc_pos_y: questInfo.NpcPosY || null,
+							reward_item_list: questInfo.RewardItemList || [],
+							reward_exp_base: questInfo.RewardEXP || 0,
+							reward_exp_job: questInfo.RewardJEXP || 0,
+							active: q.active !== void 0 ? q.active : q.data?.byteLength > 4 ? q.data[4] !== 0 : true,
+							start_time: 0,
+							end_time: 0,
+							count: 0,
+							hunt_list: []
+						};
+					}
+					Controller$3.setQuestList(questList);
+				} else if (quests && typeof quests === "object" && typeof Controller$3?.setQuestList === "function") Controller$3.setQuestList(quests);
+			}
+			const actors = this._actorNamesBuffer?.actorNames || this._actorNamesBuffer?.actors;
+			if (actors?.length > 0) for (const actor of actors) {
+				const entity = EntityManager.get(actor.gid);
+				if (entity?.display) entity.display.name = actor.name;
+			}
+			if (this._openWindowsBuffer?.length > 0) for (const win of this._openWindowsBuffer) {
+				const compName = WindowIdToComponent[win.windowId];
+				if (compName) try {
+					const comp = UIManager.getComponent(compName);
+					if (comp) {
+						if (!comp.__active || !comp._host?.parentNode) comp.append();
+						else if (typeof comp.ui?.show === "function") comp.ui.show();
+					}
+				} catch (e) {
+					replayLog(`[ReplayPlayer] Error opening window ${compName}:`, e);
+				}
+			}
+			if (this._navigationBuffer?.isPathActive && typeof Navigation_default?.setTargetCoordinatesText === "function") {
+				const navX = this._navigationBuffer.endX ?? this._navigationBuffer.x;
+				const navY = this._navigationBuffer.endY ?? this._navigationBuffer.y;
+				if (navX !== void 0 && navY !== void 0) Navigation_default.setTargetCoordinatesText(navX, navY);
+			}
+			if (SessionStorage_default.Entity) {
+				if (BasicInfoController.update) {
+					BasicInfoController.update("blvl", SessionStorage_default.Entity.clevel);
+					BasicInfoController.update("jlvl", SessionStorage_default.Entity.joblevel);
+					BasicInfoController.update("zeny", SessionStorage_default.Entity.money);
+					BasicInfoController.update("name", SessionStorage_default.Entity.display.name);
+					BasicInfoController.update("job", SessionStorage_default.Entity.job);
+					BasicInfoController.update("hp", SessionStorage_default.Entity.life.hp, SessionStorage_default.Entity.life.hp_max);
+					BasicInfoController.update("sp", SessionStorage_default.Entity.life.sp, SessionStorage_default.Entity.life.sp_max);
+					BasicInfoController.update("weight", SessionStorage_default.Entity.weight, SessionStorage_default.Entity.max_weight);
+				}
+				if (WinStatsController.update) {
+					WinStatsController.update("str", SessionStorage_default.Entity.str);
+					WinStatsController.update("agi", SessionStorage_default.Entity.agi);
+					WinStatsController.update("vit", SessionStorage_default.Entity.vit);
+					WinStatsController.update("int", SessionStorage_default.Entity.int);
+					WinStatsController.update("dex", SessionStorage_default.Entity.dex);
+					WinStatsController.update("luk", SessionStorage_default.Entity.luk);
+					WinStatsController.update("str2", SessionStorage_default.Entity.str_bonus);
+					WinStatsController.update("agi2", SessionStorage_default.Entity.agi_bonus);
+					WinStatsController.update("vit2", SessionStorage_default.Entity.vit_bonus);
+					WinStatsController.update("int2", SessionStorage_default.Entity.int_bonus);
+					WinStatsController.update("dex2", SessionStorage_default.Entity.dex_bonus);
+					WinStatsController.update("luk2", SessionStorage_default.Entity.luk_bonus);
+				}
+			}
+			this._setState(ReplayState.INITIAL_DATA_COMPLETE);
+		}
+		/**
+		* Time-based packet injection from the PacketStream buffer.
+		*/
+		_tickPacketStream(now) {
+			const logicalTime = (now - this.startTime) * this.speed + (this._firstStreamTime || 0);
+			this._logicalTime = logicalTime;
+			while (this._streamChunkIndex < this._packetStreamBuffer.length) {
+				const chunk = this._packetStreamBuffer[this._streamChunkIndex];
+				if (chunk.time <= logicalTime) {
+					if (chunk.packetId === 2222 || chunk.packetId === 2222) this._handleReplayEvent(chunk.data);
+					else this._pushPacket(chunk.data);
+					this._streamChunkIndex++;
+				} else break;
+			}
+			if (this._streamChunkIndex >= this._packetStreamBuffer.length) {
+				replayLog("[Replay] Replay finished");
+				this._setState(ReplayState.REPLAY_FINISHED);
+				this.stop();
+			}
+		}
+		/**
+		* Handles synthetic replay events (Opcode 2222 / 0x08AE).
+		* Format: [packetId: Uint16 (2222), length: Uint16, subOpCode: Uint16, payload...]
+		*/
+		_handleReplayEvent(data) {
+			if (!data || data.byteLength < 6) return;
+			try {
+				const reader = new BinaryReader(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength));
+				reader.seek(2, 2);
+				const len = reader.readUShort();
+				const subOpCode = reader.readUShort();
+				const totalLen = data.byteLength;
+				if (len < 6 || len > totalLen) return;
+				switch (subOpCode) {
+					case ReplayEventSubOpCode.WINDOW_MOVE: {
+						if (totalLen < 12 || len < 12) return;
+						const windowId = reader.readUShort();
+						const x = reader.readShort();
+						const y = reader.readShort();
+						const compName = WindowIdToComponent[windowId];
+						if (compName) try {
+							const comp = UIManager.getComponent(compName);
+							if (comp?.ui) comp.ui.css({
+								left: `${x}px`,
+								top: `${y}px`
+							});
+						} catch (_e) {}
+						break;
+					}
+					case ReplayEventSubOpCode.ITEM_DESC: {
+						if (totalLen < 10 || len < 10) return;
+						const itid = reader.readUInt();
+						if (ItemInfo_default?.setItem) {
+							if (!ItemInfo_default.__active) ItemInfo_default.append();
+							ItemInfo_default.setItem({
+								ITID: itid,
+								IsIdentified: true
+							});
+						}
+						break;
+					}
+					case ReplayEventSubOpCode.WINDOW_MSG: {
+						if (totalLen < 8 || len < 8) return;
+						reader.readUShort();
+						const msgLen = Math.min(len - 8, totalLen - 8);
+						if (msgLen > 0 && ChatBox_default?.addText) {
+							const text = reader.readBinaryString(msgLen);
+							ChatBox_default.addText(text, ChatBox_default.TYPE_INFO);
+						}
+						break;
+					}
+					case ReplayEventSubOpCode.SET_TARGET: {
+						if (totalLen < 10 || len < 10) return;
+						const targetGid = reader.readUInt();
+						if (SessionStorage_default.Entity) SessionStorage_default.Entity.target = targetGid ? EntityManager.get(targetGid) : null;
+						break;
+					}
+					case ReplayEventSubOpCode.SET_MAP_INFO:
+						if (totalLen < 22 || len < 22) return;
+						replayLog(`[ReplayEvent] SET_MAP_INFO: ${reader.readBinaryString(16)}`);
+						break;
+					case ReplayEventSubOpCode.MAP_TRANSITION:
+						if (totalLen < 22 || len < 22) return;
+						replayLog(`[ReplayEvent] MAP_TRANSITION: ${reader.readBinaryString(16)}`);
+						break;
+					case ReplayEventSubOpCode.SET_BGM_AMBIENT: {
+						const bgmLen = Math.min(len > 6 ? len - 6 : 0, totalLen > 6 ? totalLen - 6 : 0);
+						if (bgmLen > 0) {
+							const bgmName = reader.readBinaryString(bgmLen);
+							if (BGM?.play && bgmName) BGM.play(bgmName);
+						}
+						break;
+					}
+					case ReplayEventSubOpCode.SET_SESSION_TEXT: {
+						const textLen = Math.min(len > 6 ? len - 6 : 0, totalLen > 6 ? totalLen - 6 : 0);
+						if (textLen > 0) replayLog(`[ReplayEvent] SET_SESSION_TEXT: ${reader.readBinaryString(textLen)}`);
+						break;
+					}
+					case ReplayEventSubOpCode.NAVI_PATH:
+					case ReplayEventSubOpCode.NAVI_WAYPOINT:
+					case ReplayEventSubOpCode.NAVI_TARGET:
+					case ReplayEventSubOpCode.NAVIGATION_PATH:
+					case ReplayEventSubOpCode.NAVIGATION_ARROW:
+					case ReplayEventSubOpCode.NAVIGATION_ACTIVE:
+						if (totalLen >= 10 && len >= 10 && typeof Navigation_default?.setTargetCoordinatesText === "function") {
+							const x = reader.readUShort();
+							const y = reader.readUShort();
+							Navigation_default.setTargetCoordinatesText(x, y);
+						}
+						break;
+					case ReplayEventSubOpCode.MAKE_WINDOW: {
+						if (totalLen < 8 || len < 8) return;
+						const windowId = reader.readUShort();
+						const compName = WindowIdToComponent[windowId];
+						if (compName) try {
+							const comp = UIManager.getComponent(compName);
+							if (comp) {
+								if (!comp.__active || !comp._host?.parentNode) comp.append();
+								else if (comp.ui && typeof comp.ui.show === "function") comp.ui.show();
+							}
+						} catch (e) {
+							replayLog(`[ReplayEvent] MAKE_WINDOW error for ${compName}:`, e);
+						}
+						break;
+					}
+					case ReplayEventSubOpCode.WINDOW_ACTION:
+						if (totalLen < 10 || len < 10) return;
+						replayLog(`[ReplayEvent] WINDOW_ACTION: win=${reader.readUShort()}, action=${reader.readUShort()}`);
+						break;
+					case ReplayEventSubOpCode.CLOSE_WINDOW: {
+						if (totalLen < 8 || len < 8) return;
+						const windowId = reader.readUShort();
+						const compName = WindowIdToComponent[windowId];
+						if (compName) try {
+							const comp = UIManager.getComponent(compName);
+							if (comp && (comp.__active || comp._host?.parentNode)) comp.remove();
+						} catch (e) {
+							replayLog(`[ReplayEvent] CLOSE_WINDOW error for ${compName}:`, e);
+						}
+						break;
+					}
+					default: replayLog(`[ReplayEvent] Unhandled subOpCode: ${subOpCode}`);
+				}
+			} catch (e) {
+				console.warn("[ReplayPlayer] Error handling replay event:", e);
+			}
+		}
+		_getCurrentStreamChunk() {
+			return this._packetStreamBuffer[this._streamChunkIndex] || null;
+		}
+		/**
+		* Injects a raw network packet buffer into the NetworkManager via the mock socket.
+		*/
+		_pushPacket(data) {
+			if (!this.socket || !this.socket.connected) return;
+			try {
+				this.socket.push(data);
+			} catch (e) {
+				console.error("[Replay] Packet injection error:", e);
+			}
+		}
+	};
+}));
+// src/UI/Components/WinLogin/WinLoginCommon.js
+function createWinLogin({ name, htmlText, cssText }) {
+	const Component = new GUIComponent(name, cssText);
+	Component.render = () => htmlText;
+	Component.needFocus = false;
+	const _preferences = Preferences.get("WinLogin", {
+		saveID: true,
+		ID: ""
+	}, 1);
+	let _inputUsername;
+	let _inputPassword;
+	let _buttonSave;
+	Component.init = function init() {
+		this.draggable();
+		const root = this.getRoot();
+		_inputUsername = root.querySelector(".user");
+		_inputPassword = root.querySelector(".pass");
+		_buttonSave = root.querySelector(".save");
+		_inputUsername.addEventListener("mousedown", function(event) {
+			this.focus();
+			this.value = "";
+			event.stopImmediatePropagation();
+		});
+		_inputPassword.addEventListener("mousedown", function(event) {
+			this.focus();
+			this.value = "";
+			event.stopImmediatePropagation();
+		});
+		_buttonSave.addEventListener("mousedown", (event) => {
+			toggleSaveButton();
+			event.stopImmediatePropagation();
+		});
+		root.querySelector(".signup").addEventListener("click", signup);
+		root.querySelector(".connect").addEventListener("click", connect);
+		root.querySelector(".exit").addEventListener("click", exit);
+		const replayUpload = root.querySelector(".replay-upload");
+		const replayButton = root.querySelector(".replay");
+		if (!replayUpload || !replayButton) return;
+		replayButton.addEventListener("click", () => {
+			replayUpload.click();
+		});
+		replayUpload.addEventListener("change", function() {
+			if (!this.files || !this.files.length) return;
+			const file = this.files[0];
+			this.value = "";
+			if (!file.name || !file.name.toLowerCase().endsWith(".rrf")) {
+				UIManager.showMessageBox("Please select a Ragnarok replay file (.rrf).", "ok");
+				return;
+			}
+			loadReplay(file);
+		});
+	};
+	Component.onAppend = function onAppend() {
+		_inputUsername.value = _preferences.saveID ? _preferences.ID : "";
+		_inputPassword.value = "";
+		Client.loadFile(`${DB.INTERFACE_PATH}login_interface/chk_save${_preferences.saveID ? "on" : "off"}.bmp`, (url) => {
+			_buttonSave.style.backgroundImage = "url(" + url + ")";
+		});
+		if (_preferences.ID.length) _inputPassword.focus();
+		else _inputUsername.focus();
+		Component.placeOnTop();
+		if (PerfProbe.enabled) PerfProbe.loginShown();
+	};
+	Component.onKeyDown = function onKeyDown(event) {
+		if (this._host.style.display === "none") return true;
+		switch (event.which) {
+			case KEYS.ENTER:
+				connect();
+				event.stopImmediatePropagation();
+				return false;
+			case KEYS.ESCAPE:
+				exit();
+				event.stopImmediatePropagation();
+				return false;
+			case KEYS.TAB: {
+				const target = this._shadow.activeElement === _inputUsername ? _inputPassword : _inputUsername;
+				target.focus();
+				target.select();
+				event.stopImmediatePropagation();
+				return false;
+			}
+		}
+		return true;
+	};
+	function toggleSaveButton() {
+		_preferences.saveID = !_preferences.saveID;
+		Client.loadFile(`${DB.INTERFACE_PATH}login_interface/chk_save${_preferences.saveID ? "on" : "off"}.bmp`, (url) => {
+			_buttonSave.style.backgroundImage = "url(" + url + ")";
+		});
+	}
+	function exit() {
+		Component.onExitRequest();
+		return false;
+	}
+	function connect() {
+		const user = _inputUsername.value;
+		const pass = _inputPassword.value;
+		if (_preferences.saveID) {
+			_preferences.saveID = true;
+			_preferences.ID = user;
+		} else {
+			_preferences.saveID = false;
+			_preferences.ID = "";
+		}
+		_preferences.save();
+		Component.onConnectionRequest(user, pass);
+		return false;
+	}
+	async function loadReplay(file) {
+		try {
+			const { default: ReplayPlayer } = await __vitePreload(async () => {
+				const { default: ReplayPlayer } = await Promise.resolve().then(() => (init_ReplayPlayer(), ReplayPlayer_exports));
+				return { default: ReplayPlayer };
+			}, void 0, import.meta.url);
+			const replay = new ReplayPlayer();
+			await replay.load(file);
+			Component.remove();
+			replay.start();
+		} catch (err) {
+			console.error("[Replay] Error loading replay", err);
+			UIManager.showMessageBox(`Could not load the replay file.\n${err.message || err}`, "ok");
+		}
+	}
+	function signup() {
+		const url = Configs.get("registrationweb");
+		if (url) UIManager.showPromptBox(DB.getMessage(662), "ok", "cancel", () => {
+			window.open(url);
+		}, null);
+		else UIManager.showPromptBox("No registration URL was provided.\nIf this server uses simplified registration, then input your new:\n - Username followed by _M for Male and _F for Female account (Eg: MyUser_M)\n - Password.", "ok", "cancel", null, null);
+	}
+	Component.onConnectionRequest = function onConnectionRequest() {};
+	Component.onExitRequest = function onExitRequest() {};
+	return UIManager.addComponent(Component);
+}
+var init_WinLoginCommon = __esmMin((() => {
+	init_DBManager();
+	init_Client();
+	init_Configs();
+	init_Preferences$1();
+	init_KeyEventHandler();
+	init_UIManager();
+	init_GUIComponent();
+	init_PerfProbe();
+	init_Elements();
+	init_preload_helper();
+}));
+// src/UI/Components/WinLogin/WinLogin/WinLogin.js
+var WinLogin_default;
+var init_WinLogin$1 = __esmMin((() => {
+	init_WinLogin$3();
+	init_WinLogin$2();
+	init_WinLoginCommon();
+	WinLogin_default = createWinLogin({
+		name: "WinLogin",
+		htmlText: WinLogin_default$2,
+		cssText: WinLogin_default$1
+	});
+}));
+// src/UI/Components/WinLogin/WinLoginV2/WinLoginV2.html?raw
+var WinLoginV2_default$2;
+var init_WinLoginV2$2 = __esmMin((() => {
+	WinLoginV2_default$2 = "<div id=\"WinLogin\" class=\"win_login\">\r\n	<div class=\"win_login\">\r\n		<ui-image src=\"login_interface/bg_login.tga\"></ui-image>\r\n		<!-- User Auth -->\r\n		<input id=\"user\" class=\"user\" type=\"text\" value=\"\" />\r\n		<input id=\"pass\" class=\"pass\" type=\"password\" value=\"\" />\r\n		<button\r\n			id=\"save\"\r\n			class=\"save\"\r\n			type=\"button\"\r\n			data-background=\"login_interface/chk_saveoff.bmp\"\r\n			data-preload=\"login_interface/chk_saveon.bmp\"\r\n		></button>\r\n\r\n		<!-- Buttons -->\r\n		<button\r\n			class=\"btn replay\"\r\n			type=\"button\"\r\n			data-background=\"login_interface/bt_join_normal.bmp\"\r\n			data-hover=\"login_interface/bt_join_over.bmp\"\r\n			data-down=\"login_interface/bt_join_press.bmp\"\r\n		>\r\n			Replay\r\n		</button>\r\n		<input type=\"file\" class=\"replay-upload\" accept=\".rrf\" style=\"display: none\" />\r\n		<button\r\n			id=\"btn_connect\"\r\n			class=\"btn connect\"\r\n			type=\"submit\"\r\n			data-background=\"login_interface/bt_start_normal.bmp\"\r\n			data-hover=\"login_interface/bt_start_over.bmp\"\r\n			data-down=\"login_interface/bt_start_press.bmp\"\r\n		></button>\r\n		<button\r\n			id=\"btn_connect\"\r\n			class=\"btn signup\"\r\n			type=\"button\"\r\n			data-background=\"login_interface/bt_join_normal.bmp\"\r\n			data-hover=\"login_interface/bt_join_over.bmp\"\r\n			data-down=\"login_interface/bt_join_press.bmp\"\r\n		>\r\n			Sign Up\r\n		</button>\r\n		<button id=\"btn_exit\" class=\"btn exit\" type=\"button\"></button>\r\n	</div>\r\n</div>\r\n";
+}));
+// src/UI/Components/WinLogin/WinLoginV2/WinLoginV2.css?raw
+var WinLoginV2_default$1;
+var init_WinLoginV2$1 = __esmMin((() => {
+	WinLoginV2_default$1 = ":host {\r\n	top: 60%;\r\n	left: calc(50% - 140px);\r\n	width: 301px;\r\n	height: 132px;\r\n}\r\n\r\n#WinLogin {\r\n	position: absolute;\r\n	width: 301px;\r\n	height: 132px;\r\n}\r\n#WinLogin .win_login {\r\n	width: 100%;\r\n	height: 100%;\r\n}\r\n#WinLogin .win_login input {\r\n	position: absolute;\r\n	left: 17px;\r\n	height: 18px;\r\n	width: 127px;\r\n	border: none;\r\n	background-color: transparent;\r\n	padding-left: 2px;\r\n	outline: none;\r\n	text-align: center;\r\n}\r\n#WinLogin .win_login input.user {\r\n	top: 39px;\r\n}\r\n#WinLogin .win_login input.pass {\r\n	top: 61px;\r\n}\r\n#WinLogin .win_login .save {\r\n	position: absolute;\r\n	top: 85px;\r\n	left: 57px;\r\n	display: block;\r\n	width: 38px;\r\n	height: 10px;\r\n	border: none;\r\n	background-color: transparent;\r\n	background-repeat: no-repeat;\r\n}\r\n#WinLogin .win_login .btn {\r\n	position: absolute;\r\n	border: 0;\r\n	background-color: transparent;\r\n}\r\n#WinLogin .win_login .btn.connect {\r\n	width: 84px;\r\n	height: 84px;\r\n	right: 25px;\r\n	bottom: 15px;\r\n}\r\n#WinLogin .win_login .btn.signup {\r\n	width: 84px;\r\n	height: 21px;\r\n	right: 120px;\r\n	bottom: 10px;\r\n}\r\n#WinLogin .btn.replay {\r\n	width: 84px;\r\n	height: 21px;\r\n	right: 210px;\r\n	bottom: 10px;\r\n}\r\n#WinLogin .win_login .btn.exit {\r\n	width: 24px;\r\n	height: 23px;\r\n	right: 7px;\r\n	bottom: 96px;\r\n}\r\n\r\n/* Override browser autofill styles */\r\n#WinLogin .win_login input:-webkit-autofill,\r\n#WinLogin .win_login input:-webkit-autofill:hover,\r\n#WinLogin .win_login input:-webkit-autofill:focus,\r\n#WinLogin .win_login input:-webkit-autofill:active,\r\n#WinLogin .win_login input:-internal-autofill-selected,\r\n#WinLogin .win_login input:-internal-autofill-previewed {\r\n	-webkit-background-clip: text;\r\n	transition: background-color 5000sease-in-out 0s;\r\n	box-shadow: inset 0 0 20px 20px #ffffff00;\r\n}\r\n";
+}));
+// src/UI/Components/WinLogin/WinLoginV2/WinLoginV2.js
+var WinLoginV2_default;
+var init_WinLoginV2 = __esmMin((() => {
+	init_WinLoginV2$2();
+	init_WinLoginV2$1();
+	init_WinLoginCommon();
+	WinLoginV2_default = createWinLogin({
+		name: "WinLoginV2",
+		htmlText: WinLoginV2_default$2,
+		cssText: WinLoginV2_default$1
+	});
+}));
+// src/UI/Components/WinLogin/WinLoginV3/WinLoginV3.js
+var WinLoginV3_default;
+var init_WinLoginV3 = __esmMin((() => {
+	init_WinLoginV2$2();
+	init_WinLoginV2$1();
+	init_WinLoginCommon();
+	WinLoginV3_default = createWinLogin({
+		name: "WinLoginV3",
+		htmlText: WinLoginV2_default$2,
+		cssText: WinLoginV2_default$1
+	});
+}));
+// src/UI/Components/WinLogin/WinLogin.js
+var publicName$3, versionInfo$3, Controller$2;
+var init_WinLogin = __esmMin((() => {
+	init_WinLogin$1();
+	init_WinLoginV2();
+	init_WinLoginV3();
+	init_UIVersionManager();
+	publicName$3 = "WinLogin";
+	versionInfo$3 = {
+		default: WinLogin_default,
+		common: {
+			20221207: WinLoginV3_default,
+			20181114: WinLoginV2_default
+		},
+		re: {},
+		prere: {}
+	};
+	Controller$2 = UIVersionManager.getUIController(publicName$3, versionInfo$3);
+}));
+// src/Plugins/Quickstart/Quickstart.js
+var Quickstart_exports = /* @__PURE__ */ __exportAll({ default: () => Init });
+/** JOB_LORD_KNIGHT -> Lord Knight */
+function jobName(jobClass) {
+	return String(jobClass || "").replace(/^JOB_/, "").toLowerCase().split("_").filter(Boolean).map((word) => word[0].toUpperCase() + word.slice(1)).join(" ");
+}
+async function graphql(api, query, variables) {
+	const body = await (await fetch(api, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			query,
+			variables
+		})
+	})).json();
+	if (body.errors && body.errors.length) {
+		const err = new Error(body.errors[0].message);
+		err.code = body.errors[0].extensions && body.errors[0].extensions.code;
+		throw err;
+	}
+	return body.data;
+}
+/** Resolves once check() is true (polled), or rejects after `ms`. */
+function waitFor(check, ms) {
+	return new Promise((resolve, reject) => {
+		const started = Date.now();
+		(function poll() {
+			if (check()) return resolve();
+			if (Date.now() - started > ms) return reject(/* @__PURE__ */ new Error("timeout"));
+			setTimeout(poll, 200);
+		})();
+	});
+}
+function el(tag, className, text) {
+	const node = document.createElement(tag);
+	if (className) node.className = className;
+	if (text !== void 0) node.textContent = text;
+	return node;
+}
+/** Drops ?invite= from the address bar, so a reload doesn't reuse a spent invite. */
+function forgetInvite() {
+	const url = new URL(window.location.href);
+	url.searchParams.delete("invite");
+	window.history.replaceState(null, "", url.toString());
+}
+function showInvite(api, code) {
+	const style = el("style", null, STYLE);
+	const overlay = el("div", "qs-invite");
+	const box = el("div", "qs-invite__box");
+	overlay.appendChild(box);
+	document.head.appendChild(style);
+	document.body.appendChild(overlay);
+	const close = () => {
+		overlay.remove();
+		style.remove();
+	};
+	const showError = (message) => {
+		box.replaceChildren(el("div", "qs-invite__error", message));
+		const play = el("button", "qs-invite__link", "Play without the invite");
+		play.onclick = () => {
+			forgetInvite();
+			close();
+		};
+		box.appendChild(play);
+	};
+	box.appendChild(el("div", "qs-invite__line", "Checking your invite…"));
+	graphql(api, "query ($code: String!) { invite(code: $code) { status map inviter { name class baseLevel jobLevel } } }", { code }).then(({ invite }) => {
+		if (!invite || invite.status !== "OPEN" || !invite.inviter) {
+			showError("This invite has expired or was already used.");
+			return;
+		}
+		const { name, baseLevel, jobLevel } = invite.inviter;
+		const where = el("div", "qs-invite__where", invite.map);
+		const play = el("button", "qs-invite__button", "Play Now");
+		box.replaceChildren(el("div", "qs-invite__who", `${name} — ${jobName(invite.inviter.class)} ${baseLevel}/${jobLevel}`), el("div", "qs-invite__line", "has invited you to"), where, play);
+		const mapFile = `${invite.map}.gat`;
+		waitFor(() => DB.getMapName(mapFile, "") !== "", 6e4).then(() => {
+			where.textContent = `${DB.getMapName(mapFile, "")} (${invite.map})`;
+		}).catch(() => {});
+		play.onclick = () => {
+			play.disabled = true;
+			play.textContent = "Joining…";
+			graphql(api, "mutation ($code: String!) { acceptInvite(code: $code) { username token } }", { code }).then(({ acceptInvite }) => waitFor(() => Controller$2.__active && typeof Controller$2.onConnectionRequest === "function", 6e4).then(() => {
+				forgetInvite();
+				close();
+				Controller$2.onConnectionRequest(acceptInvite.username, acceptInvite.token);
+			})).catch((err) => {
+				showError(err.code === "GUEST_BUSY" ? "The guest character is playing right now; try again in a few minutes." : err.code === "INVITE_NOT_OPEN" ? "This invite has expired or was already used." : "Couldn’t join right now; reload the page and try again.");
+			});
+		};
+	}).catch(() => showError("Couldn’t check this invite; try again later."));
+}
+function Init(params) {
+	const code = new URLSearchParams(window.location.search).get("invite");
+	if (code && INVITE_CODE.test(code)) showInvite(params && params.api || DEFAULT_API, code);
+	return true;
+}
+var INVITE_CODE, DEFAULT_API, STYLE;
+var init_Quickstart = __esmMin((() => {
+	init_DBManager();
+	init_WinLogin();
+	INVITE_CODE = /^[a-z0-9]{16}$/;
+	DEFAULT_API = "https://api.titanro.net/graphql";
+	STYLE = `
+.qs-invite { position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center;
+	background: rgba(0, 0, 0, 0.55); font-family: Arial, Helvetica, sans-serif; }
+.qs-invite__box { width: min(360px, calc(100vw - 32px)); padding: 24px; border-radius: 8px; background: #f6f3ea;
+	color: #2b2b2b; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35); text-align: center; }
+.qs-invite__who { font-size: 18px; font-weight: bold; }
+.qs-invite__line { margin: 6px 0; font-size: 14px; color: #555; }
+.qs-invite__where { font-size: 16px; font-weight: bold; margin-bottom: 18px; }
+.qs-invite__button { min-width: 140px; padding: 10px 18px; border: 0; border-radius: 6px; background: #3a6ea5;
+	color: #fff; font-size: 15px; font-weight: bold; cursor: pointer; }
+.qs-invite__button:disabled { background: #8aa4bf; cursor: default; }
+.qs-invite__link { display: block; margin: 12px auto 0; border: 0; background: none; color: #3a6ea5;
+	font-size: 13px; text-decoration: underline; cursor: pointer; }
+.qs-invite__error { color: #a33; font-size: 14px; margin: 12px 0 0; }
+`;
+}));
 // src/Plugins/PluginManager.js
 var _bundled, Plugins, _initialized;
 var init_PluginManager = __esmMin((() => {
@@ -334941,7 +337649,10 @@ var init_PluginManager = __esmMin((() => {
 	init_preload_helper();
 	_bundled = {};
 	try {
-		_bundled = /* #__PURE__ */ Object.assign({ "./DefaultSettings/DefaultSettings.js": () => __vitePreload(() => Promise.resolve().then(() => (init_DefaultSettings(), DefaultSettings_exports)), void 0, import.meta.url) });
+		_bundled = /* #__PURE__ */ Object.assign({
+			"./DefaultSettings/DefaultSettings.js": () => __vitePreload(() => Promise.resolve().then(() => (init_DefaultSettings(), DefaultSettings_exports)), void 0, import.meta.url),
+			"./Quickstart/Quickstart.js": () => __vitePreload(() => Promise.resolve().then(() => (init_Quickstart(), Quickstart_exports)), void 0, import.meta.url)
+		});
 	} catch (_e) {
 		_bundled = {};
 	}
@@ -335818,7 +338529,7 @@ var init_PlayerViewEquipV2 = __esmMin((() => {
 	});
 }));
 // src/UI/Components/PlayerViewEquip/PlayerViewEquip.js
-var publicName$3, versionInfo$3, PlayerViewEquipController, _selectUIVersion;
+var publicName$2, versionInfo$2, PlayerViewEquipController, _selectUIVersion;
 var init_PlayerViewEquip = __esmMin((() => {
 	init_PlayerViewEquipV0();
 	init_PlayerViewEquipV1();
@@ -335826,8 +338537,8 @@ var init_PlayerViewEquip = __esmMin((() => {
 	init_UIVersionManager();
 	init_DBManager();
 	init_KeyEventHandler();
-	publicName$3 = "PlayerViewEquip";
-	versionInfo$3 = {
+	publicName$2 = "PlayerViewEquip";
+	versionInfo$2 = {
 		default: PlayerViewEquipV0_default,
 		common: {
 			20150225: PlayerViewEquipV2_default,
@@ -335836,7 +338547,7 @@ var init_PlayerViewEquip = __esmMin((() => {
 		re: {},
 		prere: {}
 	};
-	PlayerViewEquipController = UIVersionManager.getUIController(publicName$3, versionInfo$3);
+	PlayerViewEquipController = UIVersionManager.getUIController(publicName$2, versionInfo$2);
 	_selectUIVersion = PlayerViewEquipController.selectUIVersion;
 	PlayerViewEquipController.selectUIVersion = function() {
 		_selectUIVersion();
@@ -350641,15 +353352,15 @@ var init_CharSelectV4 = __esmMin((() => {
 	});
 }));
 // src/UI/Components/CharSelect/CharSelect.js
-var publicName$2, versionInfo$2, Controller$2;
+var publicName$1, versionInfo$1, Controller$1;
 var init_CharSelect = __esmMin((() => {
 	init_CharSelect$1();
 	init_CharSelectV2();
 	init_CharSelectV3();
 	init_CharSelectV4();
 	init_UIVersionManager();
-	publicName$2 = "CharSelect";
-	versionInfo$2 = {
+	publicName$1 = "CharSelect";
+	versionInfo$1 = {
 		default: CharSelect_default,
 		common: {
 			20180124: CharSelectV4_default,
@@ -350661,7 +353372,7 @@ var init_CharSelect = __esmMin((() => {
 		re: {},
 		prere: {}
 	};
-	Controller$2 = UIVersionManager.getUIController(publicName$2, versionInfo$2, { phase: "char" });
+	Controller$1 = UIVersionManager.getUIController(publicName$1, versionInfo$1, { phase: "char" });
 }));
 // src/UI/Components/CharCreate/CharCreate/CharCreate.html?raw
 var CharCreate_default$2;
@@ -351587,15 +354298,15 @@ var init_CharCreatev4 = __esmMin((() => {
 	});
 }));
 // src/UI/Components/CharCreate/CharCreate.js
-var publicName$1, versionInfo$1, Controller$1;
+var publicName, versionInfo, Controller;
 var init_CharCreate = __esmMin((() => {
 	init_CharCreate$1();
 	init_CharCreatev2();
 	init_CharCreatev3();
 	init_CharCreatev4();
 	init_UIVersionManager();
-	publicName$1 = "CharCreate";
-	versionInfo$1 = {
+	publicName = "CharCreate";
+	versionInfo = {
 		default: CharCreate_default,
 		common: {
 			20180124: CharCreatev4_default,
@@ -351605,13 +354316,7 @@ var init_CharCreate = __esmMin((() => {
 		re: {},
 		prere: {}
 	};
-	Controller$1 = UIVersionManager.getUIController(publicName$1, versionInfo$1, { phase: "char" });
-}));
-// src/Renderer/Entity/Player.js
-var Player;
-var init_Player = __esmMin((() => {
-	init_Entity$1();
-	Player = class extends Entity {};
+	Controller = UIVersionManager.getUIController(publicName, versionInfo, { phase: "char" });
 }));
 // src/Engine/CharEngine.js
 var CharEngine_exports = /* @__PURE__ */ __exportAll({ default: () => CharEngine });
@@ -351628,7 +354333,7 @@ function onExitRequest$1() {
 */
 function onCharacterListChunk(pkt) {
 	pkt.charInfo.forEach((charInfo) => {
-		Controller$2.addCharacter(charInfo);
+		Controller$1.addCharacter(charInfo);
 	});
 }
 /**
@@ -351655,14 +354360,14 @@ function onConnectionAccepted$1(pkt) {
 		MapName.resetState();
 	}
 	UIManager.getComponent("WinLoading").remove();
-	Controller$2.onExitRequest = onExitRequest$1;
-	Controller$2.onConnectRequest = onConnectRequest;
-	Controller$2.onCreateRequest = onCreateRequest;
-	Controller$2.onDeleteRequest = onDeleteRequest;
-	Controller$2.onDeleteReqDelay = onDeleteReqDelay;
-	Controller$2.onCancelDeleteRequest = onCancelDeleteRequest;
-	Controller$2.append();
-	Controller$2.setInfo(pkt);
+	Controller$1.onExitRequest = onExitRequest$1;
+	Controller$1.onConnectRequest = onConnectRequest;
+	Controller$1.onCreateRequest = onCreateRequest;
+	Controller$1.onDeleteRequest = onDeleteRequest;
+	Controller$1.onDeleteReqDelay = onDeleteReqDelay;
+	Controller$1.onCancelDeleteRequest = onCancelDeleteRequest;
+	Controller$1.append();
+	Controller$1.setInfo(pkt);
 	/**
 	* In PACKETVERs < 20180124 that support pincode auth, we're supposed to
 	* show a button that will ask the server to perform it.
@@ -351738,7 +354443,7 @@ function onConnectionRefused$1(pkt) {
 function onMapUnavailable(pkt) {
 	UIManager.showMessageBox(DB.getMessage(1811), "ok", () => {
 		UIManager.getComponent("WinLoading").remove();
-		Controller$2.append();
+		Controller$1.append();
 	}, true);
 }
 /**
@@ -351746,7 +354451,7 @@ function onMapUnavailable(pkt) {
 */
 function onRequestCharDel(pkt) {
 	if (!pkt) return;
-	Controller$2.reqdeleteAnswer(pkt);
+	Controller$1.reqdeleteAnswer(pkt);
 }
 /**
 * Char Delete Request Cancel
@@ -351862,7 +354567,7 @@ function onDeleteAnswer(pkt) {
 	let result;
 	if (PacketVerManager_default.value <= 20100803) result = typeof pkt.ErrorCode === "undefined" ? -1 : pkt.ErrorCode;
 	else result = typeof pkt.Result === "undefined" ? -1 : pkt.Result;
-	Controller$2.deleteAnswer(result);
+	Controller$1.deleteAnswer(result);
 }
 /**
 * Asking from CharSelect to create a character, moving to CharCreate window
@@ -351871,14 +354576,14 @@ function onDeleteAnswer(pkt) {
 */
 function onCreateRequest(index) {
 	_creationSlot = index;
-	Controller$2.remove();
-	Controller$1.setAccountSex(SessionStorage_default.Sex);
-	Controller$1.onCharCreationRequest = onCharCreationRequest;
-	Controller$1.onExitRequest = function() {
-		Controller$1.remove();
-		Controller$2.append();
+	Controller$1.remove();
+	Controller.setAccountSex(SessionStorage_default.Sex);
+	Controller.onCharCreationRequest = onCharCreationRequest;
+	Controller.onExitRequest = function() {
+		Controller.remove();
+		Controller$1.append();
 	};
-	Controller$1.append();
+	Controller.append();
 }
 /**
 * User want to create a character, send data to server
@@ -351922,9 +354627,9 @@ function onCharCreationRequest(name, Str, Agi, Vit, Int, Dex, Luk, hair, color, 
 * @param {object} pkt - PACKET.HC.ACCEPT_MAKECHAR
 */
 function onCreationSuccess(pkt) {
-	Controller$1.remove();
-	Controller$2.addCharacter(pkt.charinfo);
-	Controller$2.append();
+	Controller.remove();
+	Controller$1.addCharacter(pkt.charinfo);
+	Controller$1.append();
 }
 /**
 * Fail to create a character
@@ -352018,11 +354723,11 @@ function onPincodeCheckSuccess(pkt) {
 					UIManager.showMessageBox(DB.getMessage(1891), "ok");
 				}
 				PincodeWindow_default.resetUI();
-				Controller$2.setUIEnabled(true);
+				Controller$1.setUIEnabled(true);
 			}
 			break;
 		case 1:
-			Controller$2.setUIEnabled(false);
+			Controller$1.setUIEnabled(false);
 			PincodeWindow_default.selectInput(0);
 			if (_pincodeAttempts < 3) {
 				PincodeWindow_default.clearPin();
@@ -352032,7 +354737,7 @@ function onPincodeCheckSuccess(pkt) {
 			break;
 		case 2:
 		case 4:
-			Controller$2.setUIEnabled(false);
+			Controller$1.setUIEnabled(false);
 			UIManager.showMessageBox(DB.getMessage(1900), "ok");
 			PincodeWindow_default.selectInput(0);
 			PincodeWindow_default.setUserSeed(pkt.Seed);
@@ -352040,7 +354745,7 @@ function onPincodeCheckSuccess(pkt) {
 			PincodeWindow_default.append();
 			break;
 		case 3:
-			Controller$2.setUIEnabled(false);
+			Controller$1.setUIEnabled(false);
 			if (_pincodeAttempts < 3) {
 				UIManager.showMessageBox(DB.getMessage(2345), "ok");
 				PincodeWindow_default.setUserSeed(pkt.Seed);
@@ -352077,7 +354782,7 @@ function onPincodeCheckSuccess(pkt) {
 */
 function onConnectRequest(entity) {
 	SoundManager.play("¹öÆ°¼Ò¸®.wav");
-	Controller$2.remove();
+	Controller$1.remove();
 	UIManager.getComponent("WinLoading").append();
 	SessionStorage_default.Entity = new Player(entity);
 	const pkt = new PACKET.CH.SELECT_CHAR();
@@ -355083,2589 +357788,6 @@ var init_Rijndael = __esmMin((() => {
 		}
 	};
 }));
-// src/UI/Components/WinLogin/WinLogin/WinLogin.html?raw
-var WinLogin_default$2;
-var init_WinLogin$3 = __esmMin((() => {
-	WinLogin_default$2 = "<div id=\"WinLogin\">\r\n	<ui-image src=\"login_interface/win_login.bmp\"></ui-image>\r\n	<!-- User Auth -->\r\n	<input class=\"user\" type=\"text\" value=\"\" />\r\n	<input class=\"pass\" type=\"password\" value=\"\" />\r\n	<button\r\n		class=\"save\"\r\n		type=\"button\"\r\n		data-background=\"login_interface/chk_saveoff.bmp\"\r\n		data-preload=\"login_interface/chk_saveon.bmp\"\r\n	></button>\r\n\r\n	<!-- Buttons -->\r\n	<button\r\n		class=\"btn signup\"\r\n		type=\"button\"\r\n		data-background=\"login_interface/btn_request.bmp\"\r\n		data-hover=\"login_interface/btn_request_a.bmp\"\r\n		data-down=\"login_interface/btn_request_b.bmp\"\r\n	></button>\r\n	<button\r\n		class=\"btn connect\"\r\n		type=\"submit\"\r\n		data-background=\"login_interface/btn_connect.bmp\"\r\n		data-hover=\"login_interface/btn_connect_a.bmp\"\r\n		data-down=\"login_interface/btn_connect_b.bmp\"\r\n	></button>\r\n	<button\r\n		class=\"btn exit\"\r\n		type=\"button\"\r\n		data-background=\"login_interface/btn_exit.bmp\"\r\n		data-hover=\"login_interface/btn_exit_a.bmp\"\r\n		data-down=\"login_interface/btn_exit_b.bmp\"\r\n	></button>\r\n</div>\r\n";
-}));
-// src/UI/Components/WinLogin/WinLogin/WinLogin.css?raw
-var WinLogin_default$1;
-var init_WinLogin$2 = __esmMin((() => {
-	WinLogin_default$1 = ":host {\r\n	width: 280px;\r\n	height: 120px;\r\n	top: 60%;\r\n	left: calc(50% - 140px);\r\n}\r\n\r\n#WinLogin {\r\n	position: absolute;\r\n	width: 280px;\r\n	height: 120px;\r\n}\r\n#WinLogin input {\r\n	position: absolute;\r\n	left: 91px;\r\n	height: 18px;\r\n	width: 127px;\r\n	border: none;\r\n	background-color: transparent;\r\n	padding-left: 2px;\r\n	outline: none;\r\n}\r\n#WinLogin input.user {\r\n	top: 29px;\r\n}\r\n#WinLogin input.pass {\r\n	top: 61px;\r\n}\r\n#WinLogin .save {\r\n	position: absolute;\r\n	top: 32px;\r\n	right: 10px;\r\n	display: block;\r\n	width: 38px;\r\n	height: 10px;\r\n	border: none;\r\n	background-color: transparent;\r\n	background-repeat: no-repeat;\r\n}\r\n#WinLogin .btn {\r\n	position: absolute;\r\n	border: 0;\r\n	width: 42px;\r\n	height: 20px;\r\n	bottom: 4px;\r\n	background-color: transparent;\r\n}\r\n#WinLogin .btn.connect {\r\n	right: 50px;\r\n}\r\n#WinLogin .btn.signup {\r\n	left: 5px;\r\n}\r\n#WinLogin .btn.exit {\r\n	right: 5px;\r\n}\r\n\r\n/* Override browser autofill styles */\r\n#WinLogin input:-webkit-autofill,\r\n#WinLogin input:-webkit-autofill:hover,\r\n#WinLogin input:-webkit-autofill:focus,\r\n#WinLogin input:-webkit-autofill:active,\r\n#WinLogin input:-internal-autofill-selected,\r\n#WinLogin input:-internal-autofill-previewed {\r\n	-webkit-background-clip: text;\r\n	transition: background-color 5000sease-in-out 0s;\r\n	box-shadow: inset 0 0 20px 20px #ffffff00;\r\n}\r\n";
-}));
-// src/Engine/Replay/ReplayTypes.js
-/**
-* Informational replay logging, only emitted in development builds.
-* Warnings and errors are reported unconditionally.
-*
-* @param {...*} args
-*/
-function replayLog(...args) {
-	if (Configs.get("development", false)) console.log(...args);
-}
-var ContainerType, ReplayEventSubOpCode, ContainerTypeNames, ItemChunkKind, ItemRecordTag, ReplayOpCodes, ReplayOpCodeName, ReplayState, WindowIdToComponent;
-var init_ReplayTypes = __esmMin((() => {
-	init_Configs();
-	ContainerType = {
-		None: 0,
-		PacketStream: 1,
-		ReplayData: 2,
-		Session: 3,
-		Status: 4,
-		Quests: 6,
-		GroupAndFriends: 7,
-		Items: 8,
-		Companions: 9,
-		MemorialDungeon: 10,
-		Unused11: 11,
-		EntryQueue: 12,
-		Hotkeys: 13,
-		InitialPackets: 14,
-		InitialEntities: 15,
-		InitialFloorItems: 16,
-		SkillGroundUnits: 17,
-		EfstList: 18,
-		OpenWindows: 19,
-		WindowDragAll: 20,
-		EntitiesInfo: 21,
-		ActorNames: 22,
-		QuestFlag: 23,
-		Navigation: 24
-	};
-	ReplayEventSubOpCode = {
-		WINDOW_MOVE: 900,
-		ITEM_DESC: 901,
-		WINDOW_MSG: 902,
-		SET_TARGET: 903,
-		SET_MAP_INFO: 904,
-		MAP_TRANSITION: 905,
-		SET_BGM_AMBIENT: 906,
-		SET_SESSION_TEXT: 907,
-		NAVIGATION_MSG: 908,
-		MAKE_WINDOW: 909,
-		NAVI_PATH: 910,
-		NAVI_WAYPOINT: 911,
-		NAVI_TARGET: 912,
-		NAVIGATION_PATH: 910,
-		NAVIGATION_ARROW: 911,
-		NAVIGATION_ACTIVE: 912,
-		WINDOW_ACTION: 913,
-		CLOSE_WINDOW: 914
-	};
-	ContainerTypeNames = {};
-	for (const [name, code] of Object.entries(ContainerType)) ContainerTypeNames[code] = name;
-	ItemChunkKind = {
-		INVENTORY: 4510,
-		CART: 4516,
-		CART_MIRROR: 4518,
-		EQUIPPED: 4601,
-		EQUIPPED_COSTUME: 4603,
-		STORAGE: 4701,
-		GUILD_STORAGE: 4702
-	};
-	ItemRecordTag = {
-		START_CHAIN: 281,
-		END_CHAIN: 282,
-		POS: 285,
-		WEAR_STATE: 286,
-		QTY: 287,
-		CARDS: 290,
-		NAMEID: 291,
-		REFINE: 295,
-		SPRITE: 298,
-		GRADE: 299,
-		OPTIONS_COUNT: 300,
-		OPTIONS: 301
-	};
-	ReplayOpCodes = {
-		ZC_ROOM_NEWENTRY: 201,
-		ZC_STORE_ENTRY: 202,
-		ZC_PROGRESS: 203,
-		ZC_BUYING_STORE_ENTRY: 204,
-		ZC_SKILL_POST_ENTRY: 205,
-		ZC_SKILL_GROUND_UNIT: 206,
-		ZC_ITEM_ENTRY: 207,
-		ZC_NOTIFY_MOVEENTRY8: 208,
-		ZC_NOTIFY_STANDENTRY7: 210,
-		ZC_NOTIFY_NEWENTRY5: 212,
-		ZC_NOTIFY_ACTENTRY: 213,
-		ZC_NOTIFY_MOVEENTRY11: 214,
-		ZC_NOTIFY_STANDENTRY10: 215,
-		ZC_NOTIFY_MOVEENTRY10: 216,
-		ZC_NOTIFY_STANDENTRY11: 217,
-		ZC_NOTIFY_MOVEENTRY: 218,
-		ZC_NPC_CHAT: 401,
-		Begin_950: 950,
-		End_950: 951,
-		TailMagic: 960,
-		Region: 961,
-		Service: 962,
-		ServerType: 963,
-		Sex: 963,
-		Charactername: 964,
-		Mapname: 965,
-		Maptype: 966,
-		PosX: 967,
-		PosY: 968,
-		Direction: 969,
-		TotalTimeMs: 970,
-		Length: 970,
-		PacketCount: 971,
-		EndFileOffset: 972,
-		SaveUiOptions: 973,
-		Begin_1000: 1e3,
-		End_1000: 1001,
-		Aid: 1010,
-		Gid: 1011,
-		Job: 1014,
-		Exp: 1015,
-		Level: 1016,
-		JobPoint: 1017,
-		NextExp: 1018,
-		JobLevel: 1019,
-		SkillPoint: 1020,
-		Str: 1024,
-		Agi: 1025,
-		Vit: 1026,
-		Int: 1027,
-		Dex: 1028,
-		Luk: 1029,
-		PlusStr: 1030,
-		PlusAgi: 1031,
-		PlusVit: 1032,
-		PlusInt: 1033,
-		PlusDex: 1034,
-		PlusLuk: 1035,
-		ASPD: 1036,
-		AttackPower: 1037,
-		MDefPower: 1038,
-		PlusASPD: 1039,
-		ItemDefPower: 1040,
-		PlusDefPower: 1041,
-		RefiningPower: 1042,
-		MaxMattPower: 1043,
-		MinMattPower: 1044,
-		PlusMDefPower: 1045,
-		HitSuccessValue: 1046,
-		AvoidSuccessValue: 1047,
-		CriticalSuccessValue: 1048,
-		PlusAvoidSuccessValue: 1049,
-		EquipArrowIndex: 1050,
-		Money: 1051,
-		Speed: 1052,
-		Honor: 1053,
-		NextJobExp: 1054,
-		JobExp: 1055,
-		Virtue: 1056,
-		Head: 1060,
-		Weapon: 1061,
-		Shield: 1062,
-		BodyPalette: 1063,
-		HeadPalette: 1064,
-		Accessory: 1065,
-		Accessory2: 1066,
-		Accessory3: 1067,
-		EffectState: 1070,
-		RobePalette: 1071,
-		CartCurCount: 1086,
-		CartMaxCount: 1087,
-		CartCurWeight: 1088,
-		CartMaxWeight: 1089,
-		Begin_2000: 2e3,
-		End_2000: 2001,
-		BonusStr: 2010,
-		BonusAgi: 2011,
-		BonusVit: 2012,
-		BonusInt: 2013,
-		BonusDex: 2014,
-		BonusLuk: 2015,
-		CurWeight: 2017,
-		MaxWeight: 2018,
-		Hp: 2029,
-		MaxHp: 2030,
-		Sp: 2031,
-		MaxSp: 2032,
-		Begin_3500: 3500,
-		End_3500: 3501,
-		QuestInfo: 3510,
-		Begin_4000: 4e3,
-		End_4000: 4001,
-		GroupName: 4014,
-		GroupInfo: 4015,
-		FriendInfo: 4016,
-		Begin_4500: 4500,
-		End_4500: 4501,
-		InventoryItems: 4510,
-		CartItems: 4516,
-		CartMirrorItems: 4518,
-		EquippedItems: 4601,
-		EquippedShadowItems: 4603,
-		StorageItems: 4701,
-		GuildStorageItems: 4702,
-		Begin_5000: 5e3,
-		End_5000: 5001,
-		HomunGid: 5101,
-		HomunName: 5102,
-		HomunJob: 5103,
-		HomunLevel: 5104,
-		HomunFullness: 5105,
-		HomunRelation: 5106,
-		HomunHp: 5107,
-		HomunMaxHp: 5108,
-		HomunSp: 5109,
-		HomunMaxSp: 5110,
-		HomunAtk: 5111,
-		HomunMatk: 5112,
-		HomunHit: 5113,
-		HomunCritical: 5114,
-		HomunDef: 5115,
-		HomunMdef: 5116,
-		HomunFlee: 5117,
-		HomunAspd: 5118,
-		HomunExp: 5119,
-		HomunNextExp: 5120,
-		HomunSkillPoint: 5121,
-		HomunOldFullness: 5122,
-		HomunOldRelation: 5123,
-		HomunIsModified: 5124,
-		HomunIsModifiedName: 5125,
-		HomunState: 5126,
-		HomunAtkRange: 5127,
-		HomunClass: 5128,
-		HomunEvolution: 5129,
-		HomunEvolutionCost: 5130,
-		HomunBaseLevel: 5131,
-		HomunMaxLevel: 5132,
-		HomunAutoFeed: 5133,
-		HomunFoodId: 5134,
-		MercenaryGid: 5201,
-		MercenaryName: 5202,
-		MercenaryJob: 5203,
-		MercenaryLevel: 5204,
-		MercenaryHp: 5205,
-		MercenaryMaxHp: 5206,
-		MercenarySp: 5207,
-		MercenaryMaxSp: 5208,
-		MercenaryAtk: 5209,
-		MercenaryMatk: 5210,
-		MercenaryHit: 5211,
-		MercenaryCritical: 5212,
-		MercenaryDef: 5213,
-		MercenaryMdef: 5214,
-		MercenaryFlee: 5215,
-		MercenaryAspd: 5216,
-		MercenaryRemainTime: 5217,
-		MercenaryCalls: 5218,
-		MercenaryKillCount: 5219,
-		MercenaryState: 5220,
-		MercenaryAtkRange: 5221,
-		MercenaryClass: 5222,
-		MercenaryType: 5223,
-		MercenaryEndurance: 5224,
-		MercenarySkillPoint: 5225,
-		MercenaryContractTime: 5226,
-		MercenaryProperty: 5227,
-		MercenaryPropertyLevel: 5228,
-		MercenaryOldFullness: 5229,
-		Begin_5300: 5300,
-		PetGid: 5301,
-		PetIsNameModified: 5302,
-		PetName: 5303,
-		PetAccessory: 5304,
-		PetJob: 5305,
-		PetLevel: 5306,
-		PetFullness: 5307,
-		PetRelation: 5308,
-		PetEggIndex: 5309,
-		PetOldFullness: 5310,
-		ElementalGid: 5401,
-		ElementalName: 5402,
-		ElementalJob: 5403,
-		ElementalLevel: 5404,
-		ElementalRemainTime: 5405,
-		Begin_5500: 5500,
-		End_5500: 5501,
-		MemorialDungeonIsOpen: 5510,
-		MemorialDungeonWndX: 5511,
-		MemorialDungeonWndY: 5512,
-		MemorialDungeonFactor: 5513,
-		MemorialDungeonEnterTime: 5514,
-		MemorialDungeonName: 5515,
-		MemorialDungeonDestroyTime: 5516,
-		MemorialDungeonReEnterTime: 5517,
-		MemorialDungeonState: 5518,
-		Begin_6500: 6500,
-		End_6500: 6501,
-		EntryQueueSelected: 6511,
-		EntryQueueState: 6512,
-		EntryQueueInfo: 6513,
-		EntryQueueApply: 6514,
-		EntryQueueWnd: 6515,
-		EntryQueueStandByWnd: 6516,
-		EntryQueueParam1: 6517,
-		EntryQueueParam2: 6518,
-		Begin_7000: 7e3,
-		End_7000: 7001,
-		HotkeyBar1: 7100,
-		HotkeyBar2: 7101,
-		Begin_7500: 7500,
-		End_7500: 7501,
-		SkillNameEntry: 7502,
-		SkillItem: 7504,
-		SkillTreeItem: 7505,
-		Begin_8000: 8e3,
-		End_8000: 8001,
-		NaviAutoSearch: 8002,
-		NaviFindDistance: 8003,
-		NaviShowDistance: 8004,
-		NaviDrawNpcIcon: 8005,
-		NaviRoutePath: 8006,
-		NaviStartNode: 8007,
-		NaviEndNode: 8008,
-		NaviStartX: 8009,
-		NaviStartY: 8010,
-		NaviEndX: 8011,
-		NaviEndY: 8012,
-		NaviTargetGid: 8013,
-		NaviTargetType: 8014,
-		NaviStartMap: 8015,
-		NaviDestMap: 8016,
-		NaviRouteCost: 8017,
-		NaviScrollState: 8018,
-		NaviActiveTab: 8019,
-		NaviFilterState: 8020,
-		NaviWorldInfo: 8021,
-		NaviWaypointList: 8022,
-		NaviIsPathActive: 8023,
-		Begin_10000: 1e4,
-		End_10000: 10001,
-		Begin_13000: 13e3,
-		End_13000: 13001,
-		ActorNameList: 13002,
-		GuildNameList: 13003,
-		GuildEmblemId: 13004,
-		GuildEmblemData: 13005,
-		Begin_14000: 14e3,
-		End_14000: 14001,
-		IsOnQuest: 14011,
-		Begin_15000: 15e3,
-		End_15000: 15001,
-		Begin_17000: 17e3,
-		End_17000: 17001,
-		Begin_19000: 19e3,
-		End_19000: 19001,
-		EfstInfo: 19011,
-		Begin_20000: 2e4,
-		End_20000: 20001,
-		OpenWindow_Base: 20100,
-		Begin_25000: 25e3,
-		End_25000: 25001,
-		IsDragAll: 25010,
-		Begin_26000: 26e3,
-		End_26000: 26001
-	};
-	ReplayOpCodeName = {};
-	for (const [name, code] of Object.entries(ReplayOpCodes)) ReplayOpCodeName[code] = name;
-	ReplayState = {
-		IDLE: "IDLE",
-		LOADING_REPLAY: "LOADING_REPLAY",
-		APPLYING_SESSION: "APPLYING_SESSION",
-		LOADING_MAP: "LOADING_MAP",
-		PLAYING_INITIAL_DATA: "PLAYING_INITIAL_DATA",
-		INITIAL_DATA_COMPLETE: "INITIAL_DATA_COMPLETE",
-		PLAYING_PACKET_STREAM: "PLAYING_PACKET_STREAM",
-		REPLAY_FINISHED: "REPLAY_FINISHED"
-	};
-	WindowIdToComponent = {
-		0: "BasicInfo",
-		1: "ItemInfo",
-		2: "ItemSelection",
-		3: "Inventory",
-		4: "Equipment",
-		5: "WinStats",
-		6: "SkillList",
-		7: "ChatBox",
-		8: "ChatRoom",
-		9: "MiniMap",
-		10: "PartyFriends",
-		11: "Guild",
-		12: "Emoticons",
-		13: "ShortCut",
-		14: "GraphicsOption",
-		15: "Escape",
-		16: "Quest",
-		17: "NpcStore",
-		18: "PetInformations",
-		19: "HomunInformations",
-		20: "MercenaryInformations",
-		21: "CartItems",
-		22: "Storage",
-		23: "WorldMap",
-		24: "Navigation"
-	};
-}));
-// src/Engine/Replay/ReplayParser.js
-var HEADER_BYTES, DESCRIPTOR_BYTES, DESCRIPTOR_COUNT, ReplayParser;
-var init_ReplayParser = __esmMin((() => {
-	init_BinaryReader();
-	init_ItemType();
-	init_EquipmentLocation();
-	init_ReplayTypes();
-	HEADER_BYTES = 112;
-	DESCRIPTOR_BYTES = 10;
-	DESCRIPTOR_COUNT = 24;
-	ReplayParser = class {
-		constructor(fileBuffer) {
-			this.fp = new BinaryReader(fileBuffer);
-			this.header = {};
-			this.containers = [];
-			this.size = fileBuffer.byteLength;
-		}
-		parse() {
-			this.readHeader();
-			replayLog("[ReplayParser] Header parsed:", this.header);
-			if (this.header.version === 5) this.readContainersV5();
-			else console.warn(`[ReplayParser] Unsupported version: ${this.header.version}`);
-			return this.buildBuffers();
-		}
-		readHeader() {
-			if (this.size < HEADER_BYTES) throw new Error(`Replay file is truncated: ${this.size} bytes, expected at least ${HEADER_BYTES}`);
-			this.fp.seek(0, 0);
-			this.header.rawPrefix = this.fp.readBinaryString(100);
-			this.header.version = this.fp.readUByte();
-			this.header.sig = this.fp.readBinaryString(3);
-			this.header.recordedAt = {
-				year: this.fp.readShort(),
-				month: this.fp.readUByte(),
-				day: this.fp.readUByte()
-			};
-			this.header.dateUnused = this.fp.readUByte();
-			this.header.recordedAt.hour = this.fp.readUByte();
-			this.header.recordedAt.minute = this.fp.readUByte();
-			this.header.recordedAt.second = this.fp.readUByte();
-			this.header.date = this.header.recordedAt;
-			this.keys = this.deriveKeys(this.header.recordedAt);
-		}
-		deriveKeys(d) {
-			const view = /* @__PURE__ */ new DataView(/* @__PURE__ */ new ArrayBuffer(4));
-			view.setInt16(0, d.year, true);
-			view.setUint8(2, d.month);
-			view.setUint8(3, d.day);
-			const k1 = view.getInt32(0, true) >> 5;
-			view.setUint8(0, 0);
-			view.setUint8(1, d.hour);
-			view.setUint8(2, d.minute);
-			view.setUint8(3, d.second);
-			return {
-				k1,
-				k2: view.getInt32(0, true) >> 3
-			};
-		}
-		decryptChunk(data, size) {
-			const out = new Uint8Array(data.length);
-			out.set(data);
-			const view = new DataView(out.buffer, out.byteOffset, out.byteLength);
-			const wordCount = Math.floor(size / 4);
-			for (let cursor = 0; cursor < wordCount; cursor++) {
-				const old = view.getInt32(cursor * 4, true);
-				const xorVal = Math.imul(this.keys.k1 + cursor + 1, this.keys.k2);
-				view.setInt32(cursor * 4, old ^ xorVal, true);
-			}
-			return out;
-		}
-		readContainersV5() {
-			const tableOffset = HEADER_BYTES;
-			const tableEnd = 352;
-			if (this.size < tableEnd) throw new Error(`Replay descriptor table is truncated: ${this.size} bytes, expected at least ${tableEnd}`);
-			for (let i = 0; i < DESCRIPTOR_COUNT; i++) {
-				this.fp.seek(tableOffset + i * DESCRIPTOR_BYTES, 0);
-				const type = this.fp.readUShort();
-				const declaredLength = this.fp.readLong();
-				const offset = this.fp.readLong();
-				let realLength = declaredLength;
-				if (realLength === 0 && offset > 0) realLength = this.size - offset;
-				const container = {
-					type,
-					declaredLength,
-					offset,
-					realLength,
-					data: []
-				};
-				this.containers.push(container);
-				if (offset === 0 && declaredLength === 0) continue;
-				if (offset < 0 || offset >= this.size || realLength <= 0 || offset + realLength > this.size) {
-					console.warn(`[ReplayParser] Skipping out of bounds container ${ContainerTypeNames[type] || type} at ${offset} (${realLength} bytes)`);
-					continue;
-				}
-				this.fp.seek(offset, 0);
-				const body = new Uint8Array(this.fp.buffer, offset, realLength);
-				if (type === ContainerType.PacketStream) this.parsePacketStream(container, body);
-				else this.parseGenericContainer(container, body, declaredLength);
-			}
-		}
-		parsePacketStream(container, body) {
-			const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
-			let ptr = 0;
-			while (ptr + 10 <= body.byteLength) {
-				const id = view.getInt32(ptr, true);
-				const time = view.getInt32(ptr + 4, true);
-				const length = view.getUint16(ptr + 8, true);
-				const dataStart = ptr + 10;
-				const dataEnd = dataStart + length;
-				if (dataEnd > body.byteLength) break;
-				const encrypted = body.subarray(dataStart, dataEnd);
-				const decrypted = this.decryptChunk(encrypted, length);
-				const packetId = decrypted.length >= 2 ? decrypted[0] | decrypted[1] << 8 : 0;
-				container.data.push({
-					id,
-					time,
-					length,
-					data: decrypted,
-					packetId
-				});
-				ptr = dataEnd;
-			}
-		}
-		parseGenericContainer(container, body, declaredLength) {
-			if (declaredLength <= 0) return;
-			const decrypted = this.decryptChunk(body, declaredLength);
-			const view = new DataView(decrypted.buffer, decrypted.byteOffset, decrypted.byteLength);
-			let ptr = 0;
-			while (ptr + 6 <= declaredLength) {
-				const id = view.getInt16(ptr, true);
-				const length = view.getInt32(ptr + 2, true);
-				const dataStart = ptr + 6;
-				const dataEnd = dataStart + length;
-				if (length < 0 || dataEnd > decrypted.byteLength) break;
-				const data = decrypted.subarray(dataStart, dataEnd);
-				container.data.push({
-					id,
-					length,
-					data
-				});
-				ptr = dataEnd;
-			}
-		}
-		buildBuffers() {
-			const sessionBuffer = this.buildSessionBuffer();
-			const itemsBuffer = this.buildItemsBuffer();
-			const companionsBuffer = this.buildCompanionsBuffer();
-			const petBuffer = companionsBuffer.pet;
-			const homunBuffer = companionsBuffer.homunculus;
-			const mercenaryBuffer = companionsBuffer.mercenary;
-			const elementalBuffer = companionsBuffer.elemental;
-			const statusBuffer = this.buildStatusBuffer();
-			const efstListBuffer = this.buildEfstListBuffer();
-			const hotkeysBuffer = this.buildHotkeysBuffer();
-			const questsBuffer = this.buildQuestsBuffer();
-			const groupAndFriendsBuffer = this.buildGroupAndFriendsBuffer();
-			const memorialDungeonBuffer = this.buildMemorialDungeonBuffer();
-			const entryQueueBuffer = this.buildEntryQueueBuffer();
-			const navigationBuffer = this.buildNavigationBuffer();
-			const actorNamesBuffer = this.buildActorNamesBuffer();
-			const openWindowsBuffer = this.buildOpenWindowsBuffer();
-			const windowDragAllBuffer = this.buildWindowDragAllBuffer();
-			Object.assign(sessionBuffer, statusBuffer);
-			if (petBuffer) sessionBuffer.pet = petBuffer;
-			if (homunBuffer) sessionBuffer.homun = homunBuffer;
-			if (mercenaryBuffer) sessionBuffer.mercenary = mercenaryBuffer;
-			if (elementalBuffer) sessionBuffer.elemental = elementalBuffer;
-			if (questsBuffer.isOnQuest !== void 0) sessionBuffer.isOnQuest = questsBuffer.isOnQuest;
-			const initialBuffer = [];
-			const initialTypes = [
-				ContainerType.InitialPackets,
-				ContainerType.InitialEntities,
-				ContainerType.InitialFloorItems,
-				ContainerType.SkillGroundUnits
-			];
-			for (const container of this.containers) {
-				if (!initialTypes.includes(container.type)) continue;
-				if (container.data.length === 0) continue;
-				const typeName = ContainerTypeNames[container.type] || `Unknown(${container.type})`;
-				const chunks = container.data.filter((chunk) => chunk.data && chunk.data.byteLength > 0).map((chunk) => chunk.data);
-				if (chunks.length > 0) {
-					initialBuffer.push({
-						type: container.type,
-						typeName,
-						chunks
-					});
-					replayLog(`[Replay] Loaded ${typeName} (${container.type}): ${chunks.length} packets`);
-				}
-			}
-			const packetStreamContainer = this.containers.find((c) => c.type === ContainerType.PacketStream);
-			const packetStreamBuffer = packetStreamContainer ? packetStreamContainer.data : [];
-			replayLog(`[Replay] Packet stream loaded: ${packetStreamBuffer.length} chunks`);
-			let lastPacketTime = 0;
-			if (packetStreamBuffer.length > 0) lastPacketTime = packetStreamBuffer[packetStreamBuffer.length - 1].time || 0;
-			const durationMs = Math.max(sessionBuffer.durationMs || 0, lastPacketTime);
-			sessionBuffer.durationMs = durationMs;
-			return {
-				header: this.header,
-				sessionBuffer,
-				itemsBuffer,
-				companionsBuffer,
-				petBuffer,
-				homunBuffer,
-				mercenaryBuffer,
-				elementalBuffer,
-				statusBuffer,
-				efstListBuffer,
-				hotkeysBuffer,
-				questsBuffer,
-				groupAndFriendsBuffer,
-				memorialDungeonBuffer,
-				entryQueueBuffer,
-				navigationBuffer,
-				actorNamesBuffer,
-				openWindowsBuffer,
-				windowDragAllBuffer,
-				initialBuffer,
-				packetStreamBuffer,
-				durationMs
-			};
-		}
-		buildSessionBuffer() {
-			const buf = {};
-			const readU8 = (chunk) => new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength).getUint8(0);
-			const readU16 = (chunk) => new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength).getUint16(0, true);
-			const readU32 = (chunk) => new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength).getUint32(0, true);
-			const readStringById = (container, id) => {
-				const ch = container.data.find((c) => c.id === id);
-				if (!ch || ch.data.byteLength === 0) return null;
-				return this.readString(ch.data);
-			};
-			const readU32ById = (container, id) => {
-				const ch = container.data.find((c) => c.id === id);
-				if (!ch || ch.data.byteLength < 4) return null;
-				return readU32(ch);
-			};
-			const readU16ById = (container, id) => {
-				const ch = container.data.find((c) => c.id === id);
-				if (!ch || ch.data.byteLength < 2) return null;
-				return readU16(ch);
-			};
-			const readU8ById = (container, id) => {
-				const ch = container.data.find((c) => c.id === id);
-				if (!ch || ch.data.byteLength < 1) return null;
-				return readU8(ch);
-			};
-			const replayData = this.containers.find((c) => c.type === ContainerType.ReplayData);
-			if (replayData) {
-				const sexVal = readU32ById(replayData, 963) ?? readU8ById(replayData, 963);
-				if (sexVal !== null) buf.sex = sexVal === 0 || sexVal === 1 ? sexVal : 0;
-				let name = readStringById(replayData, 964);
-				if (!name && replayData.data.length > 4 && replayData.data[4].data?.byteLength > 0) name = this.readString(replayData.data[4].data);
-				if (name) buf.characterName = name;
-				let mapName = readStringById(replayData, 965);
-				if (!mapName && replayData.data.length > 5 && replayData.data[5].data?.byteLength > 0) mapName = this.readString(replayData.data[5].data);
-				if (mapName) {
-					if (!mapName.endsWith(".rsw")) mapName += ".rsw";
-					buf.mapName = mapName;
-				}
-				const gx = readU32ById(replayData, 967);
-				if (gx !== null) buf.startX = gx;
-				const gy = readU32ById(replayData, 968);
-				if (gy !== null) buf.startY = gy;
-				const dir = readU32ById(replayData, 969) ?? readU8ById(replayData, 969);
-				if (dir !== null) buf.startDir = dir;
-				const lengthMs = readU32ById(replayData, 970);
-				if (lengthMs !== null) buf.durationMs = lengthMs;
-				const tailMagic = readU32ById(replayData, ReplayOpCodes.TailMagic);
-				if (tailMagic !== null) buf.tailMagic = tailMagic;
-				const region = readU32ById(replayData, ReplayOpCodes.Region) ?? readU8ById(replayData, ReplayOpCodes.Region);
-				if (region !== null) buf.region = region;
-				const service = readU32ById(replayData, ReplayOpCodes.Service) ?? readU8ById(replayData, ReplayOpCodes.Service);
-				if (service !== null) buf.service = service;
-				const serverType = readU32ById(replayData, ReplayOpCodes.ServerType) ?? readU8ById(replayData, ReplayOpCodes.ServerType);
-				if (serverType !== null) buf.serverType = serverType;
-				const mapType = readU32ById(replayData, ReplayOpCodes.Maptype) ?? readU8ById(replayData, ReplayOpCodes.Maptype);
-				if (mapType !== null) buf.mapType = mapType;
-				const packetCount = readU32ById(replayData, ReplayOpCodes.PacketCount);
-				if (packetCount !== null) buf.packetCount = packetCount;
-				const endFileOffset = readU32ById(replayData, ReplayOpCodes.EndFileOffset);
-				if (endFileOffset !== null) buf.endFileOffset = endFileOffset;
-				const saveUiOptions = readU32ById(replayData, ReplayOpCodes.SaveUiOptions) ?? readU8ById(replayData, ReplayOpCodes.SaveUiOptions);
-				if (saveUiOptions !== null) buf.saveUiOptions = saveUiOptions;
-			}
-			const sessionContainer = this.containers.find((c) => c.type === ContainerType.Session);
-			if (sessionContainer) {
-				if (!buf.characterName) {
-					const charName = readStringById(sessionContainer, 964);
-					if (charName) buf.characterName = charName;
-				}
-				const aid = readU32ById(sessionContainer, 1010);
-				if (aid !== null) {
-					buf.AID = aid;
-					buf.GID = aid;
-				}
-				const gid = readU32ById(sessionContainer, 1011);
-				if (gid !== null) buf.GID = gid;
-				const job = readU32ById(sessionContainer, 1014);
-				if (job !== null) buf.job = job;
-				const exp = readU32ById(sessionContainer, 1015);
-				if (exp !== null) buf.exp = exp;
-				const level = readU32ById(sessionContainer, 1016);
-				if (level !== null) {
-					buf.level = level;
-					buf.clevel = level;
-				}
-				const jobPoint = readU32ById(sessionContainer, 1017);
-				if (jobPoint !== null) buf.jobPoint = jobPoint;
-				const nextExp = readU32ById(sessionContainer, 1018);
-				if (nextExp !== null) buf.exp_next = nextExp;
-				const jobLevel = readU32ById(sessionContainer, 1019);
-				if (jobLevel !== null) buf.joblevel = jobLevel;
-				const skillPoint = readU32ById(sessionContainer, 1020);
-				if (skillPoint !== null) buf.skillPoint = skillPoint;
-				const str = readU32ById(sessionContainer, 1024);
-				if (str !== null) buf.str = str;
-				const agi = readU32ById(sessionContainer, 1025);
-				if (agi !== null) buf.agi = agi;
-				const vit = readU32ById(sessionContainer, 1026);
-				if (vit !== null) buf.vit = vit;
-				const intVal = readU32ById(sessionContainer, 1027);
-				if (intVal !== null) buf.int = intVal;
-				const dex = readU32ById(sessionContainer, 1028);
-				if (dex !== null) buf.dex = dex;
-				const luk = readU32ById(sessionContainer, 1029);
-				if (luk !== null) buf.luk = luk;
-				const plusStr = readU32ById(sessionContainer, 1030);
-				if (plusStr !== null) {
-					buf.plusStr = plusStr;
-					buf.str_bonus = plusStr;
-				}
-				const plusAgi = readU32ById(sessionContainer, 1031);
-				if (plusAgi !== null) {
-					buf.plusAgi = plusAgi;
-					buf.agi_bonus = plusAgi;
-				}
-				const plusVit = readU32ById(sessionContainer, 1032);
-				if (plusVit !== null) {
-					buf.plusVit = plusVit;
-					buf.vit_bonus = plusVit;
-				}
-				const plusInt = readU32ById(sessionContainer, 1033);
-				if (plusInt !== null) {
-					buf.plusInt = plusInt;
-					buf.int_bonus = plusInt;
-				}
-				const plusDex = readU32ById(sessionContainer, 1034);
-				if (plusDex !== null) {
-					buf.plusDex = plusDex;
-					buf.dex_bonus = plusDex;
-				}
-				const plusLuk = readU32ById(sessionContainer, 1035);
-				if (plusLuk !== null) {
-					buf.plusLuk = plusLuk;
-					buf.luk_bonus = plusLuk;
-				}
-				const aspd = readU32ById(sessionContainer, 1036);
-				if (aspd !== null) {
-					buf.aspd = aspd;
-					buf.attack_speed = aspd;
-				}
-				const atk = readU32ById(sessionContainer, 1037);
-				if (atk !== null) buf.atk = atk;
-				const mdef = readU32ById(sessionContainer, 1038);
-				if (mdef !== null) buf.mdef = mdef;
-				const plusAspd = readU32ById(sessionContainer, 1039);
-				if (plusAspd !== null) buf.plusAspd = plusAspd;
-				const def = readU32ById(sessionContainer, 1040);
-				if (def !== null) buf.def = def;
-				const plusDef = readU32ById(sessionContainer, 1041);
-				if (plusDef !== null) buf.plusDef = plusDef;
-				const refiningPower = readU32ById(sessionContainer, 1042);
-				if (refiningPower !== null) buf.refiningPower = refiningPower;
-				const maxMatk = readU32ById(sessionContainer, 1043);
-				if (maxMatk !== null) buf.maxMatk = maxMatk;
-				const minMatk = readU32ById(sessionContainer, 1044);
-				if (minMatk !== null) buf.minMatk = minMatk;
-				const plusMdef = readU32ById(sessionContainer, 1045);
-				if (plusMdef !== null) buf.plusMdef = plusMdef;
-				const hit = readU32ById(sessionContainer, 1046);
-				if (hit !== null) buf.hit = hit;
-				const flee = readU32ById(sessionContainer, 1047);
-				if (flee !== null) buf.flee = flee;
-				const crit = readU32ById(sessionContainer, 1048);
-				if (crit !== null) buf.crit = crit;
-				const plusFlee = readU32ById(sessionContainer, 1049);
-				if (plusFlee !== null) buf.plusFlee = plusFlee;
-				const equipArrowIndex = readU16ById(sessionContainer, 1050);
-				if (equipArrowIndex !== null) buf.equipArrowIndex = equipArrowIndex;
-				const money = readU32ById(sessionContainer, 1051);
-				if (money !== null) buf.money = money;
-				const speed = readU32ById(sessionContainer, 1052);
-				if (speed !== null) buf.speed = speed;
-				const honor = readU32ById(sessionContainer, 1053);
-				if (honor !== null) buf.honor = honor;
-				const nextJobExp = readU32ById(sessionContainer, 1054);
-				if (nextJobExp !== null) buf.job_exp_next = nextJobExp;
-				const jobExp = readU32ById(sessionContainer, 1055);
-				if (jobExp !== null) buf.job_exp = jobExp;
-				const virtue = readU32ById(sessionContainer, 1056);
-				if (virtue !== null) buf.virtue = virtue;
-				const hairStyle = readU32ById(sessionContainer, 1060);
-				if (hairStyle !== null) buf.head = hairStyle;
-				const weapon = readU32ById(sessionContainer, 1061);
-				if (weapon !== null) buf.weapon = weapon;
-				const shield = readU32ById(sessionContainer, 1062);
-				if (shield !== null) buf.shield = shield;
-				const clothesColor = readU32ById(sessionContainer, 1063);
-				if (clothesColor !== null) buf.bodypalette = clothesColor;
-				const hairColor = readU32ById(sessionContainer, 1064);
-				if (hairColor !== null) buf.headpalette = hairColor;
-				const accessory = readU32ById(sessionContainer, 1065);
-				if (accessory !== null) buf.accessory = accessory;
-				const accessory2 = readU32ById(sessionContainer, 1066);
-				if (accessory2 !== null) buf.accessory2 = accessory2;
-				const accessory3 = readU32ById(sessionContainer, 1067);
-				if (accessory3 !== null) buf.accessory3 = accessory3;
-				const option = readU32ById(sessionContainer, 1070);
-				if (option !== null) {
-					buf.effectState = option;
-					buf.option = option;
-				}
-				const robe = readU32ById(sessionContainer, 1071);
-				if (robe !== null) buf.robe = robe;
-				const cartCurCount = readU16ById(sessionContainer, 1086);
-				if (cartCurCount !== null) buf.cartCurCount = cartCurCount;
-				const cartMaxCount = readU16ById(sessionContainer, 1087);
-				if (cartMaxCount !== null) buf.cartMaxCount = cartMaxCount;
-				const cartCurWeight = readU32ById(sessionContainer, 1088);
-				if (cartCurWeight !== null) buf.cartCurWeight = cartCurWeight;
-				const cartMaxWeight = readU32ById(sessionContainer, 1089);
-				if (cartMaxWeight !== null) buf.cartMaxWeight = cartMaxWeight;
-				buf.hasCart = (buf.cartMaxCount || 0) > 0 || (buf.cartMaxWeight || 0) > 0;
-			}
-			return buf;
-		}
-		buildStatusBuffer() {
-			const buf = {};
-			const statusContainer = this.containers.find((c) => c.type === ContainerType.Status);
-			if (!statusContainer) return buf;
-			const readU32 = (chunk) => new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength).getUint32(0, true);
-			const readU32ById = (container, id) => {
-				const ch = container.data.find((c) => c.id === id);
-				if (!ch || ch.data.byteLength < 4) return null;
-				return readU32(ch);
-			};
-			const bonusStr = readU32ById(statusContainer, 2010);
-			if (bonusStr !== null) buf.str_bonus = bonusStr;
-			const bonusAgi = readU32ById(statusContainer, 2011);
-			if (bonusAgi !== null) buf.agi_bonus = bonusAgi;
-			const bonusVit = readU32ById(statusContainer, 2012);
-			if (bonusVit !== null) buf.vit_bonus = bonusVit;
-			const bonusInt = readU32ById(statusContainer, 2013);
-			if (bonusInt !== null) buf.int_bonus = bonusInt;
-			const bonusDex = readU32ById(statusContainer, 2014);
-			if (bonusDex !== null) buf.dex_bonus = bonusDex;
-			const bonusLuk = readU32ById(statusContainer, 2015);
-			if (bonusLuk !== null) buf.luk_bonus = bonusLuk;
-			const curWeight = readU32ById(statusContainer, 2017);
-			if (curWeight !== null) buf.weight = curWeight;
-			const maxWeight = readU32ById(statusContainer, 2018);
-			if (maxWeight !== null) buf.max_weight = maxWeight;
-			const hp = readU32ById(statusContainer, 2029);
-			if (hp !== null) buf.hp = hp;
-			const maxHp = readU32ById(statusContainer, 2030);
-			if (maxHp !== null) buf.maxHp = maxHp;
-			const sp = readU32ById(statusContainer, 2031);
-			if (sp !== null) buf.sp = sp;
-			const maxSp = readU32ById(statusContainer, 2032);
-			if (maxSp !== null) buf.maxSp = maxSp;
-			return buf;
-		}
-		buildCompanionsBuffer() {
-			const compContainer = this.containers.find((c) => c.type === ContainerType.Companions);
-			if (!compContainer) return {
-				pet: null,
-				homunculus: null,
-				mercenary: null,
-				elemental: null
-			};
-			const readU32 = (chunk) => new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength).getUint32(0, true);
-			const readU8 = (chunk) => new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength).getUint8(0);
-			const readU32ById = (id) => {
-				const ch = compContainer.data.find((c) => c.id === id);
-				if (!ch || ch.data.byteLength < 4) return null;
-				return readU32(ch);
-			};
-			const readU8ById = (id) => {
-				const ch = compContainer.data.find((c) => c.id === id);
-				if (!ch || ch.data.byteLength < 1) return null;
-				return readU8(ch);
-			};
-			const readStringById = (id) => {
-				const ch = compContainer.data.find((c) => c.id === id);
-				if (!ch || ch.data.byteLength === 0) return "";
-				return this.readString(ch.data);
-			};
-			let pet = null;
-			const petAid = readU32ById(ReplayOpCodes.PetGid);
-			if (petAid) {
-				const name = readStringById(ReplayOpCodes.PetName);
-				const viewRaw = readU32ById(ReplayOpCodes.PetJob) ?? 0;
-				const level = readU32ById(ReplayOpCodes.PetLevel) ?? 1;
-				const hunger = readU32ById(ReplayOpCodes.PetFullness) ?? 0;
-				const intimacy = readU32ById(ReplayOpCodes.PetRelation) ?? 0;
-				const accessory = readU32ById(ReplayOpCodes.PetAccessory) ?? 0;
-				const isNameModified = readU32ById(ReplayOpCodes.PetIsNameModified) ?? readU8ById(ReplayOpCodes.PetIsNameModified) ?? 0;
-				const eggIndex = readU32ById(ReplayOpCodes.PetEggIndex) ?? 0;
-				const oldFullness = readU32ById(ReplayOpCodes.PetOldFullness) ?? 0;
-				pet = {
-					aid: petAid,
-					name,
-					szName: name,
-					view: viewRaw === 4294967295 ? -1 : viewRaw,
-					job: viewRaw === 4294967295 ? -1 : viewRaw,
-					level,
-					nLevel: level,
-					hunger,
-					nFullness: hunger,
-					intimacy,
-					nRelationship: intimacy,
-					accessory,
-					ITID: accessory,
-					bModified: isNameModified,
-					eggIndex,
-					oldFullness
-				};
-			}
-			let homunculus = null;
-			const homunGid = readU32ById(ReplayOpCodes.HomunGid);
-			if (homunGid) {
-				const szName = readStringById(ReplayOpCodes.HomunName) || "";
-				const level = readU32ById(ReplayOpCodes.HomunLevel) ?? 1;
-				const fullness = readU32ById(ReplayOpCodes.HomunFullness) ?? 0;
-				const relation = readU32ById(ReplayOpCodes.HomunRelation) ?? 0;
-				const hp = readU32ById(ReplayOpCodes.HomunHp) ?? 0;
-				const maxHp = readU32ById(ReplayOpCodes.HomunMaxHp) ?? 0;
-				const sp = readU32ById(ReplayOpCodes.HomunSp) ?? 0;
-				const maxSp = readU32ById(ReplayOpCodes.HomunMaxSp) ?? 0;
-				const exp = readU32ById(ReplayOpCodes.HomunExp) ?? 0;
-				const nextExp = readU32ById(ReplayOpCodes.HomunNextExp) ?? 0;
-				homunculus = {
-					gid: homunGid,
-					szName,
-					name: szName,
-					job: readU32ById(ReplayOpCodes.HomunJob) ?? 0,
-					nLevel: level,
-					level,
-					nFullness: fullness,
-					hunger: fullness,
-					nRelationship: relation,
-					intimacy: relation,
-					hp,
-					maxHP: maxHp,
-					sp,
-					maxSP: maxSp,
-					atk: readU32ById(ReplayOpCodes.HomunAtk) ?? 0,
-					Matk: readU32ById(ReplayOpCodes.HomunMatk) ?? 0,
-					hit: readU32ById(ReplayOpCodes.HomunHit) ?? 0,
-					critical: readU32ById(ReplayOpCodes.HomunCritical) ?? 0,
-					def: readU32ById(ReplayOpCodes.HomunDef) ?? 0,
-					Mdef: readU32ById(ReplayOpCodes.HomunMdef) ?? 0,
-					flee: readU32ById(ReplayOpCodes.HomunFlee) ?? 0,
-					aspd: readU32ById(ReplayOpCodes.HomunAspd) ?? 0,
-					exp,
-					maxEXP: nextExp,
-					skillPoint: readU32ById(ReplayOpCodes.HomunSkillPoint) ?? 0,
-					oldFullness: readU32ById(ReplayOpCodes.HomunOldFullness) ?? 0,
-					oldRelation: readU32ById(ReplayOpCodes.HomunOldRelation) ?? 0,
-					bModified: readU32ById(ReplayOpCodes.HomunIsModified) ?? 0,
-					state: readU32ById(ReplayOpCodes.HomunState) ?? 0,
-					atkRange: readU32ById(ReplayOpCodes.HomunAtkRange) ?? 0,
-					class_: readU32ById(ReplayOpCodes.HomunClass) ?? 0,
-					evolution: readU32ById(ReplayOpCodes.HomunEvolution) ?? 0,
-					evolutionCost: readU32ById(ReplayOpCodes.HomunEvolutionCost) ?? 0,
-					autoFeed: readU32ById(ReplayOpCodes.HomunAutoFeed) ?? 0,
-					foodId: readU32ById(ReplayOpCodes.HomunFoodId) ?? 0
-				};
-			}
-			let mercenary = null;
-			const mercGid = readU32ById(ReplayOpCodes.MercenaryGid);
-			if (mercGid) {
-				const name = readStringById(ReplayOpCodes.MercenaryName) || "";
-				const level = readU32ById(ReplayOpCodes.MercenaryLevel) ?? 1;
-				const hp = readU32ById(ReplayOpCodes.MercenaryHp) ?? 0;
-				const maxHp = readU32ById(ReplayOpCodes.MercenaryMaxHp) ?? 0;
-				const sp = readU32ById(ReplayOpCodes.MercenarySp) ?? 0;
-				const maxSp = readU32ById(ReplayOpCodes.MercenaryMaxSp) ?? 0;
-				mercenary = {
-					gid: mercGid,
-					name,
-					job: readU32ById(ReplayOpCodes.MercenaryJob) ?? 0,
-					level,
-					hp,
-					maxHP: maxHp,
-					sp,
-					maxSP: maxSp,
-					atk: readU32ById(ReplayOpCodes.MercenaryAtk) ?? 0,
-					Matk: readU32ById(ReplayOpCodes.MercenaryMatk) ?? 0,
-					hit: readU32ById(ReplayOpCodes.MercenaryHit) ?? 0,
-					critical: readU32ById(ReplayOpCodes.MercenaryCritical) ?? 0,
-					def: readU32ById(ReplayOpCodes.MercenaryDef) ?? 0,
-					Mdef: readU32ById(ReplayOpCodes.MercenaryMdef) ?? 0,
-					flee: readU32ById(ReplayOpCodes.MercenaryFlee) ?? 0,
-					aspd: readU32ById(ReplayOpCodes.MercenaryAspd) ?? 0,
-					ExpireDate: readU32ById(ReplayOpCodes.MercenaryRemainTime) ?? 0,
-					remainTime: readU32ById(ReplayOpCodes.MercenaryRemainTime) ?? 0,
-					calls: readU32ById(ReplayOpCodes.MercenaryCalls) ?? 0,
-					approval_monster_kill_counter: readU32ById(ReplayOpCodes.MercenaryKillCount) ?? 0,
-					killCount: readU32ById(ReplayOpCodes.MercenaryKillCount) ?? 0,
-					state: readU32ById(ReplayOpCodes.MercenaryState) ?? 0,
-					atkRange: readU32ById(ReplayOpCodes.MercenaryAtkRange) ?? 0,
-					class_: readU32ById(ReplayOpCodes.MercenaryClass) ?? 0,
-					type: readU32ById(ReplayOpCodes.MercenaryType) ?? 0,
-					faith: readU32ById(ReplayOpCodes.MercenaryEndurance) ?? 0,
-					endurance: readU32ById(ReplayOpCodes.MercenaryEndurance) ?? 0,
-					SKPoint: readU32ById(ReplayOpCodes.MercenarySkillPoint) ?? 0,
-					contractTime: readU32ById(ReplayOpCodes.MercenaryContractTime) ?? 0,
-					property: readU32ById(ReplayOpCodes.MercenaryProperty) ?? 0,
-					propertyLevel: readU32ById(ReplayOpCodes.MercenaryPropertyLevel) ?? 0,
-					oldFullness: readU32ById(ReplayOpCodes.MercenaryOldFullness) ?? 0
-				};
-			}
-			let elemental = null;
-			const elemGid = readU32ById(ReplayOpCodes.ElementalGid);
-			if (elemGid) elemental = {
-				gid: elemGid,
-				name: readStringById(ReplayOpCodes.ElementalName) || "",
-				job: readU32ById(ReplayOpCodes.ElementalJob) ?? 0,
-				level: readU32ById(ReplayOpCodes.ElementalLevel) ?? 1,
-				remainTime: readU32ById(ReplayOpCodes.ElementalRemainTime) ?? 0
-			};
-			return {
-				pet,
-				homunculus,
-				mercenary,
-				elemental
-			};
-		}
-		buildPetBuffer() {
-			return this.buildCompanionsBuffer().pet;
-		}
-		buildHotkeysBuffer() {
-			const hotkeysContainer = this.containers.find((c) => c.type === ContainerType.Hotkeys);
-			if (!hotkeysContainer) return [];
-			const list = [];
-			for (const chunk of hotkeysContainer.data) {
-				if (!chunk.data || chunk.data.byteLength < 7) continue;
-				const view = new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength);
-				const count = Math.floor(chunk.data.byteLength / 7);
-				for (let i = 0; i < count; i++) {
-					const offset = i * 7;
-					const isSkill = view.getUint8(offset) === 1;
-					const id = view.getUint32(offset + 1, true);
-					const countVal = view.getUint16(offset + 5, true);
-					list.push({
-						isSkill,
-						ID: id,
-						count: countVal
-					});
-				}
-			}
-			return list;
-		}
-		buildQuestsBuffer() {
-			const questsContainer = this.containers.find((c) => c.type === ContainerType.Quests);
-			const questFlagContainer = this.containers.find((c) => c.type === ContainerType.QuestFlag);
-			let isOnQuest = false;
-			if (questFlagContainer) {
-				const flagChunk = questFlagContainer.data.find((c) => c.id === ReplayOpCodes.IsOnQuest);
-				if (flagChunk && flagChunk.data.byteLength > 0) isOnQuest = flagChunk.data[0] !== 0;
-			}
-			const quests = [];
-			if (questsContainer) for (const chunk of questsContainer.data) {
-				if (!chunk.data || chunk.data.byteLength === 0) continue;
-				const view = new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength);
-				if (chunk.data.byteLength >= 4) {
-					const questId = view.getUint32(0, true);
-					const active = chunk.data.byteLength > 4 ? chunk.data[4] !== 0 : true;
-					quests.push({
-						questID: questId,
-						active,
-						data: chunk.data
-					});
-				}
-			}
-			return {
-				isOnQuest,
-				quests
-			};
-		}
-		buildGroupAndFriendsBuffer() {
-			const groupContainer = this.containers.find((c) => c.type === ContainerType.GroupAndFriends);
-			if (!groupContainer) return {
-				groupName: "",
-				groupInfo: [],
-				friendInfo: []
-			};
-			let groupName = "";
-			const nameChunk = groupContainer.data.find((c) => c.id === ReplayOpCodes.GroupName);
-			if (nameChunk && nameChunk.data?.byteLength > 0) groupName = this.readString(nameChunk.data);
-			const groupInfo = [];
-			const groupInfoChunk = groupContainer.data.find((c) => c.id === ReplayOpCodes.GroupInfo);
-			if (groupInfoChunk && groupInfoChunk.data?.byteLength >= 46) {
-				const data = groupInfoChunk.data;
-				const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-				const count = Math.floor(data.byteLength / 46);
-				for (let i = 0; i < count; i++) {
-					const offset = i * 46;
-					const aid = view.getUint32(offset, true);
-					const charName = this.readString(data.subarray(offset + 4, offset + 28));
-					const mapName = this.readString(data.subarray(offset + 28, offset + 44));
-					const role = view.getUint8(offset + 44);
-					const state = view.getUint8(offset + 45);
-					groupInfo.push({
-						AID: aid,
-						characterName: charName,
-						mapName,
-						role,
-						state
-					});
-				}
-			}
-			const friendInfo = [];
-			const friendInfoChunk = groupContainer.data.find((c) => c.id === ReplayOpCodes.FriendInfo);
-			if (friendInfoChunk && friendInfoChunk.data?.byteLength >= 32) {
-				const data = friendInfoChunk.data;
-				const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-				const count = Math.floor(data.byteLength / 32);
-				for (let i = 0; i < count; i++) {
-					const offset = i * 32;
-					const aid = view.getUint32(offset, true);
-					const gid = view.getUint32(offset + 4, true);
-					const name = this.readString(data.subarray(offset + 8, offset + 32));
-					friendInfo.push({
-						AID: aid,
-						GID: gid,
-						Name: name
-					});
-				}
-			}
-			return {
-				groupName,
-				groupInfo,
-				friendInfo
-			};
-		}
-		buildMemorialDungeonBuffer() {
-			const mdContainer = this.containers.find((c) => c.type === ContainerType.MemorialDungeon);
-			if (!mdContainer) return null;
-			const readU32ById = (id) => {
-				const ch = mdContainer.data.find((c) => c.id === id);
-				return ch && ch.data.byteLength >= 4 ? new DataView(ch.data.buffer, ch.data.byteOffset, ch.data.byteLength).getUint32(0, true) : null;
-			};
-			const readStringById = (id) => {
-				const ch = mdContainer.data.find((c) => c.id === id);
-				return ch && ch.data.byteLength > 0 ? this.readString(ch.data) : "";
-			};
-			return {
-				isOpen: (readU32ById(ReplayOpCodes.MemorialDungeonIsOpen) ?? 0) !== 0,
-				name: readStringById(ReplayOpCodes.MemorialDungeonName),
-				wndX: readU32ById(ReplayOpCodes.MemorialDungeonWndX) ?? 0,
-				wndY: readU32ById(ReplayOpCodes.MemorialDungeonWndY) ?? 0,
-				factor: readU32ById(ReplayOpCodes.MemorialDungeonFactor) ?? 0,
-				enterTime: readU32ById(ReplayOpCodes.MemorialDungeonEnterTime) ?? 0,
-				destroyTime: readU32ById(ReplayOpCodes.MemorialDungeonDestroyTime) ?? 0,
-				reEnterTime: readU32ById(ReplayOpCodes.MemorialDungeonReEnterTime) ?? 0,
-				state: readU32ById(ReplayOpCodes.MemorialDungeonState) ?? 0
-			};
-		}
-		buildEntryQueueBuffer() {
-			const eqContainer = this.containers.find((c) => c.type === ContainerType.EntryQueue);
-			if (!eqContainer) return null;
-			const readU32ById = (id) => {
-				const ch = eqContainer.data.find((c) => c.id === id);
-				return ch && ch.data.byteLength >= 4 ? new DataView(ch.data.buffer, ch.data.byteOffset, ch.data.byteLength).getUint32(0, true) : null;
-			};
-			return {
-				selected: readU32ById(ReplayOpCodes.EntryQueueSelected) ?? 0,
-				state: readU32ById(ReplayOpCodes.EntryQueueState) ?? 0,
-				info: readU32ById(ReplayOpCodes.EntryQueueInfo) ?? 0,
-				apply: readU32ById(ReplayOpCodes.EntryQueueApply) ?? 0,
-				wnd: readU32ById(ReplayOpCodes.EntryQueueWnd) ?? 0,
-				standByWnd: readU32ById(ReplayOpCodes.EntryQueueStandByWnd) ?? 0,
-				param1: readU32ById(ReplayOpCodes.EntryQueueParam1) ?? 0,
-				param2: readU32ById(ReplayOpCodes.EntryQueueParam2) ?? 0
-			};
-		}
-		buildNavigationBuffer() {
-			const navContainer = this.containers.find((c) => c.type === ContainerType.Navigation);
-			if (!navContainer) return null;
-			const readU32ById = (id) => {
-				const ch = navContainer.data.find((c) => c.id === id);
-				return ch && ch.data.byteLength >= 4 ? new DataView(ch.data.buffer, ch.data.byteOffset, ch.data.byteLength).getUint32(0, true) : null;
-			};
-			const readStringById = (id) => {
-				const ch = navContainer.data.find((c) => c.id === id);
-				return ch && ch.data.byteLength > 0 ? this.readString(ch.data) : "";
-			};
-			return {
-				autoSearch: (readU32ById(ReplayOpCodes.NaviAutoSearch) ?? 0) !== 0,
-				findDistance: readU32ById(ReplayOpCodes.NaviFindDistance) ?? 0,
-				showDistance: readU32ById(ReplayOpCodes.NaviShowDistance) ?? 0,
-				drawNpcIcon: (readU32ById(ReplayOpCodes.NaviDrawNpcIcon) ?? 0) !== 0,
-				startNode: readU32ById(ReplayOpCodes.NaviStartNode) ?? 0,
-				endNode: readU32ById(ReplayOpCodes.NaviEndNode) ?? 0,
-				startX: readU32ById(ReplayOpCodes.NaviStartX) ?? 0,
-				startY: readU32ById(ReplayOpCodes.NaviStartY) ?? 0,
-				endX: readU32ById(ReplayOpCodes.NaviEndX) ?? 0,
-				endY: readU32ById(ReplayOpCodes.NaviEndY) ?? 0,
-				x: readU32ById(ReplayOpCodes.NaviEndX) ?? 0,
-				y: readU32ById(ReplayOpCodes.NaviEndY) ?? 0,
-				targetGid: readU32ById(ReplayOpCodes.NaviTargetGid) ?? 0,
-				targetType: readU32ById(ReplayOpCodes.NaviTargetType) ?? 0,
-				startMap: readStringById(ReplayOpCodes.NaviStartMap),
-				destMap: readStringById(ReplayOpCodes.NaviDestMap),
-				routeCost: readU32ById(ReplayOpCodes.NaviRouteCost) ?? 0,
-				isPathActive: (readU32ById(ReplayOpCodes.NaviIsPathActive) ?? 0) !== 0
-			};
-		}
-		buildActorNamesBuffer() {
-			const namesContainer = this.containers.find((c) => c.type === ContainerType.ActorNames);
-			if (!namesContainer) return {
-				actorNames: [],
-				guildNames: []
-			};
-			const actorNames = [];
-			const actorChunk = namesContainer.data.find((c) => c.id === ReplayOpCodes.ActorNameList);
-			if (actorChunk && actorChunk.data?.byteLength >= 28) {
-				const data = actorChunk.data;
-				const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-				const count = Math.floor(data.byteLength / 28);
-				for (let i = 0; i < count; i++) {
-					const offset = i * 28;
-					const gid = view.getUint32(offset, true);
-					const name = this.readString(data.subarray(offset + 4, offset + 28));
-					actorNames.push({
-						gid,
-						name
-					});
-				}
-			}
-			const guildNames = [];
-			const guildChunk = namesContainer.data.find((c) => c.id === ReplayOpCodes.GuildNameList);
-			if (guildChunk && guildChunk.data?.byteLength >= 28) {
-				const data = guildChunk.data;
-				const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-				const count = Math.floor(data.byteLength / 28);
-				for (let i = 0; i < count; i++) {
-					const offset = i * 28;
-					const guildId = view.getUint32(offset, true);
-					const name = this.readString(data.subarray(offset + 4, offset + 28));
-					guildNames.push({
-						guildId,
-						name
-					});
-				}
-			}
-			return {
-				actorNames,
-				actors: actorNames,
-				guildNames
-			};
-		}
-		buildOpenWindowsBuffer() {
-			const winContainer = this.containers.find((c) => c.type === ContainerType.OpenWindows);
-			if (!winContainer) return [];
-			const openWindows = [];
-			for (const chunk of winContainer.data) if (chunk.id >= ReplayOpCodes.OpenWindow_Base && chunk.id < 20500) {
-				const windowId = chunk.id - ReplayOpCodes.OpenWindow_Base;
-				let x = null;
-				let y = null;
-				if (chunk.data && chunk.data.byteLength >= 4) {
-					const view = new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength);
-					x = view.getInt16(0, true);
-					y = view.getInt16(2, true);
-				}
-				openWindows.push({
-					windowId,
-					x,
-					y
-				});
-			}
-			return openWindows;
-		}
-		buildWindowDragAllBuffer() {
-			const dragContainer = this.containers.find((c) => c.type === ContainerType.WindowDragAll);
-			if (!dragContainer) return false;
-			const ch = dragContainer.data.find((c) => c.id === ReplayOpCodes.IsDragAll);
-			return ch && ch.data?.byteLength > 0 ? ch.data[0] !== 0 : false;
-		}
-		buildEfstListBuffer() {
-			const efstContainer = this.containers.find((c) => c.type === ContainerType.EfstList);
-			if (!efstContainer) return [];
-			const result = [];
-			for (const chunk of efstContainer.data) {
-				if (!chunk.data || chunk.data.byteLength < 4) continue;
-				const efstId = new DataView(chunk.data.buffer, chunk.data.byteOffset, 4).getUint32(0, true);
-				if (efstId > 0 && efstId <= 3e3) result.push(efstId);
-			}
-			return result;
-		}
-		buildItemsBuffer() {
-			const itemsContainer = this.containers.find((c) => c.type === ContainerType.Items);
-			if (!itemsContainer) return {
-				inventory: [],
-				cart: [],
-				equipped: [],
-				equippedCostume: []
-			};
-			const out = {
-				inventory: [],
-				cart: [],
-				cartMirror: [],
-				equipped: [],
-				equippedCostume: [],
-				storage: [],
-				guildStorage: []
-			};
-			const SKIP_CHUNKS = /* @__PURE__ */ new Set([
-				4602,
-				4604,
-				4605,
-				4606
-			]);
-			const RECORD_SIZES = [221, 172];
-			const NAMEID_OFFSET = 104;
-			const detectRecordSize = (view, byteLength) => {
-				const plausible = (id) => id > 0 && id < 5e6;
-				for (const size of RECORD_SIZES) {
-					if (byteLength < size || byteLength % size !== 0) continue;
-					let anyValid = false;
-					let ok = true;
-					for (let r = 0; r < byteLength / size; r++) {
-						const id = view.getInt32(r * size + NAMEID_OFFSET, true);
-						if (id === 0) continue;
-						if (!plausible(id)) {
-							ok = false;
-							break;
-						}
-						anyValid = true;
-					}
-					if (ok && anyValid) return size;
-				}
-				return 0;
-			};
-			const readTlvFields = (view, base, recordSize) => {
-				const fields = /* @__PURE__ */ new Map();
-				let o = 0;
-				while (o + 6 <= recordSize) {
-					const tag = view.getUint16(base + o, true);
-					const length = view.getUint32(base + o + 2, true);
-					if (o + 6 + length > recordSize) return null;
-					fields.set(tag, {
-						offset: o + 6,
-						length
-					});
-					o += 6 + length;
-				}
-				return o === recordSize ? fields : null;
-			};
-			const readTlvNumber = (view, base, fields, tag, fallback = 0) => {
-				const field = fields.get(tag);
-				if (!field) return fallback;
-				switch (field.length) {
-					case 1: return view.getUint8(base + field.offset);
-					case 2: return view.getUint16(base + field.offset, true);
-					case 4: return view.getInt32(base + field.offset, true);
-					default: return fallback;
-				}
-			};
-			const parseItemChunk = (chunk, targetArray) => {
-				if (!chunk.data || chunk.data.byteLength === 0) return;
-				const view = new DataView(chunk.data.buffer, chunk.data.byteOffset, chunk.data.byteLength);
-				const recordSize = detectRecordSize(view, chunk.data.byteLength);
-				if (recordSize === 0) {
-					console.warn(`[ReplayParser] Unrecognized item record layout in chunk ${chunk.id} (${chunk.data.byteLength} bytes), items skipped`);
-					return;
-				}
-				const recordCount = Math.floor(chunk.data.byteLength / recordSize);
-				for (let r = 0; r < recordCount; r++) {
-					const base = r * recordSize;
-					const fields = readTlvFields(view, base, recordSize);
-					let slot = 0;
-					let equipped = 0;
-					let qty = 0;
-					let itemId = 0;
-					let refine = 0;
-					let grade = 0;
-					const cards = [
-						0,
-						0,
-						0,
-						0
-					];
-					const options = [];
-					if (fields) {
-						slot = readTlvNumber(view, base, fields, ItemRecordTag.POS, 0);
-						equipped = readTlvNumber(view, base, fields, ItemRecordTag.WEAR_STATE, 0);
-						qty = readTlvNumber(view, base, fields, ItemRecordTag.QTY, 0);
-						itemId = readTlvNumber(view, base, fields, ItemRecordTag.NAMEID, 0);
-						refine = readTlvNumber(view, base, fields, ItemRecordTag.REFINE, 0);
-						grade = readTlvNumber(view, base, fields, ItemRecordTag.GRADE, 0);
-						const cardsField = fields.get(ItemRecordTag.CARDS);
-						if (cardsField && cardsField.length >= 16) for (let c = 0; c < 4; c++) cards[c] = view.getInt32(base + cardsField.offset + c * 4, true);
-						const optField = fields.get(ItemRecordTag.OPTIONS);
-						if (optField && optField.length >= 5) {
-							const optCount = Math.min(5, Math.floor(optField.length / 5));
-							for (let o = 0; o < optCount; o++) {
-								const optOffset = base + optField.offset + o * 5;
-								const optId = view.getUint16(optOffset, true);
-								if (optId > 0) {
-									const optVal = view.getInt16(optOffset + 2, true);
-									const optParam = view.getUint8(optOffset + 4);
-									options.push({
-										id: optId,
-										value: optVal,
-										param: optParam
-									});
-								}
-							}
-						}
-					} else {
-						slot = view.getInt16(base + 22, true);
-						equipped = view.getInt32(base + 42, true);
-						qty = view.getInt16(base + 52, true);
-						for (let c = 0; c < 4; c++) cards[c] = view.getInt32(base + 82 + c * 4, true);
-						itemId = view.getInt32(base + 104, true);
-						refine = view.getUint8(base + 134);
-						if (recordSize >= 221) for (let o = 0; o < 5; o++) {
-							const optOffset = base + 190 + o * 5;
-							const optId = view.getUint16(optOffset, true);
-							if (optId > 0) {
-								const optVal = view.getInt16(optOffset + 2, true);
-								const optParam = view.getUint8(optOffset + 4);
-								options.push({
-									id: optId,
-									value: optVal,
-									param: optParam
-								});
-							}
-						}
-					}
-					if (itemId > 0) {
-						let itemType = ItemType_default.ETC;
-						if (chunk.id === ItemChunkKind.EQUIPPED_COSTUME || chunk.id === ReplayOpCodes.EquippedShadowItems || equipped & (EquipmentLocation_default.COSTUME_HEAD_TOP | EquipmentLocation_default.COSTUME_HEAD_MID | EquipmentLocation_default.COSTUME_HEAD_BOTTOM | EquipmentLocation_default.COSTUME_ROBE | EquipmentLocation_default.COSTUME_FLOOR | EquipmentLocation_default.SHADOW_ARMOR | EquipmentLocation_default.SHADOW_WEAPON | EquipmentLocation_default.SHADOW_SHIELD | EquipmentLocation_default.SHADOW_SHOES | EquipmentLocation_default.SHADOW_R_ACCESSORY_SHADOW | EquipmentLocation_default.SHADOW_L_ACCESSORY_SHADOW)) itemType = ItemType_default.SHADOWGEAR;
-						else if (equipped & EquipmentLocation_default.WEAPON) itemType = ItemType_default.WEAPON;
-						else if (equipped & EquipmentLocation_default.AMMO) itemType = ItemType_default.AMMO;
-						else if (equipped > 0) itemType = ItemType_default.ARMOR;
-						else if (refine > 0 || grade > 0) itemType = ItemType_default.ARMOR;
-						else if (itemId >= 501 && itemId <= 600) itemType = ItemType_default.HEALING;
-						else if (itemId >= 601 && itemId <= 700) itemType = ItemType_default.USABLE;
-						else if (itemId >= 4001 && itemId <= 4700) itemType = ItemType_default.CARD;
-						else if (itemId >= 1101 && itemId <= 2100) itemType = ItemType_default.WEAPON;
-						else if (itemId >= 2101 && itemId <= 2999) itemType = ItemType_default.ARMOR;
-						targetArray.push({
-							index: slot + 2,
-							ITID: itemId,
-							count: qty > 0 ? qty : 1,
-							type: itemType,
-							IsIdentified: true,
-							IsDamaged: false,
-							PlaceETCTab: false,
-							WearState: equipped,
-							location: equipped,
-							RefiningLevel: refine,
-							enchantgrade: grade,
-							slot: {
-								card1: cards[0] || 0,
-								card2: cards[1] || 0,
-								card3: cards[2] || 0,
-								card4: cards[3] || 0
-							},
-							cards: [
-								cards[0] || 0,
-								cards[1] || 0,
-								cards[2] || 0,
-								cards[3] || 0
-							],
-							Options: options.map((opt) => ({
-								index: opt.id,
-								value: opt.value,
-								param: opt.param
-							})),
-							HireExpireDate: 0,
-							bindOnEquipType: 0,
-							wItemSpriteNumber: 0,
-							itemId,
-							qty: qty > 0 ? qty : 1,
-							slotIndex: slot,
-							refine,
-							grade,
-							options
-						});
-					}
-				}
-			};
-			for (const chunk of itemsContainer.data) {
-				if (SKIP_CHUNKS.has(chunk.id)) continue;
-				switch (chunk.id) {
-					case ItemChunkKind.INVENTORY:
-						parseItemChunk(chunk, out.inventory);
-						break;
-					case ItemChunkKind.CART:
-						parseItemChunk(chunk, out.cart);
-						break;
-					case ItemChunkKind.CART_MIRROR:
-						parseItemChunk(chunk, out.cartMirror);
-						if (out.cart.length === 0) parseItemChunk(chunk, out.cart);
-						break;
-					case ItemChunkKind.EQUIPPED:
-						parseItemChunk(chunk, out.equipped);
-						break;
-					case ItemChunkKind.EQUIPPED_COSTUME:
-					case ReplayOpCodes.EquippedShadowItems:
-						parseItemChunk(chunk, out.equippedCostume);
-						break;
-					case ItemChunkKind.STORAGE:
-					case ReplayOpCodes.StorageItems:
-						parseItemChunk(chunk, out.storage);
-						break;
-					case ItemChunkKind.GUILD_STORAGE:
-					case ReplayOpCodes.GuildStorageItems: parseItemChunk(chunk, out.guildStorage);
-				}
-			}
-			return out;
-		}
-		toNetworkPacket(chunk) {
-			return chunk.data;
-		}
-		readString(uint8array) {
-			let length = 0;
-			while (length < uint8array.length && uint8array[length] !== 0) length++;
-			return new TextDecoder("euc-kr").decode(uint8array.subarray(0, length));
-		}
-		dumpContainers() {
-			console.log("=== REPLAY CONTAINERS DUMP ===");
-			for (let i = 0; i < this.containers.length; i++) {
-				const container = this.containers[i];
-				const containerName = ContainerTypeNames[container.type] || `Unknown(${container.type})`;
-				console.log(`\n--- Container [${i}] Type: ${container.type} (${containerName}) | DeclaredLen: ${container.declaredLength} | Offset: ${container.offset} | RealLen: ${container.realLength} | Chunks: ${container.data.length} ---`);
-				container.data.forEach((chunk, index) => {
-					const data = chunk.data;
-					const size = data ? data.byteLength : 0;
-					const opName = chunk.id !== void 0 ? ReplayOpCodeName[chunk.id] || "" : "";
-					const packetInfo = chunk.packetId !== void 0 ? ` | PacketID: 0x${chunk.packetId.toString(16).padStart(4, "0")} (${chunk.packetId})` : "";
-					const chunkHeader = `Chunk [${index}] ID: ${chunk.id ?? "N/A"}${opName ? ` (${opName})` : ""}${packetInfo}${chunk.time !== void 0 ? ` | Time: ${chunk.time}` : ""} | Data Size: ${size}`;
-					console.log(chunkHeader);
-					if (!data || size === 0) {
-						console.log("  [Empty Content]");
-						return;
-					}
-					if (size === 1) {
-						const val = new DataView(data.buffer, data.byteOffset, data.byteLength).getUint8(0);
-						console.log(`  Char: ${val} (0x${val.toString(16).padStart(2, "0")})`);
-					} else if (size === 2) {
-						const val = new DataView(data.buffer, data.byteOffset, data.byteLength).getUint16(0, true);
-						console.log(`  uint16: ${val} (0x${val.toString(16).padStart(4, "0")})`);
-					} else if (size === 4) {
-						const val = new DataView(data.buffer, data.byteOffset, data.byteLength).getUint32(0, true);
-						console.log(`  uint32: ${val} (0x${val.toString(16).padStart(8, "0")})`);
-					} else if (size === 8) {
-						const val = new DataView(data.buffer, data.byteOffset, data.byteLength).getBigUint64(0, true);
-						console.log(`  uint64: ${val} (0x${val.toString(16).padStart(16, "0")})`);
-					}
-					this.dumpHex(data);
-				});
-			}
-			console.log("=== END OF REPLAY CONTAINERS DUMP ===");
-		}
-		dumpHex(uint8Array) {
-			const lines = [];
-			for (let offset = 0; offset < uint8Array.length; offset += 16) {
-				const chunk = uint8Array.subarray(offset, offset + 16);
-				const hexParts = [];
-				const asciiParts = [];
-				for (let i = 0; i < 16; i++) if (i < chunk.length) {
-					const byte = chunk[i];
-					hexParts.push(byte.toString(16).padStart(2, "0"));
-					asciiParts.push(byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : ".");
-				} else {
-					hexParts.push("  ");
-					asciiParts.push(" ");
-				}
-				const hexStr = hexParts.slice(0, 8).join(" ") + "  " + hexParts.slice(8, 16).join(" ");
-				const asciiStr = asciiParts.join("");
-				const offsetStr = offset.toString(16).padStart(4, "0");
-				lines.push(`  ${offsetStr}: ${hexStr}  |${asciiStr}|`);
-			}
-			console.log(lines.join("\n"));
-		}
-	};
-}));
-// src/Engine/Replay/ReplaySocket.js
-var ReplaySocket;
-var init_ReplaySocket = __esmMin((() => {
-	ReplaySocket = class {
-		constructor(host, port) {
-			this.host = host;
-			this.port = port;
-			this.connected = false;
-			this.onMessage = null;
-			this.onClose = null;
-			this.onError = null;
-			this.onComplete = null;
-			setTimeout(() => {
-				this.connected = true;
-				if (this.onComplete) this.onComplete(true);
-			}, 10);
-		}
-		send(buffer) {}
-		close() {
-			this.connected = false;
-			if (this.onClose) this.onClose();
-		}
-		/**
-		* Feed data into NetworkManager
-		* @param {Uint8Array|ArrayBuffer} data
-		*/
-		push(data) {
-			if (!this.connected || !this.onMessage || !data) return;
-			let buffer;
-			if (data instanceof Uint8Array) buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
-			else if (data instanceof ArrayBuffer) buffer = data;
-			else return;
-			this.onMessage(buffer);
-		}
-	};
-}));
-// src/Engine/Replay/ReplayPlayer.js
-var ReplayPlayer_exports = /* @__PURE__ */ __exportAll({ default: () => ReplayPlayer });
-var ReplayPlayer;
-var init_ReplayPlayer = __esmMin((() => {
-	init_DBManager();
-	init_NetworkManager();
-	init_MapRenderer();
-	init_SessionStorage();
-	init_MapEngine();
-	init_Player();
-	init_BasicInfo();
-	init_WinStats();
-	init_Inventory();
-	init_CartItems();
-	init_ShortCut();
-	init_Storage$1();
-	init_PartyFriends();
-	init_Quest$1();
-	init_HomunInformations();
-	init_MercenaryInformations();
-	init_PetInformations();
-	init_Navigation();
-	init_ItemInfo();
-	init_ChatBox();
-	init_BGM();
-	init_EntityManager();
-	init_UIManager();
-	init_BinaryReader();
-	init_ReplayTypes();
-	init_ReplayParser();
-	init_ReplaySocket();
-	ReplayPlayer = class {
-		constructor() {
-			this.parser = null;
-			this.socket = null;
-			this.playing = false;
-			this.speed = 1;
-			this.startTime = 0;
-			this.lastTickTime = 0;
-			this.durationMs = 0;
-			this._state = ReplayState.IDLE;
-			this._sessionData = null;
-			this._itemsBuffer = null;
-			this._petBuffer = null;
-			this._homunBuffer = null;
-			this._mercenaryBuffer = null;
-			this._elementalBuffer = null;
-			this._statusBuffer = null;
-			this._efstListBuffer = [];
-			this._hotkeysBuffer = [];
-			this._questsBuffer = null;
-			this._groupAndFriendsBuffer = null;
-			this._memorialDungeonBuffer = null;
-			this._entryQueueBuffer = null;
-			this._navigationBuffer = null;
-			this._actorNamesBuffer = null;
-			this._openWindowsBuffer = [];
-			this._windowDragAll = null;
-			this._initialBuffer = [];
-			this._packetStreamBuffer = [];
-			this._initialGroupIndex = 0;
-			this._initialChunkIndex = 0;
-			this._streamChunkIndex = 0;
-			this._firstStreamTime = 0;
-			this._logicalTime = 0;
-			this._onTick = this.tick.bind(this);
-			this._animate = false;
-			this._retryCount = 0;
-		}
-		async load(file) {
-			this._setState(ReplayState.LOADING_REPLAY);
-			replayLog("[Replay] Loading RRF...");
-			const buffer = await file.arrayBuffer();
-			this.parser = new ReplayParser(buffer);
-			const result = this.parser.parse();
-			this._sessionData = result.sessionBuffer;
-			this._itemsBuffer = result.itemsBuffer;
-			this._petBuffer = result.petBuffer;
-			this._homunBuffer = result.homunBuffer;
-			this._mercenaryBuffer = result.mercenaryBuffer;
-			this._elementalBuffer = result.elementalBuffer;
-			this._statusBuffer = result.statusBuffer;
-			this._efstListBuffer = result.efstListBuffer || [];
-			this._hotkeysBuffer = result.hotkeysBuffer || [];
-			this._questsBuffer = result.questsBuffer || null;
-			this._groupAndFriendsBuffer = result.groupAndFriendsBuffer || null;
-			this._memorialDungeonBuffer = result.memorialDungeonBuffer || null;
-			this._entryQueueBuffer = result.entryQueueBuffer || null;
-			this._navigationBuffer = result.navigationBuffer || null;
-			this._actorNamesBuffer = result.actorNamesBuffer || null;
-			this._openWindowsBuffer = result.openWindowsBuffer || [];
-			this._windowDragAll = result.windowDragAll;
-			this._initialBuffer = result.initialBuffer;
-			this._packetStreamBuffer = result.packetStreamBuffer;
-			this.durationMs = result.durationMs || 0;
-			this._setState(ReplayState.IDLE);
-			if (this._packetStreamBuffer.length === 0) throw new Error("The replay contains no recorded packets, the file is truncated or corrupt.");
-		}
-		start() {
-			if (!this.parser || !this._sessionData) {
-				console.error("[ReplayPlayer] No replay loaded");
-				throw new Error("No replay loaded");
-			}
-			if (!DB.isLoaded) {
-				if (!DB.startedLazyInit) {
-					DB.lazyInit();
-					DB.startedLazyInit = true;
-				}
-				this._retryCount = (this._retryCount || 0) + 1;
-				if (this._retryCount > 600) {
-					console.error("[Replay] Failed loading databases.");
-					this._retryCount = 0;
-					DB.startedLazyInit = false;
-					return;
-				}
-				setTimeout(() => this.start(), 100);
-				return;
-			}
-			this._retryCount = 0;
-			DB.startedLazyInit = false;
-			this._initialGroupIndex = 0;
-			this._initialChunkIndex = 0;
-			this._streamChunkIndex = 0;
-			this.playing = true;
-			this.startTime = 0;
-			this.lastTickTime = Date.now();
-			Network.setSocketFactory((host, port) => {
-				this.socket = new ReplaySocket(host, port);
-				return this.socket;
-			});
-			Network.close();
-			this._applySession();
-		}
-		pause() {
-			this.playing = false;
-		}
-		resume() {
-			this.playing = true;
-			this._syncTimeOrigin();
-		}
-		stop() {
-			this.playing = false;
-			this._animate = false;
-			Network.setSocketFactory(null);
-			if (this.socket) {
-				Network.close();
-				this.socket = null;
-			}
-			if (this._state !== ReplayState.REPLAY_FINISHED) this._setState(ReplayState.IDLE);
-		}
-		setSpeed(speed) {
-			this.speed = speed;
-			this._syncTimeOrigin();
-		}
-		/**
-		* Recompute the wall clock origin so playback continues from the logical time
-		* reached so far. Inverse of the formula used in _tickPacketStream().
-		*/
-		_syncTimeOrigin() {
-			const firstStreamTime = this._firstStreamTime || 0;
-			const logicalTime = Math.max(this._logicalTime || 0, firstStreamTime);
-			this.startTime = Date.now() - (logicalTime - firstStreamTime) / this.speed;
-		}
-		_setState(newState) {
-			this._state = newState;
-		}
-		/**
-		* Applies session data directly to Session and Session.Entity.
-		* Called BEFORE MapEngine.init so map name and character are available.
-		*/
-		_applySession() {
-			this._setState(ReplayState.APPLYING_SESSION);
-			const s = this._sessionData;
-			const charName = s.characterName || "Replay";
-			const sex = s.sex === 0 || s.sex === 1 ? s.sex : 0;
-			const aid = s.AID || 0;
-			const gid = s.GID || aid;
-			const playerInitData = {
-				name: charName,
-				sex,
-				job: s.job !== void 0 ? s.job : 0,
-				clevel: s.level !== void 0 ? s.level : s.clevel || 1,
-				joblevel: s.joblevel !== void 0 ? s.joblevel : 1,
-				exp: s.exp || 0,
-				exp_next: s.exp_next || 0,
-				job_exp: s.job_exp || 0,
-				job_exp_next: s.job_exp_next || 0,
-				str: s.str || 1,
-				agi: s.agi || 1,
-				vit: s.vit || 1,
-				int: s.int || 1,
-				dex: s.dex || 1,
-				luk: s.luk || 1,
-				str_bonus: s.str_bonus || s.plusStr || 0,
-				agi_bonus: s.agi_bonus || s.plusAgi || 0,
-				vit_bonus: s.vit_bonus || s.plusVit || 0,
-				int_bonus: s.int_bonus || s.plusInt || 0,
-				dex_bonus: s.dex_bonus || s.plusDex || 0,
-				luk_bonus: s.luk_bonus || s.plusLuk || 0,
-				money: s.money || 0,
-				weight: s.weight || 0,
-				max_weight: s.max_weight || 0,
-				speed: s.speed || 150,
-				attack_speed: s.attack_speed || s.aspd || 300,
-				head: s.head || 0,
-				weapon: s.weapon || 0,
-				shield: s.shield || 0,
-				bodypalette: s.bodypalette || 0,
-				headpalette: s.headpalette || 0,
-				accessory: s.accessory || 0,
-				accessory2: s.accessory2 || 0,
-				accessory3: s.accessory3 || 0,
-				robe: s.robe || 0,
-				AID: aid,
-				GID: gid
-			};
-			SessionStorage_default.AID = aid;
-			SessionStorage_default.GID = gid;
-			SessionStorage_default.Sex = sex;
-			SessionStorage_default.zeny = s.money || 0;
-			SessionStorage_default.hasCart = s.hasCart || false;
-			SessionStorage_default.CartNum = s.CartNum || 0;
-			if (s.pet && s.pet.aid) {
-				SessionStorage_default.petId = s.pet.aid;
-				SessionStorage_default.pet = s.pet;
-			} else {
-				SessionStorage_default.petId = 0;
-				SessionStorage_default.pet = {};
-			}
-			if (s.homun && s.homun.gid) {
-				SessionStorage_default.homunId = s.homun.gid;
-				SessionStorage_default.homun = s.homun;
-			} else {
-				SessionStorage_default.homunId = 0;
-				SessionStorage_default.homun = {};
-			}
-			if (s.mercenary && (s.mercenary.gid || s.mercenary.GID)) {
-				const mercId = s.mercenary.gid || s.mercenary.GID;
-				SessionStorage_default.mercId = mercId;
-				SessionStorage_default.mercenaryId = mercId;
-				SessionStorage_default.mercenary = s.mercenary;
-			} else {
-				SessionStorage_default.mercId = 0;
-				SessionStorage_default.mercenaryId = 0;
-				SessionStorage_default.mercenary = {};
-			}
-			if (s.elemental && s.elemental.gid) {
-				SessionStorage_default.elementalId = s.elemental.gid;
-				SessionStorage_default.elemental = s.elemental;
-			} else {
-				SessionStorage_default.elementalId = 0;
-				SessionStorage_default.elemental = {};
-			}
-			if (s.tailMagic || s.region !== void 0 || s.service !== void 0 || s.serverType !== void 0) SessionStorage_default.replayMeta = {
-				tailMagic: s.tailMagic,
-				region: s.region,
-				service: s.service,
-				serverType: s.serverType,
-				mapType: s.mapType,
-				packetCount: s.packetCount,
-				endFileOffset: s.endFileOffset,
-				saveUiOptions: s.saveUiOptions
-			};
-			SessionStorage_default.Entity = new Player(playerInitData);
-			SessionStorage_default.Entity.display.name = charName;
-			SessionStorage_default.Entity.sex = sex;
-			SessionStorage_default.Entity._sex = sex;
-			SessionStorage_default.Entity.job = playerInitData.job;
-			SessionStorage_default.Entity._job = playerInitData.job;
-			SessionStorage_default.Entity.clevel = playerInitData.clevel;
-			SessionStorage_default.Entity.level = playerInitData.clevel;
-			SessionStorage_default.Entity.joblevel = playerInitData.joblevel;
-			SessionStorage_default.Entity.money = playerInitData.money;
-			SessionStorage_default.Entity.weight = playerInitData.weight;
-			SessionStorage_default.Entity.max_weight = playerInitData.max_weight;
-			SessionStorage_default.Entity.speed = playerInitData.speed;
-			SessionStorage_default.Entity.attack_speed = playerInitData.attack_speed;
-			SessionStorage_default.Entity.str = playerInitData.str;
-			SessionStorage_default.Entity.agi = playerInitData.agi;
-			SessionStorage_default.Entity.vit = playerInitData.vit;
-			SessionStorage_default.Entity.int = playerInitData.int;
-			SessionStorage_default.Entity.dex = playerInitData.dex;
-			SessionStorage_default.Entity.luk = playerInitData.luk;
-			SessionStorage_default.Entity.str_bonus = playerInitData.str_bonus;
-			SessionStorage_default.Entity.agi_bonus = playerInitData.agi_bonus;
-			SessionStorage_default.Entity.vit_bonus = playerInitData.vit_bonus;
-			SessionStorage_default.Entity.int_bonus = playerInitData.int_bonus;
-			SessionStorage_default.Entity.dex_bonus = playerInitData.dex_bonus;
-			SessionStorage_default.Entity.luk_bonus = playerInitData.luk_bonus;
-			SessionStorage_default.Entity.head = playerInitData.head;
-			SessionStorage_default.Entity._head = playerInitData.head;
-			SessionStorage_default.Entity.headpalette = playerInitData.headpalette;
-			SessionStorage_default.Entity._headpalette = playerInitData.headpalette;
-			SessionStorage_default.Entity.bodypalette = playerInitData.bodypalette;
-			SessionStorage_default.Entity._bodypalette = playerInitData.bodypalette;
-			SessionStorage_default.Entity.weapon = playerInitData.weapon;
-			SessionStorage_default.Entity._weapon = playerInitData.weapon;
-			SessionStorage_default.Entity.shield = playerInitData.shield;
-			SessionStorage_default.Entity._shield = playerInitData.shield;
-			SessionStorage_default.Entity.accessory = playerInitData.accessory;
-			SessionStorage_default.Entity._accessory = playerInitData.accessory;
-			SessionStorage_default.Entity.accessory2 = playerInitData.accessory2;
-			SessionStorage_default.Entity._accessory2 = playerInitData.accessory2;
-			SessionStorage_default.Entity.accessory3 = playerInitData.accessory3;
-			SessionStorage_default.Entity._accessory3 = playerInitData.accessory3;
-			SessionStorage_default.Entity.robe = playerInitData.robe;
-			const hp = s.hp !== void 0 ? s.hp : s.maxHp !== void 0 ? s.maxHp : 100;
-			const maxHp = s.maxHp !== void 0 ? s.maxHp : hp;
-			const sp = s.sp !== void 0 ? s.sp : s.maxSp !== void 0 ? s.maxSp : 100;
-			const maxSp = s.maxSp !== void 0 ? s.maxSp : sp;
-			SessionStorage_default.Entity.life.hp = hp;
-			SessionStorage_default.Entity.life.hp_max = maxHp;
-			SessionStorage_default.Entity.life.sp = sp;
-			SessionStorage_default.Entity.life.sp_max = maxSp;
-			const option = s.effectState !== void 0 ? s.effectState : s.option || 0;
-			SessionStorage_default.Entity.effectState = option;
-			SessionStorage_default.Entity._effectState = option;
-			SessionStorage_default.Entity.option = option;
-			SessionStorage_default.Entity.hasCart = SessionStorage_default.hasCart;
-			SessionStorage_default.Entity.CartNum = SessionStorage_default.CartNum;
-			this._mapName = s.mapName || "prontera.rsw";
-			this._startX = s.startX || 0;
-			this._startY = s.startY || 0;
-			this._startDir = s.startDir !== void 0 ? s.startDir : 4;
-			SessionStorage_default.Entity.position[0] = this._startX;
-			SessionStorage_default.Entity.position[1] = this._startY;
-			SessionStorage_default.Entity.position[2] = 0;
-			SessionStorage_default.Entity.direction = this._startDir;
-			replayLog(`[Replay] Session applied — name: ${charName}, sex: ${SessionStorage_default.Entity.sex}, head: ${SessionStorage_default.Entity.head}, job: ${SessionStorage_default.Entity.job}, map: ${this._mapName}, HP: ${hp}/${maxHp}, SP: ${sp}/${maxSp}`);
-			this._loadMap();
-		}
-		_loadMap() {
-			this._setState(ReplayState.LOADING_MAP);
-			this._acceptEnterSent = false;
-			this._mapLoadStarted = false;
-			MapEngine.init("127.0.0.1", 6900, this._mapName);
-			this._animate = true;
-			this.lastTickTime = Date.now();
-			this._onTick();
-		}
-		/**
-		* Synthesizes the ZC_ACCEPT_ENTER (0x0073) packet that MapEngine needs
-		* to register the player entity and trigger the full map initialisation sequence.
-		*/
-		_sendAcceptEnter() {
-			const pkt = /* @__PURE__ */ new Uint8Array(11);
-			const view = new DataView(pkt.buffer);
-			view.setUint16(0, 115, true);
-			view.setUint32(2, Date.now(), true);
-			const x = this._startX;
-			const y = this._startY;
-			const dir = this._startDir;
-			const p = x << 14 | y << 4 | dir & 15;
-			view.setUint8(6, p >> 16 & 255);
-			view.setUint8(7, p >> 8 & 255);
-			view.setUint8(8, p & 255);
-			this._pushPacket(pkt);
-		}
-		/**
-		* Synthesizes a ZC_MSG_STATE_CHANGE (0x0196) packet for an active EFST buff.
-		*/
-		_sendStateChange(statusId, isOn = true) {
-			const pkt = /* @__PURE__ */ new Uint8Array(9);
-			const view = new DataView(pkt.buffer);
-			view.setUint16(0, 406, true);
-			view.setUint16(2, statusId, true);
-			view.setUint32(4, SessionStorage_default.AID, true);
-			view.setUint8(8, isOn ? 1 : 0);
-			this._pushPacket(pkt);
-		}
-		tick() {
-			if (this._animate) requestAnimationFrame(this._onTick);
-			if (!this.playing || !this.socket || !this.socket.connected) {
-				this.lastTickTime = Date.now();
-				return;
-			}
-			const now = Date.now();
-			switch (this._state) {
-				case ReplayState.LOADING_MAP:
-					if (!this._acceptEnterSent) {
-						MapRenderer.currentMap = "";
-						this._sendAcceptEnter();
-						this._acceptEnterSent = true;
-						this._mapLoadStarted = false;
-					}
-					if (this._acceptEnterSent && MapRenderer.loading) this._mapLoadStarted = true;
-					if (this._mapLoadStarted && !MapRenderer.loading) {
-						this._mapLoadStarted = false;
-						this._setState(ReplayState.PLAYING_INITIAL_DATA);
-					}
-					this.startTime += now - this.lastTickTime;
-					this.lastTickTime = now;
-					break;
-				case ReplayState.PLAYING_INITIAL_DATA:
-					this.lastTickTime = now;
-					this._tickInitialData();
-					break;
-				case ReplayState.INITIAL_DATA_COMPLETE:
-					this._setState(ReplayState.PLAYING_PACKET_STREAM);
-					this.startTime = Date.now();
-					this.lastTickTime = now;
-					this._firstStreamTime = this._packetStreamBuffer.length > 0 ? this._packetStreamBuffer[0].time : 0;
-					this._logicalTime = this._firstStreamTime;
-					break;
-				case ReplayState.PLAYING_PACKET_STREAM:
-					this.lastTickTime = now;
-					this._tickPacketStream(now);
-					break;
-				default: this.lastTickTime = now;
-			}
-		}
-		/**
-		* Drains initial data (InitialPackets → InitialEntities → InitialFloorItems)
-		* and applies initial Efst buffs, items, and UI stat updates.
-		*/
-		_tickInitialData() {
-			for (const group of this._initialBuffer) for (const chunk of group.chunks) {
-				const data = chunk.data || chunk;
-				this._pushPacket(data);
-			}
-			if (this._efstListBuffer && this._efstListBuffer.length > 0) for (const efstId of this._efstListBuffer) this._sendStateChange(efstId, true);
-			if (this._itemsBuffer) {
-				const inventoryUI = InventoryController?.getUI ? InventoryController : null;
-				if (inventoryUI && typeof inventoryUI.addItem === "function") {
-					if (inventoryUI.list) inventoryUI.list.length = 0;
-					if (inventoryUI.equippedItems) inventoryUI.equippedItems.length = 0;
-					if (this._itemsBuffer.inventory?.length > 0) for (const item of this._itemsBuffer.inventory) inventoryUI.addItem(item);
-					if (this._itemsBuffer.equipped?.length > 0) for (const item of this._itemsBuffer.equipped) inventoryUI.addItem(item);
-					if (this._itemsBuffer.equippedCostume?.length > 0) for (const item of this._itemsBuffer.equippedCostume) inventoryUI.addItem(item);
-				}
-				const cartUI = CartItems_default?.getUI ? CartItems_default : null;
-				if (cartUI && this._itemsBuffer.cart?.length > 0) {
-					if (typeof cartUI.addItem === "function") {
-						if (cartUI.list) cartUI.list.length = 0;
-						for (const item of this._itemsBuffer.cart) cartUI.addItem(item);
-					} else if (typeof cartUI.setItems === "function") cartUI.setItems(this._itemsBuffer.cart);
-				}
-				const storageUI = StorageController?.getUI ? StorageController.getUI() || StorageController : StorageController;
-				if (storageUI && this._itemsBuffer.storage?.length > 0) {
-					if (typeof storageUI.prepare === "function" && !storageUI.__loaded) storageUI.prepare();
-					if (typeof storageUI.setItems === "function") storageUI.setItems(this._itemsBuffer.storage);
-				}
-			}
-			if (this._sessionData?.pet) {
-				const petId = this._sessionData.pet.aid || this._sessionData.pet.AID;
-				if (petId) {
-					SessionStorage_default.petId = petId;
-					SessionStorage_default.pet = this._sessionData.pet;
-				}
-			}
-			if (this._sessionData?.homun) {
-				const homunId = this._sessionData.homun.gid || this._sessionData.homun.GID;
-				if (homunId) {
-					SessionStorage_default.homunId = homunId;
-					SessionStorage_default.homun = this._sessionData.homun;
-				}
-			}
-			if (this._sessionData?.mercenary) {
-				const mercId = this._sessionData.mercenary.gid || this._sessionData.mercenary.GID;
-				if (mercId) {
-					SessionStorage_default.mercId = mercId;
-					SessionStorage_default.mercenaryId = mercId;
-					SessionStorage_default.mercenary = this._sessionData.mercenary;
-				}
-			}
-			if (this._sessionData?.elemental) {
-				const eleId = this._sessionData.elemental.gid || this._sessionData.elemental.GID;
-				if (eleId) {
-					SessionStorage_default.elementalId = eleId;
-					SessionStorage_default.elemental = this._sessionData.elemental;
-				}
-			}
-			if (this._homunBuffer && typeof HomunInformations_default?.setInformations === "function") HomunInformations_default.setInformations(this._homunBuffer);
-			if (this._mercenaryBuffer && typeof MercenaryInformations_default?.setInformations === "function") MercenaryInformations_default.setInformations(this._mercenaryBuffer);
-			if (this._petBuffer && typeof PetInformations_default?.setInformations === "function") PetInformations_default.setInformations(this._petBuffer);
-			if (this._hotkeysBuffer?.length > 0 && typeof ShortCut_default?.setList === "function") ShortCut_default.setList(this._hotkeysBuffer);
-			if (this._groupAndFriendsBuffer) {
-				if (this._groupAndFriendsBuffer.groupInfo?.length > 0 && typeof controller?.setParty === "function") controller.setParty(this._groupAndFriendsBuffer.groupName || "", this._groupAndFriendsBuffer.groupInfo);
-				if (this._groupAndFriendsBuffer.friendInfo?.length > 0 && typeof controller?.setFriends === "function") controller.setFriends(this._groupAndFriendsBuffer.friendInfo);
-			}
-			if (this._questsBuffer) {
-				const quests = this._questsBuffer.quests || this._questsBuffer.questInfo;
-				if (Array.isArray(quests) && quests.length > 0 && typeof Controller$3?.setQuestList === "function") {
-					const questList = {};
-					for (const q of quests) {
-						const questId = q.questID || q.id || q;
-						const questInfo = DB.getQuestInfo(questId) || {};
-						questList[questId] = {
-							questID: questId,
-							title: questInfo.Title || "",
-							summary: questInfo.Summary || "",
-							description: questInfo.Description || "",
-							icon: questInfo.IconName || "ico_nq.bmp",
-							npc_spr: questInfo.NpcSpr || null,
-							npc_navi: questInfo.NpcNavi || null,
-							npc_pos_x: questInfo.NpcPosX || null,
-							npc_pos_y: questInfo.NpcPosY || null,
-							reward_item_list: questInfo.RewardItemList || [],
-							reward_exp_base: questInfo.RewardEXP || 0,
-							reward_exp_job: questInfo.RewardJEXP || 0,
-							active: q.active !== void 0 ? q.active : q.data?.byteLength > 4 ? q.data[4] !== 0 : true,
-							start_time: 0,
-							end_time: 0,
-							count: 0,
-							hunt_list: []
-						};
-					}
-					Controller$3.setQuestList(questList);
-				} else if (quests && typeof quests === "object" && typeof Controller$3?.setQuestList === "function") Controller$3.setQuestList(quests);
-			}
-			const actors = this._actorNamesBuffer?.actorNames || this._actorNamesBuffer?.actors;
-			if (actors?.length > 0) for (const actor of actors) {
-				const entity = EntityManager.get(actor.gid);
-				if (entity?.display) entity.display.name = actor.name;
-			}
-			if (this._openWindowsBuffer?.length > 0) for (const win of this._openWindowsBuffer) {
-				const compName = WindowIdToComponent[win.windowId];
-				if (compName) try {
-					const comp = UIManager.getComponent(compName);
-					if (comp) {
-						if (!comp.__active || !comp._host?.parentNode) comp.append();
-						else if (typeof comp.ui?.show === "function") comp.ui.show();
-					}
-				} catch (e) {
-					replayLog(`[ReplayPlayer] Error opening window ${compName}:`, e);
-				}
-			}
-			if (this._navigationBuffer?.isPathActive && typeof Navigation_default?.setTargetCoordinatesText === "function") {
-				const navX = this._navigationBuffer.endX ?? this._navigationBuffer.x;
-				const navY = this._navigationBuffer.endY ?? this._navigationBuffer.y;
-				if (navX !== void 0 && navY !== void 0) Navigation_default.setTargetCoordinatesText(navX, navY);
-			}
-			if (SessionStorage_default.Entity) {
-				if (BasicInfoController.update) {
-					BasicInfoController.update("blvl", SessionStorage_default.Entity.clevel);
-					BasicInfoController.update("jlvl", SessionStorage_default.Entity.joblevel);
-					BasicInfoController.update("zeny", SessionStorage_default.Entity.money);
-					BasicInfoController.update("name", SessionStorage_default.Entity.display.name);
-					BasicInfoController.update("job", SessionStorage_default.Entity.job);
-					BasicInfoController.update("hp", SessionStorage_default.Entity.life.hp, SessionStorage_default.Entity.life.hp_max);
-					BasicInfoController.update("sp", SessionStorage_default.Entity.life.sp, SessionStorage_default.Entity.life.sp_max);
-					BasicInfoController.update("weight", SessionStorage_default.Entity.weight, SessionStorage_default.Entity.max_weight);
-				}
-				if (WinStatsController.update) {
-					WinStatsController.update("str", SessionStorage_default.Entity.str);
-					WinStatsController.update("agi", SessionStorage_default.Entity.agi);
-					WinStatsController.update("vit", SessionStorage_default.Entity.vit);
-					WinStatsController.update("int", SessionStorage_default.Entity.int);
-					WinStatsController.update("dex", SessionStorage_default.Entity.dex);
-					WinStatsController.update("luk", SessionStorage_default.Entity.luk);
-					WinStatsController.update("str2", SessionStorage_default.Entity.str_bonus);
-					WinStatsController.update("agi2", SessionStorage_default.Entity.agi_bonus);
-					WinStatsController.update("vit2", SessionStorage_default.Entity.vit_bonus);
-					WinStatsController.update("int2", SessionStorage_default.Entity.int_bonus);
-					WinStatsController.update("dex2", SessionStorage_default.Entity.dex_bonus);
-					WinStatsController.update("luk2", SessionStorage_default.Entity.luk_bonus);
-				}
-			}
-			this._setState(ReplayState.INITIAL_DATA_COMPLETE);
-		}
-		/**
-		* Time-based packet injection from the PacketStream buffer.
-		*/
-		_tickPacketStream(now) {
-			const logicalTime = (now - this.startTime) * this.speed + (this._firstStreamTime || 0);
-			this._logicalTime = logicalTime;
-			while (this._streamChunkIndex < this._packetStreamBuffer.length) {
-				const chunk = this._packetStreamBuffer[this._streamChunkIndex];
-				if (chunk.time <= logicalTime) {
-					if (chunk.packetId === 2222 || chunk.packetId === 2222) this._handleReplayEvent(chunk.data);
-					else this._pushPacket(chunk.data);
-					this._streamChunkIndex++;
-				} else break;
-			}
-			if (this._streamChunkIndex >= this._packetStreamBuffer.length) {
-				replayLog("[Replay] Replay finished");
-				this._setState(ReplayState.REPLAY_FINISHED);
-				this.stop();
-			}
-		}
-		/**
-		* Handles synthetic replay events (Opcode 2222 / 0x08AE).
-		* Format: [packetId: Uint16 (2222), length: Uint16, subOpCode: Uint16, payload...]
-		*/
-		_handleReplayEvent(data) {
-			if (!data || data.byteLength < 6) return;
-			try {
-				const reader = new BinaryReader(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength));
-				reader.seek(2, 2);
-				const len = reader.readUShort();
-				const subOpCode = reader.readUShort();
-				const totalLen = data.byteLength;
-				if (len < 6 || len > totalLen) return;
-				switch (subOpCode) {
-					case ReplayEventSubOpCode.WINDOW_MOVE: {
-						if (totalLen < 12 || len < 12) return;
-						const windowId = reader.readUShort();
-						const x = reader.readShort();
-						const y = reader.readShort();
-						const compName = WindowIdToComponent[windowId];
-						if (compName) try {
-							const comp = UIManager.getComponent(compName);
-							if (comp?.ui) comp.ui.css({
-								left: `${x}px`,
-								top: `${y}px`
-							});
-						} catch (_e) {}
-						break;
-					}
-					case ReplayEventSubOpCode.ITEM_DESC: {
-						if (totalLen < 10 || len < 10) return;
-						const itid = reader.readUInt();
-						if (ItemInfo_default?.setItem) {
-							if (!ItemInfo_default.__active) ItemInfo_default.append();
-							ItemInfo_default.setItem({
-								ITID: itid,
-								IsIdentified: true
-							});
-						}
-						break;
-					}
-					case ReplayEventSubOpCode.WINDOW_MSG: {
-						if (totalLen < 8 || len < 8) return;
-						reader.readUShort();
-						const msgLen = Math.min(len - 8, totalLen - 8);
-						if (msgLen > 0 && ChatBox_default?.addText) {
-							const text = reader.readBinaryString(msgLen);
-							ChatBox_default.addText(text, ChatBox_default.TYPE_INFO);
-						}
-						break;
-					}
-					case ReplayEventSubOpCode.SET_TARGET: {
-						if (totalLen < 10 || len < 10) return;
-						const targetGid = reader.readUInt();
-						if (SessionStorage_default.Entity) SessionStorage_default.Entity.target = targetGid ? EntityManager.get(targetGid) : null;
-						break;
-					}
-					case ReplayEventSubOpCode.SET_MAP_INFO:
-						if (totalLen < 22 || len < 22) return;
-						replayLog(`[ReplayEvent] SET_MAP_INFO: ${reader.readBinaryString(16)}`);
-						break;
-					case ReplayEventSubOpCode.MAP_TRANSITION:
-						if (totalLen < 22 || len < 22) return;
-						replayLog(`[ReplayEvent] MAP_TRANSITION: ${reader.readBinaryString(16)}`);
-						break;
-					case ReplayEventSubOpCode.SET_BGM_AMBIENT: {
-						const bgmLen = Math.min(len > 6 ? len - 6 : 0, totalLen > 6 ? totalLen - 6 : 0);
-						if (bgmLen > 0) {
-							const bgmName = reader.readBinaryString(bgmLen);
-							if (BGM?.play && bgmName) BGM.play(bgmName);
-						}
-						break;
-					}
-					case ReplayEventSubOpCode.SET_SESSION_TEXT: {
-						const textLen = Math.min(len > 6 ? len - 6 : 0, totalLen > 6 ? totalLen - 6 : 0);
-						if (textLen > 0) replayLog(`[ReplayEvent] SET_SESSION_TEXT: ${reader.readBinaryString(textLen)}`);
-						break;
-					}
-					case ReplayEventSubOpCode.NAVI_PATH:
-					case ReplayEventSubOpCode.NAVI_WAYPOINT:
-					case ReplayEventSubOpCode.NAVI_TARGET:
-					case ReplayEventSubOpCode.NAVIGATION_PATH:
-					case ReplayEventSubOpCode.NAVIGATION_ARROW:
-					case ReplayEventSubOpCode.NAVIGATION_ACTIVE:
-						if (totalLen >= 10 && len >= 10 && typeof Navigation_default?.setTargetCoordinatesText === "function") {
-							const x = reader.readUShort();
-							const y = reader.readUShort();
-							Navigation_default.setTargetCoordinatesText(x, y);
-						}
-						break;
-					case ReplayEventSubOpCode.MAKE_WINDOW: {
-						if (totalLen < 8 || len < 8) return;
-						const windowId = reader.readUShort();
-						const compName = WindowIdToComponent[windowId];
-						if (compName) try {
-							const comp = UIManager.getComponent(compName);
-							if (comp) {
-								if (!comp.__active || !comp._host?.parentNode) comp.append();
-								else if (comp.ui && typeof comp.ui.show === "function") comp.ui.show();
-							}
-						} catch (e) {
-							replayLog(`[ReplayEvent] MAKE_WINDOW error for ${compName}:`, e);
-						}
-						break;
-					}
-					case ReplayEventSubOpCode.WINDOW_ACTION:
-						if (totalLen < 10 || len < 10) return;
-						replayLog(`[ReplayEvent] WINDOW_ACTION: win=${reader.readUShort()}, action=${reader.readUShort()}`);
-						break;
-					case ReplayEventSubOpCode.CLOSE_WINDOW: {
-						if (totalLen < 8 || len < 8) return;
-						const windowId = reader.readUShort();
-						const compName = WindowIdToComponent[windowId];
-						if (compName) try {
-							const comp = UIManager.getComponent(compName);
-							if (comp && (comp.__active || comp._host?.parentNode)) comp.remove();
-						} catch (e) {
-							replayLog(`[ReplayEvent] CLOSE_WINDOW error for ${compName}:`, e);
-						}
-						break;
-					}
-					default: replayLog(`[ReplayEvent] Unhandled subOpCode: ${subOpCode}`);
-				}
-			} catch (e) {
-				console.warn("[ReplayPlayer] Error handling replay event:", e);
-			}
-		}
-		_getCurrentStreamChunk() {
-			return this._packetStreamBuffer[this._streamChunkIndex] || null;
-		}
-		/**
-		* Injects a raw network packet buffer into the NetworkManager via the mock socket.
-		*/
-		_pushPacket(data) {
-			if (!this.socket || !this.socket.connected) return;
-			try {
-				this.socket.push(data);
-			} catch (e) {
-				console.error("[Replay] Packet injection error:", e);
-			}
-		}
-	};
-}));
-// src/UI/Components/WinLogin/WinLoginCommon.js
-function createWinLogin({ name, htmlText, cssText }) {
-	const Component = new GUIComponent(name, cssText);
-	Component.render = () => htmlText;
-	Component.needFocus = false;
-	const _preferences = Preferences.get("WinLogin", {
-		saveID: true,
-		ID: ""
-	}, 1);
-	let _inputUsername;
-	let _inputPassword;
-	let _buttonSave;
-	Component.init = function init() {
-		this.draggable();
-		const root = this.getRoot();
-		_inputUsername = root.querySelector(".user");
-		_inputPassword = root.querySelector(".pass");
-		_buttonSave = root.querySelector(".save");
-		_inputUsername.addEventListener("mousedown", function(event) {
-			this.focus();
-			this.value = "";
-			event.stopImmediatePropagation();
-		});
-		_inputPassword.addEventListener("mousedown", function(event) {
-			this.focus();
-			this.value = "";
-			event.stopImmediatePropagation();
-		});
-		_buttonSave.addEventListener("mousedown", (event) => {
-			toggleSaveButton();
-			event.stopImmediatePropagation();
-		});
-		root.querySelector(".signup").addEventListener("click", signup);
-		root.querySelector(".connect").addEventListener("click", connect);
-		root.querySelector(".exit").addEventListener("click", exit);
-		const replayUpload = root.querySelector(".replay-upload");
-		const replayButton = root.querySelector(".replay");
-		if (!replayUpload || !replayButton) return;
-		replayButton.addEventListener("click", () => {
-			replayUpload.click();
-		});
-		replayUpload.addEventListener("change", function() {
-			if (!this.files || !this.files.length) return;
-			const file = this.files[0];
-			this.value = "";
-			if (!file.name || !file.name.toLowerCase().endsWith(".rrf")) {
-				UIManager.showMessageBox("Please select a Ragnarok replay file (.rrf).", "ok");
-				return;
-			}
-			loadReplay(file);
-		});
-	};
-	Component.onAppend = function onAppend() {
-		_inputUsername.value = _preferences.saveID ? _preferences.ID : "";
-		_inputPassword.value = "";
-		Client.loadFile(`${DB.INTERFACE_PATH}login_interface/chk_save${_preferences.saveID ? "on" : "off"}.bmp`, (url) => {
-			_buttonSave.style.backgroundImage = "url(" + url + ")";
-		});
-		if (_preferences.ID.length) _inputPassword.focus();
-		else _inputUsername.focus();
-		Component.placeOnTop();
-		if (PerfProbe.enabled) PerfProbe.loginShown();
-	};
-	Component.onKeyDown = function onKeyDown(event) {
-		if (this._host.style.display === "none") return true;
-		switch (event.which) {
-			case KEYS.ENTER:
-				connect();
-				event.stopImmediatePropagation();
-				return false;
-			case KEYS.ESCAPE:
-				exit();
-				event.stopImmediatePropagation();
-				return false;
-			case KEYS.TAB: {
-				const target = this._shadow.activeElement === _inputUsername ? _inputPassword : _inputUsername;
-				target.focus();
-				target.select();
-				event.stopImmediatePropagation();
-				return false;
-			}
-		}
-		return true;
-	};
-	function toggleSaveButton() {
-		_preferences.saveID = !_preferences.saveID;
-		Client.loadFile(`${DB.INTERFACE_PATH}login_interface/chk_save${_preferences.saveID ? "on" : "off"}.bmp`, (url) => {
-			_buttonSave.style.backgroundImage = "url(" + url + ")";
-		});
-	}
-	function exit() {
-		Component.onExitRequest();
-		return false;
-	}
-	function connect() {
-		const user = _inputUsername.value;
-		const pass = _inputPassword.value;
-		if (_preferences.saveID) {
-			_preferences.saveID = true;
-			_preferences.ID = user;
-		} else {
-			_preferences.saveID = false;
-			_preferences.ID = "";
-		}
-		_preferences.save();
-		Component.onConnectionRequest(user, pass);
-		return false;
-	}
-	async function loadReplay(file) {
-		try {
-			const { default: ReplayPlayer } = await __vitePreload(async () => {
-				const { default: ReplayPlayer } = await Promise.resolve().then(() => (init_ReplayPlayer(), ReplayPlayer_exports));
-				return { default: ReplayPlayer };
-			}, void 0, import.meta.url);
-			const replay = new ReplayPlayer();
-			await replay.load(file);
-			Component.remove();
-			replay.start();
-		} catch (err) {
-			console.error("[Replay] Error loading replay", err);
-			UIManager.showMessageBox(`Could not load the replay file.\n${err.message || err}`, "ok");
-		}
-	}
-	function signup() {
-		const url = Configs.get("registrationweb");
-		if (url) UIManager.showPromptBox(DB.getMessage(662), "ok", "cancel", () => {
-			window.open(url);
-		}, null);
-		else UIManager.showPromptBox("No registration URL was provided.\nIf this server uses simplified registration, then input your new:\n - Username followed by _M for Male and _F for Female account (Eg: MyUser_M)\n - Password.", "ok", "cancel", null, null);
-	}
-	Component.onConnectionRequest = function onConnectionRequest() {};
-	Component.onExitRequest = function onExitRequest() {};
-	return UIManager.addComponent(Component);
-}
-var init_WinLoginCommon = __esmMin((() => {
-	init_DBManager();
-	init_Client();
-	init_Configs();
-	init_Preferences$1();
-	init_KeyEventHandler();
-	init_UIManager();
-	init_GUIComponent();
-	init_PerfProbe();
-	init_Elements();
-	init_preload_helper();
-}));
-// src/UI/Components/WinLogin/WinLogin/WinLogin.js
-var WinLogin_default;
-var init_WinLogin$1 = __esmMin((() => {
-	init_WinLogin$3();
-	init_WinLogin$2();
-	init_WinLoginCommon();
-	WinLogin_default = createWinLogin({
-		name: "WinLogin",
-		htmlText: WinLogin_default$2,
-		cssText: WinLogin_default$1
-	});
-}));
-// src/UI/Components/WinLogin/WinLoginV2/WinLoginV2.html?raw
-var WinLoginV2_default$2;
-var init_WinLoginV2$2 = __esmMin((() => {
-	WinLoginV2_default$2 = "<div id=\"WinLogin\" class=\"win_login\">\r\n	<div class=\"win_login\">\r\n		<ui-image src=\"login_interface/bg_login.tga\"></ui-image>\r\n		<!-- User Auth -->\r\n		<input id=\"user\" class=\"user\" type=\"text\" value=\"\" />\r\n		<input id=\"pass\" class=\"pass\" type=\"password\" value=\"\" />\r\n		<button\r\n			id=\"save\"\r\n			class=\"save\"\r\n			type=\"button\"\r\n			data-background=\"login_interface/chk_saveoff.bmp\"\r\n			data-preload=\"login_interface/chk_saveon.bmp\"\r\n		></button>\r\n\r\n		<!-- Buttons -->\r\n		<button\r\n			class=\"btn replay\"\r\n			type=\"button\"\r\n			data-background=\"login_interface/bt_join_normal.bmp\"\r\n			data-hover=\"login_interface/bt_join_over.bmp\"\r\n			data-down=\"login_interface/bt_join_press.bmp\"\r\n		>\r\n			Replay\r\n		</button>\r\n		<input type=\"file\" class=\"replay-upload\" accept=\".rrf\" style=\"display: none\" />\r\n		<button\r\n			id=\"btn_connect\"\r\n			class=\"btn connect\"\r\n			type=\"submit\"\r\n			data-background=\"login_interface/bt_start_normal.bmp\"\r\n			data-hover=\"login_interface/bt_start_over.bmp\"\r\n			data-down=\"login_interface/bt_start_press.bmp\"\r\n		></button>\r\n		<button\r\n			id=\"btn_connect\"\r\n			class=\"btn signup\"\r\n			type=\"button\"\r\n			data-background=\"login_interface/bt_join_normal.bmp\"\r\n			data-hover=\"login_interface/bt_join_over.bmp\"\r\n			data-down=\"login_interface/bt_join_press.bmp\"\r\n		>\r\n			Sign Up\r\n		</button>\r\n		<button id=\"btn_exit\" class=\"btn exit\" type=\"button\"></button>\r\n	</div>\r\n</div>\r\n";
-}));
-// src/UI/Components/WinLogin/WinLoginV2/WinLoginV2.css?raw
-var WinLoginV2_default$1;
-var init_WinLoginV2$1 = __esmMin((() => {
-	WinLoginV2_default$1 = ":host {\r\n	top: 60%;\r\n	left: calc(50% - 140px);\r\n	width: 301px;\r\n	height: 132px;\r\n}\r\n\r\n#WinLogin {\r\n	position: absolute;\r\n	width: 301px;\r\n	height: 132px;\r\n}\r\n#WinLogin .win_login {\r\n	width: 100%;\r\n	height: 100%;\r\n}\r\n#WinLogin .win_login input {\r\n	position: absolute;\r\n	left: 17px;\r\n	height: 18px;\r\n	width: 127px;\r\n	border: none;\r\n	background-color: transparent;\r\n	padding-left: 2px;\r\n	outline: none;\r\n	text-align: center;\r\n}\r\n#WinLogin .win_login input.user {\r\n	top: 39px;\r\n}\r\n#WinLogin .win_login input.pass {\r\n	top: 61px;\r\n}\r\n#WinLogin .win_login .save {\r\n	position: absolute;\r\n	top: 85px;\r\n	left: 57px;\r\n	display: block;\r\n	width: 38px;\r\n	height: 10px;\r\n	border: none;\r\n	background-color: transparent;\r\n	background-repeat: no-repeat;\r\n}\r\n#WinLogin .win_login .btn {\r\n	position: absolute;\r\n	border: 0;\r\n	background-color: transparent;\r\n}\r\n#WinLogin .win_login .btn.connect {\r\n	width: 84px;\r\n	height: 84px;\r\n	right: 25px;\r\n	bottom: 15px;\r\n}\r\n#WinLogin .win_login .btn.signup {\r\n	width: 84px;\r\n	height: 21px;\r\n	right: 120px;\r\n	bottom: 10px;\r\n}\r\n#WinLogin .btn.replay {\r\n	width: 84px;\r\n	height: 21px;\r\n	right: 210px;\r\n	bottom: 10px;\r\n}\r\n#WinLogin .win_login .btn.exit {\r\n	width: 24px;\r\n	height: 23px;\r\n	right: 7px;\r\n	bottom: 96px;\r\n}\r\n\r\n/* Override browser autofill styles */\r\n#WinLogin .win_login input:-webkit-autofill,\r\n#WinLogin .win_login input:-webkit-autofill:hover,\r\n#WinLogin .win_login input:-webkit-autofill:focus,\r\n#WinLogin .win_login input:-webkit-autofill:active,\r\n#WinLogin .win_login input:-internal-autofill-selected,\r\n#WinLogin .win_login input:-internal-autofill-previewed {\r\n	-webkit-background-clip: text;\r\n	transition: background-color 5000sease-in-out 0s;\r\n	box-shadow: inset 0 0 20px 20px #ffffff00;\r\n}\r\n";
-}));
-// src/UI/Components/WinLogin/WinLoginV2/WinLoginV2.js
-var WinLoginV2_default;
-var init_WinLoginV2 = __esmMin((() => {
-	init_WinLoginV2$2();
-	init_WinLoginV2$1();
-	init_WinLoginCommon();
-	WinLoginV2_default = createWinLogin({
-		name: "WinLoginV2",
-		htmlText: WinLoginV2_default$2,
-		cssText: WinLoginV2_default$1
-	});
-}));
-// src/UI/Components/WinLogin/WinLoginV3/WinLoginV3.js
-var WinLoginV3_default;
-var init_WinLoginV3 = __esmMin((() => {
-	init_WinLoginV2$2();
-	init_WinLoginV2$1();
-	init_WinLoginCommon();
-	WinLoginV3_default = createWinLogin({
-		name: "WinLoginV3",
-		htmlText: WinLoginV2_default$2,
-		cssText: WinLoginV2_default$1
-	});
-}));
-// src/UI/Components/WinLogin/WinLogin.js
-var publicName, versionInfo, Controller;
-var init_WinLogin = __esmMin((() => {
-	init_WinLogin$1();
-	init_WinLoginV2();
-	init_WinLoginV3();
-	init_UIVersionManager();
-	publicName = "WinLogin";
-	versionInfo = {
-		default: WinLogin_default,
-		common: {
-			20221207: WinLoginV3_default,
-			20181114: WinLoginV2_default
-		},
-		re: {},
-		prere: {}
-	};
-	Controller = UIVersionManager.getUIController(publicName, versionInfo);
-}));
 // src/Engine/LoginEngine.js
 var LoginEngine_exports = /* @__PURE__ */ __exportAll({ default: () => LoginEngine });
 /**
@@ -357676,14 +357798,14 @@ var LoginEngine_exports = /* @__PURE__ */ __exportAll({ default: () => LoginEngi
 */
 function onConnectionRequest(username, password) {
 	SoundManager.play("¹öÆ°¼Ò¸®.wav");
-	Controller.remove();
+	Controller$2.remove();
 	WinLoading.append();
 	_loginID = username;
 	Network.connect(_server.address, _server.port, (success) => {
 		if (!success) {
 			UIManager.showMessageBox(DB.getMessage(1), "ok", () => {
 				UIManager.removeComponents();
-				Controller.append();
+				Controller$2.append();
 			}, true);
 			return;
 		}
@@ -357806,7 +357928,7 @@ function onConnectionAccepted(pkt) {
 		WinList_default.onExitRequest = () => {
 			Network.close();
 			WinList_default.remove();
-			Controller.append();
+			Controller$2.append();
 		};
 		WinList_default.append();
 		WinList_default.setList(list);
@@ -357856,7 +357978,7 @@ function onTarenConnectionRefused(pkt) {
 	}
 	UIManager.showMessageBox(DB.getMessage(msg_id), "ok", () => {
 		UIManager.removeComponents();
-		Controller.append();
+		Controller$2.append();
 	}, true);
 	Network.close();
 }
@@ -357904,7 +358026,7 @@ function onTarenConnectionRefused2(pkt) {
 	}
 	UIManager.showMessageBox(DB.getMessage(msg_id).replace("%s", pkt.blockDate), "ok", () => {
 		UIManager.removeComponents();
-		Controller.append();
+		Controller$2.append();
 	}, true);
 }
 /**
@@ -357962,7 +358084,7 @@ function onInternationalConnectionRefused(pkt) {
 	}
 	UIManager.showMessageBox(DB.getMessage(msg_id).replace("%d", pkt.blockDate), "ok", () => {
 		UIManager.removeComponents();
-		Controller.append();
+		Controller$2.append();
 	}, true);
 	Network.close();
 }
@@ -358162,7 +358284,7 @@ function onConnectionRefused(pkt) {
 	}
 	UIManager.showMessageBox(DB.getMessage(error).replace("%s", pkt.blockDate), "ok", () => {
 		UIManager.removeComponents();
-		Controller.append();
+		Controller$2.append();
 	}, true);
 	Network.close();
 }
@@ -358269,7 +358391,7 @@ function onServerClosed(pkt) {
 		BGM.play("01.mp3");
 		UIManager.removeComponents();
 		Background.setLoginBackground();
-		Controller.append();
+		Controller$2.append();
 	}, true);
 	Network.close();
 }
@@ -358360,21 +358482,21 @@ var init_LoginEngine = __esmMin((() => {
 			if (audioExt) BGM.setAvailableExtensions(audioExt);
 			SessionStorage_default.AdminList = server.adminList || [];
 			Plugins.init();
-			Controller.selectUIVersion();
+			Controller$2.selectUIVersion();
 			Background.setLoginBackground();
-			Controller.onConnectionRequest = onConnectionRequest;
-			Controller.onExitRequest = onExitRequest;
+			Controller$2.onConnectionRequest = onConnectionRequest;
+			Controller$2.onExitRequest = onExitRequest;
 			Network.onDisconnect = () => {
 				UIManager.showMessageBox(DB.getMessage(1), "ok", () => {
 					UIManager.removeComponents();
-					Controller.append();
+					Controller$2.append();
 				}, true);
 			};
 			if (autoLogin instanceof Array && autoLogin[0] && autoLogin[1]) {
 				onConnectionRequest.apply(null, autoLogin);
 				Configs.set("autoLogin", null);
 			} else q.add(function() {
-				Controller.append();
+				Controller$2.append();
 			});
 			if (PacketVerManager_default.value < 20170315) Network.hookPacket(PACKET.AC.ACCEPT_LOGIN, onConnectionAccepted);
 			else Network.hookPacket(PACKET.AC.ACCEPT_LOGIN3, onConnectionAccepted);
@@ -358393,9 +358515,9 @@ var init_LoginEngine = __esmMin((() => {
 		*/
 		static reload() {
 			UIManager.removeComponents();
-			Controller.onConnectionRequest = onConnectionRequest;
-			Controller.onExitRequest = onExitRequest;
-			Controller.append();
+			Controller$2.onConnectionRequest = onConnectionRequest;
+			Controller$2.onExitRequest = onExitRequest;
+			Controller$2.append();
 			Network.close();
 		}
 		/**

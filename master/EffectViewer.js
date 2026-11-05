@@ -207591,10 +207591,11 @@ var init_PacketCrypt = __esmMin((() => {
 * @param {string} host
 * @param {number} port
 * @param {?string} proxy - wsProxy URL (server option `socketProxy`)
-* @param {?string} urlTemplate - direct WebSocket URL with {host}/{port} (server option `socketUrl`)
+* @param {?string} urlTemplate - direct WebSocket URL with {role}/{host}/{port} (server option `socketUrl`)
+* @param {?string} role - 'login', 'char' or 'map'
 */
-function Socket$1(host, port, proxy, urlTemplate) {
-	const url = buildUrl(host, port, proxy, urlTemplate);
+function Socket$1(host, port, proxy, urlTemplate, role) {
+	const url = buildUrl(host, port, proxy, urlTemplate, role);
 	const self = this;
 	this.connected = false;
 	this.ws = new WebSocket(url);
@@ -207618,8 +207619,9 @@ function Socket$1(host, port, proxy, urlTemplate) {
 /**
 * WebSocket URL for a game server at host:port.
 *
-* - urlTemplate (server option `socketUrl`): the game servers accept WebSocket clients themselves; `{host}` and
-*   `{port}` are replaced, e.g. 'wss://ws.example.com/{port}' when an HTTPS edge routes each path to a server.
+* - urlTemplate (server option `socketUrl`): the game servers accept WebSocket clients themselves; `{role}`
+*   ('login', 'char' or 'map'), `{host}` and `{port}` are replaced, e.g. 'wss://ws.example.com/{role}' when an
+*   HTTPS edge routes each path to a server.
 * - proxy (server option `socketProxy`): a wsProxy; the target goes in the path, e.g. 'wss://proxy/host:port'.
 * - neither: the server itself, ws://host:port/.
 *
@@ -207627,10 +207629,11 @@ function Socket$1(host, port, proxy, urlTemplate) {
 * @param {number} port
 * @param {?string} proxy
 * @param {?string} urlTemplate
+* @param {?string} [role]
 * @return {string}
 */
-function buildUrl(host, port, proxy, urlTemplate) {
-	if (urlTemplate) return urlTemplate.replace(/\{host\}/g, host).replace(/\{port\}/g, String(port));
+function buildUrl(host, port, proxy, urlTemplate, role) {
+	if (urlTemplate) return urlTemplate.replace(/\{role\}/g, role || "").replace(/\{host\}/g, host).replace(/\{port\}/g, String(port));
 	if (proxy) return proxy + (proxy.match(/\/$/) ? "" : "/") + host + ":" + port;
 	return "ws://" + host + ":" + port + "/";
 }
@@ -207715,12 +207718,13 @@ var init_NodeSocket = __esmMin((() => {
 *
 * @param {string} host
 * @param {number} port
+* @param {string} [role] - 'login', 'char' or 'map'
 * @return {Socket}
 */
-function defaultSocketFactory(host, port) {
+function defaultSocketFactory(host, port, role) {
 	const proxy = Configs.get("socketProxy", null);
 	if (Socket.isSupported()) return new Socket(host, port, proxy);
-	return new Socket$1(host, port, proxy, Configs.get("socketUrl", null));
+	return new Socket$1(host, port, proxy, Configs.get("socketUrl", null), role);
 }
 function _scheduleLogCallback(cb) {
 	if (typeof window !== "undefined" && window.requestIdleCallback) requestIdleCallback(cb);
@@ -207777,9 +207781,11 @@ function Packets(name, Struct, size) {
 * @param {number} port
 * @param {function} callback once connected or not
 * @param {boolean} is zone server ?
+* @param {string} [role] - 'login', 'char' or 'map' (default 'map' for a zone server); fills {role} in socketUrl
 */
-function connect(host, port, callback, isZone) {
-	const socket = _socketFactory ? _socketFactory(host, port) : defaultSocketFactory(host, port);
+function connect(host, port, callback, isZone, role) {
+	role = role || (isZone ? "map" : void 0);
+	const socket = _socketFactory ? _socketFactory(host, port, role) : defaultSocketFactory(host, port, role);
 	socket.isZone = !!isZone;
 	socket.onClose = onClose$9;
 	socket.onComplete = function onComplete(success) {
@@ -348937,7 +348943,7 @@ var init_MapEngine = __esmMin((() => {
 					Network.sendPacket(ping);
 				});
 				SessionStorage_default.Playing = true;
-			}, true);
+			}, true, "map");
 			if (MapEngine.needsUIVerUpdate || !_isInitialised) {
 				if (PacketVerManager_default.value < 20200520) BasicInfoController.selectUIVersion();
 				UIVersionManager.selectAll();
@@ -352163,7 +352169,7 @@ var init_CharEngine = __esmMin((() => {
 				Network.read((fp) => {
 					SessionStorage_default.AID = fp.readLong();
 				});
-			});
+			}, false, "char");
 			UIVersionManager.selectAllChar();
 			Network.hookPacket(PACKET.HC.ACCEPT_ENTER_NEO_UNION, onConnectionAccepted$1);
 			Network.hookPacket(PACKET.HC.REFUSE_ENTER, onConnectionRefused$1);
@@ -357744,7 +357750,7 @@ function onConnectionRequest(username, password) {
 				Network.sendPacket(pkt);
 			}
 		}
-	});
+	}, false, "login");
 }
 /**
 * Go back to intro window

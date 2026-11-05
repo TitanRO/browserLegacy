@@ -1,7 +1,7 @@
 /**
  * Quickstart Plugin (TitanRO)
  *
- * Quick Invite: a link such as https://play.titanro.net/?invite=<code> (made in game with @invite) shows who sent
+ * Quick Invite: a link such as https://play.titanro.net/?invite=<code> (made in game with @quickinvite) shows who sent
  * it and where they are, and "Play Now" logs the visitor in as the guest character, which loads in next to the
  * inviter. The server side is the Hercules quickstart plugin (TitanRO/titanro2 src/plugins/quickstart); the invite
  * details and the one-time login come from titanro-api (query `invite`, mutation `acceptInvite`).

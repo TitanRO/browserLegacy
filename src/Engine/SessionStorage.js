@@ -63,6 +63,9 @@ export default {
 	guildName: '',
 	isGuildMaster: false,
 
+	// The char-server will select the character itself (Quickstart guest login): CharEngine skips the char list
+	ServerSelectsChar: false,
+
 	Playing: false,
 	hasCart: false,
 	CartNum: 0,

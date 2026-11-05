@@ -8,7 +8,8 @@
  *
  * Everything stays in this plugin: the dialog is its own overlay (no roBrowser UI component changes), and the login
  * goes through the login window's own handler, as if the visitor had typed the username and token and pressed
- * Connect. The server picks the character and the map, so the client goes straight from login to the game.
+ * Connect. The server picks the character and the map; Session.ServerSelectsChar tells CharEngine to skip the char
+ * list, so the client goes straight from login to the game.
  *
  * Config.local.js: plugins: { Quickstart: { path: 'Quickstart/Quickstart', pars: { api: '<GraphQL URL>' } } }
  *
@@ -16,25 +17,32 @@
  */
 
 import DB from 'DB/DBManager.js';
+import Session from 'Engine/SessionStorage.js';
 import WinLogin from 'UI/Components/WinLogin/WinLogin.js';
 
 const INVITE_CODE = /^[a-z0-9]{16}$/;
 const DEFAULT_API = 'https://api.titanro.net/graphql';
 
+// Styled after the game's own windows (font, title bar, buttons). z-index stays under the game cursor (.cursor, 9999),
+// which the game draws itself over every element once its cursor is loaded.
 const STYLE = `
-.qs-invite { position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center;
-	background: rgba(0, 0, 0, 0.55); font-family: Arial, Helvetica, sans-serif; }
-.qs-invite__box { width: min(360px, calc(100vw - 32px)); padding: 24px; border-radius: 8px; background: #f6f3ea;
-	color: #2b2b2b; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35); text-align: center; }
-.qs-invite__who { font-size: 18px; font-weight: bold; }
-.qs-invite__line { margin: 6px 0; font-size: 14px; color: #555; }
-.qs-invite__where { font-size: 16px; font-weight: bold; margin-bottom: 18px; }
-.qs-invite__button { min-width: 140px; padding: 10px 18px; border: 0; border-radius: 6px; background: #3a6ea5;
-	color: #fff; font-size: 15px; font-weight: bold; cursor: pointer; }
-.qs-invite__button:disabled { background: #8aa4bf; cursor: default; }
-.qs-invite__link { display: block; margin: 12px auto 0; border: 0; background: none; color: #3a6ea5;
-	font-size: 13px; text-decoration: underline; cursor: pointer; }
-.qs-invite__error { color: #a33; font-size: 14px; margin: 12px 0 0; }
+.qs-invite { position: fixed; inset: 0; z-index: 9000; display: flex; align-items: center; justify-content: center;
+	background: rgba(0, 0, 0, 0.35); font-size: 12px; line-height: 1.3; color: #000; }
+.qs-invite__box { width: min(280px, calc(100vw - 32px)); background: #fff; border: 1px solid #8c9db7;
+	border-radius: 4px 4px 2px 2px; box-shadow: 1px 2px 6px rgba(0, 0, 0, 0.45); overflow: hidden; }
+.qs-invite__title { height: 17px; padding: 0 8px; line-height: 17px; font-weight: bold; color: #2b3e5a;
+	background: linear-gradient(#fdfeff, #d9e4f1); border-bottom: 1px solid #b3c2d6; }
+.qs-invite__body { padding: 12px 12px 8px; text-align: center; }
+.qs-invite__who { font-weight: bold; }
+.qs-invite__line { margin: 4px 0; color: #444; }
+.qs-invite__where { font-weight: bold; color: #1d4e89; }
+.qs-invite__error { color: #b02020; }
+.qs-invite__buttons { display: flex; justify-content: flex-end; gap: 4px; padding: 4px 6px 6px; background: #f2f5f9;
+	border-top: 1px solid #dde4ee; }
+.qs-invite__button { min-width: 58px; height: 20px; padding: 0 8px; font: inherit; color: #1f2f47;
+	border: 1px solid #7f93b0; border-radius: 3px; background: linear-gradient(#ffffff, #dbe3ee); cursor: pointer; }
+.qs-invite__button:hover:not(:disabled) { background: linear-gradient(#ffffff, #c9d7ea); }
+.qs-invite__button:disabled { color: #8a96a8; }
 `;
 
 /** JOB_LORD_KNIGHT -> Lord Knight */
@@ -93,6 +101,9 @@ function showInvite(api, code) {
 	const style = el('style', null, STYLE);
 	const overlay = el('div', 'qs-invite');
 	const box = el('div', 'qs-invite__box');
+	const body = el('div', 'qs-invite__body');
+	const buttons = el('div', 'qs-invite__buttons');
+	box.append(el('div', 'qs-invite__title', 'Invitation'), body, buttons);
 	overlay.appendChild(box);
 	document.head.appendChild(style);
 	document.body.appendChild(overlay);
@@ -101,17 +112,21 @@ function showInvite(api, code) {
 		overlay.remove();
 		style.remove();
 	};
+	const button = (text, onclick) => {
+		const node = el('button', 'qs-invite__button', text);
+		node.onclick = onclick;
+		return node;
+	};
+	const playWithout = () => {
+		forgetInvite();
+		close();
+	};
 	const showError = message => {
-		box.replaceChildren(el('div', 'qs-invite__error', message));
-		const play = el('button', 'qs-invite__link', 'Play without the invite');
-		play.onclick = () => {
-			forgetInvite();
-			close();
-		};
-		box.appendChild(play);
+		body.replaceChildren(el('div', 'qs-invite__error', message));
+		buttons.replaceChildren(button('OK', playWithout));
 	};
 
-	box.appendChild(el('div', 'qs-invite__line', 'Checking your invite…'));
+	body.appendChild(el('div', 'qs-invite__line', 'Checking your invite…'));
 
 	graphql(
 		api,
@@ -125,12 +140,10 @@ function showInvite(api, code) {
 			}
 			const { name, baseLevel, jobLevel } = invite.inviter;
 			const where = el('div', 'qs-invite__where', invite.map);
-			const play = el('button', 'qs-invite__button', 'Play Now');
-			box.replaceChildren(
-				el('div', 'qs-invite__who', `${name} — ${jobName(invite.inviter.class)} ${baseLevel}/${jobLevel}`),
+			body.replaceChildren(
+				el('div', 'qs-invite__who', `${name} (${jobName(invite.inviter.class)} ${baseLevel}/${jobLevel})`),
 				el('div', 'qs-invite__line', 'has invited you to'),
-				where,
-				play
+				where
 			);
 
 			// The map's display name comes from the client's map table (keyed by <map>.rsw; getMapName maps .gat to
@@ -142,19 +155,23 @@ function showInvite(api, code) {
 				})
 				.catch(() => {});
 
-			play.onclick = () => {
+			const cancel = button('Cancel', playWithout);
+			const play = button('Play Now', () => {
 				play.disabled = true;
+				cancel.disabled = true;
 				play.textContent = 'Joining…';
 				graphql(api, 'mutation ($code: String!) { acceptInvite(code: $code) { username token } }', { code })
 					.then(({ acceptInvite }) =>
 						// The login window's handler exists once the login screen is up; it logs in exactly as if
-						// the username and token had been typed in and Connect pressed.
+						// the username and token had been typed in and Connect pressed. The char-server then selects
+						// the guest character itself, so CharEngine skips the char list.
 						waitFor(
 							() => WinLogin.__active && typeof WinLogin.onConnectionRequest === 'function',
 							60000
 						).then(() => {
 							forgetInvite();
 							close();
+							Session.ServerSelectsChar = true;
 							WinLogin.onConnectionRequest(acceptInvite.username, acceptInvite.token);
 						})
 					)
@@ -167,7 +184,8 @@ function showInvite(api, code) {
 									: 'Couldn’t join right now; reload the page and try again.'
 						);
 					});
-			};
+			});
+			buttons.replaceChildren(play, cancel);
 		})
 		.catch(() => showError('Couldn’t check this invite; try again later.'));
 }

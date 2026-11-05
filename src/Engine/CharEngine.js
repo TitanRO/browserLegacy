@@ -61,6 +61,11 @@ let _resettingPincode = false;
  */
 let _creatingPincode = false;
 
+/**
+ * @type {Array} characters of the current char list, for a selection the char-server makes by itself
+ */
+const _characters = [];
+
 class CharEngine {
 	/*
 	 * Connect to char server
@@ -161,6 +166,7 @@ function onExitRequest() {
  */
 function onCharacterListChunk(pkt) {
 	pkt.charInfo.forEach(charInfo => {
+		_characters.push(charInfo);
 		CharSelect.addCharacter(charInfo);
 	});
 }
@@ -186,6 +192,10 @@ function onConnectionAccepted(pkt) {
 
 	// Reset the active player for the new char-select session
 	Session.Entity = null;
+	_characters.length = 0;
+	if (pkt.charInfo) {
+		_characters.push(...pkt.charInfo);
+	}
 
 	// Reset Announcement component
 	const Announce = UIManager.getComponent('Announce');
@@ -844,6 +854,18 @@ function onReceiveMapInfo(pkt) {
 	}
 	DB.startedLazyInit = false;
 	retryCount = 0;
+
+	// The char-server can select the character itself, with no click on the char list (the quickstart plugin's
+	// guest login): build the player here, as onConnectRequest does for a click.
+	if (!Session.Entity) {
+		const character = _characters.find(c => c.GID === pkt.GID);
+		if (character) {
+			CharSelect.remove();
+			UIManager.getComponent('WinLoading').append();
+			Session.Entity = new Player(character);
+		}
+	}
+
 	Session.GID = pkt.GID;
 	MapEngine.init(pkt.addr.ip, pkt.addr.port, pkt.mapName);
 }

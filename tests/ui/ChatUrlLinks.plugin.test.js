@@ -2,8 +2,8 @@
  * tests/ui/ChatUrlLinks.plugin.test.js
  *
  * With the ChatUrlLinks plugin, a received line holding a <URL>label<INFO>url</INFO></URL> link (e.g. the
- * quickstart plugin's invite link) shows the label as a link that copies the URL when clicked and says so in the chat.
- * Only http(s) URLs become links; the rest stays text, and item links keep working.
+ * quickstart plugin's invite link) shows the label as a link that copies the URL when clicked and says so in the chat;
+ * NPC dialog text gets the same link. Only http(s) URLs become links; the rest stays text, and item links keep working.
  */
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -60,6 +60,7 @@ vi.mock('UI/CursorManager.js', () => ({ default: { setType: vi.fn(), ACTION: {} 
 vi.mock('UI/GUIComponent.js', () => ({ default: mocks.MockGUIComponent }));
 vi.mock('UI/UIManager.js', () => ({ default: { addComponent: c => c, showMessageBox: vi.fn() } }));
 vi.mock('UI/Elements/Elements.js', () => ({}));
+vi.mock('UI/Components/NpcBox/NpcBox.js', () => ({ default: { texts: [], setText(text) { this.texts.push(text); } } }));
 vi.mock('UI/Components/ContextMenu/ContextMenu.js', () => ({
 	default: { remove: vi.fn(), addElement: vi.fn(), append: vi.fn() }
 }));
@@ -69,6 +70,7 @@ vi.mock('UI/Components/ChatBoxSettings/ChatBoxSettings.js', () => ({
 
 const ChatBox = (await import('UI/Components/ChatBox/ChatBox.js')).default;
 const ChatUrlLinks = (await import('Plugins/ChatUrlLinks/ChatUrlLinks.js')).default;
+const NpcBox = (await import('UI/Components/NpcBox/NpcBox.js')).default;
 
 function mountChatBox() {
 	const host = document.createElement('div');
@@ -158,5 +160,13 @@ describe('ChatUrlLinks plugin — URL links in a received line', () => {
 
 		expect(line.querySelector('b')).toBeNull();
 		expect(line.textContent).toBe('<b>hi</b> & bye');
+	});
+	it('turns <URL> in NPC dialog text into the same link, leaving the rest for NpcBox', () => {
+		NpcBox.setText('Send this: <URL>https://e.com/x<INFO>https://e.com/x</INFO></URL>^0055FF!^000000', 7);
+
+		const html = NpcBox.texts.pop();
+		expect(html).toContain('<a data-url="https://e.com/x"');
+		expect(html).not.toContain('<URL>');
+		expect(html.endsWith('^0055FF!^000000')).toBe(true);
 	});
 });

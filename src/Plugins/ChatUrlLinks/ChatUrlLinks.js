@@ -1,13 +1,14 @@
 /**
  * ChatUrlLinks Plugin (TitanRO)
  *
- * Renders <URL>label<INFO>url</INFO></URL> in chat as a link that copies the URL to the clipboard when clicked and
+ * Renders <URL>label<INFO>url</INFO></URL> in chat and NPC dialogs as a link that copies the URL to the clipboard when clicked and
  * says so in the chat ("Link copied"). The server writes this tag with clif_format_url, e.g. the quickstart plugin's
- * @quickinvite link, which a player wants to paste somewhere else; the chat window itself can't copy text. Clients
- * from 2018-10-24 open the same link in the default browser instead. Without the plugin the chat shows the raw tags.
+ * @quickinvite link and dialog, which a player wants to paste somewhere else; the game windows can't copy text.
+ * Clients from 2018-10-24 open the same link in the default browser from NPC dialogs. Without the plugin the tags show
+ * as text.
  *
- * It wraps ChatBox.messageToHTML (received lines, whispers, the whisper window) and ChatBox.addText (which renders a
- * line as HTML only when it holds an item link), so ChatBox itself is unchanged. Players can type the tag too: only
+ * It wraps ChatBox.messageToHTML (received lines, whispers, the whisper window), ChatBox.addText (which renders a
+ * line as HTML only when it holds an item link) and NpcBox.setText, so those components themselves are unchanged. Players can type the tag too: only
  * http(s) URLs become links, and the link's title shows the URL; any other link shows its label as text.
  *
  * Config.local.js: plugins: { ChatUrlLinks: 'ChatUrlLinks/ChatUrlLinks' }
@@ -16,6 +17,7 @@
  */
 
 import ChatBox from 'UI/Components/ChatBox/ChatBox.js';
+import NpcBox from 'UI/Components/NpcBox/NpcBox.js';
 
 const URL_TAG = /(<URL>.*?<\/URL>)/i;
 const URL_PARTS = /^<URL>([\s\S]*?)<INFO>([\s\S]*?)<\/INFO><\/URL>$/i;
@@ -104,6 +106,19 @@ export default function Init() {
 			override = true;
 		}
 		return addText.call(this, text, colorType, filterType, color, override);
+	};
+
+	// NPC dialog text is inserted as HTML after NpcBox converts its own tags (items, navigation, colours), so the
+	// <URL> tags are swapped for the link first; the rest of the text is left as NpcBox expects it
+	const setText = NpcBox.setText;
+	NpcBox.setText = function setTextWithUrls(text, gid) {
+		if (typeof text === 'string' && URL_TAG.test(text)) {
+			text = text
+				.split(URL_TAG)
+				.map((part, i) => (i % 2 ? urlLinkToHTML(part) : part))
+				.join('');
+		}
+		return setText.call(this, text, gid);
 	};
 
 	document.addEventListener('click', onClick);

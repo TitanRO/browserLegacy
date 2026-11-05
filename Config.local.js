@@ -35,7 +35,9 @@ window.ROConfigLocal = {
 	plugins: {
 		DefaultSettings: 'DefaultSettings/DefaultSettings',
 		// Quick Invite links (?invite=<code>): invite details and the guest login come from titanro-api.
-		Quickstart: { path: 'Quickstart/Quickstart', pars: { api: 'https://api.titanro.net/graphql' } }
+		Quickstart: { path: 'Quickstart/Quickstart', pars: { api: 'https://api.titanro.net/graphql' } },
+		// <URL> chat links (clif_format_url, e.g. the @quickinvite link) as links opening a new tab.
+		ChatUrlLinks: 'ChatUrlLinks/ChatUrlLinks'
 		// ServiceWorker: 'ServiceWorker/ServiceWorker', // not ported to this branch yet
 	},
 	clientHash: null,

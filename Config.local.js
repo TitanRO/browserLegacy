@@ -20,10 +20,9 @@ window.ROConfigLocal = {
 			langtype: 1,
 			packetver: 20151029,
 			renewal: true,
-			// Connect char/map to play.titanro.net:<advertised port>: wsProxy only allows these host:port targets
-			// (-a play.titanro.net:...), and the servers advertise the edge IP.
-			forceUseAddress: true,
-			socketProxy: 'wss://ws.titanro.net/',
+			// Connect straight to the game servers: the edge routes wss://ws.titanro.net/<port> (the port each server
+			// advertises) to login/char/map, which accept WebSocket clients themselves (client_transport plugin).
+			socketUrl: 'wss://ws.titanro.net/{port}',
 			packetKeys: true
 		}
 	],

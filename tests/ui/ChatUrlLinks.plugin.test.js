@@ -2,8 +2,8 @@
  * tests/ui/ChatUrlLinks.plugin.test.js
  *
  * With the ChatUrlLinks plugin, a received line holding a <URL>label<INFO>url</INFO></URL> link (e.g. the
- * quickstart plugin's invite link) shows the label as a link opening the URL in a new tab. Only http(s) URLs become
- * links; the rest stays text, and item links keep working.
+ * quickstart plugin's invite link) shows the label as a link that copies the URL when clicked and says so in the chat.
+ * Only http(s) URLs become links; the rest stays text, and item links keep working.
  */
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -99,21 +99,36 @@ describe('ChatUrlLinks plugin — URL links in a received line', () => {
 		return root.querySelector(`.content[data-content="${tab}"] div:last-child`);
 	}
 
-	it('renders the label as a link to the URL, opening in a new tab', () => {
+	it('renders the label as a link holding the URL, without navigating anywhere', () => {
 		const line = add('Invite link: <URL>Open invite<INFO>https://play.titanro.net/?invite=abc</INFO></URL>');
 
 		const a = line.querySelector('a.url-link');
-		expect(a.getAttribute('href')).toBe('https://play.titanro.net/?invite=abc');
-		expect(a.getAttribute('title')).toBe('https://play.titanro.net/?invite=abc');
-		expect(a.getAttribute('target')).toBe('_blank');
-		expect(a.getAttribute('rel')).toBe('noopener noreferrer');
+		expect(a.dataset.url).toBe('https://play.titanro.net/?invite=abc');
+		expect(a.getAttribute('title')).toBe('https://play.titanro.net/?invite=abc (click to copy)');
+		expect(a.hasAttribute('href')).toBe(false);
 		expect(line.textContent).toBe('Invite link: Open invite');
+	});
+
+	it('copies the URL on click and says so in the chat', async () => {
+		const writeText = vi.fn(() => Promise.resolve());
+		vi.stubGlobal('navigator', { clipboard: { writeText } });
+		vi.stubGlobal('isSecureContext', true);
+		const a = add('<URL>invite<INFO>https://play.titanro.net/?invite=abc</INFO></URL>').querySelector('a.url-link');
+
+		a.click();
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(writeText).toHaveBeenCalledWith('https://play.titanro.net/?invite=abc');
+		const last = root.querySelector(`.content[data-content="${tab}"] div:last-child`);
+		expect(last.textContent).toBe('Link copied: https://play.titanro.net/?invite=abc');
+		vi.unstubAllGlobals();
 	});
 
 	it('drops the in-game browser size older clients put after the URL', () => {
 		const a = add('<URL>site<INFO>https://example.com/,800,600</INFO></URL>').querySelector('a.url-link');
 
-		expect(a.getAttribute('href')).toBe('https://example.com/');
+		expect(a.dataset.url).toBe('https://example.com/');
 	});
 
 	it('shows a link to anything but http(s) as plain text', () => {

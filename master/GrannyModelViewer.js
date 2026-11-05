@@ -78057,6 +78057,7 @@ var init_SessionStorage = __esmMin((() => {
 		guildPermission: 0,
 		guildName: "",
 		isGuildMaster: false,
+		ServerSelectsChar: false,
 		Playing: false,
 		hasCart: false,
 		CartNum: 0,
@@ -337583,6 +337584,9 @@ function showInvite(api, code) {
 	const style = el("style", null, STYLE);
 	const overlay = el("div", "qs-invite");
 	const box = el("div", "qs-invite__box");
+	const body = el("div", "qs-invite__body");
+	const buttons = el("div", "qs-invite__buttons");
+	box.append(el("div", "qs-invite__title", "Invitation"), body, buttons);
 	overlay.appendChild(box);
 	document.head.appendChild(style);
 	document.body.appendChild(overlay);
@@ -337590,16 +337594,20 @@ function showInvite(api, code) {
 		overlay.remove();
 		style.remove();
 	};
-	const showError = (message) => {
-		box.replaceChildren(el("div", "qs-invite__error", message));
-		const play = el("button", "qs-invite__link", "Play without the invite");
-		play.onclick = () => {
-			forgetInvite();
-			close();
-		};
-		box.appendChild(play);
+	const button = (text, onclick) => {
+		const node = el("button", "qs-invite__button", text);
+		node.onclick = onclick;
+		return node;
 	};
-	box.appendChild(el("div", "qs-invite__line", "Checking your invite…"));
+	const playWithout = () => {
+		forgetInvite();
+		close();
+	};
+	const showError = (message) => {
+		body.replaceChildren(el("div", "qs-invite__error", message));
+		buttons.replaceChildren(button("OK", playWithout));
+	};
+	body.appendChild(el("div", "qs-invite__line", "Checking your invite…"));
 	graphql(api, "query ($code: String!) { invite(code: $code) { status map inviter { name class baseLevel jobLevel } } }", { code }).then(({ invite }) => {
 		if (!invite || invite.status !== "OPEN" || !invite.inviter) {
 			showError("This invite has expired or was already used.");
@@ -337607,23 +337615,26 @@ function showInvite(api, code) {
 		}
 		const { name, baseLevel, jobLevel } = invite.inviter;
 		const where = el("div", "qs-invite__where", invite.map);
-		const play = el("button", "qs-invite__button", "Play Now");
-		box.replaceChildren(el("div", "qs-invite__who", `${name} — ${jobName(invite.inviter.class)} ${baseLevel}/${jobLevel}`), el("div", "qs-invite__line", "has invited you to"), where, play);
+		body.replaceChildren(el("div", "qs-invite__who", `${name} (${jobName(invite.inviter.class)} ${baseLevel}/${jobLevel})`), el("div", "qs-invite__line", "has invited you to"), where);
 		const mapFile = `${invite.map}.gat`;
 		waitFor(() => DB.getMapName(mapFile, "") !== "", 6e4).then(() => {
 			where.textContent = `${DB.getMapName(mapFile, "")} (${invite.map})`;
 		}).catch(() => {});
-		play.onclick = () => {
+		const cancel = button("Cancel", playWithout);
+		const play = button("Play Now", () => {
 			play.disabled = true;
+			cancel.disabled = true;
 			play.textContent = "Joining…";
 			graphql(api, "mutation ($code: String!) { acceptInvite(code: $code) { username token } }", { code }).then(({ acceptInvite }) => waitFor(() => Controller$2.__active && typeof Controller$2.onConnectionRequest === "function", 6e4).then(() => {
 				forgetInvite();
 				close();
+				SessionStorage_default.ServerSelectsChar = true;
 				Controller$2.onConnectionRequest(acceptInvite.username, acceptInvite.token);
 			})).catch((err) => {
 				showError(err.code === "GUEST_BUSY" ? "The guest character is playing right now; try again in a few minutes." : err.code === "INVITE_NOT_OPEN" ? "This invite has expired or was already used." : "Couldn’t join right now; reload the page and try again.");
 			});
-		};
+		});
+		buttons.replaceChildren(play, cancel);
 	}).catch(() => showError("Couldn’t check this invite; try again later."));
 }
 function Init(params) {
@@ -337634,23 +337645,28 @@ function Init(params) {
 var INVITE_CODE, DEFAULT_API, STYLE;
 var init_Quickstart = __esmMin((() => {
 	init_DBManager();
+	init_SessionStorage();
 	init_WinLogin();
 	INVITE_CODE = /^[a-z0-9]{16}$/;
 	DEFAULT_API = "https://api.titanro.net/graphql";
 	STYLE = `
-.qs-invite { position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center;
-	background: rgba(0, 0, 0, 0.55); font-family: Arial, Helvetica, sans-serif; }
-.qs-invite__box { width: min(360px, calc(100vw - 32px)); padding: 24px; border-radius: 8px; background: #f6f3ea;
-	color: #2b2b2b; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35); text-align: center; }
-.qs-invite__who { font-size: 18px; font-weight: bold; }
-.qs-invite__line { margin: 6px 0; font-size: 14px; color: #555; }
-.qs-invite__where { font-size: 16px; font-weight: bold; margin-bottom: 18px; }
-.qs-invite__button { min-width: 140px; padding: 10px 18px; border: 0; border-radius: 6px; background: #3a6ea5;
-	color: #fff; font-size: 15px; font-weight: bold; cursor: pointer; }
-.qs-invite__button:disabled { background: #8aa4bf; cursor: default; }
-.qs-invite__link { display: block; margin: 12px auto 0; border: 0; background: none; color: #3a6ea5;
-	font-size: 13px; text-decoration: underline; cursor: pointer; }
-.qs-invite__error { color: #a33; font-size: 14px; margin: 12px 0 0; }
+.qs-invite { position: fixed; inset: 0; z-index: 9000; display: flex; align-items: center; justify-content: center;
+	background: rgba(0, 0, 0, 0.35); font-size: 12px; line-height: 1.3; color: #000; }
+.qs-invite__box { width: min(280px, calc(100vw - 32px)); background: #fff; border: 1px solid #8c9db7;
+	border-radius: 4px 4px 2px 2px; box-shadow: 1px 2px 6px rgba(0, 0, 0, 0.45); overflow: hidden; }
+.qs-invite__title { height: 17px; padding: 0 8px; line-height: 17px; font-weight: bold; color: #2b3e5a;
+	background: linear-gradient(#fdfeff, #d9e4f1); border-bottom: 1px solid #b3c2d6; }
+.qs-invite__body { padding: 12px 12px 8px; text-align: center; }
+.qs-invite__who { font-weight: bold; }
+.qs-invite__line { margin: 4px 0; color: #444; }
+.qs-invite__where { font-weight: bold; color: #1d4e89; }
+.qs-invite__error { color: #b02020; }
+.qs-invite__buttons { display: flex; justify-content: flex-end; gap: 4px; padding: 4px 6px 6px; background: #f2f5f9;
+	border-top: 1px solid #dde4ee; }
+.qs-invite__button { min-width: 58px; height: 20px; padding: 0 8px; font: inherit; color: #1f2f47;
+	border: 1px solid #7f93b0; border-radius: 3px; background: linear-gradient(#ffffff, #dbe3ee); cursor: pointer; }
+.qs-invite__button:hover:not(:disabled) { background: linear-gradient(#ffffff, #c9d7ea); }
+.qs-invite__button:disabled { color: #8a96a8; }
 `;
 }));
 // src/Plugins/PluginManager.js
@@ -354338,13 +354354,24 @@ function onExitRequest$1() {
 	__vitePreload(() => Promise.resolve().then(() => (init_LoginEngine(), LoginEngine_exports)).then((m) => m.default.reload()), void 0, import.meta.url);
 }
 /**
+* Keeps a char list entry for a selection the char-server makes by itself. The char list window fills in the account's
+* sex when a packet leaves it out; do the same, since that window may never open.
+*
+* @param {object} character - char list entry
+*/
+function keepCharacter(character) {
+	if (!("sex" in character) || character.sex === 99) character.sex = SessionStorage_default.Sex;
+	_characters.push(character);
+}
+/**
 * Server send character list chunk
 *
 * @param {object} pkt - PACKET.HC.ACCEPT_ENTER_NEO_UNION_LIST or PACKET.HC.ACCEPT_ENTER_NEO_UNION_LIST2
 */
 function onCharacterListChunk(pkt) {
 	pkt.charInfo.forEach((charInfo) => {
-		Controller$1.addCharacter(charInfo);
+		keepCharacter(charInfo);
+		if (_serverSelectFallback === null) Controller$1.addCharacter(charInfo);
 	});
 }
 /**
@@ -354363,6 +354390,8 @@ function onConnectionAccepted$1(pkt) {
 	SessionStorage_default.Playing = false;
 	SessionStorage_default.hasCart = false;
 	SessionStorage_default.Entity = null;
+	_characters.length = 0;
+	if (pkt.charInfo) pkt.charInfo.forEach(keepCharacter);
 	const Announce = UIManager.getComponent("Announce");
 	if (Announce) Announce.remove();
 	const MapName = UIManager.getComponent("MapName");
@@ -354370,13 +354399,28 @@ function onConnectionAccepted$1(pkt) {
 		MapName.remove();
 		MapName.resetState();
 	}
-	UIManager.getComponent("WinLoading").remove();
 	Controller$1.onExitRequest = onExitRequest$1;
 	Controller$1.onConnectRequest = onConnectRequest;
 	Controller$1.onCreateRequest = onCreateRequest;
 	Controller$1.onDeleteRequest = onDeleteRequest;
 	Controller$1.onDeleteReqDelay = onDeleteReqDelay;
 	Controller$1.onCancelDeleteRequest = onCancelDeleteRequest;
+	clearTimeout(_serverSelectFallback);
+	_serverSelectFallback = null;
+	if (SessionStorage_default.ServerSelectsChar) {
+		_serverSelectFallback = setTimeout(() => {
+			_serverSelectFallback = null;
+			SessionStorage_default.ServerSelectsChar = false;
+			UIManager.getComponent("WinLoading").remove();
+			Controller$1.append();
+			Controller$1.setInfo({
+				...pkt,
+				charInfo: _characters.slice()
+			});
+		}, SERVER_SELECT_WAIT);
+		return;
+	}
+	UIManager.getComponent("WinLoading").remove();
 	Controller$1.append();
 	Controller$1.setInfo(pkt);
 	/**
@@ -354833,10 +354877,22 @@ function onReceiveMapInfo(pkt) {
 	}
 	DB.startedLazyInit = false;
 	retryCount = 0;
+	clearTimeout(_serverSelectFallback);
+	_serverSelectFallback = null;
+	SessionStorage_default.ServerSelectsChar = false;
+	if (!SessionStorage_default.Entity) {
+		const character = _characters.find((c) => c.GID === pkt.GID);
+		if (character) {
+			if (Controller$1.__active) Controller$1.remove();
+			const WinLoading = UIManager.getComponent("WinLoading");
+			if (!WinLoading.__active) WinLoading.append();
+			SessionStorage_default.Entity = new Player(character);
+		}
+	}
 	SessionStorage_default.GID = pkt.GID;
 	MapEngine.init(pkt.addr.ip, pkt.addr.port, pkt.mapName);
 }
-var _server$1, _creationSlot, _pincodeAttempts, _inAuthPincodeReset, _resettingPincode, _creatingPincode, CharEngine, retryCount;
+var _server$1, _creationSlot, _pincodeAttempts, _inAuthPincodeReset, _resettingPincode, _creatingPincode, _characters, _serverSelectFallback, SERVER_SELECT_WAIT, CharEngine, retryCount;
 var init_CharEngine = __esmMin((() => {
 	init_DBManager();
 	init_Configs();
@@ -354864,6 +354920,9 @@ var init_CharEngine = __esmMin((() => {
 	_inAuthPincodeReset = false;
 	_resettingPincode = false;
 	_creatingPincode = false;
+	_characters = [];
+	_serverSelectFallback = null;
+	SERVER_SELECT_WAIT = 5e3;
 	CharEngine = class CharEngine {
 		static init(server) {
 			BGM.play("01.mp3");

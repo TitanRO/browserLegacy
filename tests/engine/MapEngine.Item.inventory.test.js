@@ -88,9 +88,9 @@ const NpcStore = (await import('UI/Components/NpcStore/NpcStore.js')).default;
 const PACKET = (await import('Network/PacketStructure.js')).default;
 const Session = (await import('Engine/SessionStorage.js')).default;
 
-// prepare() schedules scrollbar checks up to 500 ms out; let the last ones
-// land before jsdom is torn down.
-afterAll(() => new Promise(resolve => setTimeout(resolve, 600)));
+// prepare() schedules scrollbar checks up to 500 ms out; detaching the UI makes any still pending skip, so none
+// runs after jsdom is torn down.
+afterAll(() => document.body.replaceChildren());
 
 function deliver(struct, fields) {
 	const pkt = Object.create(struct.prototype);

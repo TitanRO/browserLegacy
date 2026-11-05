@@ -15,7 +15,8 @@ async function loadManager() {
 	return (await import('Plugins/PluginManager.js')).default;
 }
 
-describe('PluginManager', () => {
+// The first test's dynamic import of the plugin and its client modules takes seconds on a loaded CI node.
+describe('PluginManager', { timeout: 30000 }, () => {
 	let log, error;
 
 	beforeEach(() => {
@@ -34,7 +35,8 @@ describe('PluginManager', () => {
 		Plugins.init();
 
 		await vi.waitFor(() =>
-			expect(log).toHaveBeenCalledWith('[PluginManager] Initialized plugin: ./DefaultSettings/DefaultSettings')
+			expect(log).toHaveBeenCalledWith('[PluginManager] Initialized plugin: ./DefaultSettings/DefaultSettings'),
+			{ timeout: 10000 }
 		);
 		const Audio = (await import('Preferences/Audio.js')).default;
 		expect(Audio.BGM.volume).toBe(0.1);
@@ -47,7 +49,8 @@ describe('PluginManager', () => {
 		Plugins.init();
 
 		await vi.waitFor(() =>
-			expect(log).toHaveBeenCalledWith('[PluginManager] Initialized plugin: ./DefaultSettings/DefaultSettings.js')
+			expect(log).toHaveBeenCalledWith('[PluginManager] Initialized plugin: ./DefaultSettings/DefaultSettings.js'),
+			{ timeout: 10000 }
 		);
 	});
 
@@ -57,7 +60,8 @@ describe('PluginManager', () => {
 		Plugins.init();
 
 		await vi.waitFor(() =>
-			expect(error).toHaveBeenCalledWith('[PluginManager] Error loading plugin: ./Missing/Missing', expect.anything())
+			expect(error).toHaveBeenCalledWith('[PluginManager] Error loading plugin: ./Missing/Missing', expect.anything()),
+			{ timeout: 10000 }
 		);
 	});
 
@@ -67,7 +71,7 @@ describe('PluginManager', () => {
 		Plugins.init();
 		Plugins.init();
 
-		await vi.waitFor(() => expect(log).toHaveBeenCalled());
+		await vi.waitFor(() => expect(log).toHaveBeenCalled(), { timeout: 10000 });
 		await new Promise(r => setTimeout(r, 20));
 		expect(log.mock.calls.filter(c => String(c[0]).includes('Initialized plugin'))).toHaveLength(1);
 	});

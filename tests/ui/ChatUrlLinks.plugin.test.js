@@ -2,7 +2,7 @@
  * tests/ui/ChatUrlLinks.plugin.test.js
  *
  * With the ChatUrlLinks plugin, a received line holding a <URL>label<INFO>url</INFO></URL> link (e.g. the
- * quickstart plugin's invite link) shows the label as a link that copies the URL when clicked and says so in the chat;
+ * quickstart plugin's invite link) shows the label as a link that copies the URL when clicked and shows "Link copied!" over it;
  * NPC dialog text gets the same link. Only http(s) URLs become links; the rest stays text, and item links keep working.
  */
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -111,19 +111,36 @@ describe('ChatUrlLinks plugin — URL links in a received line', () => {
 		expect(line.textContent).toBe('Invite link: Open invite');
 	});
 
-	it('copies the URL on click and says so in the chat', async () => {
+	it('copies the URL on click and shows "Link copied!" over the link for a moment', async () => {
 		const writeText = vi.fn(() => Promise.resolve());
 		vi.stubGlobal('navigator', { clipboard: { writeText } });
 		vi.stubGlobal('isSecureContext', true);
-		const a = add('<URL>invite<INFO>https://play.titanro.net/?invite=abc</INFO></URL>').querySelector('a.url-link');
+		const line = add('<URL>invite<INFO>https://play.titanro.net/?invite=abc</INFO></URL>');
+		vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 
-		a.click();
+		line.querySelector('a.url-link').click();
 		await Promise.resolve();
 		await Promise.resolve();
 
 		expect(writeText).toHaveBeenCalledWith('https://play.titanro.net/?invite=abc');
+		const tip = document.querySelector('.url-link-copied');
+		expect(tip.textContent).toBe('Link copied!');
+		expect(root.querySelector(`.content[data-content="${tab}"] div:last-child`)).toBe(line);
+		vi.advanceTimersByTime(1600);
+		expect(document.querySelector('.url-link-copied')).toBeNull();
+		vi.useRealTimers();
+		vi.unstubAllGlobals();
+	});
+
+	it('says in the chat when the URL could not be copied', async () => {
+		vi.stubGlobal('navigator', { clipboard: { writeText: vi.fn(() => Promise.reject(new Error('denied'))) } });
+		vi.stubGlobal('isSecureContext', true);
+		add('<URL>invite<INFO>https://play.titanro.net/?invite=abc</INFO></URL>').querySelector('a.url-link').click();
+		await Promise.resolve();
+		await Promise.resolve();
+
 		const last = root.querySelector(`.content[data-content="${tab}"] div:last-child`);
-		expect(last.textContent).toBe('Link copied: https://play.titanro.net/?invite=abc');
+		expect(last.textContent).toBe("Couldn't copy the link: https://play.titanro.net/?invite=abc");
 		vi.unstubAllGlobals();
 	});
 

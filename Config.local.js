@@ -31,7 +31,9 @@ window.ROConfigLocal = {
 	skipIntro: true,
 	clientVersionMode: 'PacketVer',
 	plugins: {
-		DefaultSettings: 'DefaultSettings/DefaultSettings'
+		DefaultSettings: 'DefaultSettings/DefaultSettings',
+		// Quick Invite links (?invite=<code>): invite details and the guest login come from titanro-api.
+		Quickstart: { path: 'Quickstart/Quickstart', pars: { api: 'https://api.titanro.net/graphql' } }
 		// ServiceWorker: 'ServiceWorker/ServiceWorker', // not ported to this branch yet
 	},
 	clientHash: null,

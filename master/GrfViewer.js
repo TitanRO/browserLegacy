@@ -334943,8 +334943,8 @@ function Init() {
 		BGM: { volume: .1 },
 		Sound: { volume: .1 }
 	}, 1);
-	Audio_default.BGM.volume = customAudio.BGM.volume;
-	Audio_default.Sound.volume = customAudio.Sound.volume;
+	BGM.setVolume(customAudio.BGM.volume);
+	SoundManager.setVolume(customAudio.Sound.volume);
 	const customMap = Preferences.get("Map", { fog: false }, 1.1);
 	Map_default.fog = customMap.fog;
 	return true;
@@ -334952,6 +334952,8 @@ function Init() {
 var init_DefaultSettings = __esmMin((() => {
 	init_Preferences$1();
 	init_Audio();
+	init_BGM();
+	init_SoundManager();
 	init_Map();
 }));
 // src/Plugins/PluginManager.js

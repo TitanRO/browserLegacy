@@ -11,6 +11,8 @@
 // Dependencies
 import Preferences from 'Core/Preferences.js';
 import Audio from 'Preferences/Audio.js';
+import BGM from 'Audio/BGM.js';
+import SoundManager from 'Audio/SoundManager.js';
 import Map from 'Preferences/Map.js';
 
 export default function Init() {
@@ -27,8 +29,10 @@ export default function Init() {
 		},
 		1.0
 	);
-	Audio.BGM.volume = customAudio.BGM.volume;
-	Audio.Sound.volume = customAudio.Sound.volume;
+	// BGM and SoundManager copy the volume from Preferences when their modules load, before plugins run, so
+	// setting Audio.*.volume alone only moves the sliders; their setters update what actually plays.
+	BGM.setVolume(customAudio.BGM.volume);
+	SoundManager.setVolume(customAudio.Sound.volume);
 
 	// Map preferences
 	const customMap = Preferences.get(

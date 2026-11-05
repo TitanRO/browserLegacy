@@ -1,8 +1,9 @@
-# Pipelines-as-Code: the PR check "titanro-ci / pr" on pull requests to master, two tasks in parallel:
+# Pipelines-as-Code: the PR check "titanro-ci / pr" on pull requests to master, three tasks in parallel:
 # - image: build Dockerfile.titanro WITHOUT pushing it and scan it with Trivy against the image deployed now (pinned in
 #   TitanRO/sysops argo/prod-season/robrowser). Fails on a build error or on a NEW fixable HIGH/CRITICAL vulnerability.
-# - tests: vitest, ESLint and the Prettier check (Task run-check in TitanRO/sysops: the PR code runs with no
-#   credentials). Fails if any of the three fails; all three always run.
+# - tests: vitest. lint: ESLint and the Prettier check, both always run (Task run-check in TitanRO/sysops: the PR
+#   code runs with no credentials). The pre-commit hook (lint-staged, installed by npm install) applies the same
+#   fixes on commit.
 # Same-repo PRs (incl. Renovate) run automatically; fork PRs need /ok-to-test.
 apiVersion: tekton.dev/v1
 kind: PipelineRun
@@ -58,13 +59,37 @@ spec:
                   - name: script
                     value: |
                         npm ci --no-audit --no-fund
+                        npx vitest run --maxWorkers=4
+              workspaces:
+                  - { name: github-app, workspace: github-app }
+            - name: lint
+              taskRef:
+                  resolver: cluster
+                  params:
+                      - { name: kind, value: task }
+                      - { name: name, value: run-check }
+                      - { name: namespace, value: tekton-pipelines }
+              params:
+                  - { name: git-url, value: $(params.git-url) }
+                  - { name: git-revision, value: $(params.git-revision) }
+                  - { name: image, value: 'node:24.22.2-alpine3.24' }
+                  - name: script
+                    value: |
+                        npm ci --no-audit --no-fund
                         status=0
-                        npx vitest run --maxWorkers=4 || status=1
                         npm run lint || status=1
-                        npm run format:check || status=1
+                        npm run format:check || { echo "Run 'npm run format' to fix."; status=1; }
                         exit $status
               workspaces:
                   - { name: github-app, workspace: github-app }
+    # Lint needs little CPU; at run-check's default 2-CPU request it could wait for a node while the tests run.
+    taskRunSpecs:
+        - pipelineTaskName: lint
+          stepSpecs:
+              - name: run
+                computeResources:
+                    requests: { cpu: 500m, memory: 512Mi }
+                    limits: { memory: 2Gi }
     taskRunTemplate:
         serviceAccountName: ci-builder
         podTemplate:

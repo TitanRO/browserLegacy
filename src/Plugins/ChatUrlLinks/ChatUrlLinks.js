@@ -2,7 +2,7 @@
  * ChatUrlLinks Plugin (TitanRO)
  *
  * Renders <URL>label<INFO>url</INFO></URL> in chat and NPC dialogs as a link that copies the URL to the clipboard when clicked and
- * says so in the chat ("Link copied"). The server writes this tag with clif_format_url, e.g. the quickstart plugin's
+ * shows "Link copied!" above it for a moment. The server writes this tag with clif_format_url, e.g. the quickstart plugin's
  * @quickinvite link and dialog, which a player wants to paste somewhere else; the game windows can't copy text.
  * Clients from 2018-10-24 open the same link in the default browser from NPC dialogs. Without the plugin the tags show
  * as text.
@@ -73,6 +73,44 @@ export function copyText(text) {
 	});
 }
 
+// Under the game cursor (.cursor, 9999), which the game draws over every element
+const TOOLTIP_STYLE = `
+.url-link-copied { position: fixed; z-index: 9000; transform: translate(-50%, -100%); padding: 2px 8px;
+	font-size: 12px; line-height: 16px; white-space: nowrap; pointer-events: none; color: #fff;
+	background: rgba(20, 30, 45, 0.9); border: 1px solid #8c9db7; border-radius: 3px;
+	box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.4); transition: opacity 0.3s; }
+.url-link-copied--hidden { opacity: 0; }
+`;
+const TOOLTIP_MS = 1200;
+let tooltip = null;
+let tooltipTimer = 0;
+
+/**
+ * Shows "Link copied!" just above the link for a moment.
+ *
+ * @param {Element} link
+ */
+export function showCopiedTooltip(link) {
+	if (!tooltip) {
+		const style = document.createElement('style');
+		style.textContent = TOOLTIP_STYLE;
+		document.head.appendChild(style);
+		tooltip = document.createElement('div');
+		tooltip.className = 'url-link-copied';
+		tooltip.textContent = 'Link copied!';
+	}
+	const box = link.getBoundingClientRect();
+	tooltip.style.left = `${box.left + box.width / 2}px`;
+	tooltip.style.top = `${box.top - 4}px`;
+	tooltip.classList.remove('url-link-copied--hidden');
+	document.body.appendChild(tooltip);
+	clearTimeout(tooltipTimer);
+	tooltipTimer = setTimeout(() => {
+		tooltip.classList.add('url-link-copied--hidden');
+		tooltipTimer = setTimeout(() => tooltip.remove(), 300);
+	}, TOOLTIP_MS);
+}
+
 function onClick(event) {
 	const link = event
 		.composedPath()
@@ -83,7 +121,7 @@ function onClick(event) {
 	event.preventDefault();
 	const url = link.dataset.url;
 	copyText(url)
-		.then(() => ChatBox.addText(`Link copied: ${url}`, ChatBox.TYPE.INFO, ChatBox.FILTER.PUBLIC_LOG))
+		.then(() => showCopiedTooltip(link))
 		.catch(() => ChatBox.addText(`Couldn't copy the link: ${url}`, ChatBox.TYPE.ERROR, ChatBox.FILTER.PUBLIC_LOG));
 }
 

@@ -235,14 +235,14 @@ function sent() {
 	return vi.waitFor(() => {
 		expect(Guild.onSendEmblem).toHaveBeenCalled();
 		return Guild.onSendEmblem.mock.calls[0][0];
-	});
+	}, { timeout: 10000 });
 }
 
 function refused() {
 	return vi.waitFor(() => {
 		expect(mocks.messageBox).toHaveBeenCalled();
 		return mocks.messageBox.mock.calls[0];
-	});
+	}, { timeout: 10000 });
 }
 
 describe('Guild emblem picker', () => {

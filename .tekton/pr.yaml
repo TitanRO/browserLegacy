@@ -1,6 +1,9 @@
-# Pipelines-as-Code: on a pull request to master, build Dockerfile.titanro WITHOUT pushing it and scan it with Trivy against the
-# image deployed now (pinned in TitanRO/sysops argo/prod-season/robrowser). The PR check fails on a build error or on a NEW fixable
-# HIGH/CRITICAL vulnerability. Same-repo PRs (incl. Renovate) run automatically; fork PRs need /ok-to-test.
+# Pipelines-as-Code: the PR check "titanro-ci / pr" on pull requests to master, two tasks in parallel:
+# - image: build Dockerfile.titanro WITHOUT pushing it and scan it with Trivy against the image deployed now (pinned in
+#   TitanRO/sysops argo/prod-season/robrowser). Fails on a build error or on a NEW fixable HIGH/CRITICAL vulnerability.
+# - tests: vitest, ESLint and the Prettier check (Task run-check in TitanRO/sysops: the PR code runs with no
+#   credentials). Fails if any of the three fails; all three always run.
+# Same-repo PRs (incl. Renovate) run automatically; fork PRs need /ok-to-test.
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
@@ -12,19 +15,56 @@ metadata:
         # A new push to the PR cancels the check still running for its previous commit.
         pipelinesascode.tekton.dev/cancel-in-progress: 'true'
 spec:
-    pipelineRef:
-        resolver: cluster
-        params:
-            - { name: kind, value: pipeline }
-            - { name: name, value: build-check }
-            - { name: namespace, value: tekton-pipelines }
     params:
         - { name: git-url, value: '{{ repo_url }}' }
         - { name: git-revision, value: '{{ revision }}' }
-        - { name: context, value: . }
-        - { name: dockerfile, value: Dockerfile.titanro }
-        - { name: image-name, value: robrowser }
-        - { name: sysops-path, value: argo/prod-season/robrowser }
+    pipelineSpec:
+        params:
+            - name: git-url
+            - name: git-revision
+        workspaces:
+            - name: github-app
+            - name: docr-pull
+        tasks:
+            - name: image
+              taskRef:
+                  resolver: cluster
+                  params:
+                      - { name: kind, value: task }
+                      - { name: name, value: build-check }
+                      - { name: namespace, value: tekton-pipelines }
+              params:
+                  - { name: git-url, value: $(params.git-url) }
+                  - { name: git-revision, value: $(params.git-revision) }
+                  - { name: context, value: . }
+                  - { name: dockerfile, value: Dockerfile.titanro }
+                  - { name: image-name, value: robrowser }
+                  - { name: sysops-path, value: argo/prod-season/robrowser }
+              workspaces:
+                  - { name: github-app, workspace: github-app }
+                  - { name: dockerconfig, workspace: docr-pull }
+            - name: tests
+              taskRef:
+                  resolver: cluster
+                  params:
+                      - { name: kind, value: task }
+                      - { name: name, value: run-check }
+                      - { name: namespace, value: tekton-pipelines }
+              params:
+                  - { name: git-url, value: $(params.git-url) }
+                  - { name: git-revision, value: $(params.git-revision) }
+                  - { name: image, value: 'node:24.22.2-alpine3.24' }
+                  # Two vitest workers: one per host CPU would exceed the task's 2 GiB memory limit.
+                  - name: script
+                    value: |
+                        npm ci --no-audit --no-fund
+                        status=0
+                        npx vitest run --maxWorkers=2 || status=1
+                        npm run lint || status=1
+                        npm run format:check || status=1
+                        exit $status
+              workspaces:
+                  - { name: github-app, workspace: github-app }
     taskRunTemplate:
         serviceAccountName: ci-builder
         podTemplate:

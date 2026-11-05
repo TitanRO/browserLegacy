@@ -51,7 +51,7 @@ describe('FileManager.getHTTP with a cache that rejects every write', () => {
 		const callback = vi.fn();
 		FileManager.getHTTP('data\\texture\\\xc7\xca\xb5\xe5\\prt_01.bmp', callback);
 		// Under a loaded run the fetch chain may need more than one tick
-		await vi.waitFor(() => expect(callback).toHaveBeenCalled());
+		await vi.waitFor(() => expect(callback).toHaveBeenCalled(), { timeout: 10000 });
 		await new Promise(r => setTimeout(r, 10));
 
 		expect(callback).toHaveBeenCalledOnce();

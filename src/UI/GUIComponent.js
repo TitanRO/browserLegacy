@@ -1033,6 +1033,9 @@ class GUIComponent {
 			if (!this._host || !this._host.parentNode) return;
 
 			const checkScrollbars = el => {
+				// The component may have been removed before a staggered check runs
+				if (!el.isConnected) return;
+
 				// Check the element itself and all descendants
 				const candidates = [el, ...el.querySelectorAll('*')];
 				for (const node of candidates) {

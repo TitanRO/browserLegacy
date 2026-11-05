@@ -20,7 +20,7 @@ import DB from 'DB/DBManager.js';
 import Session from 'Engine/SessionStorage.js';
 import WinLogin from 'UI/Components/WinLogin/WinLogin.js';
 
-const INVITE_CODE = /^[a-z0-9]{16}$/;
+const INVITE_CODE = /^[A-Za-z0-9]{1,32}$/;
 const DEFAULT_API = 'https://api.titanro.net/graphql';
 
 // Styled after the game's own windows (font, title bar, buttons). z-index stays under the game cursor (.cursor, 9999),
@@ -191,8 +191,8 @@ function showInvite(api, code) {
 }
 
 export default function Init(params) {
-	const code = new URLSearchParams(window.location.search).get('invite');
-	if (code && INVITE_CODE.test(code)) {
+	const code = (new URLSearchParams(window.location.search).get('invite') || '').trim();
+	if (INVITE_CODE.test(code)) {
 		showInvite((params && params.api) || DEFAULT_API, code);
 	}
 	return true;

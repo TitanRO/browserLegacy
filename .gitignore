@@ -8,6 +8,7 @@
 /src/Plugins/*/
 # TitanRO plugins (committed; bundled into the build by PluginManager)
 !/src/Plugins/DefaultSettings/
+!/src/Plugins/ChatUrlLinks/
 !/src/Plugins/Quickstart/
 /index.html
 Config.local.js

@@ -34,6 +34,12 @@ window.ROConfigLocal = {
 	clientVersionMode: 'PacketVer',
 	plugins: {
 		DefaultSettings: 'DefaultSettings/DefaultSettings',
+		// The launcher's screens over the game: master account sign-in, characters, create/delete, and Play straight
+		// into the game (TitanRO/titanro-launcher's web build).
+		MasterAccount: {
+			path: 'MasterAccount/MasterAccount',
+			pars: { shell: 'https://electron.titanro.net/web/titanro-shell.js' }
+		},
 		// Quick Invite links (?invite=<code>): invite details from titanro-api, the guest login from the account service.
 		Quickstart: {
 			path: 'Quickstart/Quickstart',

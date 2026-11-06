@@ -1,17 +1,20 @@
 /**
  * MasterAccount Plugin (TitanRO)
  *
- * The play site's front door: the TitanRO launcher's own screens (TitanRO/titanro-launcher, its web build
- * /web/titanro-shell.js) over the game. Players sign in to their master account (Clerk), see their characters, create
- * and delete them, and pick one; the game then logs in to that character's hidden game account with a single-use
- * launch token from the account service, as the desktop launcher's Play does. The login server's launch_token plugin
- * accepts the token, and the char server's master_characters plugin selects the account's character, so there's no
- * login screen, server list or character selection.
+ * The play site's front door: the TitanRO launcher's own screens (TitanRO/titanro-launcher's web build, served at
+ * /shell/titanro-shell.js on the play site) over the game. Players sign in to their master account (Clerk), see their
+ * characters, create and delete them, and pick one; the game then logs in to that character's hidden game account
+ * with a single-use launch token from the account service, as the desktop launcher's Play does. The login server's
+ * launch_token plugin accepts the token, and the char server's master_characters plugin selects the account's
+ * character, so there's no login screen, server list or character selection.
  *
  * The shell is imported at runtime (it's built and deployed with the launcher) and lives in its own shadow root over
  * the page; roBrowser loads behind it meanwhile. It's shown whenever the login window would be: on the first load,
  * and again after a disconnect or "back to login". Quick Invite links (?invite=, the Quickstart plugin) skip it.
- * `?gamelogin` skips it too and shows roBrowser's own login window (test accounts).
+ *
+ * roBrowser asks "Leave site?" before the page unloads (App/Online.js window.onbeforeunload). That's for leaving the
+ * game; while the shell is up nobody is in the game, and its sign-in and sign-out leave the page for Clerk, so the
+ * question is kept from showing then.
  *
  * Config.local.js: plugins: { MasterAccount: { path: 'MasterAccount/MasterAccount',
  *   pars: { shell: '<URL of titanro-shell.js>' } } }
@@ -22,7 +25,7 @@
 import Session from 'Engine/SessionStorage.js';
 import WinLogin from 'UI/Components/WinLogin/WinLogin.js';
 
-const DEFAULT_SHELL = 'https://electron.titanro.net/web/titanro-shell.js';
+const DEFAULT_SHELL = '/shell/titanro-shell.js';
 // How long a launched login may keep the login window up (e.g. refused) before the shell comes back over it.
 const LAUNCH_GRACE_MS = 10000;
 
@@ -41,8 +44,7 @@ function waitFor(check, ms) {
 const loginReady = () => WinLogin.__active && typeof WinLogin.onConnectionRequest === 'function';
 
 export default function Init(params) {
-	const query = new URLSearchParams(window.location.search);
-	if (query.has('invite') || query.has('gamelogin')) {
+	if (new URLSearchParams(window.location.search).has('invite')) {
 		return true;
 	}
 
@@ -50,6 +52,19 @@ export default function Init(params) {
 	let host = null;
 	let shell = null;
 	let launchedAt = 0;
+	let gameUnload = null;
+
+	// roBrowser's question goes away while the shell is up (Online.js may set it just after this plugin starts, so
+	// it's checked again with the shell's poll) and comes back for the game.
+	const quietUnload = () => {
+		if (window.onbeforeunload) {
+			gameUnload = window.onbeforeunload;
+			window.onbeforeunload = null;
+		}
+	};
+	const restoreUnload = () => {
+		if (gameUnload && !window.onbeforeunload) window.onbeforeunload = gameUnload;
+	};
 
 	const hide = () => {
 		if (shell) shell.unmount();
@@ -67,11 +82,13 @@ export default function Init(params) {
 		const { username, token } = await login();
 		launchedAt = Date.now();
 		hide();
+		restoreUnload();
 		Session.ServerSelectsChar = true;
 		WinLogin.onConnectionRequest(username, token);
 	};
 
 	const show = () => {
+		quietUnload();
 		if (host) return;
 		host = document.createElement('div');
 		host.id = 'titanro-shell';
@@ -93,9 +110,11 @@ export default function Init(params) {
 	};
 
 	show();
+	setTimeout(quietUnload, 0);
 	// Back at the login window (a disconnect, or the game's "back to login"): the shell again, once a launched login
 	// had its chance.
 	setInterval(() => {
+		if (host) quietUnload();
 		if (!host && WinLogin.__active && Date.now() - launchedAt > LAUNCH_GRACE_MS) show();
 	}, 500);
 	return true;

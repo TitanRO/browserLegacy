@@ -4,14 +4,16 @@
  * Quick Invite: a link such as https://play.titanro.net/?invite=<code> (made in game with @quickinvite) shows who sent
  * it and where they are, and "Play Now" logs the visitor in as the guest character, which loads in next to the
  * inviter. The server side is the Hercules quickstart plugin (TitanRO/titanro2 src/plugins/quickstart); the invite
- * details and the one-time login come from titanro-api (query `invite`, mutation `acceptInvite`).
+ * details come from titanro-api (query `invite`), and the guest's login from the account service
+ * (POST /v1/invites/<code>/accept: the guest account's name and a launch token, valid for a minute).
  *
  * Everything stays in this plugin: the dialog is its own overlay (no roBrowser UI component changes), and the login
  * goes through the login window's own handler, as if the visitor had typed the username and token and pressed
  * Connect. The server picks the character and the map; Session.ServerSelectsChar tells CharEngine to skip the char
  * list, so the client goes straight from login to the game.
  *
- * Config.local.js: plugins: { Quickstart: { path: 'Quickstart/Quickstart', pars: { api: '<GraphQL URL>' } } }
+ * Config.local.js: plugins: { Quickstart: { path: 'Quickstart/Quickstart',
+ *   pars: { api: '<GraphQL URL>', accountApi: '<account service URL>' } } }
  *
  * @author Trojal
  */
@@ -22,6 +24,7 @@ import WinLogin from 'UI/Components/WinLogin/WinLogin.js';
 
 const INVITE_CODE = /^[A-Za-z0-9]{1,32}$/;
 const DEFAULT_API = 'https://api.titanro.net/graphql';
+const DEFAULT_ACCOUNT_API = 'https://account-api.titanro.net';
 
 // Styled after the game's own windows (font, title bar, buttons). z-index stays under the game cursor (.cursor, 9999),
 // which the game draws itself over every element once its cursor is loaded.
@@ -71,6 +74,21 @@ async function graphql(api, query, variables) {
 	return body.data;
 }
 
+/**
+ * The account service's accept: {username, token}, or an error with the service's code. A simple request (a POST
+ * without a body or custom headers), which browsers send without a preflight; the service answers only POST.
+ */
+async function acceptInvite(accountApi, code) {
+	const res = await fetch(`${accountApi}/v1/invites/${encodeURIComponent(code)}/accept`, { method: 'POST' });
+	const body = await res.json().catch(() => ({}));
+	if (!res.ok) {
+		const err = new Error((body.error && body.error.message) || `HTTP ${res.status}`);
+		err.code = body.error && body.error.code;
+		throw err;
+	}
+	return body;
+}
+
 /** Resolves once check() is true (polled), or rejects after `ms`. */
 function waitFor(check, ms) {
 	return new Promise((resolve, reject) => {
@@ -97,7 +115,7 @@ function forgetInvite() {
 	window.history.replaceState(null, '', url.toString());
 }
 
-function showInvite(api, code) {
+function showInvite(api, accountApi, code) {
 	const style = el('style', null, STYLE);
 	const overlay = el('div', 'qs-invite');
 	const box = el('div', 'qs-invite__box');
@@ -160,21 +178,17 @@ function showInvite(api, code) {
 				play.disabled = true;
 				cancel.disabled = true;
 				play.textContent = 'Joining…';
-				graphql(api, 'mutation ($code: String!) { acceptInvite(code: $code) { username token } }', { code })
-					.then(({ acceptInvite }) =>
-						// The login window's handler exists once the login screen is up; it logs in exactly as if
-						// the username and token had been typed in and Connect pressed. The char-server then selects
-						// the guest character itself, so CharEngine skips the char list.
-						waitFor(
-							() => WinLogin.__active && typeof WinLogin.onConnectionRequest === 'function',
-							60000
-						).then(() => {
-							forgetInvite();
-							close();
-							Session.ServerSelectsChar = true;
-							WinLogin.onConnectionRequest(acceptInvite.username, acceptInvite.token);
-						})
-					)
+				// The login window's handler exists once the login screen is up; it logs in exactly as if the username
+				// and token had been typed in and Connect pressed. The token is asked for only then, as it's short-lived.
+				// The char-server then selects the guest character itself, so CharEngine skips the char list.
+				waitFor(() => WinLogin.__active && typeof WinLogin.onConnectionRequest === 'function', 60000)
+					.then(() => acceptInvite(accountApi, code))
+					.then(login => {
+						forgetInvite();
+						close();
+						Session.ServerSelectsChar = true;
+						WinLogin.onConnectionRequest(login.username, login.token);
+					})
 					.catch(err => {
 						showError(
 							err.code === 'GUEST_BUSY'
@@ -193,7 +207,7 @@ function showInvite(api, code) {
 export default function Init(params) {
 	const code = (new URLSearchParams(window.location.search).get('invite') || '').trim();
 	if (INVITE_CODE.test(code)) {
-		showInvite((params && params.api) || DEFAULT_API, code);
+		showInvite((params && params.api) || DEFAULT_API, (params && params.accountApi) || DEFAULT_ACCOUNT_API, code);
 	}
 	return true;
 }

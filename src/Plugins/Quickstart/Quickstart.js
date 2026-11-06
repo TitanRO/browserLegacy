@@ -74,7 +74,10 @@ async function graphql(api, query, variables) {
 	return body.data;
 }
 
-/** The account service's accept: {username, token}, or an error with the service's code. */
+/**
+ * The account service's accept: {username, token}, or an error with the service's code. A simple request (a POST
+ * without a body or custom headers), which browsers send without a preflight; the service answers only POST.
+ */
 async function acceptInvite(accountApi, code) {
 	const res = await fetch(`${accountApi}/v1/invites/${encodeURIComponent(code)}/accept`, { method: 'POST' });
 	const body = await res.json().catch(() => ({}));

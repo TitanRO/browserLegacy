@@ -38,7 +38,7 @@ window.ROConfigLocal = {
 		// into the game (TitanRO/titanro-launcher's web build).
 		MasterAccount: {
 			path: 'MasterAccount/MasterAccount',
-			pars: { shell: 'https://electron.titanro.net/web/titanro-shell.js' }
+			pars: { shell: '/shell/titanro-shell.js' }
 		},
 		// Quick Invite links (?invite=<code>): invite details from titanro-api, the guest login from the account service.
 		Quickstart: {

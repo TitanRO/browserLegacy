@@ -23,6 +23,36 @@ function smartDecode(bytes, fallback) {
 }
 
 /**
+ * The length of the longest prefix of `bytes`, at most `max` bytes, that doesn't end inside a UTF-8 character.
+ *
+ * @param {Uint8Array} bytes - UTF-8 bytes.
+ * @param {number} max - Maximum length.
+ * @returns {number} Prefix length.
+ */
+function utf8Prefix(bytes, max) {
+	let end = Math.min(max, bytes.length);
+	if (end < bytes.length) {
+		// Cut inside the string: back up while the byte at the cut continues the character before it.
+		while (end > 0 && (bytes[end] & 0xc0) === 0x80) {
+			end--;
+		}
+		return end;
+	}
+	// The whole string: step back over a last character that is cut short.
+	let start = end - 1;
+	while (start > 0 && end - start < 4 && (bytes[start] & 0xc0) === 0x80) {
+		start--;
+	}
+	if (start >= 0 && bytes[start] >= 0xc0) {
+		const need = bytes[start] >= 0xf0 ? 4 : bytes[start] >= 0xe0 ? 3 : 2;
+		if (end - start < need) {
+			end = start;
+		}
+	}
+	return end;
+}
+
+/**
  * Exports
  */
 const CodepageManager = {
@@ -64,6 +94,63 @@ const CodepageManager = {
 		}
 
 		return iconv.encode(str, charset || this.userCharset);
+	},
+	/*
+	 * Encodes a string as UTF-8, cut to at most `maxBytes` bytes without splitting a character.
+	 *
+	 * @param {string} str - String to encode.
+	 * @param {number} maxBytes - Maximum length in bytes.
+	 * @returns {Uint8Array} Encoded string.
+	 */
+	encodeUtf8Fit: function encodeUtf8Fit(str, maxBytes) {
+		const data = this.encode(String(str), 'utf-8');
+		if (data.length <= maxBytes) {
+			return data;
+		}
+		return data.subarray(0, utf8Prefix(data, maxBytes));
+	},
+	/*
+	 * Cuts a string so that its UTF-8 form fits in `maxBytes` bytes, without splitting a character.
+	 *
+	 * @param {string} str - String to cut.
+	 * @param {number} maxBytes - Maximum length in bytes.
+	 * @returns {string} The string, or its longest prefix that fits.
+	 */
+	fitUtf8: function fitUtf8(str, maxBytes) {
+		const data = this.encode(String(str), 'utf-8');
+		if (data.length <= maxBytes) {
+			return String(str);
+		}
+		return iconv.decode(data.subarray(0, utf8Prefix(data, maxBytes)), 'utf-8');
+	},
+	/*
+	 * Decodes text that is UTF-8 or, failing that, in a legacy charset (client text tables: UTF-8 language packs and
+	 * older files in the GRF's charset).
+	 *
+	 * @param {Uint8Array} data - Raw byte data to decode.
+	 * @param {string} fallback - Charset to use when the bytes aren't UTF-8.
+	 * @returns {string} Decoded string.
+	 */
+	decodeText: function decodeText(data, fallback) {
+		return smartDecode(data, fallback || this.userCharset);
+	},
+	/*
+	 * Decodes a fixed-size packet field that the sender filled to the last byte (no NUL): when only its last
+	 * character is cut short, the rest is decoded as UTF-8 without it, rather than the whole field in the legacy
+	 * charset.
+	 *
+	 * @param {Uint8Array} data - The field's bytes.
+	 * @returns {string} Decoded string.
+	 */
+	decodeFullField: function decodeFullField(data) {
+		const whole = utf8Prefix(data, data.length);
+		if (whole < data.length && whole > 0) {
+			const trimmed = iconv.decode(data.subarray(0, whole), 'utf-8');
+			if (!/�/.test(trimmed) && /[^ -~\t\r\n]/.test(trimmed)) {
+				return trimmed;
+			}
+		}
+		return smartDecode(data, this.userCharset);
 	},
 	/*
 	 * @param {Uint8Array} data - Raw byte data to decode.

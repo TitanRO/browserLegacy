@@ -13,6 +13,7 @@ import CommonCSS from 'UI/Common.css?raw';
 import UIVersionManager from 'UI/UIVersionManager.js';
 import KEYS from 'Controls/KeyEventHandler.js';
 import ClampToViewport from 'UI/ClampToViewport.js';
+import ByteLimit from 'Utils/ByteLimit.js';
 
 /**
  * Centralize popup position
@@ -130,6 +131,7 @@ class UIManager {
 
 		component.manager = this;
 		this.components[component.name] = component;
+		ByteLimit.install();
 		return component;
 	}
 

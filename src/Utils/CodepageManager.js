@@ -186,7 +186,7 @@ const CodepageManager = {
 		for (let i = 0; i < count; ++i) {
 			data[i] = str.charCodeAt(i);
 		}
-		return iconv.decode(data, this.userCharset);
+		return smartDecode(data, this.userCharset); // UTF-8 language packs, or the GRF's charset
 	},
 
 	detectEncodingByLangtype: detectEncodingByLangtype

@@ -7637,7 +7637,9 @@ function loadMapTbl(filename, callback, onEnd) {
 					const decoded_subTitle =
 						subTitle && subTitle.length > 1 ? userStringDecoder.decodeText(subTitle, userCharpage) : null;
 					const decoded_mainTitle =
-						mainTitle && mainTitle.length > 1 ? userStringDecoder.decodeText(mainTitle, userCharpage) : null;
+						mainTitle && mainTitle.length > 1
+							? userStringDecoder.decodeText(mainTitle, userCharpage)
+							: null;
 					MapInfo[decoded_name].signName = {
 						subTitle: decoded_subTitle,
 						mainTitle: decoded_mainTitle

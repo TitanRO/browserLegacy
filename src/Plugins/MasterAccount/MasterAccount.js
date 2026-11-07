@@ -16,12 +16,19 @@
  * game; while the shell is up nobody is in the game, and its sign-in and sign-out leave the page for Clerk, so the
  * question is kept from showing then.
  *
+ * Language: the game's client files follow the master account's language. The shell announces it (a `titanro-language`
+ * event on window, with the code); the plugin keeps it in localStorage and, for a language other than English, points
+ * the remote client at grfhost's `lang/<code>/` (that language's client pack over the release's files) before the game
+ * loads anything. A different language announced while the shell is up (on sign-in, or picked in its top bar) reloads
+ * the page into it; nobody is in the game then. Server text follows the same setting at the next login.
+ *
  * Config.local.js: plugins: { MasterAccount: { path: 'MasterAccount/MasterAccount',
  *   pars: { shell: '<URL of titanro-shell.js>' } } }
  *
  * @author Trojal
  */
 
+import Configs from 'Core/Configs.js';
 import Session from 'Engine/SessionStorage.js';
 import WinLogin from 'UI/Components/WinLogin/WinLogin.js';
 
@@ -43,7 +50,31 @@ function waitFor(check, ms) {
 
 const loginReady = () => WinLogin.__active && typeof WinLogin.onConnectionRequest === 'function';
 
+const LANGUAGE_KEY = 'titanro.language';
+const LANGUAGE_EVENT = 'titanro-language';
+const LANGUAGE_CODE = /^[A-Za-z0-9-]{2,16}$/;
+
+function storedLanguage() {
+	try {
+		const code = window.localStorage.getItem(LANGUAGE_KEY);
+		return code && LANGUAGE_CODE.test(code) ? code : 'en';
+	} catch {
+		return 'en';
+	}
+}
+
+/** The language's client files: grfhost's lang/<code>/ (its pack, else the release's file) instead of the release's. */
+function useLanguage(code) {
+	const remoteClient = Configs.get('remoteClient');
+	if (code !== 'en' && remoteClient) {
+		Configs.set('remoteClient', remoteClient.replace(/\/?$/, '/') + `lang/${code}/`);
+	}
+}
+
 export default function Init(params) {
+	const language = storedLanguage();
+	useLanguage(language);
+
 	if (new URLSearchParams(window.location.search).has('invite')) {
 		return true;
 	}
@@ -108,6 +139,21 @@ export default function Init(params) {
 				}
 			});
 	};
+
+	// The account's language, from the shell: kept for the next load, and loaded now if it isn't this page's.
+	window.addEventListener(LANGUAGE_EVENT, event => {
+		const code = event.detail;
+		if (typeof code !== 'string' || !LANGUAGE_CODE.test(code)) return;
+		try {
+			window.localStorage.setItem(LANGUAGE_KEY, code);
+		} catch {
+			return; // without storage the reload would come back in the same language
+		}
+		if (code !== language && host) {
+			quietUnload();
+			window.location.reload();
+		}
+	});
 
 	show();
 	setTimeout(quietUnload, 0);

@@ -4322,6 +4322,17 @@ function getSystemAliases(basePath) {
 }
 
 /**
+ * Runs a lua file and then its main() in one synchronous step. The loaders share one Lua state and run concurrently,
+ * so between an awaited doFile and a later main() call another loader can define its own main (Towninfo.lub,
+ * spopup.lub and achievements.lub all have one). The file must not require() anything that has to be fetched.
+ *
+ * @param {string} filename - A file already mounted with lua.mountFile.
+ */
+function runFileMain(filename) {
+	lua.doStringSync(`main = nil; (__ro_orig_dofile or dofile)(${JSON.stringify(filename)}); main()`);
+}
+
+/**
  * Load TXT table
  *
  * @param {string} filename to load
@@ -4955,9 +4966,7 @@ function loadAttendanceFile(filename, callback, onEnd) {
 				// mount file
 				lua.mountFile('CheckAttendance.lub', buffer);
 				// execute file
-				await lua.doFile('CheckAttendance.lub');
-				// execute main lua function
-				lua.doStringSync('main()');
+				runFileMain('CheckAttendance.lub');
 			} catch (error) {
 				console.error('[loadAttendanceFile] Error: ', error);
 			} finally {
@@ -5238,9 +5247,7 @@ function loadTownInfoFile(filename, callback, onEnd) {
 				// mount file
 				lua.mountFile(filename, buffer);
 				// execute file
-				await lua.doFile(filename);
-				// execute main lua function
-				lua.doStringSync('main()');
+				runFileMain(filename);
 			} catch (error) {
 				console.error('[loadTownInfoFile] Error: ', error);
 			} finally {
@@ -5284,8 +5291,7 @@ function loadPrivateAirship(filename, callback, onEnd) {
 					return 1;
 				};
 				lua.mountFile(filename, buffer);
-				await lua.doFile(filename);
-				lua.doStringSync('main()');
+				runFileMain(filename);
 				success = PrivateAirship.isLoaded();
 			} catch (error) {
 				console.error('[loadPrivateAirship] Error: ', error);
@@ -7827,8 +7833,7 @@ function loadPetEvolution(filename, callback, onEnd) {
 				};
 
 				// Execute Lua
-				await lua.doFile(filename);
-				lua.doStringSync('main()');
+				runFileMain(filename);
 				wasSuccessful = true;
 			} catch (error) {
 				console.error('[loadPetEvolutionFile] Error: ', error);

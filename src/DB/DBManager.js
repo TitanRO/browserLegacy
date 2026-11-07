@@ -4337,7 +4337,7 @@ function loadTable(filename, separator, size, callback, onEnd, useCharPage = fal
 			console.log('Loading file "' + filename + '"...');
 
 			let data = buffer instanceof ArrayBuffer ? new Uint8Array(buffer) : buffer;
-			data = TextEncoding.decode(data, useCharPage ? userCharpage : null);
+			data = useCharPage ? TextEncoding.decodeText(data, userCharpage) : TextEncoding.decode(data);
 
 			// Remove commented lines
 			const content = ('\n' + data).replace(/\n(\/\/[^\n]+)/g, '');
@@ -4451,7 +4451,7 @@ function loadMoveInfoTable(onEnd) {
 			console.log('Loading file "ItemMoveInfoV5.txt"...');
 
 			let data = file instanceof ArrayBuffer ? new Uint8Array(file) : file;
-			data = TextEncoding.decode(data, userCharpage);
+			data = TextEncoding.decodeText(data, userCharpage);
 			const lines = data.split(/\r?\n/);
 
 			for (let line of lines) {
@@ -4507,7 +4507,7 @@ function loadXMLFile(filename, callback, onEnd) {
 		async function (file) {
 			console.log('Loading file "' + filename + '"...');
 			let xml = file instanceof ArrayBuffer ? new Uint8Array(file) : file;
-			xml = TextEncoding.decode(xml, userCharpage);
+			xml = TextEncoding.decodeText(xml, userCharpage);
 			xml = xml.replace(/^.*<\?xml/, '<?xml');
 			const parser = new DOMParser();
 			const parsedXML = parser.parseFromString(xml, 'application/xml');

@@ -42,12 +42,9 @@ DataView.prototype.setPos = function SetPos(offset, value, littleEndian) {
  * @param {number} len
  */
 DataView.prototype.setString = function SetString(offset, str, len) {
-	if (len) {
-		str = String(str).substr(0, len);
-	}
-
 	let i, count;
-	const data = TextEncoding.encode(str, 'utf-8');
+	// A fixed-size field holds whole characters only: the server refuses a name cut inside one.
+	const data = len ? TextEncoding.encodeUtf8Fit(str, len) : TextEncoding.encode(String(str), 'utf-8');
 
 	// fuck it, need to rebuild the buffer
 	if (!len && data.length > str.length) {
@@ -234,11 +231,8 @@ BinaryWriter.prototype.setFloat64 = BinaryWriter.prototype.writeDouble = functio
  * @return {BinaryWriter}
  */
 BinaryWriter.prototype.setString = BinaryWriter.prototype.writeString = function setString(str, length) {
-	if (length) {
-		str = String(str).substr(0, length);
-	}
-
-	const data = TextEncoding.encode(str, 'utf-8');
+	// A fixed-size field holds whole characters only: the server refuses a name cut inside one.
+	const data = length ? TextEncoding.encodeUtf8Fit(str, length) : TextEncoding.encode(String(str), 'utf-8');
 	let i;
 	const count = length || data.length;
 

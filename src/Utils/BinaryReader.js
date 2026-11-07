@@ -220,6 +220,9 @@ BinaryReader.prototype.getString = BinaryReader.prototype.readString = function 
 		}
 	}
 	this.offset += len;
+	if (realLen === len && len > 0) {
+		return TextEncoding.decodeFullField(bytes); // the server may have cut its last character
+	}
 	return TextEncoding.decode(bytes.subarray(0, realLen), 'utf-8'); // default server charset
 };
 

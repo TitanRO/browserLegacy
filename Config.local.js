@@ -61,7 +61,7 @@ window.ROConfigLocal = {
 	CameraMaxZoomOut: 5,
 	loadLua: true,
 	// The client's own item names (ROenglishRE SystemEN/itemInfo.lua: the official table, itemInfo_C.lua's custom items),
-	// as the Windows client reads them. Without the file the web client keeps its built-in names.
+	// as the Windows client reads them (grf.titanro.net serves SystemEN/, and /lang/<code>/ a language pack's copy).
 	customItemInfo: ['SystemEN/itemInfo.lua'],
 	enableConsole: true
 };

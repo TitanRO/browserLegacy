@@ -5046,7 +5046,7 @@ function loadWorldMapInfo(basePath, onEnd) {
 			) => {
 				const decodedTableKey = userStringDecoder.decode(worldTableKey);
 				let decodedRsw = userStringDecoder.decode(rswName);
-				const decodedName = userStringDecoder.decode(nameDisplay, userCharpage);
+				const decodedName = userStringDecoder.decodeText(nameDisplay, userCharpage);
 				const decodedLevel = level ? userStringDecoder.decode(level) : '';
 
 				// Find the world this map belongs to
@@ -5175,7 +5175,7 @@ function loadTitleTable(filename, callback, onEnd) {
 				const ctx = lua.ctx;
 
 				ctx.AddTitle = function (titleID, titleName) {
-					TitleTable[titleID] = userStringDecoder.decode(titleName, userCharpage);
+					TitleTable[titleID] = userStringDecoder.decodeText(titleName, userCharpage);
 					return 1;
 				};
 
@@ -5229,7 +5229,7 @@ function loadTownInfoFile(filename, callback, onEnd) {
 					mapName = userStringDecoder.decode(mapName);
 					TownInfo[mapName] = [];
 					TownInfo[mapName].push({
-						Name: userStringDecoder.decode(name, userCharpage),
+						Name: userStringDecoder.decodeText(name, userCharpage),
 						X: X,
 						Y: Y,
 						Type: TYPE
@@ -5331,8 +5331,8 @@ function loadQuestInfo(filename, callback, onEnd) {
 					RewardJEXP
 				) => {
 					QuestInfo[QuestID] = {
-						Title: userStringDecoder.decode(Title, userCharpage),
-						Summary: userStringDecoder.decode(Summary, userCharpage),
+						Title: userStringDecoder.decodeText(Title, userCharpage),
+						Summary: userStringDecoder.decodeText(Summary, userCharpage),
 						IconName: userStringDecoder.decode(IconName),
 						Description: [],
 						NpcSpr: NpcSpr instanceof Uint8Array ? userStringDecoder.decode(NpcSpr) : null,
@@ -5349,7 +5349,7 @@ function loadQuestInfo(filename, callback, onEnd) {
 
 				// add quest description
 				ctx.AddQuestDescription = (QuestID, QuestDescription) => {
-					QuestInfo[QuestID].Description.push(userStringDecoder.decode(QuestDescription, userCharpage));
+					QuestInfo[QuestID].Description.push(userStringDecoder.decodeText(QuestDescription, userCharpage));
 					return 1;
 				};
 
@@ -5534,9 +5534,9 @@ function loadItemInfo(filename, callback, onEnd) {
 				) => {
 					ItemTable[ItemID] = {
 						...(typeof ItemTable[ItemID] === 'object' && ItemTable[ItemID]),
-						unidentifiedDisplayName: userStringDecoder.decode(unidentifiedDisplayName, userCharpage),
+						unidentifiedDisplayName: userStringDecoder.decodeText(unidentifiedDisplayName, userCharpage),
 						unidentifiedResourceName: userStringDecoder.decode(unidentifiedResourceName),
-						identifiedDisplayName: userStringDecoder.decode(identifiedDisplayName, userCharpage),
+						identifiedDisplayName: userStringDecoder.decodeText(identifiedDisplayName, userCharpage),
 						identifiedResourceName: userStringDecoder.decode(identifiedResourceName),
 						unidentifiedDescriptionName: [],
 						identifiedDescriptionName: [],
@@ -5549,11 +5549,11 @@ function loadItemInfo(filename, callback, onEnd) {
 					return 1;
 				};
 				ctx.AddItemUnidentifiedDesc = (ItemID, v) => {
-					ItemTable[ItemID].unidentifiedDescriptionName.push(userStringDecoder.decode(v, userCharpage));
+					ItemTable[ItemID].unidentifiedDescriptionName.push(userStringDecoder.decodeText(v, userCharpage));
 					return 1;
 				};
 				ctx.AddItemIdentifiedDesc = (ItemID, v) => {
-					ItemTable[ItemID].identifiedDescriptionName.push(userStringDecoder.decode(v, userCharpage));
+					ItemTable[ItemID].identifiedDescriptionName.push(userStringDecoder.decodeText(v, userCharpage));
 					return 1;
 				};
 				ctx.AddItemEffectInfo = (ItemID, EffectID) => {
@@ -5665,7 +5665,7 @@ function loadLaphineSysFile(filename, callback, onEnd) {
 					const decoded_key = key && key.length > 1 ? userStringDecoder.decode(key) : null;
 					const decoded_NeedSource_String =
 						NeedSource_String && NeedSource_String.length > 1
-							? userStringDecoder.decode(NeedSource_String, userCharpage)
+							? userStringDecoder.decodeText(NeedSource_String, userCharpage)
 							: '';
 					LaphineSysTable[decoded_key] = {
 						ItemID: ItemID,
@@ -5762,7 +5762,7 @@ function loadLaphineUpgFile(filename, callback, onEnd) {
 					const decoded_key = key && key.length > 1 ? userStringDecoder.decode(key) : null;
 					const decoded_NeedSource_String =
 						NeedSource_String && NeedSource_String.length > 1
-							? userStringDecoder.decode(NeedSource_String, userCharpage)
+							? userStringDecoder.decodeText(NeedSource_String, userCharpage)
 							: '';
 
 					LaphineUpgTable[decoded_key] = {
@@ -5951,7 +5951,7 @@ function loadItemReformFile(filename, callback, onEnd) {
 
 				ctx.ReformInfoAddInformationString = (key, string) => {
 					const decoded_string =
-						string && string.length > 1 ? userStringDecoder.decode(string, userCharpage) : null;
+						string && string.length > 1 ? userStringDecoder.decodeText(string, userCharpage) : null;
 					ItemReformTable.ReformInfo[key].InformationString.push(decoded_string);
 					return 1;
 				};
@@ -6160,7 +6160,7 @@ function loadEnchantListFile(basePath, onEnd) {
 				};
 				ctx.SetEnchantCaution = (enchantId, message) => {
 					const group = ensureGroup(enchantId);
-					group.caution = userStringDecoder.decode(message, userCharpage);
+					group.caution = userStringDecoder.decodeText(message, userCharpage);
 					return 1;
 				};
 				ctx.AddEnchantResetMaterial = (enchantId, itemDb, count) => {
@@ -6628,7 +6628,7 @@ function loadSignBoardList(filename, callback, onEnd) {
 						icon_location && icon_location.length > 1 ? userStringDecoder.decode(icon_location) : null;
 					const decoded_description =
 						description && description.length > 1
-							? userStringDecoder.decode(description, userCharpage)
+							? userStringDecoder.decodeText(description, userCharpage)
 							: null;
 					const decoded_color = color && color.length > 1 ? userStringDecoder.decode(color) : null;
 
@@ -6873,7 +6873,7 @@ function loadSkillInfoList(filename, callback, onEnd) {
 					};
 					SkillInfo[skillId] = {
 						Name: userStringDecoder.decode(resName),
-						SkillName: userStringDecoder.decode(skillName, userCharpage),
+						SkillName: userStringDecoder.decodeText(skillName, userCharpage),
 						MaxLv: maxLv,
 						SpAmount: toArray(spAmount),
 						bSeperateLv: bSeperateLv,
@@ -7263,7 +7263,7 @@ function loadStateIconInfo(basePath, callback, onEnd) {
 				if (!StatusInfo[id]) {
 					return 0;
 				}
-				const text = userStringDecoder.decode(desc, userCharpage);
+				const text = userStringDecoder.decodeText(desc, userCharpage);
 				let color = null;
 				if (r >= 0 && g >= 0 && b >= 0) {
 					color = `rgb(${r}, ${g}, ${b})`;
@@ -7431,7 +7431,7 @@ function loadLuaTable(file_list, table_name, callback, onEnd, contextFunc) {
 
 			// create context function
 			ctx.addKeyAndValueToTable = (key, value) => {
-				table[key] = userStringDecoder.decode(value, userCharpage);
+				table[key] = userStringDecoder.decodeText(value, userCharpage);
 				return 1;
 			};
 
@@ -7440,7 +7440,7 @@ function loadLuaTable(file_list, table_name, callback, onEnd, contextFunc) {
 				if (!table[key]) {
 					table[key] = '';
 				}
-				table[key] += userStringDecoder.decode(value, userCharpage) + '\n';
+				table[key] += userStringDecoder.decodeText(value, userCharpage) + '\n';
 				return 1;
 			};
 
@@ -7620,7 +7620,7 @@ function loadMapTbl(filename, callback, onEnd) {
 				ctx.AddMapDisplayName = (name, displayName, notify_enter) => {
 					const decoded_name = userStringDecoder.decode(name);
 					MapInfo[decoded_name] = {
-						displayName: userStringDecoder.decode(displayName, userCharpage),
+						displayName: userStringDecoder.decodeText(displayName, userCharpage),
 						notifyEnter: notify_enter,
 						signName: {
 							subTitle: null,
@@ -7635,9 +7635,9 @@ function loadMapTbl(filename, callback, onEnd) {
 				ctx.AddMapSignName = (name, subTitle, mainTitle) => {
 					const decoded_name = userStringDecoder.decode(name);
 					const decoded_subTitle =
-						subTitle && subTitle.length > 1 ? userStringDecoder.decode(subTitle, userCharpage) : null;
+						subTitle && subTitle.length > 1 ? userStringDecoder.decodeText(subTitle, userCharpage) : null;
 					const decoded_mainTitle =
-						mainTitle && mainTitle.length > 1 ? userStringDecoder.decode(mainTitle, userCharpage) : null;
+						mainTitle && mainTitle.length > 1 ? userStringDecoder.decodeText(mainTitle, userCharpage) : null;
 					MapInfo[decoded_name].signName = {
 						subTitle: decoded_subTitle,
 						mainTitle: decoded_mainTitle

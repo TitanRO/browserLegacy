@@ -22,6 +22,10 @@
  * loads anything. A different language announced while the shell is up (on sign-in, or picked in its top bar) reloads
  * the page into it; nobody is in the game then. Server text follows the same setting at the next login.
  *
+ * The game's databases (item, skill, job tables...) otherwise load only once a character is picked. The shell
+ * announces the language only for a signed-in master account, so from then on, when the browser is idle, they load
+ * while the player looks at the characters, and Play goes straight to the map.
+ *
  * Config.local.js: plugins: { MasterAccount: { path: 'MasterAccount/MasterAccount',
  *   pars: { shell: '<URL of titanro-shell.js>' } } }
  *
@@ -29,6 +33,7 @@
  */
 
 import Configs from 'Core/Configs.js';
+import DB from 'DB/DBManager.js';
 import Session from 'Engine/SessionStorage.js';
 import WinLogin from 'UI/Components/WinLogin/WinLogin.js';
 
@@ -49,6 +54,22 @@ function waitFor(check, ms) {
 }
 
 const loginReady = () => WinLogin.__active && typeof WinLogin.onConnectionRequest === 'function';
+
+/** Starts loading the game's databases in the browser's idle time, unless they're loaded or loading. The login window
+ * being up means the server (and its packet version) is chosen. */
+function preloadDatabases() {
+	waitFor(loginReady, 120000)
+		.then(() => {
+			const start = () => {
+				if (DB.isLoaded || DB.startedLazyInit) return;
+				DB.startedLazyInit = true;
+				DB.lazyInit();
+			};
+			if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(start, { timeout: 5000 });
+			else setTimeout(start, 1000);
+		})
+		.catch(() => {});
+}
 
 const LANGUAGE_KEY = 'titanro.language';
 const LANGUAGE_EVENT = 'titanro-language';
@@ -152,7 +173,9 @@ export default function Init(params) {
 		if (code !== language && host) {
 			quietUnload();
 			window.location.reload();
+			return;
 		}
+		preloadDatabases();
 	});
 
 	show();

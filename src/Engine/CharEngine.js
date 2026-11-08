@@ -875,6 +875,9 @@ function onReceiveMapInfo(pkt) {
 	// Once, from the packet: a retry may run after the game moved on to another socket
 	if (retryCount === 0) {
 		Network.expectClose();
+		// The selection came: the loading window stays up while the databases load, without the char list's fallback
+		clearTimeout(_serverSelectFallback);
+		_serverSelectFallback = null;
 	}
 	if (!DB.isLoaded) {
 		if (!DB.startedLazyInit) {

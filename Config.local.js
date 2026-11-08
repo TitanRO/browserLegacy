@@ -20,9 +20,10 @@ window.ROConfigLocal = {
 			langtype: 1,
 			packetver: 20250716,
 			renewal: true,
-			// Connect straight to the game servers: the edge routes wss://ws.titanro.net/login, /char and /map to those
-			// servers, which accept WebSocket clients themselves (client_transport plugin).
-			socketUrl: 'wss://ws.titanro.net/{role}',
+			// Connect straight to the game servers: the edge routes wss://ws.titanro.net/login/6901, /char/6122 and
+			// /map/<port> (one path per map server, by the port it announces) to those servers, which accept
+			// WebSocket clients themselves (client_transport plugin).
+			socketUrl: 'wss://ws.titanro.net/{role}/{port}',
 			// 2021-09 and newer kRO clients send packet ids unencrypted (Hercules: all-zero keys); roBrowser's key table
 			// ends in 2018 and would encrypt with that year's keys.
 			packetKeys: false

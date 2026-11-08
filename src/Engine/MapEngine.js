@@ -120,6 +120,26 @@ import BankEngine from './MapEngine/Bank.js';
 import AchievementEngine from './MapEngine/Achievement.js';
 
 /**
+ * @type {Array<Array<number>>} item id ranges of the mercenary contracts (the server's items whose script calls
+ * mercenary_create: Bowman, Swordman and Spearman scrolls, and the event and special mercenaries)
+ */
+const MERCENARY_CONTRACTS = [
+	[12153, 12182],
+	[12276, 12278],
+	[12300, 12302],
+	[12329, 12330],
+	[12380, 12382],
+	[12626, 12630],
+	[12778, 12779],
+	[12787, 12787],
+	[12797, 12798],
+	[12800, 12801],
+	[12806, 12806],
+	[12820, 12821],
+	[12823, 12824]
+];
+
+/**
  * @type {string} mapname
  */
 let _mapName = '';
@@ -1236,6 +1256,12 @@ function onUseItem(index) {
 		(ItemReform.__loaded && ItemReform.__active && ItemReform.ui.is(':visible'))
 	) {
 		return false;
+	}
+
+	// A mercenary contract: its AI gets ready meanwhile
+	const used = Inventory.getItemByIndex(index);
+	if (used && MERCENARY_CONTRACTS.some(([first, last]) => used.ITID >= first && used.ITID <= last)) {
+		import('Core/AIDriver.js').then(module => module.default.prepare('merc'));
 	}
 
 	let pkt;

@@ -23,6 +23,7 @@ import MonsterNameTable from './Monsters/MonsterNameTable.js';
 import PetIllustration from './Pets/PetIllustration.js';
 import PetAction from './Pets/PetAction.js';
 import ItemTable from './Items/ItemTable.js';
+import { applyItemInfoJson, itemInfoJsonPath, loadedLanguage } from './Items/ItemInfoJson.js';
 import HatTable from './Items/HatTable.js';
 import ShieldTable from './Items/ShieldTable.js';
 import WeaponTable from './Items/WeaponTable.js';
@@ -432,7 +433,7 @@ class DB {
 					DB.isLoaded = true;
 					// Force cleanup of DB file data (lua, txt, csv, bson blobs) that are no longer needed
 					// gl is null here because we may not have a WebGL context yet during lazy loading
-					MemoryManager.forceClean(null, /\.(lub|lua|txt|csv|bson)$/i);
+					MemoryManager.forceClean(null, /\.(lub|lua|txt|csv|bson|json)$/i);
 				}
 			};
 		}
@@ -450,7 +451,7 @@ class DB {
 			if (Array.isArray(customII) && customII.length > 0) {
 				// add custom client info table
 				iteminfoNames = iteminfoNames.concat(customII);
-				tryLoadLuaAliases(loadItemInfo, iteminfoNames, null, onLoad(), true);
+				tryLoadLuaAliases(loadItemInfoPreferJson, iteminfoNames, null, onLoad(), true);
 			} else {
 				iteminfoNames = iteminfoNames.concat(getSystemAliases('System/itemInfo.lub'));
 				tryLoadLuaAliases(loadItemInfo, iteminfoNames, null, onLoad());
@@ -5513,6 +5514,45 @@ function tryLoadLuaAliases(rFunc, files, callBack, onEnd, loadAll = false) {
  *
  * @author alisonrag
  */
+/**
+ * Loads an item info file from its prebuilt JSON table (DB/Items/ItemInfoJson.js) when there is one for the loaded
+ * language, else runs the Lua file.
+ *
+ * @param {string} filename - Lua file
+ * @param {function} callback
+ * @param {function} onEnd - Called with whether it loaded
+ */
+function loadItemInfoPreferJson(filename, callback, onEnd) {
+	const jsonPath = itemInfoJsonPath(filename);
+	if (!jsonPath) {
+		loadItemInfo(filename, callback, onEnd);
+		return;
+	}
+	new Promise((resolve, reject) => {
+		Client.loadFile(jsonPath, resolve, reject);
+	})
+		.then(file => {
+			const started = performance.now();
+			const count = applyItemInfoJson(file instanceof ArrayBuffer ? new Uint8Array(file) : file, {
+				language: loadedLanguage(Configs.get('remoteClient')),
+				itemTable: ItemTable,
+				decodeText: bytes => userStringDecoder.decodeText(bytes, userCharpage),
+				decodeName: bytes => userStringDecoder.decode(bytes)
+			});
+			if (!count) {
+				throw new Error('not the loaded language');
+			}
+			console.log(
+				`[loadItemInfo] ${count} items from "${jsonPath}" in ${Math.round(performance.now() - started)} ms`
+			);
+			onEnd(true);
+		})
+		.catch(error => {
+			console.log(`[loadItemInfo] "${jsonPath}": ${error?.message || error}; running "${filename}"`);
+			loadItemInfo(filename, callback, onEnd);
+		});
+}
+
 function loadItemInfo(filename, callback, onEnd) {
 	const loadPromise = new Promise((resolve, reject) => {
 		Client.loadFile(filename, resolve, reject);

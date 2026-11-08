@@ -363,6 +363,7 @@ MercenaryInformations.toggleAggressive = function toggleAggressive() {
  * Start AI
  */
 MercenaryInformations.startAI = function startAI() {
+	AIDriver.prepare('merc');
 	if (!this.AILoop) {
 		AIDriver.reset();
 		this.AILoop = setInterval(() => {

@@ -729,6 +729,11 @@ function onUseSkill(id, level, targetID) {
 		return;
 	}
 
+	// A homunculus is coming: its AI gets ready while the skill casts
+	if (id === SkillId.AM_CALLHOMUN || id === SkillId.AM_RESURRECTHOMUN) {
+		import('Core/AIDriver.js').then(module => module.default.prepare('homun'));
+	}
+
 	if (id === SkillId.MC_CHANGECART) {
 		if (Session.Entity.hasCart == true) {
 			UIManager.getComponent('ChangeCart').onChangeCartSkill();

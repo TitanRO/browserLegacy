@@ -22,10 +22,7 @@ vi.mock('UI/UIManager.js', () => ({
 
 vi.mock('DB/DBManager.js', () => ({
 	default: {
-		getHOAI_VM: vi.fn(),
-		getMERAI_VM: vi.fn(),
-		getDefaultHOAI_VM: vi.fn(),
-		getDefaultMERAI_VM: vi.fn()
+		createLuaState: vi.fn()
 	}
 }));
 
@@ -549,10 +546,8 @@ describe('LuaModuleLoader', () => {
 				CLua.Lua.create({ customWasmUri: wasmDataUri })
 			]);
 
-			vi.spyOn(DB, 'getHOAI_VM').mockReturnValue(vms[0]);
-			vi.spyOn(DB, 'getMERAI_VM').mockReturnValue(vms[1]);
-			vi.spyOn(DB, 'getDefaultHOAI_VM').mockReturnValue(vms[2]);
-			vi.spyOn(DB, 'getDefaultMERAI_VM').mockReturnValue(vms[3]);
+			// Made on demand, the default AI first: the homunculus' (default, custom)
+			vi.spyOn(DB, 'createLuaState').mockResolvedValueOnce(vms[2]).mockResolvedValueOnce(vms[0]);
 
 			const reqMoveToOwner = vi.fn();
 			vi.spyOn(UIManager, 'getComponent').mockReturnValue({
@@ -566,10 +561,9 @@ describe('LuaModuleLoader', () => {
 				await AIDriver.initAI(() => {
 					ended = true;
 				});
-
 				expect(ended).toBe(true);
-				expect(AIDriver.ready).toBe(true);
 
+				await AIDriver.prepare('homun');
 				AIDriver.exec('AI(1001)', true);
 				expect(reqMoveToOwner).toHaveBeenCalledWith(1001);
 			} finally {
@@ -611,13 +605,19 @@ describe('LuaModuleLoader', () => {
 				CLua.Lua.create({ customWasmUri: wasmDataUri })
 			]);
 
-			vi.spyOn(DB, 'getHOAI_VM').mockReturnValue(vms[0]);
-			vi.spyOn(DB, 'getMERAI_VM').mockReturnValue(vms[1]);
-			vi.spyOn(DB, 'getDefaultHOAI_VM').mockReturnValue(vms[2]);
-			vi.spyOn(DB, 'getDefaultMERAI_VM').mockReturnValue(vms[3]);
+			const states = () =>
+				vi
+					.spyOn(DB, 'createLuaState')
+					.mockResolvedValueOnce(vms[2])
+					.mockResolvedValueOnce(vms[0])
+					.mockResolvedValueOnce(vms[3])
+					.mockResolvedValueOnce(vms[1]);
+			states();
 
 			try {
 				await AIDriver.initAI();
+				await AIDriver.prepare('homun');
+				await AIDriver.prepare('merc');
 
 				// Custom HO_AI succeeded and must NOT be replaced by default_HO_AI
 				expect(AIDriver.HO_AI === vms[0]).toBe(true);
@@ -638,6 +638,14 @@ describe('LuaModuleLoader', () => {
 				LuaModuleLoader.clearCache();
 				aiVfs['AI/USER_AI/AI_M.lua'] = 'error("custom mercenary runtime failure")';
 				await AIDriver.initAI();
+				vms.splice(
+					0,
+					4,
+					...(await Promise.all([0, 1, 2, 3].map(() => CLua.Lua.create({ customWasmUri: wasmDataUri }))))
+				);
+				states();
+				await AIDriver.prepare('homun');
+				await AIDriver.prepare('merc');
 
 				expect(errorSpy).toHaveBeenCalledWith(
 					expect.stringContaining('[AIDriver] Custom MER USER_AI failed to initialize'),

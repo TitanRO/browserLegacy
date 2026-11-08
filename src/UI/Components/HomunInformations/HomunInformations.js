@@ -542,6 +542,7 @@ HomunInformations.toggleAggressive = function toggleAggressive() {
 };
 
 HomunInformations.startAI = function startAI() {
+	AIDriver.prepare('homun');
 	if (!this.AILoop) {
 		AIDriver.reset();
 		this.AILoop = setInterval(() => {

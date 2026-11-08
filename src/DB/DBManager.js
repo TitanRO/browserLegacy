@@ -67,10 +67,6 @@ import LuaModuleLoader from 'Core/LuaModuleLoader.js';
  * @type {Object} lua instance
  */
 let lua;
-let HO_AI;
-let MER_AI;
-let default_HO_AI;
-let default_MER_AI;
 
 /**
  * Whether the archive ships the halter-lead mounts' own palettes; undefined
@@ -927,20 +923,15 @@ class DB {
 			module.default.initAI(onAIDriverLoaded);
 		});
 	}
-	static getHOAI_VM() {
-		return HO_AI;
-	}
-
-	static getMERAI_VM() {
-		return MER_AI;
-	}
-
-	static getDefaultHOAI_VM() {
-		return default_HO_AI;
-	}
-
-	static getDefaultMERAI_VM() {
-		return default_MER_AI;
+	/**
+	 * A new Lua state of its own (the homunculus and mercenary AIs each run in one, made when one is coming).
+	 *
+	 * @returns {Promise<object>} Wasmoon Lua instance
+	 */
+	static async createLuaState() {
+		const wasmUrl = (await import('Vendors/liblua5.1.wasm?url')).default;
+		const CLua = (await import('Vendors/wasmoon-lua5.1.js')).default;
+		return CLua.Lua.create({ customWasmUri: wasmUrl });
 	}
 
 	static getAllTitles() {
@@ -4167,60 +4158,7 @@ class DB {
 
 async function startLua() {
 	LuaModuleLoader.clearCache();
-	const wasmUrl = (await import('Vendors/liblua5.1.wasm?url')).default;
-	const CLua = (await import('Vendors/wasmoon-lua5.1.js')).default;
-	const [l, ha, ma, dha, dma] = await Promise.all([
-		CLua.Lua.create({ customWasmUri: wasmUrl }),
-		CLua.Lua.create({ customWasmUri: wasmUrl }),
-		CLua.Lua.create({ customWasmUri: wasmUrl }),
-		CLua.Lua.create({ customWasmUri: wasmUrl }),
-		CLua.Lua.create({ customWasmUri: wasmUrl })
-	]);
-	lua = LuaModuleLoader.setup(l);
-	HO_AI = LuaModuleLoader.setup(ha, {
-		searchPaths: [
-			'./?.lua',
-			'./?.lub',
-			'AI/USER_AI/?.lua',
-			'AI/USER_AI/?.lub',
-			'AI/?.lua',
-			'AI/?.lub',
-			...LuaModuleLoader.DEFAULT_SEARCH_PATHS
-		]
-	});
-	MER_AI = LuaModuleLoader.setup(ma, {
-		searchPaths: [
-			'./?.lua',
-			'./?.lub',
-			'AI/USER_AI/?.lua',
-			'AI/USER_AI/?.lub',
-			'AI/?.lua',
-			'AI/?.lub',
-			...LuaModuleLoader.DEFAULT_SEARCH_PATHS
-		]
-	});
-	default_HO_AI = LuaModuleLoader.setup(dha, {
-		searchPaths: [
-			'./?.lua',
-			'./?.lub',
-			'AI/?.lua',
-			'AI/?.lub',
-			'AI/USER_AI/?.lua',
-			'AI/USER_AI/?.lub',
-			...LuaModuleLoader.DEFAULT_SEARCH_PATHS
-		]
-	});
-	default_MER_AI = LuaModuleLoader.setup(dma, {
-		searchPaths: [
-			'./?.lua',
-			'./?.lub',
-			'AI/?.lua',
-			'AI/?.lub',
-			'AI/USER_AI/?.lua',
-			'AI/USER_AI/?.lub',
-			...LuaModuleLoader.DEFAULT_SEARCH_PATHS
-		]
-	});
+	lua = LuaModuleLoader.setup(await DB.createLuaState());
 }
 
 function loadFontFromClient(fontPath) {

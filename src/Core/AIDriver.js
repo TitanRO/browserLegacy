@@ -20,7 +20,6 @@ class AIDriver {
 	static MER_AI = null;
 	static default_HO_AI = null;
 	static default_MER_AI = null;
-	static ready = false;
 	// this is called in a code in someplace, left if here :u
 	static init() {}
 
@@ -32,7 +31,12 @@ class AIDriver {
 		}
 	}
 
-	static addCTX() {
+	/**
+	 * Gives AI Lua states the functions the AI scripts call.
+	 *
+	 * @param {...Array} engines - [lua, isHoAI] pairs
+	 */
+	static addCTX(...engines) {
 		const scriptStartTime = Date.now();
 
 		// Prevents circular dependancy
@@ -420,124 +424,60 @@ class AIDriver {
 			};
 		}
 
-		addCTX(AIDriver.default_HO_AI, true);
-		addCTX(AIDriver.HO_AI, true);
-		addCTX(AIDriver.default_MER_AI, false);
-		addCTX(AIDriver.MER_AI, false);
+		for (const [lua, isHoAI] of engines) {
+			addCTX(lua, isHoAI);
+		}
 	}
 
+	/**
+	 * While the game's databases load: fetches the AI scripts, so that an AI can start without waiting for the
+	 * network. Their Lua states are made only when a homunculus or mercenary is coming (prepare); ones made from the
+	 * previous files are dropped.
+	 *
+	 * @param {function} onEnd
+	 */
 	static initAI = async onEnd => {
-		AIDriver.ready = false;
-
-		const defaultAISearchPaths = [
-			'./?.lua',
-			'./?.lub',
-			'AI/?.lua',
-			'AI/?.lub',
-			'AI/USER_AI/?.lua',
-			'AI/USER_AI/?.lub',
-			...LuaModuleLoader.DEFAULT_SEARCH_PATHS
-		];
-
-		const customAISearchPaths = [
-			'./?.lua',
-			'./?.lub',
-			'AI/USER_AI/?.lua',
-			'AI/USER_AI/?.lub',
-			'AI/?.lua',
-			'AI/?.lub',
-			...LuaModuleLoader.DEFAULT_SEARCH_PATHS
-		];
-
-		try {
-			AIDriver.HO_AI = DB.getHOAI_VM();
-			AIDriver.MER_AI = DB.getMERAI_VM();
-			AIDriver.default_HO_AI = DB.getDefaultHOAI_VM();
-			AIDriver.default_MER_AI = DB.getDefaultMERAI_VM();
-
-			LuaModuleLoader.setup(AIDriver.default_HO_AI, { searchPaths: defaultAISearchPaths });
-			LuaModuleLoader.setup(AIDriver.default_MER_AI, { searchPaths: defaultAISearchPaths });
-			LuaModuleLoader.setup(AIDriver.HO_AI, { searchPaths: customAISearchPaths });
-			LuaModuleLoader.setup(AIDriver.MER_AI, { searchPaths: customAISearchPaths });
-
-			AIDriver.addCTX();
-
-			console.log('Loading Default HOAI...');
-			const defaultHoFiles = ['AI/Util.lua', 'AI/Const.lua', 'AI/AI.lua'];
-			await LuaModuleLoader.loadAndExecuteFiles(AIDriver.default_HO_AI, defaultHoFiles, {
-				searchPaths: defaultAISearchPaths
-			});
-
-			console.log('Loading Default MERAI...');
-			const defaultMerFiles = ['AI/Util.lua', 'AI/Const.lua', 'AI/AI_M.lua'];
-			await LuaModuleLoader.loadAndExecuteFiles(AIDriver.default_MER_AI, defaultMerFiles, {
-				searchPaths: defaultAISearchPaths
-			});
-
-			try {
-				console.log('Loading Custom HOAI...');
-				const customHoFiles = ['AI/USER_AI/Util.lua', 'AI/USER_AI/Const.lua', 'AI/USER_AI/AI.lua'];
-				await LuaModuleLoader.loadAndExecuteFiles(AIDriver.HO_AI, customHoFiles, {
-					searchPaths: customAISearchPaths
-				});
-			} catch (customHoError) {
-				if (customHoError && customHoError.code === 'LUA_FILE_NOT_FOUND') {
-					console.warn(
-						'[AIDriver] Custom HO USER_AI files not available, falling back to default HO AI:',
-						customHoError.message || customHoError
-					);
-				} else {
-					console.error(
-						'[AIDriver] Custom HO USER_AI failed to initialize, falling back to default HO AI:',
-						customHoError.message || customHoError
-					);
-				}
-				AIDriver.HO_AI = AIDriver.default_HO_AI;
-			}
-
-			try {
-				console.log('Loading Custom MERAI...');
-				const customMerFiles = ['AI/USER_AI/Util.lua', 'AI/USER_AI/Const.lua', 'AI/USER_AI/AI_M.lua'];
-				await LuaModuleLoader.loadAndExecuteFiles(AIDriver.MER_AI, customMerFiles, {
-					searchPaths: customAISearchPaths
-				});
-			} catch (customMerError) {
-				if (customMerError && customMerError.code === 'LUA_FILE_NOT_FOUND') {
-					console.warn(
-						'[AIDriver] Custom MER USER_AI files not available, falling back to default MER AI:',
-						customMerError.message || customMerError
-					);
-				} else {
-					console.error(
-						'[AIDriver] Custom MER USER_AI failed to initialize, falling back to default MER AI:',
-						customMerError.message || customMerError
-					);
-				}
-				AIDriver.MER_AI = AIDriver.default_MER_AI;
-			}
-		} catch (error) {
-			if (error && error.code === 'LUA_FILE_NOT_FOUND') {
-				console.warn('[AIDriver] AI files not available, skipping AI initialization:', error.message || error);
-			} else {
-				console.error('[AIDriver] Failed to initialize AI:', error.message || error);
-			}
-			if (typeof onEnd === 'function') {
-				onEnd();
-			}
-			return;
-		}
-
-		AIDriver.ready = true;
-
+		// The databases load again with another client's files: AI states made from the previous ones are dropped
+		forgetAI();
+		await Promise.all(
+			Object.values(AI_FILES)
+				.flatMap(kind => [...kind.default, ...kind.custom])
+				.map(file =>
+					LuaModuleLoader.loadCandidateData(LuaModuleLoader.normalizeVfsPath(file)).catch(() => null)
+				)
+		);
 		if (typeof onEnd === 'function') {
 			onEnd();
 		}
 	};
 
+	/**
+	 * Makes the homunculus' or the mercenary's AI Lua states (the default AI and the player's USER_AI), once: on the
+	 * first sign that one is coming (its information at map login or when summoned, the summon skill or a contract
+	 * used), and at the latest on the AI's first tick. About 5 ms per state once the scripts are fetched.
+	 *
+	 * @param {string} kind - 'homun' or 'merc'
+	 * @returns {Promise<void>}
+	 */
+	static prepare(kind) {
+		if (!_preparing[kind]) {
+			_preparing[kind] = buildAI(kind).catch(error => {
+				if (error && error.code === 'LUA_FILE_NOT_FOUND') {
+					console.warn(`[AIDriver] ${kind} AI files not available:`, error.message || error);
+				} else {
+					console.error(`[AIDriver] ${kind} AI failed to initialize:`, error.message || error);
+				}
+			});
+		}
+		return _preparing[kind];
+	}
+
 	static exec = (code, homunculus = true) => {
 		try {
 			//console.log('exec', code);
-			if (!AIDriver.ready) {
+			const kind = homunculus ? 'homun' : 'merc';
+			if (!_ready[kind]) {
+				AIDriver.prepare(kind);
 				return;
 			}
 
@@ -562,6 +502,106 @@ class AIDriver {
 	};
 	// this is called in some place of code
 	static reset = () => {};
+}
+
+const DEFAULT_AI_SEARCH_PATHS = [
+	'./?.lua',
+	'./?.lub',
+	'AI/?.lua',
+	'AI/?.lub',
+	'AI/USER_AI/?.lua',
+	'AI/USER_AI/?.lub',
+	...LuaModuleLoader.DEFAULT_SEARCH_PATHS
+];
+const CUSTOM_AI_SEARCH_PATHS = [
+	'./?.lua',
+	'./?.lub',
+	'AI/USER_AI/?.lua',
+	'AI/USER_AI/?.lub',
+	'AI/?.lua',
+	'AI/?.lub',
+	...LuaModuleLoader.DEFAULT_SEARCH_PATHS
+];
+const AI_FILES = {
+	homun: {
+		default: ['AI/Util.lua', 'AI/Const.lua', 'AI/AI.lua'],
+		custom: ['AI/USER_AI/Util.lua', 'AI/USER_AI/Const.lua', 'AI/USER_AI/AI.lua']
+	},
+	merc: {
+		default: ['AI/Util.lua', 'AI/Const.lua', 'AI/AI_M.lua'],
+		custom: ['AI/USER_AI/Util.lua', 'AI/USER_AI/Const.lua', 'AI/USER_AI/AI_M.lua']
+	}
+};
+/** Per kind ('homun', 'merc'): its AI states being made, made, and ready. */
+const _preparing = {};
+const _states = {};
+const _ready = {};
+
+/** Closes the AI states made so far; the next tick or sign makes them again. */
+function forgetAI() {
+	for (const kind of Object.keys(_states)) {
+		for (const state of new Set(_states[kind])) {
+			if (!state.global.isClosed()) {
+				state.global.close();
+			}
+		}
+	}
+	for (const table of [_preparing, _states, _ready]) {
+		for (const kind of Object.keys(table)) {
+			delete table[kind];
+		}
+	}
+	AIDriver.HO_AI = AIDriver.MER_AI = AIDriver.default_HO_AI = AIDriver.default_MER_AI = null;
+}
+
+/**
+ * Makes a kind's two AI Lua states and runs their scripts; the player's USER_AI falls back to the default AI.
+ *
+ * @param {string} kind - 'homun' or 'merc'
+ */
+async function buildAI(kind) {
+	const started = performance.now();
+	const isHoAI = kind === 'homun';
+	const defaultAI = LuaModuleLoader.setup(await DB.createLuaState(), { searchPaths: DEFAULT_AI_SEARCH_PATHS });
+	let customAI = LuaModuleLoader.setup(await DB.createLuaState(), { searchPaths: CUSTOM_AI_SEARCH_PATHS });
+	AIDriver.addCTX([defaultAI, isHoAI], [customAI, isHoAI]);
+
+	console.log(`Loading Default ${isHoAI ? 'HOAI' : 'MERAI'}...`);
+	await LuaModuleLoader.loadAndExecuteFiles(defaultAI, AI_FILES[kind].default, {
+		searchPaths: DEFAULT_AI_SEARCH_PATHS
+	});
+	try {
+		console.log(`Loading Custom ${isHoAI ? 'HOAI' : 'MERAI'}...`);
+		await LuaModuleLoader.loadAndExecuteFiles(customAI, AI_FILES[kind].custom, {
+			searchPaths: CUSTOM_AI_SEARCH_PATHS
+		});
+	} catch (error) {
+		const name = isHoAI ? 'HO' : 'MER';
+		if (error && error.code === 'LUA_FILE_NOT_FOUND') {
+			console.warn(
+				`[AIDriver] Custom ${name} USER_AI files not available, falling back to default ${name} AI:`,
+				error.message || error
+			);
+		} else {
+			console.error(
+				`[AIDriver] Custom ${name} USER_AI failed to initialize, falling back to default ${name} AI:`,
+				error.message || error
+			);
+		}
+		customAI.global.close();
+		customAI = defaultAI;
+	}
+
+	if (isHoAI) {
+		AIDriver.default_HO_AI = defaultAI;
+		AIDriver.HO_AI = customAI;
+	} else {
+		AIDriver.default_MER_AI = defaultAI;
+		AIDriver.MER_AI = customAI;
+	}
+	_states[kind] = [defaultAI, customAI];
+	_ready[kind] = true;
+	console.log(`[AIDriver] ${kind} AI ready in ${Math.round(performance.now() - started)} ms`);
 }
 
 export default AIDriver;

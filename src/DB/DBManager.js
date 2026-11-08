@@ -430,6 +430,8 @@ class DB {
 					// Force cleanup of DB file data (lua, txt, csv, bson blobs) that are no longer needed
 					// gl is null here because we may not have a WebGL context yet during lazy loading
 					MemoryManager.forceClean(null, /\.(lub|lua|txt|csv|bson|json)$/i);
+					// The tables are in JS now: the Lua state that read them goes, once the last loader has returned
+					setTimeout(releaseLua, 0);
 				}
 			};
 		}
@@ -4159,6 +4161,17 @@ class DB {
 async function startLua() {
 	LuaModuleLoader.clearCache();
 	lua = LuaModuleLoader.setup(await DB.createLuaState());
+}
+
+/**
+ * Closes the Lua state the databases were read with. Nothing runs Lua from them after the load, and the state's wasm
+ * memory (tens of MB, the item and skill tables' Lua) is only given back when nothing refers to it.
+ */
+function releaseLua() {
+	if (lua && !lua.global.isClosed()) {
+		lua.global.close();
+	}
+	lua = null;
 }
 
 function loadFontFromClient(fontPath) {

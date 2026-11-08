@@ -8,6 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('Engine/SessionStorage.js', () => ({ default: {} }));
+vi.mock('DB/DBManager.js', () => ({ default: { isLoaded: false, startedLazyInit: false, lazyInit: vi.fn() } }));
 vi.mock('UI/Components/WinLogin/WinLogin.js', () => ({ default: { __active: false } }));
 
 const reload = vi.fn();

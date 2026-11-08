@@ -59,6 +59,7 @@ import PACKET from 'Network/PacketStructure.js';
 import PACKETVER from 'Network/PacketVerManager.js';
 import MemoryManager from 'Core/MemoryManager.js';
 import LuaModuleLoader from 'Core/LuaModuleLoader.js';
+import { withoutAddedGlobalGetters } from 'Utils/EmscriptenGlobals.js';
 
 //Pet
 //MapName
@@ -930,10 +931,12 @@ class DB {
 	 *
 	 * @returns {Promise<object>} Wasmoon Lua instance
 	 */
-	static async createLuaState() {
-		const wasmUrl = (await import('Vendors/liblua5.1.wasm?url')).default;
-		const CLua = (await import('Vendors/wasmoon-lua5.1.js')).default;
-		return CLua.Lua.create({ customWasmUri: wasmUrl });
+	static createLuaState() {
+		return withoutAddedGlobalGetters(async () => {
+			const wasmUrl = (await import('Vendors/liblua5.1.wasm?url')).default;
+			const CLua = (await import('Vendors/wasmoon-lua5.1.js')).default;
+			return CLua.Lua.create({ customWasmUri: wasmUrl });
+		});
 	}
 
 	static getAllTitles() {

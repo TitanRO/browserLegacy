@@ -6878,7 +6878,8 @@ function loadSkillInfoList(filename, callback, onEnd) {
 						SpAmount: toArray(spAmount),
 						bSeperateLv: bSeperateLv,
 						AttackRange: toArray(attackRange),
-						SkillScale: skillScale,
+						// A copy: a Lua table would keep the closed Lua state (and its wasm memory) alive
+						SkillScale: toArray(skillScale).map(scale => [scale?.x, scale?.y]),
 						NeedSkillList: {},
 						_NeedSkillList: []
 					};

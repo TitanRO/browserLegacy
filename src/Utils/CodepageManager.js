@@ -1,6 +1,12 @@
 import iconv from 'Vendors/iconv-lite.js';
 
 /**
+ * The browser's own UTF-8 decoder, which throws on bytes that aren't UTF-8: several times faster than iconv-lite on
+ * the hundreds of thousands of strings the client's tables hold.
+ */
+const strictUtf8 = new TextDecoder('utf-8', { fatal: true });
+
+/**
  * Smart decode helper.
  *
  * Tries to decode the given byte array as UTF-8 first (default server-side charpage).
@@ -15,6 +21,13 @@ import iconv from 'Vendors/iconv-lite.js';
  * @returns {string} Decoded string.
  */
 function smartDecode(bytes, fallback) {
+	if (bytes instanceof Uint8Array) {
+		try {
+			return strictUtf8.decode(bytes);
+		} catch {
+			return iconv.decode(bytes, fallback);
+		}
+	}
 	const utf8 = iconv.decode(bytes, 'utf-8');
 	if (!/�/.test(utf8)) {
 		return utf8;

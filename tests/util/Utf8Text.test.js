@@ -24,6 +24,12 @@ describe('UTF-8 text', () => {
 		expect(TextEncoding.decodeText(new Uint8Array([0xbb, 0xe7, 0xb0, 0xfa]), 'windows-949')).toBe('사과');
 	});
 
+	it('decodes UTF-8 inside a larger buffer, and a cut-short character in the fallback charset', () => {
+		const packet = utf8('xxHangul 한국어xx');
+		expect(TextEncoding.decodeText(packet.subarray(2, packet.length - 2), 'windows-1252')).toBe('Hangul 한국어');
+		expect(TextEncoding.decodeText(utf8('한').subarray(0, 2), 'windows-1252')).toBe('í•');
+	});
+
 	it('cuts strings to a byte limit at character boundaries', () => {
 		expect(TextEncoding.fitUtf8('가나다라마바사아', 23)).toBe('가나다라마바사');
 		expect(TextEncoding.fitUtf8('Conceição', 7)).toBe('Concei');

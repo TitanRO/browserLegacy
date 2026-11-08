@@ -21,8 +21,13 @@ RUN npm run build -- -O -T -H
 # Pinned (was the floating php:8-apache): the version the deployed image already ran.
 FROM php:8.5.12-apache
 
-RUN apt-get update -y && apt-get install -y libpng-dev
-RUN docker-php-ext-install pdo pdo_mysql mysqli gd
+# gd builds against libpng's headers; only the library stays (apt-mark manual), the headers and apt's lists go in the
+# same layer.
+RUN apt-get update -y && apt-get install -y --no-install-recommends libpng-dev \
+ && docker-php-ext-install pdo pdo_mysql mysqli gd \
+ && apt-mark manual libpng16-16t64 \
+ && apt-get purge -y --auto-remove libpng-dev \
+ && rm -rf /var/lib/apt/lists/*
 RUN a2enmod rewrite
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 

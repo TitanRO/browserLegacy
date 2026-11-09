@@ -469,10 +469,11 @@ function updateEffectState(value) {
 			this._effectStateColor[1] = 0.0;
 			this._effectStateColor[2] = 0.0;
 		} else {
-			this._effectStateColor[0] = 0.2;
-			this._effectStateColor[1] = 0.2;
-			this._effectStateColor[2] = 0.2;
-			this._effectStateColor[3] = 0.2;
+			// as the Windows client draws it: a grey figure, half transparent
+			this._effectStateColor[0] = 0.6;
+			this._effectStateColor[1] = 0.6;
+			this._effectStateColor[2] = 0.6;
+			this._effectStateColor[3] = 0.5;
 			Sound.play('effect/assasin_cloaking.wav', this.position);
 		}
 	}

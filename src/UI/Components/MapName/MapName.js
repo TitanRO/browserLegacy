@@ -14,7 +14,6 @@ import GUIComponent from 'UI/GUIComponent.js';
 import htmlText from './MapName.html?raw';
 import cssText from './MapName.css?raw';
 import Client from 'Core/Client.js';
-import Events from 'Core/Events.js';
 
 /**
  * Create Component
@@ -61,8 +60,10 @@ MapName.init = function init() {};
  * Append MapName
  */
 MapName.onAppend = function onAppend() {
-	if (_fadeTimeoutId !== null) Events.clearTimeout(_fadeTimeoutId);
-	if (_removeTimeoutId !== null) Events.clearTimeout(_removeTimeoutId);
+	// The browser's timers, not Events': Events counts from the last frame drawn, and entering the game after
+	// login draws none for seconds, so its 6 s was already over at the first frame and the banner never showed.
+	if (_fadeTimeoutId !== null) clearTimeout(_fadeTimeoutId);
+	if (_removeTimeoutId !== null) clearTimeout(_removeTimeoutId);
 	_fadeTimeoutId = null;
 	_removeTimeoutId = null;
 
@@ -74,12 +75,12 @@ MapName.onAppend = function onAppend() {
 		this._host.style.opacity = '1';
 
 		// After 5s, start fade-out (CSS transition handles the animation)
-		_fadeTimeoutId = Events.setTimeout(() => {
+		_fadeTimeoutId = setTimeout(() => {
 			this._host.style.opacity = '0';
 		}, 5000);
 
 		// After 6s (5s wait + 1s CSS transition), remove
-		_removeTimeoutId = Events.setTimeout(() => {
+		_removeTimeoutId = setTimeout(() => {
 			MapName.remove();
 		}, 6000);
 	} else {

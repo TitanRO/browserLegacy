@@ -653,9 +653,10 @@ class DB {
 			// MapName
 			if (Configs.get('enableMapName') /*PACKETVER.value >= 20190605*/) {
 				// We allow this feature to be enabled on any version due to popular demand
+				// the client's own copy is SystemEN/mapInfo.lub (the names and banners the Windows client shows)
 				tryLoadLuaAliases(
 					loadMapTbl,
-					getSystemAliases('System/mapInfo.lub'),
+					['SystemEN/mapInfo.lub', ...getSystemAliases('System/mapInfo.lub')],
 					function (json) {
 						for (const key in json) {
 							if (json.hasOwnProperty(key)) {

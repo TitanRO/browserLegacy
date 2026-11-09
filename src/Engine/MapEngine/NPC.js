@@ -364,7 +364,7 @@ function onSound(pkt) {
 /**
  * Received bgm from npc
  *
- * @param {object} pkt - PACKET.ZC.PLAY_NPC_BGM
+ * @param {object} pkt - PACKET.ZC.PLAY_NPC_BGM or PLAY_NPC_BGM2 (2022-05-04 and later; its play type isn't used)
  */
 function onBGM(pkt) {
 	if (!pkt.Bgm.match(/\.mp3$/i)) {
@@ -416,6 +416,7 @@ export default function NPCEngine() {
 	Network.hookPacket(PACKET.ZC.PROGRESS_CANCEL, onProgressBarStop);
 	Network.hookPacket(PACKET.ZC.SOUND, onSound);
 	Network.hookPacket(PACKET.ZC.PLAY_NPC_BGM, onBGM);
+	Network.hookPacket(PACKET.ZC.PLAY_NPC_BGM2, onBGM);
 	Network.hookPacket(PACKET.ZC.CLOSE_SCRIPT, onCloseScript);
 	Network.hookPacket(PACKET.ZC.DYNAMICNPC_CREATE_RESULT, onDynamicNPCCreateRequest);
 }

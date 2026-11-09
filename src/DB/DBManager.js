@@ -58,6 +58,7 @@ import Network from 'Network/NetworkManager.js';
 import PACKET from 'Network/PacketStructure.js';
 import PACKETVER from 'Network/PacketVerManager.js';
 import MemoryManager from 'Core/MemoryManager.js';
+import Rift from 'Core/Rift/Rift.js';
 import LuaModuleLoader from 'Core/LuaModuleLoader.js';
 import { withoutAddedGlobalGetters } from 'Utils/EmscriptenGlobals.js';
 
@@ -2767,6 +2768,11 @@ class DB {
 		const map = mapname.replace('.gat', '.rsw');
 
 		if (!(map in MapTable) || !MapTable[map].name) {
+			// a rift: its tileset's name, never its seed
+			const rift = Rift.mapInfo(map);
+			if (rift) {
+				return rift.displayName;
+			}
 			return typeof defaultName === 'undefined' ? DB.getMessage(187) : defaultName;
 		}
 
@@ -2795,7 +2801,7 @@ class DB {
 	 * @param {number} efst id
 	 */
 	static getMapInfo(mapname) {
-		return MapInfo[mapname] || null;
+		return MapInfo[mapname] || Rift.mapInfo(mapname);
 	}
 
 	/**

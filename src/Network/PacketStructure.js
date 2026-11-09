@@ -9746,6 +9746,13 @@ PACKET.ZC.PLAY_NPC_BGM = function PACKET_ZC_PLAY_NPC_BGM(fp, end) {
 };
 PACKET.ZC.PLAY_NPC_BGM.size = 26;
 
+// 0xb8c
+PACKET.ZC.PLAY_NPC_BGM2 = function PACKET_ZC_PLAY_NPC_BGM2(fp, end) {
+	this.playType = fp.readUChar();
+	this.Bgm = fp.readBinaryString(end - fp.tell());
+};
+PACKET.ZC.PLAY_NPC_BGM2.size = -1;
+
 // 0x7ff
 PACKET.ZC.DEFINE_CHECK = function PACKET_ZC_DEFINE_CHECK(fp, end) {
 	this.Result = fp.readLong();

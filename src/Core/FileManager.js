@@ -17,6 +17,7 @@ import Sprite from 'Loaders/Sprite.js';
 import Action from 'Loaders/Action.js';
 import Str from 'Loaders/Str.js';
 import FileSystem from 'Core/FileSystem.js';
+import Rift from 'Core/Rift/Rift.js';
 
 // Load dependencies
 /* global process */
@@ -195,10 +196,16 @@ class FileManager {
 	 *
 	 * @param {string} filename
 	 * @param {function} callback
+	 * @param {boolean} notRift - read it as a file even if it is named like a rift's
 	 */
-	static get(filename, callback) {
+	static get(filename, callback, notRift) {
 		// Trim the path
 		filename = filename.replace(/^\s+|\s+$/g, '');
+
+		// A rift's map files are built here from its name (Core/Rift)
+		if (!notRift && Rift.serve(filename, FileManager.get, callback)) {
+			return;
+		}
 
 		if (fs && fs.existsSync(filename)) {
 			callback(fs.readFileSync(filename));

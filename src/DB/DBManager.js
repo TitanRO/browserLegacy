@@ -414,6 +414,7 @@ class DB {
 	static index = 0;
 	static async lazyInit() {
 		console.log('Loading DB files...');
+		const started = performance.now();
 		await startLua();
 		// Callback
 		DB.index = 0;
@@ -429,6 +430,7 @@ class DB {
 
 				if (DB.index === DB.count) {
 					DB.isLoaded = true;
+					console.log(`[DB] ${DB.count} tables loaded in ${Math.round(performance.now() - started)} ms`);
 					// Force cleanup of DB file data (lua, txt, csv, bson blobs) that are no longer needed
 					// gl is null here because we may not have a WebGL context yet during lazy loading
 					MemoryManager.forceClean(null, /\.(lub|lua|txt|csv|bson|json)$/i);
@@ -7609,10 +7611,12 @@ function loadLuaValue(file_path, variable_name, callback, onEnd) {
  * @param {function} onEnd - The function to invoke when loading is complete.
  */
 function loadMapTbl(filename, callback, onEnd) {
+	const asked = performance.now();
 	const loadPromise = new Promise((resolve, reject) => {
 		Client.loadFile(filename, resolve, reject);
 	});
 
+	let ran = 0;
 	loadPromise
 		.then(async file => {
 			try {
@@ -7666,10 +7670,14 @@ function loadMapTbl(filename, callback, onEnd) {
 				lua.mountFile(filename, buffer);
 
 				// execute file
+				ran = performance.now();
 				await lua.doFile(filename);
 
 				// execute main function
 				lua.doStringSync('main()');
+				console.log(
+					`[loadMapTbl] ${Object.keys(MapInfo).length} maps from "${filename}" in ${Math.round(performance.now() - asked)} ms (run ${Math.round(performance.now() - ran)} ms)`
+				);
 			} catch (error) {
 				console.error('[loadMapTbl] Error: ', error);
 			} finally {

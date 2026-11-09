@@ -53,7 +53,7 @@ window.ROConfigLocal = {
 	clientHash: null,
 	enableCashShop: false,
 	enableBank: false,
-	enableMapName: false,
+	enableMapName: true,
 	enableRefineUI: false,
 	enableDmgSuffix: false,
 	enableCheckAttendance: false,

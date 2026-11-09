@@ -16,6 +16,7 @@ uniform float uFogFar;
 uniform vec3  uFogColor;
 
 uniform float uShadow;
+uniform float uGrayscale; // 0: the colours, 1: their luminance (grey)
 uniform vec2 uTextSize;
 uniform bool uIsRGBA;
 
@@ -65,6 +66,7 @@ void main(void) {
 
     // Apply shadow, apply color
     textureSample.rgb   *= uShadow;
+    textureSample.rgb    = mix(textureSample.rgb, vec3(dot(textureSample.rgb, vec3(0.299, 0.587, 0.114))), uGrayscale);
     fragColor   = textureSample * uSpriteRendererColor;
 
     // Fog feature

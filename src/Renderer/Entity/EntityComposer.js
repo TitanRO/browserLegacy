@@ -106,7 +106,7 @@ function releaseEntry(entry, gl) {
 	}
 }
 
-function useEntry(entry) {
+function useEntry(entry, grayscale) {
 	if (SpriteRenderer.renderCanvas(entry.canvas)) return;
 	SpriteRenderer.image.size[0] = entry.width;
 	SpriteRenderer.image.size[1] = entry.height;
@@ -121,7 +121,9 @@ function useEntry(entry) {
 	SpriteRenderer.image.frame = null;
 	SpriteRenderer.image.spr = null;
 	SpriteRenderer.sprite = { type: 1, width: entry.width, height: entry.height };
+	SpriteRenderer.grayscale = grayscale;
 	SpriteRenderer.render(false);
+	SpriteRenderer.grayscale = 0;
 }
 
 class EntityComposer {
@@ -181,7 +183,7 @@ class EntityComposer {
 			entry.lastUsed = now;
 			cache.delete(work.entity);
 			cache.set(work.entity, entry);
-			useEntry(entry);
+			useEntry(entry, work.entity.grayscale || 0);
 			return;
 		}
 
@@ -235,7 +237,7 @@ class EntityComposer {
 			gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
 			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, entry.canvas);
 		}
-		useEntry(entry);
+		useEntry(entry, work.entity.grayscale || 0);
 	}
 
 	/**

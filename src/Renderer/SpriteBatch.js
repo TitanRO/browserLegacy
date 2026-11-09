@@ -40,7 +40,7 @@ const mat4 = glMatrix.mat4;
  *  8-11 color
  * 12-15 texture rectangle (u0, v0, u1, v1)
  * 16-19 angle, depth, shadow, ignoreDepthMinCap (0 or 1)
- * 20-23 source (see below), atlas layer, palette row, padding
+ * 20-23 source (see below), atlas layer, palette row, grayscale (0 colours, 1 grey)
  *
  * The source is where the sprite's pixels are: SOURCE_OWN its own texture
  * (the run's), SOURCE_INDEX or SOURCE_RGBA the atlas. The palette row is the
@@ -184,7 +184,7 @@ function pointInstances(first) {
 	gl.vertexAttribPointer(attribute.aColor, 4, gl.FLOAT, false, STRIDE, base + 8 * 4);
 	gl.vertexAttribPointer(attribute.aUV, 4, gl.FLOAT, false, STRIDE, base + 12 * 4);
 	gl.vertexAttribPointer(attribute.aAngleDepthShadowCap, 4, gl.FLOAT, false, STRIDE, base + 16 * 4);
-	gl.vertexAttribPointer(attribute.aSource, 3, gl.FLOAT, false, STRIDE, base + 20 * 4);
+	gl.vertexAttribPointer(attribute.aSource, 4, gl.FLOAT, false, STRIDE, base + 20 * 4);
 }
 
 /**

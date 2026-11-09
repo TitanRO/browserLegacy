@@ -1151,8 +1151,10 @@ function renderLayer(layer, spr, pal, size, pos, type, isBlendModeOne) {
 	// Collect player layers so the composed character is submitted once.
 	if (EntityComposer.capture(this, frame, pal.palette, SpriteRenderer.offset)) return;
 
-	// Draw Sprite
+	// Draw Sprite (grey for the entity's body layers when it asks for it: Shadow Form)
+	SpriteRenderer.grayscale = type !== 'shadow' ? this.grayscale || 0 : 0;
 	SpriteRenderer.render(isBlendModeOne);
+	SpriteRenderer.grayscale = 0;
 }
 
 /**

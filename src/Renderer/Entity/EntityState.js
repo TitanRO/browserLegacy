@@ -384,6 +384,7 @@ function updateEffectState(value) {
 	this._effectStateColor[1] = 1.0;
 	this._effectStateColor[2] = 1.0;
 	this._effectStateColor[3] = 1.0;
+	this.grayscale = 0;
 
 	// ------------------------
 	// Riding
@@ -469,11 +470,13 @@ function updateEffectState(value) {
 			this._effectStateColor[1] = 0.0;
 			this._effectStateColor[2] = 0.0;
 		} else {
-			// as the Windows client draws it: a grey figure, half transparent
-			this._effectStateColor[0] = 0.6;
-			this._effectStateColor[1] = 0.6;
-			this._effectStateColor[2] = 0.6;
-			this._effectStateColor[3] = 0.5;
+			// as the Windows client draws it: a flat grey figure, the ground showing through. Measured on its
+			// capture: no colour left, out = 0.14 x the sprite's luminance + 0.69 x the ground's
+			this.grayscale = 1;
+			this._effectStateColor[0] = 0.45;
+			this._effectStateColor[1] = 0.45;
+			this._effectStateColor[2] = 0.45;
+			this._effectStateColor[3] = 0.31;
 			Sound.play('effect/assasin_cloaking.wav', this.position);
 		}
 	}

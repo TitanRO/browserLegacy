@@ -54,6 +54,9 @@ function RenderCanvas3D(isBlendModeOne) {
 	if (this.shadow !== _shadow) {
 		gl.uniform1f(uniform.uShadow, (_shadow = this.shadow));
 	}
+	if (this.grayscale !== _grayscale) {
+		gl.uniform1f(uniform.uGrayscale, (_grayscale = this.grayscale));
+	}
 	gl.uniform3fv(uniform.uSpriteRendererPosition, this.position);
 
 	// Palette
@@ -196,7 +199,8 @@ function RecordCanvas3D(isBlendModeOne) {
 	data[o++] = this.ignoreDepthMinCap ? 1 : 0;
 	data[o++] = source;
 	data[o++] = layer;
-	data[o] = paletteRow;
+	data[o++] = paletteRow;
+	data[o] = this.grayscale;
 }
 
 /**
@@ -424,6 +428,11 @@ let _lastGroupId = 0;
 let _shadow = null;
 
 /**
+ * @type {number} last grayscale used
+ */
+let _grayscale = null;
+
+/**
  * @type {number} last rotation angle used
  */
 let _angle = null;
@@ -566,6 +575,11 @@ class SpriteRenderer {
 	 * @type {number} sprite shadow (mult * color)
 	 */
 	static shadow = 1.0;
+
+	/**
+	 * @type {number} 0: the sprite's colours, 1: their luminance (a grey figure, as Shadow Form)
+	 */
+	static grayscale = 0.0;
 
 	/**
 	 * @type {number} sprite angle rotation

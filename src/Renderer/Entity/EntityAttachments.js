@@ -181,7 +181,9 @@ class AttachmentManager {
 		_effectColor[2] = this.entity.effectColor[2];
 		_effectColor[3] = this.entity.effectColor[3];
 
-		// Reset effectColor to white for attachments
+		// Reset effectColor to white for attachments, and their colours (not the entity's grey)
+		const grayscale = this.entity.grayscale;
+		this.entity.grayscale = 0;
 		this.entity.effectColor[0] = 1.0;
 		this.entity.effectColor[1] = 1.0;
 		this.entity.effectColor[2] = 1.0;
@@ -209,6 +211,7 @@ class AttachmentManager {
 		SpriteRenderer.depth = 0.0;
 
 		// Restore original effectColor
+		this.entity.grayscale = grayscale;
 		this.entity.effectColor[0] = _effectColor[0];
 		this.entity.effectColor[1] = _effectColor[1];
 		this.entity.effectColor[2] = _effectColor[2];

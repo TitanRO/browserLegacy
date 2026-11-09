@@ -7,6 +7,7 @@ flat in vec4 vUV;       // the frame's rectangle in the texture
 flat in vec4 vColor;
 flat in float vShadow;
 flat in vec3 vSource;   // source, atlas layer, palette row (see SpriteBatch.js)
+flat in float vGrayscale; // 0: the colours, 1: their luminance (grey)
 out vec4 fragColor;
 
 // The sprite's own texture and palette (source 0, palette row -2)
@@ -106,6 +107,7 @@ void main(void) {
 
     // Apply shadow, apply color
     textureSample.rgb   *= vShadow;
+    textureSample.rgb    = mix(textureSample.rgb, vec3(dot(textureSample.rgb, vec3(0.299, 0.587, 0.114))), vGrayscale);
     fragColor   = textureSample * vColor;
 
     // Fog feature

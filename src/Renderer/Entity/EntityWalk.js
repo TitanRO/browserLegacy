@@ -12,6 +12,7 @@ import PathFinding from 'Utils/PathFinding.js';
 import Altitude from 'Renderer/Map/Altitude.js';
 import Session from 'Engine/SessionStorage.js';
 import StatusState from 'DB/Status/StatusState.js';
+import FootprintHook from 'Renderer/Entity/FootprintHook.js';
 
 /**
  * Direction look up table
@@ -804,6 +805,7 @@ function walkProcess() {
 
 		walk.dist += traveledDist;
 		walk.index = index;
+		leaveFootprint(this);
 		walk.tick = segmentStart;
 		walk.prevTick = TICK;
 
@@ -823,6 +825,27 @@ function walkProcess() {
 		}
 		return;
 	}
+}
+
+/**
+ * A Chase Walker leaves a print on each cell it steps on, left and right in turn (the client draws them from the
+ * walker's moves; the body itself isn't drawn).
+ *
+ * @param {Entity} entity
+ */
+function leaveFootprint(entity) {
+	if (!(entity._effectState & StatusState.EffectState.CHASEWALK) || !FootprintHook.leave) {
+		entity._footCell = null;
+		return;
+	}
+	const x = Math.round(entity.position[0]);
+	const y = Math.round(entity.position[1]);
+	if (entity._footCell && entity._footCell[0] === x && entity._footCell[1] === y) {
+		return;
+	}
+	entity._footCell = [x, y];
+	entity._footLeft = !entity._footLeft;
+	FootprintHook.leave(x, y, entity.direction, entity._footLeft);
 }
 
 function scheduleCompanionReturn(entity, delay) {
@@ -1069,6 +1092,8 @@ function distance(entity1, entity2) {
 /**
  * Initialize and export methods
  */
+export { leaveFootprint };
+
 export default function Init() {
 	this.onWalkEnd = function onWalkEnd() {};
 	this._preserveDirection = false;

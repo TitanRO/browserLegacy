@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TitanRO Market</title>
 <link rel="stylesheet" href="site.css">
+<script src="data-api.js"></script>
 </head>
 <body>
 <header>
@@ -17,7 +18,7 @@
 			<input id="q" type="search" placeholder="Item name or id, e.g. White Potion" autocomplete="off" minlength="2" maxlength="50" required>
 			<button type="submit">Search</button>
 		</form>
-		<p class="muted" id="note">Every open vending shop and buying store, refreshed every 2 minutes. In game: <code>@market</code> opens the shop search, <code>@price &lt;item&gt;</code> shows prices.</p>
+		<p class="muted" id="note">Every open vending shop and buying store, refreshed every 2 minutes; sign in with your TitanRO account to search. In game: <code>@market</code> opens the shop search, <code>@price &lt;item&gt;</code> shows prices.</p>
 	</section>
 	<section class="panel" id="history" hidden>
 		<h2 id="h-title"></h2>
@@ -36,11 +37,13 @@
 <script>
 (function () {
 	'use strict';
-	// The account service's public routes (TitanRO/account-service src/publicData.ts); ?api= overrides it for testing.
-	var API = new URLSearchParams(location.search).get('api') || 'https://account-api.titanro.net';
 	var $ = function (id) { return document.getElementById(id); };
 	var names = {};
 	var current = { item: null, days: 30 };
+	var Q_MARKET = 'query ($q: String) { market(query: $q) { at items { id name slots } cards { id name slots }' +
+		' offers { kind itemId refine cards amount price owner shop map x y } } }';
+	var Q_HISTORY = 'query ($id: Int!, $days: Int) { priceHistory(itemId: $id, days: $days) { days median7 sales7 median30 sales30' +
+		' item { id name } daily { day sales volume median low high } } }';
 
 	function zeny(n) { return n == null ? '-' : Number(n).toLocaleString('en-US'); }
 	function el(tag, text, cls) {
@@ -48,14 +51,6 @@
 		if (text != null) e.textContent = text;
 		if (cls) e.className = cls;
 		return e;
-	}
-	function get(path) {
-		return fetch(API + path).then(function (r) {
-			return r.json().then(function (body) {
-				if (!r.ok) throw new Error((body.error && body.error.message) || ('HTTP ' + r.status));
-				return body;
-			});
-		});
 	}
 	function itemLabel(o) {
 		var label = (o.refine > 0 ? '+' + o.refine + ' ' : '') + (names[o.itemId] || ('#' + o.itemId));
@@ -66,7 +61,8 @@
 	function search(q) {
 		$('note').textContent = 'Searching...';
 		$('note').className = 'muted';
-		get('/v1/public/market?q=' + encodeURIComponent(q)).then(function (r) {
+		TitanROData.query(Q_MARKET, { q: q }).then(function (d) {
+			var r = d.market;
 			r.items.concat(r.cards).forEach(function (i) { names[i.id] = i.name + (i.slots ? ' [' + i.slots + ']' : ''); });
 			var rows = $('rows');
 			rows.textContent = '';
@@ -77,7 +73,7 @@
 				link.addEventListener('click', function () { showHistory(o.itemId); });
 				name.appendChild(link);
 				tr.appendChild(name);
-				tr.appendChild(el('td', o.kind === 'sell' ? 'Selling' : 'Buying', o.kind));
+				tr.appendChild(el('td', o.kind === 'SELL' ? 'Selling' : 'Buying', o.kind === 'SELL' ? 'sell' : 'buy'));
 				tr.appendChild(el('td', zeny(o.price), 'num'));
 				tr.appendChild(el('td', zeny(o.amount), 'num'));
 				tr.appendChild(el('td', o.shop));
@@ -95,14 +91,15 @@
 				$('note').textContent += ' Matches: ' + r.items.slice(0, 8).map(function (i) { return i.name; }).join(', ') + '.';
 			}
 		}).catch(function (e) {
-			$('note').textContent = e.message;
-			$('note').className = 'error';
+			TitanROData.showError($('note'), e);
 		});
 	}
 
 	function showHistory(itemId) {
 		current.item = itemId;
-		get('/v1/public/market/history/' + itemId + '?days=' + current.days).then(function (h) {
+		TitanROData.query(Q_HISTORY, { id: itemId, days: current.days }).then(function (d) {
+			var h = d.priceHistory;
+			if (!h) throw new Error('No item with that id.');
 			$('history').hidden = false;
 			$('h-title').textContent = h.item.name + ' (' + h.item.id + ')';
 			var stats = $('h-stats');

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TitanRO Database</title>
 <link rel="stylesheet" href="site.css">
+<script src="data-api.js"></script>
 </head>
 <body>
 <header>
@@ -30,8 +31,10 @@
 <script>
 (function () {
 	'use strict';
-	// The account service's public routes (TitanRO/account-service src/publicData.ts); ?api= overrides it for testing.
-	var API = new URLSearchParams(location.search).get('api') || 'https://account-api.titanro.net';
+	var Q_SEARCH = 'query ($q: String!) { itemSearch(query: $q) { id name slots } monsterSearch(query: $q) { id name level } }';
+	var Q_DROPS = 'query ($id: Int!) { itemDrops(itemId: $id) { item { id name } droppedBy { mobId name level rate mvpReward } } }';
+	var Q_MONSTER = 'query ($id: Int!) { monster(id: $id) { id name level hp baseExp jobExp race element elementLevel size boss mvp' +
+		' drops { itemId name rate mvpReward } spawns { map amount } } }';
 	var $ = function (id) { return document.getElementById(id); };
 	var ELEMENTS = ['Neutral', 'Water', 'Earth', 'Fire', 'Wind', 'Poison', 'Holy', 'Shadow', 'Ghost', 'Undead'];
 	var RACES = ['Formless', 'Undead', 'Brute', 'Plant', 'Insect', 'Fish', 'Demon', 'Demi-Human', 'Angel', 'Dragon'];
@@ -42,14 +45,6 @@
 		if (text != null) e.textContent = text;
 		if (cls) e.className = cls;
 		return e;
-	}
-	function get(path) {
-		return fetch(API + path).then(function (r) {
-			return r.json().then(function (body) {
-				if (!r.ok) throw new Error((body.error && body.error.message) || ('HTTP ' + r.status));
-				return body;
-			});
-		});
 	}
 	function rate(r) { return (r / 100).toFixed(r < 100 ? 2 : 1).replace(/\.?0+$/, '') + ' %'; }
 	function link(text, fn) {
@@ -80,15 +75,15 @@
 		return wrap;
 	}
 	function fail(e) {
-		$('note').textContent = e.message;
-		$('note').className = 'error';
+		TitanROData.showError($('note'), e);
 	}
 
 	function search(q) {
 		$('note').textContent = 'Searching...';
 		$('note').className = 'muted';
-		Promise.all([get('/v1/public/items?q=' + encodeURIComponent(q)), get('/v1/public/monsters?q=' + encodeURIComponent(q))])
-			.then(function (r) {
+		TitanROData.query(Q_SEARCH, { q: q })
+			.then(function (d) {
+				var r = [{ items: d.itemSearch }, { monsters: d.monsterSearch }];
 				var items = $('items'), monsters = $('monsters');
 				items.textContent = '';
 				monsters.textContent = '';
@@ -106,7 +101,9 @@
 	}
 
 	function showItem(item) {
-		get('/v1/public/drops/' + item.id).then(function (d) {
+		TitanROData.query(Q_DROPS, { id: item.id }).then(function (res) {
+			var d = res.itemDrops;
+			if (!d) throw new Error('No item with that id.');
 			var box = $('detail');
 			box.textContent = '';
 			box.appendChild(el('h2', d.item.name + ' (' + d.item.id + ')'));
@@ -122,8 +119,10 @@
 	}
 
 	function showMonster(id) {
-		get('/v1/public/monsters/' + id).then(function (r) {
-			var m = r.monster, box = $('detail');
+		TitanROData.query(Q_MONSTER, { id: id }).then(function (res) {
+			var r = res.monster;
+			if (!r) throw new Error('No monster with that id.');
+			var m = r, box = $('detail');
 			box.textContent = '';
 			box.appendChild(el('h2', m.name + ' (' + m.id + ')' + (m.mvp ? ' MVP' : m.boss ? ' Boss' : '')));
 			var ele = ELEMENTS[m.element % 20] || ('#' + m.element);

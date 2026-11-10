@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TitanRO WoE Tracker</title>
 <link rel="stylesheet" href="site.css">
+<script src="data-api.js"></script>
 </head>
 <body>
 <header>
@@ -36,8 +37,8 @@
 <script>
 (function () {
 	'use strict';
-	// The account service's public routes (TitanRO/account-service src/publicData.ts); ?api= overrides it for testing.
-	var API = new URLSearchParams(location.search).get('api') || 'https://account-api.titanro.net';
+	var Q_WOE = '{ woe { running at castles { id map name guildId guildName }' +
+		' events { time kind castleId guildId guildName } sessions { start end guilds { guildId guildName kills deaths } } } }';
 	var $ = function (id) { return document.getElementById(id); };
 	function el(tag, text, cls) {
 		var e = document.createElement(tag);
@@ -53,11 +54,8 @@
 	function when(t) { return new Date(t).toLocaleString(); }
 
 	function load() {
-		fetch(API + '/v1/public/woe').then(function (r) {
-			return r.json().then(function (body) {
-				if (!r.ok) throw new Error((body.error && body.error.message) || ('HTTP ' + r.status));
-				return body;
-			});
+		TitanROData.query(Q_WOE).then(function (d) {
+			return d.woe;
 		}).then(function (w) {
 			var castleName = {};
 			w.castles.forEach(function (c) { castleName[c.id] = c.name; });
@@ -95,13 +93,12 @@
 				events.appendChild(row([
 					[when(e.time)],
 					[castleName[e.castleId] || '#' + e.castleId],
-					[e.kind === 'break' ? 'Emperium broken' : (e.guildId ? 'New owner' : 'Released')],
+					[e.kind === 'BREAK' ? 'Emperium broken' : (e.guildId ? 'New owner' : 'Released')],
 					[e.guildName || (e.guildId ? '#' + e.guildId : '-')]
 				]));
 			});
 		}).catch(function (e) {
-			$('note').textContent = e.message;
-			$('note').className = 'error';
+			TitanROData.showError($('note'), e);
 		});
 	}
 	load();

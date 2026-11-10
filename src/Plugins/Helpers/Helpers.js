@@ -30,7 +30,6 @@ import { ZoneSignal } from './Zone.js';
 import { HelperPanels } from './HelperPanels.js';
 import { zonePanel } from './ZonePanel.js';
 import { autopotPanel } from './AutopotPanel.js';
-import { marketPanel } from './MarketPanel.js';
 import Inventory from 'UI/Components/Inventory/Inventory.js';
 import ItemType from 'DB/Items/ItemType.js';
 
@@ -77,7 +76,6 @@ export default function Init(params) {
 			healingItems
 		)
 	);
-	panels.register(marketPanel({ accountApi: (params && params.accountApi) || 'https://account-api.titanro.net' }));
 
 	zone.onChange((_state, entered) => {
 		if (entered) panels.refresh();

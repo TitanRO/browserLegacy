@@ -361,6 +361,51 @@ function onPacket(packet, listener) {
 	return () => set.delete(listener);
 }
 
+const _jsonListeners = new Map();
+
+/**
+ * Listen to the server's JSON messages of one type (text messages beside the game data, from TitanRO's game
+ * servers: e.g. {"type":"mvps",...}).
+ *
+ * @param {string} type
+ * @param {function} listener - listener(message)
+ * @returns {function} call to stop listening
+ */
+function onJson(type, listener) {
+	let set = _jsonListeners.get(type);
+	if (!set) _jsonListeners.set(type, (set = new Set()));
+	set.add(listener);
+	return () => set.delete(listener);
+}
+
+function receiveText(text) {
+	let message;
+	try {
+		message = JSON.parse(text);
+	} catch {
+		return;
+	}
+	const set = message && typeof message.type === 'string' ? _jsonListeners.get(message.type) : null;
+	if (!set) return;
+	for (const listener of set) {
+		try {
+			listener(message);
+		} catch (error) {
+			console.error('[Network] JSON listener failed', error);
+		}
+	}
+}
+
+/**
+ * Send a JSON message to the map server beside the game data (a helper's request).
+ *
+ * @param {object} message
+ * @returns {boolean} whether it was sent
+ */
+function sendJson(message) {
+	return !!(_socket && _socket.isZone && _socket.sendText && _socket.sendText(JSON.stringify(message)));
+}
+
 /**
  * Listen to every received packet the client knows (read-only, as onPacket).
  *
@@ -496,6 +541,11 @@ function _ringReadUShort(logPos) {
  * @param {ArrayBuffer|Uint8Array} buf
  */
 function receive(buf) {
+	// a JSON text message beside the game data (client_transport), never part of the packet stream
+	if (typeof buf === 'string') {
+		receiveText(buf);
+		return;
+	}
 	const incoming = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
 	const inLen = incoming.length;
 
@@ -800,6 +850,8 @@ const Network = (function network() {
 		hookPacket: hookPacket,
 		onPacket: onPacket,
 		onAnyPacket: onAnyPacket,
+		onJson: onJson,
+		sendJson: sendJson,
 		close: close,
 		expectClose: expectClose,
 		read: read,

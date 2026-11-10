@@ -71,3 +71,43 @@
 	margin-top: 4px;
 	color: #666;
 }
+.options .section {
+	margin: 4px 0 1px;
+	font-weight: bold;
+	color: #5a4a20;
+}
+.options .section:first-child {
+	margin-top: 0;
+}
+
+.lines div {
+	white-space: nowrap;
+	padding: 1px 0;
+}
+.lines .grey {
+	color: #777;
+}
+.lines .gold {
+	color: #a06a00;
+	font-weight: bold;
+}
+.lines .green {
+	color: #2a7a2a;
+}
+.lines .red {
+	color: #b03030;
+}
+.hpbar {
+	height: 5px;
+	margin: 2px 0;
+	background: #ddd;
+	border: 1px solid #999;
+}
+.hpbar div {
+	height: 100%;
+	background: #2e9a2e;
+}
+.body button.reset {
+	margin-top: 3px;
+	font-size: 11px;
+}

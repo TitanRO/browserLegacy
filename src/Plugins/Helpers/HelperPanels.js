@@ -7,8 +7,8 @@
  *
  * Each panel's place and whether it's open are helper settings (`panels.<id>`), and a feature setting turns the panel
  * on (e.g. zonePanel.enabled), so they follow the player between clients. Two key bindings from the settings: `keys.panels` shows or
- * hides every panel that's on, and `keys.helperWindow` opens the "TitanRO helpers" window, which turns panels on and
- * off.
+ * hides every panel that's on, and `keys.helperWindow` opens the "TitanRO helpers" window, which lists the options of
+ * HelperOptions.js by section; turning a panel's setting on opens that panel.
  *
  * @author Trojal
  */
@@ -16,6 +16,7 @@
 import GUIComponent from 'UI/GUIComponent.js';
 import UIManager from 'UI/UIManager.js';
 import { isTyping, matchesKey } from './Keys.js';
+import { optionSections } from './HelperOptions.js';
 import cssText from './HelperPanel.css?raw';
 
 const PREFIX = 'TitanROHelper_';
@@ -183,19 +184,34 @@ export class HelperPanels {
 		body.textContent = '';
 		const list = document.createElement('div');
 		list.className = 'options';
-		for (const [id, panel] of this.panels) {
-			const label = document.createElement('label');
-			const box = document.createElement('input');
-			box.type = 'checkbox';
-			box.checked = this.enabled(id);
-			box.addEventListener('change', () => this.setEnabled(id, box.checked));
-			label.append(box, ' ' + panel.title);
-			list.append(label);
+		for (const { section, options } of optionSections()) {
+			const heading = document.createElement('div');
+			heading.className = 'section';
+			heading.textContent = section;
+			list.append(heading);
+			for (const option of options) {
+				const [group, key] = option.key.split('.');
+				const label = document.createElement('label');
+				const box = document.createElement('input');
+				box.type = 'checkbox';
+				box.dataset.key = option.key;
+				box.checked = this.settings.get(group, key) === true;
+				box.addEventListener('change', () => this.setOption(group, key, box.checked));
+				label.append(box, ' ' + option.label);
+				list.append(label);
+			}
 		}
 		const hint = document.createElement('div');
 		hint.className = 'hint';
 		hint.textContent = (this.settings.get('keys', 'panels') || '') + ': show or hide the panels';
 		body.append(list, hint);
+	}
+
+	/** Sets an option from the helpers window; turning on the setting of a panel opens that panel. */
+	setOption(group, key, on) {
+		const panel = [...this.panels.values()].find(p => p.enabled[0] === group && p.enabled[1] === key);
+		if (panel) this.setEnabled(panel.id, on);
+		else this.settings.set({ [group]: { [key]: !!on } });
 	}
 
 	_saveMoved(panel) {

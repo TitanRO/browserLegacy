@@ -12,8 +12,10 @@
 	<h1>TitanRO Skill Simulator</h1>
 	<nav><a href="./">Play</a><a href="market.html">Market</a><a href="woe.html">WoE</a><a href="mvp.html">MVP</a><a href="search.html">Database</a><a href="stats.html">Stats</a><a href="skills.html">Skills</a><a href="tools.html">Tools</a></nav>
 </header>
-<main class="calc">
-	<section class="panel">
+<main class="calc wide">
+	<section class="box">
+		<h2 class="bar">Skill simulator</h2>
+		<div class="boxbody">
 		<div class="row">
 			<label>Job <select id="job"></select></label>
 			<button type="button" class="link" id="reset">Unlearn all</button>
@@ -23,8 +25,9 @@
 			level. The server makes you spend a job's points before you learn the next job's skills. Raising a skill also
 			raises what it needs; lowering one unlearns the skills that need it. Quest skills (marked) cost no points.
 			Shift-click to go straight to the top or to 0.</p>
+		</div>
 	</section>
-	<div class="cols" id="tiers"></div>
+	<div class="duo" id="tiers"></div>
 	<p class="muted" id="source"></p>
 </main>
 <script type="module">
@@ -67,10 +70,10 @@ function render() {
 	const html = tiers.map((t, i) => {
 		const over = used[i] > t.points;
 		const early = i > 0 && used[i] > 0 && used[i - 1] < tiers[i - 1].points;
-		let h = `<section class="panel tier"><h2><span>${esc(t.job.name)}</span><span class="${over ? 'error' : ''}">${used[i]} / ${t.points}</span></h2>`;
+		let h = `<section class="box tier"><h2 class="bar"><span>${esc(t.job.name)}</span><span class="barnote">${used[i]} / ${t.points} points${over ? ' (over)' : ''}</span></h2><div class="boxbody">`;
 		if (over) h += `<p class="error">${used[i] - t.points} points more than ${esc(t.job.name)} has.</p>`;
 		if (early) h += `<p class="warn">The server asks for all ${tiers[i - 1].points} ${esc(tiers[i - 1].job.name)} points first.</p>`;
-		h += '<table>';
+		h += '<table class="grid">';
 		for (const id of t.skills) {
 			const e = tree.get(id);
 			const s = skills.get(id);
@@ -86,7 +89,7 @@ function render() {
 				`</td><td class="num pm"><button type="button" data-id="${id}" data-d="-1">-</button>` +
 				`<span class="lv">${lv} / ${e.max}</span><button type="button" data-id="${id}" data-d="1">+</button></td></tr>`;
 		}
-		return h + '</table></section>';
+		return h + '</table></div></section>';
 	});
 	$('tiers').innerHTML = html.join('');
 	writeHash();

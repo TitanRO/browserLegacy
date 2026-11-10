@@ -3,77 +3,80 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TitanRO Stat and Damage Calculator</title>
+<title>TitanRO Calculator</title>
 <link rel="stylesheet" href="site.css">
 <link rel="stylesheet" href="calc/calc.css">
 </head>
 <body>
 <header>
-	<h1>TitanRO Stat and Damage Calculator</h1>
+	<h1>TitanRO Calculator</h1>
 	<nav><a href="./">Play</a><a href="market.html">Market</a><a href="woe.html">WoE</a><a href="mvp.html">MVP</a><a href="search.html">Database</a><a href="stats.html">Stats</a><a href="skills.html">Skills</a><a href="tools.html">Tools</a></nav>
 </header>
-<main class="calc">
-	<section class="panel">
-		<div class="row">
-			<label>Job <select id="job"></select></label>
-			<label>Base level <input id="blv" type="number" min="1" value="99"></label>
-			<label>Job level <input id="jlv" type="number" min="1" value="50"></label>
-		</div>
-		<p class="muted" id="caps"></p>
-	</section>
-	<div class="cols">
-		<section class="panel">
-			<h2>Stats</h2>
-			<table class="statin">
-				<thead><tr><th>Stat</th><th class="num">Base</th><th></th><th class="num">Job</th><th class="num">Next</th></tr></thead>
+<main class="calc wide">
+	<section class="box">
+		<h2 class="bar">Base stats <span class="barnote" id="caps"></span></h2>
+		<div class="boxbody">
+			<table class="grid basestats">
+				<tr><th>LV</th><td><input id="blv" type="number" min="1" value="99"></td><th>Job LV</th><td><input id="jlv" type="number" min="1" value="50"></td><th>Class</th><td colspan="1"><select id="job"></select></td></tr>
 				<tbody id="statrows"></tbody>
 			</table>
-			<p><b id="points"></b> <span class="muted" id="pointsnote"></span></p>
-			<p><button type="button" class="link" id="reset">Reset stats to 1</button></p>
-			<h2>Weapon</h2>
-			<div class="row">
-				<label>Type <select id="wtype"></select></label>
-				<label><input id="shield" type="checkbox"> Shield</label>
-			</div>
-			<div class="row" id="wfields">
+			<div class="remain"><b>Remaining status points</b> <span class="num" id="points"></span> <span class="muted" id="pointsnote"></span> <button type="button" class="link" id="reset">Reset</button></div>
+		</div>
+	</section>
+	<div class="strip" id="window"></div>
+	<section class="box">
+		<h2 class="bar">Weapon settings</h2>
+		<div class="boxbody row">
+			<label>Weapon type <select id="wtype"></select></label>
+			<span id="wfields" class="row">
 				<label>ATK <input id="watk" type="number" min="0" value="0"></label>
 				<label>MATK <input id="wmatk" type="number" min="0" value="0"></label>
-				<label>Weapon level <select id="wlv"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+				<label>Weapon LV <select id="wlv"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
 				<label>Refine <select id="refine"></select></label>
-			</div>
+			</span>
+			<label><input id="shield" type="checkbox"> Shield</label>
+			<label class="nc">Speed potion <select disabled><option>not counted yet</option></select></label>
+		</div>
+	</section>
+	<section class="box">
+		<h2 class="bar">Weapon &amp; armor / cards <span class="barnote">equipment bonuses, cards and enchants: not counted yet</span></h2>
+		<div class="boxbody table-wrap">
+			<table class="grid slots" id="slots"></table>
 			<div class="row">
 				<label>Equipment DEF <input id="edef" type="number" min="0" value="0"></label>
 				<label>Equipment MDEF <input id="emdef" type="number" min="0" value="0"></label>
 			</div>
-		</section>
-		<section class="panel">
-			<h2>Status window</h2>
-			<table class="window">
-				<tbody id="window"></tbody>
-			</table>
-			<p class="muted">Counted: base stats, the job's stat bonus, a weapon's ATK, MATK and refine, a shield's attack delay, and
-				the DEF and MDEF you enter. Not counted: cards, item bonuses, passive skills and buffs.</p>
-			<p><button type="button" class="link" id="share">Copy a link to this build</button> <span class="muted" id="shared"></span></p>
-		</section>
-		<section class="panel">
-			<h2>Normal attack on a monster</h2>
+		</div>
+	</section>
+	<div class="duo">
+		<details class="box"><summary class="bar">Passive / duration skills <span class="barnote">not counted yet</span></summary><div class="boxbody muted">Passive skills (masteries, Owl's Eye, Faith, ...) and self buffs don't change these numbers yet.</div></details>
+		<details class="box"><summary class="bar">Supportive / party skills <span class="barnote">not counted yet</span></summary><div class="boxbody muted">Blessing, Increase AGI, songs and other party buffs don't change these numbers yet.</div></details>
+	</div>
+	<section class="box">
+		<h2 class="bar">Monster combat simulation</h2>
+		<div class="boxbody">
 			<div class="row">
-				<label>Monster <input id="mobq" list="moblist" placeholder="Name or id" autocomplete="off"></label>
-				<datalist id="moblist"></datalist>
-			</div>
-			<p class="muted" id="mobinfo"></p>
-			<table class="window"><tbody id="attack"></tbody></table>
-			<div class="row">
-				<label>Skill <select id="skill"></select></label>
+				<label>Attack <select id="skill"></select></label>
 				<label>Level <select id="skilllv"></select></label>
 			</div>
-			<table class="window"><tbody id="skillattack"></tbody></table>
-			<p class="muted">The server's normal-attack formula: status ATK, the weapon (with refine and over-refine), size and
-				element, the monster's DEF, critical hits; for skills, their damage ratio, element and hits. Not counted yet:
-				cards, item bonuses, passive skills, buffs, arrows, elemental weapons, double attacks, and skills with a
-				formula of their own (they aren't listed).</p>
-		</section>
-	</div>
+			<div class="duo">
+				<div class="sub">
+					<h3 class="bar">Monster <input id="mobq" list="moblist" placeholder="Name or id" autocomplete="off"></h3>
+					<datalist id="moblist"></datalist>
+					<table class="grid kv" id="mobtable"></table>
+				</div>
+				<div class="sub">
+					<h3 class="bar">Combat results</h3>
+					<table class="grid kv" id="results"></table>
+				</div>
+			</div>
+			<p class="muted">Counted: status ATK, the weapon (refine and over-refine), size and element, the monster's DEF and
+				FLEE, critical hits; for skills, their damage ratio, element and hits. Not counted yet: cards, equipment and
+				item bonuses, passive skills, buffs, arrows, elemental weapons, double attacks, skill cast and delay, and
+				skills with a formula of their own (they aren't listed).</p>
+		</div>
+	</section>
+	<p><button type="button" class="link" id="share">Copy a link to this build</button> <span class="muted" id="shared"></span></p>
 	<p class="muted" id="source"></p>
 </main>
 <script type="module">
@@ -144,29 +147,33 @@ function sanitize() {
 	return job;
 }
 
+const SLOTS = ['Upper headgear', 'Middle headgear', 'Lower headgear', 'Armor', 'Shield', 'Garment', 'Footgear', 'Accessory', 'Accessory'];
+
+function fillSlots() {
+	const ro = (t) => `<select disabled><option>${t}</option></select>`;
+	$('slots').innerHTML = '<tr><th>Slot</th><th>Refine</th><th>Item</th><th>Card</th><th>Enchant</th></tr>' +
+		SLOTS.map((name) => `<tr><th>${name}</th><td>${ro('+0')}</td><td>${ro('not counted yet')}</td><td>${ro('not counted yet')}</td><td>${ro('not counted yet')}</td></tr>`).join('');
+}
+
 function render() {
 	const job = sanitize();
 	$('job').value = job.id;
 	$('blv').value = state.blv; $('blv').max = job.maxblv;
 	$('jlv').value = state.jlv; $('jlv').max = job.maxjlv;
-	$('caps').textContent = `Base level up to ${job.maxblv}, job level up to ${job.maxjlv}, stats up to ${job.maxstats}.`;
+	$('caps').textContent = `LV up to ${job.maxblv}, Job LV up to ${job.maxjlv}, stats up to ${job.maxstats}`;
 
 	const bonus = jobBonus(job, state.jlv);
-	const rows = $('statrows');
-	rows.textContent = '';
-	STATS.forEach((s, i) => {
-		const tr = document.createElement('tr');
+	const cell = (s, i) => {
 		const v = state.stats[s];
-		tr.innerHTML = `<td><b>${LABEL[s]}</b></td><td class="num"><input type="number" min="1" max="${job.maxstats}" value="${v}" data-stat="${s}"></td>` +
-			`<td class="pm"><button type="button" data-stat="${s}" data-d="-1">-</button><button type="button" data-stat="${s}" data-d="1">+</button></td>` +
-			`<td class="num">+${bonus[i]}</td><td class="num muted">${v < job.maxstats ? statCost(v, v + 1) : '-'}</td>`;
-		rows.appendChild(tr);
-	});
+		const next = v < job.maxstats ? statCost(v, v + 1) : '-';
+		return `<th>${LABEL[s]}</th><td><input type="number" min="1" max="${job.maxstats}" value="${v}" data-stat="${s}"> <span class="bonus">+${bonus[i]}</span> <span class="muted next" title="Points for the next one">${next}</span></td>`;
+	};
+	$('statrows').innerHTML = `<tr>${cell('str', 0)}${cell('agi', 1)}${cell('vit', 2)}</tr><tr>${cell('int', 3)}${cell('dex', 4)}${cell('luk', 5)}</tr>`;
 	const total = totalStatPoints(data, job, state.blv);
 	const left = total - spentStatPoints(state.stats);
-	$('points').textContent = `${left} status points left`;
-	$('points').className = left < 0 ? 'error' : '';
-	$('pointsnote').textContent = `of ${total} at base level ${state.blv}` + (job.upper ? ' (transcendent: 52 more)' : '');
+	$('points').textContent = left;
+	$('points').className = 'num' + (left < 0 ? ' error' : '');
+	$('pointsnote').textContent = `of ${total}` + (job.upper ? ' (transcendent: 52 more)' : '');
 
 	const wsel = $('wtype');
 	wsel.textContent = '';
@@ -181,49 +188,26 @@ function render() {
 	const input = { job, blv: state.blv, jlv: state.jlv, stats: state.stats, shield: state.shield, equipDef: state.edef, equipMdef: state.emdef };
 	if (state.wtype) input.weapon = { type: state.wtype, atk: state.watk, matk: state.wmatk, wlv: state.wlv, refine: state.refine };
 	const w = statusWindow(data, input);
-	const lines = [
+	const cells = [
+		['Max HP', w.max_hp.toLocaleString()], ['Max SP', w.max_sp.toLocaleString()],
 		['ATK', `${w.atk1} + ${w.atk2}`], ['MATK', `${w.matk2} + ${w.matk1}`],
-		['HIT', w.hit], ['CRIT', w.cri],
 		['DEF', `${w.def2} + ${w.def1}`], ['MDEF', `${w.mdef2} + ${w.mdef1}`],
-		['FLEE', `${w.flee1} + ${w.flee2}`], ['ASPD', w.amotion == null ? '-' : `${aspd(w.amotion)} (${(w.amotion * 2).toLocaleString()} ms between attacks)`],
-		['MaxHP', w.max_hp.toLocaleString()], ['MaxSP', w.max_sp.toLocaleString()]
+		['HIT', w.hit], ['FLEE', w.flee1], ['Perfect dodge', w.flee2], ['Critical', w.cri],
+		['ASPD', w.amotion == null ? '-' : aspd(w.amotion)]
 	];
-	$('window').innerHTML = lines.map(([k, v]) => `<tr><th>${k}</th><td class="num">${v}</td></tr>`).join('');
-	renderAttack(input, w);
+	$('window').innerHTML = cells.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('');
+	renderCombat(input, w);
 	writeHash();
 }
 
-function renderAttack(input, w) {
-	const mob = mobs && mobs.get(state.mob);
-	if (!mob) { $('attack').textContent = ''; $('mobinfo').textContent = mobs ? 'Pick a monster.' : 'Loading monsters...'; return; }
-	if (document.activeElement !== $('mobq')) $('mobq').value = `${mob.name} (${mob.id})`;
-	$('mobinfo').textContent = `Level ${mob.lv}, ${mob.hp.toLocaleString()} HP, ${SIZES[mob.size]}, ${RACES[mob.race] || mob.race}, ` +
-		`${ELEMENTS[mob.element]} ${mob.element_lv}, DEF ${mob.def} + ${mob.def2}, FLEE ${mob.flee}` + (mob.boss ? ', boss' : '');
-	const a = normalAttack(data, input, mob);
-	const pct = (x) => `${Math.round(x * 1000) / 10} %`;
-	const avgHit = (a.minTotal + a.maxTotal) / 2;
-	const perAttack = a.critRate * a.critTotal + (1 - a.critRate) * a.hitRate * avgHit;
-	const lines = [
-		['Damage a hit', a.minTotal === a.maxTotal ? a.minTotal.toLocaleString() : `${a.minTotal.toLocaleString()} - ${a.maxTotal.toLocaleString()}`],
-		['Critical hit', a.critTotal.toLocaleString()],
-		['Hit chance', pct(a.hitRate)],
-		['Critical chance', pct(a.critRate)],
-		['Average an attack', Math.round(perAttack).toLocaleString()]
-	];
-	if (perAttack > 0 && w.amotion) {
-		const attacks = Math.ceil(mob.hp / perAttack);
-		lines.push(['Attacks to defeat', `about ${attacks.toLocaleString()} (${((attacks * w.amotion * 2) / 1000).toFixed(1)} s)`]);
-	}
-	$('attack').innerHTML = lines.map(([k, v]) => `<tr><th>${k}</th><td class="num">${v}</td></tr>`).join('');
-	renderSkill(input, mob);
-}
+const kv = (rows) => rows.map((r) => `<tr>${r.map((c, i) => (i % 2 ? `<td class="num">${c}</td>` : `<th>${c}</th>`)).join('')}</tr>`).join('');
 
-function renderSkill(input, mob) {
+function renderCombat(input, w) {
 	const job = input.job;
 	const tree = job.tree.filter(([id]) => SUPPORTED.has(id));
 	const sel = $('skill');
 	sel.textContent = '';
-	sel.appendChild(new Option(tree.length ? 'Pick a skill' : 'None of this job\'s skills yet', 0));
+	sel.appendChild(new Option('Basic attack', 0));
 	for (const [id] of tree) sel.appendChild(new Option(skillNames.get(id) || id, id));
 	if (!tree.some(([id]) => id === state.skill)) state.skill = 0;
 	sel.value = state.skill;
@@ -235,14 +219,57 @@ function renderSkill(input, mob) {
 	state.skilllv = Math.min(Math.max(state.skilllv, 1), Math.max(max, 1));
 	lvSel.value = state.skilllv;
 	lvSel.disabled = !max;
-	const r = state.skill ? skillAttack(data, input, mob, state.skill, state.skilllv) : null;
-	$('skillattack').innerHTML = r ? [
-		['Damage', (r.min === r.max ? r.min : `${r.min} - ${r.max}`).toLocaleString() + (r.hits > 1 ? ` (${r.hits} hits)` : '')],
-		['Hit chance', `${Math.round(r.hitRate * 1000) / 10} %`]
-	].map(([k, v]) => `<tr><th>${k}</th><td class="num">${v}</td></tr>`).join('') : '';
+
+	const mob = mobs && mobs.get(state.mob);
+	if (!mob) {
+		$('mobtable').innerHTML = `<tr><td>${mobs ? 'Pick a monster.' : 'Loading monsters...'}</td></tr>`;
+		$('results').textContent = '';
+		return;
+	}
+	if (document.activeElement !== $('mobq')) $('mobq').value = `${mob.name} (${mob.id})`;
+	$('mobtable').innerHTML = kv([
+		['HP', mob.hp.toLocaleString(), 'LV', mob.lv],
+		['DEF', `${mob.def} + ${mob.def2}`, 'Race', RACES[mob.race] || mob.race],
+		['MDEF', `${mob.mdef} + ${mob.mdef2}`, 'Element', `${ELEMENTS[mob.element]} ${mob.element_lv}`],
+		['FLEE', mob.flee, 'Size', SIZES[mob.size]],
+		['100% hit', mob.flee + 100, '95% dodge', Math.max(mob.hit - 5, 0)],
+		['Type', mob.mvp ? 'MVP' : mob.boss ? 'Boss' : 'Normal', 'Id', mob.id]
+	]);
+
+	const pct = (x) => `${Math.round(x * 1000) / 10} %`;
+	const sec = (ms) => `${(ms / 1000).toFixed(2)} s`;
+	const fmt = (n) => Math.round(n).toLocaleString();
+	const hitsTo = (d) => (d > 0 ? Math.ceil(mob.hp / d).toLocaleString() : 'never');
+	let rows;
+	if (state.skill) {
+		const r = skillAttack(data, input, mob, state.skill, state.skilllv);
+		const avg = (r.min + r.max) / 2;
+		rows = [
+			['Hit ratio', pct(r.hitRate)], ['Hits', r.hits],
+			['Minimum damage', fmt(r.min)], ['Average damage', fmt(avg)], ['Maximum damage', fmt(r.max)],
+			['Uses to defeat (min)', hitsTo(r.max)], ['Uses to defeat (avg)', hitsTo(avg * r.hitRate)], ['Uses to defeat (max)', hitsTo(r.min)],
+			['Time per use', '<span class="nc">not counted yet</span>']
+		];
+	} else {
+		const a = normalAttack(data, input, mob);
+		const avgHit = (a.minTotal + a.maxTotal) / 2;
+		const perAttack = a.critRate * a.critTotal + (1 - a.critRate) * a.hitRate * avgHit;
+		const interval = w.amotion ? w.amotion * 2 : null;
+		rows = [
+			['Hit ratio', pct(a.hitRate)], ['Critical rate', pct(a.critRate)], ['Critical damage', fmt(a.critTotal)],
+			['Time per hit', interval ? sec(interval) : '-'],
+			['Minimum damage', fmt(a.minTotal)], ['Maximum damage', fmt(a.maxTotal)], ['Average an attack', fmt(perAttack)],
+			['Damage per second', interval ? fmt((perAttack * 1000) / interval) : '-'],
+			['Hits to defeat (min)', hitsTo(Math.max(a.maxTotal, a.critRate > 0 ? a.critTotal : 0))],
+			['Hits to defeat (avg)', hitsTo(perAttack)], ['Hits to defeat (max)', hitsTo(a.minTotal)],
+			['Average battle', interval && perAttack > 0 ? sec(Math.ceil(mob.hp / perAttack) * interval) : '-']
+		];
+	}
+	$('results').innerHTML = kv(rows);
 }
 
 fillJobs();
+fillSlots();
 readHash();
 render();
 $('source').textContent = `Numbers from the TitanRO game server's own tables and formulas (server build ${data.source.titanro2}).`;
@@ -252,7 +279,6 @@ for (const k of ['blv', 'jlv', 'watk', 'wmatk', 'edef', 'emdef']) $(k).addEventL
 for (const k of ['wtype', 'wlv', 'refine']) $(k).addEventListener('change', (e) => { state[k] = +e.target.value; render(); });
 $('shield').addEventListener('change', (e) => { state.shield = e.target.checked; render(); });
 $('statrows').addEventListener('change', (e) => { const s = e.target.dataset.stat; if (s) { state.stats[s] = Math.trunc(+e.target.value) || 1; render(); } });
-$('statrows').addEventListener('click', (e) => { const s = e.target.dataset.stat; if (s && e.target.dataset.d) { state.stats[s] += +e.target.dataset.d * (e.shiftKey ? 10 : 1); render(); } });
 $('reset').addEventListener('click', () => { for (const s of STATS) state.stats[s] = 1; render(); });
 $('share').addEventListener('click', () => { navigator.clipboard.writeText(location.href).then(() => { $('shared').textContent = 'Copied.'; }, () => { $('shared').textContent = location.href; }); });
 window.addEventListener('hashchange', () => { readHash(); render(); });

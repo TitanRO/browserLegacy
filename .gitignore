@@ -11,6 +11,7 @@
 !/src/Plugins/ChatUrlLinks/
 !/src/Plugins/Quickstart/
 !/src/Plugins/MasterAccount/
+!/src/Plugins/Helpers/
 /index.html
 Config.local.js
 # TitanRO config, baked into our image (see Dockerfile)

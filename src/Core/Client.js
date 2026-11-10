@@ -68,6 +68,7 @@ class Client {
 	 * @param {Array} args - optional
 	 */
 	static getFile(filename, onload, onerror, args) {
+		filename = swapFile(filename);
 		if (!Memory.exist(filename)) {
 			Thread.send('GET_FILE', { filename, args: args || null }, onFileGetted);
 		}
@@ -113,6 +114,7 @@ class Client {
 	 * @param {Array} args - optional
 	 */
 	static loadFile(filename, onload, onerror, args = {}) {
+		filename = swapFile(filename);
 		if (!Memory.exist(filename)) {
 			Thread.send('LOAD_FILE', { filename, args: args || null }, onFileLoaded);
 		}
@@ -159,7 +161,40 @@ class Client {
 		Thread.send('SEARCH_FILE', regex, callback);
 	}
 
+	/**
+	 * Serve another file in place of a game file, by setting (helpers' asset swaps: flat ground, bright markers, ...):
+	 * swap(filename) answers the file to load instead, or a falsy value to leave it. Swaps apply in the order they were
+	 * added, each to what the one before answered, on the main thread's getFile/loadFile (not the map loader's worker).
+	 * A file is cached under the name it was loaded by, so turning a swap off or on takes effect the next time the game
+	 * asks for the file.
+	 *
+	 * @param {function} swap - swap(filename) => string | null
+	 * @returns {function} call to remove the swap
+	 */
+	static addFileSwap(swap) {
+		_swaps.push(swap);
+		return () => {
+			const index = _swaps.indexOf(swap);
+			if (index !== -1) _swaps.splice(index, 1);
+		};
+	}
+
 	static onFilesLoaded = () => {};
+}
+
+/** Asset swaps (Client.addFileSwap), in order. */
+const _swaps = [];
+
+function swapFile(filename) {
+	for (let i = 0; i < _swaps.length; ++i) {
+		try {
+			const other = _swaps[i](filename);
+			if (typeof other === 'string' && other) filename = other;
+		} catch (error) {
+			console.error('[Client] file swap failed', error);
+		}
+	}
+	return filename;
 }
 
 /**

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TitanRO WoE Tracker</title>
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<header>
+	<h1>TitanRO WoE Tracker</h1>
+	<nav><a href="./">Play</a><a href="market.html">Market</a><a href="woe.html">WoE</a></nav>
+</header>
+<main>
+	<p class="muted" id="note">Loading...</p>
+	<section class="panel">
+		<h2>Castles</h2>
+		<div class="table-wrap"><table>
+			<thead><tr><th>Castle</th><th>Map</th><th>Owner</th></tr></thead>
+			<tbody id="castles"></tbody>
+		</table></div>
+	</section>
+	<section class="panel">
+		<h2>Recent WoE</h2>
+		<p class="muted">Guild kills and deaths on castle maps, shown once a WoE has ended.</p>
+		<div id="sessions"></div>
+	</section>
+	<section class="panel">
+		<h2>Breaks and owner changes</h2>
+		<div class="table-wrap"><table>
+			<thead><tr><th>Time</th><th>Castle</th><th>Event</th><th>Guild</th></tr></thead>
+			<tbody id="events"></tbody>
+		</table></div>
+	</section>
+</main>
+<script>
+(function () {
+	'use strict';
+	// The account service's public routes (TitanRO/account-service src/publicData.ts); ?api= overrides it for testing.
+	var API = new URLSearchParams(location.search).get('api') || 'https://account-api.titanro.net';
+	var $ = function (id) { return document.getElementById(id); };
+	function el(tag, text, cls) {
+		var e = document.createElement(tag);
+		if (text != null) e.textContent = text;
+		if (cls) e.className = cls;
+		return e;
+	}
+	function row(cells) {
+		var tr = document.createElement('tr');
+		cells.forEach(function (c) { tr.appendChild(el('td', c[0], c[1])); });
+		return tr;
+	}
+	function when(t) { return new Date(t).toLocaleString(); }
+
+	function load() {
+		fetch(API + '/v1/public/woe').then(function (r) {
+			return r.json().then(function (body) {
+				if (!r.ok) throw new Error((body.error && body.error.message) || ('HTTP ' + r.status));
+				return body;
+			});
+		}).then(function (w) {
+			var castleName = {};
+			w.castles.forEach(function (c) { castleName[c.id] = c.name; });
+			$('note').textContent = (w.running ? 'WoE is running now. ' : '') + 'As of ' + when(w.at) + '; refreshes every minute.';
+			$('note').className = 'muted';
+
+			var castles = $('castles');
+			castles.textContent = '';
+			w.castles.forEach(function (c) {
+				castles.appendChild(row([[c.name], [c.map, 'muted'], [c.guildName || (c.guildId ? '#' + c.guildId : 'Unclaimed')]]));
+			});
+
+			var sessions = $('sessions');
+			sessions.textContent = '';
+			if (w.sessions.length === 0) sessions.appendChild(el('p', 'No WoE yet.', 'muted'));
+			w.sessions.forEach(function (s) {
+				sessions.appendChild(el('h3', when(s.start) + (s.end ? ' to ' + new Date(s.end).toLocaleTimeString() : ' (running)')));
+				if (!s.end) return;
+				if (s.guilds.length === 0) { sessions.appendChild(el('p', 'No player kills.', 'muted')); return; }
+				var wrap = el('div', null, 'table-wrap');
+				var t = document.createElement('table');
+				t.innerHTML = '<thead><tr><th>Guild</th><th class="num">Kills</th><th class="num">Deaths</th></tr></thead>';
+				var body = document.createElement('tbody');
+				s.guilds.forEach(function (g) {
+					body.appendChild(row([[g.guildName || '#' + g.guildId], [String(g.kills), 'num'], [String(g.deaths), 'num']]));
+				});
+				t.appendChild(body);
+				wrap.appendChild(t);
+				sessions.appendChild(wrap);
+			});
+
+			var events = $('events');
+			events.textContent = '';
+			w.events.forEach(function (e) {
+				events.appendChild(row([
+					[when(e.time)],
+					[castleName[e.castleId] || '#' + e.castleId],
+					[e.kind === 'break' ? 'Emperium broken' : (e.guildId ? 'New owner' : 'Released')],
+					[e.guildName || (e.guildId ? '#' + e.guildId : '-')]
+				]));
+			});
+		}).catch(function (e) {
+			$('note').textContent = e.message;
+			$('note').className = 'error';
+		});
+	}
+	load();
+	setInterval(load, 60000);
+})();
+</script>
+</body>
+</html>

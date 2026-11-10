@@ -57,7 +57,8 @@
 	config.skipIntro = true;
 	window.ROConfig = config;
 
-	window.TitanROWoeStill = (id ? TitanROData.query(Q, { id: id }) : Promise.reject(new Error('No still chosen: open one from the WoE tracker.')))
+	// Some stills open without signing in; for the others the API asks for it
+	window.TitanROWoeStill = (id ? TitanROData.query(Q, { id: id }, { signedOut: true }) : Promise.reject(new Error('No still chosen: open one from the WoE tracker.')))
 		.then(function (d) {
 			var s = d.woeSnapshot;
 			if (!s) throw new Error('There is no such still.');

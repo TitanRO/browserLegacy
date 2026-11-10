@@ -9,6 +9,9 @@
  * - the zone signal (Zone.js): field, PvP or WoE for the current map, from the map properties the server sends.
  * - helper panels (HelperPanels.js): game windows for helpers, with their key bindings and the "TitanRO helpers"
  *   window; the zone panel (ZonePanel.js) is the first, off by default.
+ * - display helpers (VisualHelpers.js): low effects, no fog, bright maps, cast circles, trap
+ *   markers, flat map, see-through props and the cell grid, drawn by the renderers from Renderer/VisualOptions.js;
+ *   their rows in the helpers window are in HelperOptions.js.
  * - asset swaps: Client.addFileSwap (Core/Client.js) serves another file in place of a game file.
  * - helper settings (HelperSettings.js): the master account's settings from the account service, shared with the
  *   launcher and the Windows client.
@@ -31,9 +34,16 @@ import { ZoneSignal } from './Zone.js';
 import { HelperPanels } from './HelperPanels.js';
 import { zonePanel } from './ZonePanel.js';
 import { startInfoPanels } from './InfoPanels.js';
+import { startVisualHelpers } from './VisualHelpers.js';
+import Session from 'Engine/SessionStorage.js';
+import Entity from 'Renderer/Entity/Entity.js';
+import EffectManager from 'Renderer/EffectManager.js';
+import MapEffects from 'Renderer/Map/Effects.js';
+import ScreenEffectManager from 'Renderer/ScreenEffectManager.js';
+import VisualOptions from 'Renderer/VisualOptions.js';
 
 /** The shared pieces, once the plugin has started. */
-export const helpers = { settings: null, zone: null, panels: null, info: null };
+export const helpers = { settings: null, zone: null, panels: null, info: null, visual: null };
 
 let started = false;
 
@@ -52,6 +62,26 @@ export default function Init(params) {
 	panels.register(zonePanel(zone));
 	const info = startInfoPanels({ network: Network, settings, panels });
 
+	// Display helpers (low effects, fog, light, cast circles, markers, flat map, props, grid): live, every zone
+	const visual = startVisualHelpers({
+		settings,
+		network: Network,
+		packets: PACKET,
+		context: {
+			currentMap: () => MapRenderer.currentMap,
+			myId: () => Session.Entity && Session.Entity.GID,
+			isPlayer: entity => entity.objecttype === Entity.TYPE_PC
+		},
+		onApplied: before => {
+			if (before.filter !== VisualOptions.effectFilter) {
+				EffectManager.refilter();
+				MapEffects.respawn();
+			}
+			if (before.weather !== VisualOptions.hideWeather)
+				ScreenEffectManager.setWeatherHidden(VisualOptions.hideWeather);
+		}
+	});
+
 	zone.onChange((_state, entered) => {
 		if (entered) panels.refresh();
 		panels.update();
@@ -64,6 +94,6 @@ export default function Init(params) {
 	settings.restoreToken();
 	window.addEventListener('pagehide', () => settings.flush());
 
-	Object.assign(helpers, { settings, zone, panels, info });
+	Object.assign(helpers, { settings, zone, panels, info, visual });
 	return true;
 }

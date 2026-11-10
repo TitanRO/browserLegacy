@@ -23,8 +23,11 @@ import EFST from 'DB/Status/StatusConst.js';
 import Session from 'Engine/SessionStorage.js';
 import SpriteRenderer from 'Renderer/SpriteRenderer.js';
 import MapRenderer from 'Renderer/MapRenderer.js';
+import VisualOptions from 'Renderer/VisualOptions.js';
 
 let isMapflagEffect = false;
+/** The map whose weather (WeatherTable) started, so low effects mode can start it again */
+let _weatherMap = '';
 
 function beforeRender(gl, modelView, projection, fog, tick) {
 	SpriteRenderer.bind3DContext(gl, modelView, projection, fog);
@@ -47,6 +50,7 @@ class ScreenEffectManager {
 	 * @param {string} mapname
 	 */
 	static init(gl, mapname) {
+		_weatherMap = '';
 		// weather effects
 		if (WeatherTable.effects && WeatherTable.effects[mapname]) {
 			isMapflagEffect = true;
@@ -91,6 +95,13 @@ class ScreenEffectManager {
 		}
 
 		isMapflagEffect = false;
+		_weatherMap = mapname;
+
+		// Low effects mode hides the weather (display helper)
+		if (VisualOptions.hideWeather) {
+			return;
+		}
+
 		const Params = {
 			Inst: {
 				startTick: Renderer.tick,
@@ -142,6 +153,24 @@ class ScreenEffectManager {
 		} else if (weather === 'cloud8') {
 			Params.Inst.effectId = EffectConst.EF_CLOUD8;
 			CloudWeatherEffect.startOrRestart(Params);
+		}
+	}
+
+	/**
+	 * Low effects mode turned the weather off or on: stop it, or start the map's weather again.
+	 *
+	 * @param {boolean} hidden
+	 */
+	static setWeatherHidden(hidden) {
+		if (hidden) {
+			SnowWeather.stop(-1, Renderer.tick);
+			RainWeather.stop(-1, Renderer.tick);
+			SakuraWeatherEffect.stop(-1, Renderer.tick);
+			PokJukWeatherEffect.stop();
+			CloudWeatherEffect.stop(-1, Renderer.tick);
+		} else if (_weatherMap && WeatherTable.effects && WeatherTable.effects[_weatherMap]) {
+			isMapflagEffect = true;
+			this.startMapflagEffect(_weatherMap);
 		}
 	}
 

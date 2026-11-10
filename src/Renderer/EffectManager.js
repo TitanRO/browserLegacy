@@ -41,6 +41,7 @@ import Trail from 'Renderer/Effects/Trail.js';
 import WaterfallEffect from 'Renderer/Effects/WaterfallEffect.js';
 import Session from 'Engine/SessionStorage.js';
 import GraphicsSettings from 'Preferences/Graphics.js';
+import VisualOptions from 'Renderer/VisualOptions.js';
 
 /**
  * @type {object} saved webgl context
@@ -600,6 +601,28 @@ class EffectManager {
 	}
 
 	/**
+	 * Remove the effects playing now that low effects mode leaves out (after its settings change; new ones are
+	 * filtered as they start).
+	 */
+	static refilter() {
+		for (const name of Object.keys(_list)) {
+			const list = _list[name];
+			for (let i = list.length - 1; i >= 0; --i) {
+				const params = list[i]._Params;
+				if (params && params.Init && !VisualOptions.keepEffect(params.Init)) {
+					if (list[i].free) {
+						list[i].free(_gl);
+					}
+					list.splice(i, 1);
+				}
+			}
+			if (!list.length) {
+				delete _list[name];
+			}
+		}
+	}
+
+	/**
 	 * Spam an effect to the scene
 	 *
 	 * @param {object} Effect initial parameters {
@@ -629,6 +652,11 @@ class EffectManager {
 
 		// Not found
 		if (!(EF_Init_Par.effectId in EffectDB)) {
+			return;
+		}
+
+		// Low effects mode (display helper)
+		if (!VisualOptions.keepEffect(EF_Init_Par)) {
 			return;
 		}
 

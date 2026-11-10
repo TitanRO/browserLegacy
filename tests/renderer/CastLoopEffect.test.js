@@ -36,6 +36,7 @@ function setup(row) {
 			EffectDB: { cast_fx: [row] },
 			StrEffect: str.StrEffect,
 			Preferences: { effect: true },
+			VisualOptions: { keepEffect: () => true },
 			Sound: { playPosition: filename => played.push(filename) },
 			Events: { setTimeout: run => run() },
 			Session: { Entity: { position: [0, 0, 0] } },

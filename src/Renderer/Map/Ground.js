@@ -12,6 +12,8 @@ import WebGL from 'Utils/WebGL.js';
 import Texture from 'Utils/Texture.js';
 import Preferences from 'Preferences/Map.js';
 import Configs from 'Core/Configs.js';
+import Altitude from 'Renderer/Map/Altitude.js';
+import VisualOptions, { BRIGHT, GRID } from 'Renderer/VisualOptions.js';
 import _vertexShader from './Ground.vs?raw';
 import _fragmentShader from './Ground.fs?raw';
 
@@ -47,6 +49,11 @@ let _textureAtlas = null;
  * @var {WebGLTexture}
  */
 let _shadowMap = null;
+
+/**
+ * @var {WebGLTexture} one texel per cell: walkable or not (the cell grid)
+ */
+let _cells = null;
 
 /**
  * @var {number} total vertices count
@@ -101,6 +108,19 @@ function render(gl, modelView, projection, normalMat, fog, light) {
 	gl.uniform1f(uniform.uFogFar, fog.far);
 	gl.uniform3fv(uniform.uFogColor, fog.color);
 
+	// Display helpers
+	gl.uniform1i(uniform.uFlat, VisualOptions.flatGround);
+	gl.uniform1f(uniform.uFlatGrey, GRID.flatGrey);
+	gl.uniform1f(uniform.uMinShadow, VisualOptions.brightMaps ? BRIGHT.shadow : 0.0);
+	const grid = VisualOptions.cellGrid && bindCells(gl);
+	gl.uniform1i(uniform.uGrid, !!grid);
+	if (grid) {
+		gl.uniform1i(uniform.uCells, 3);
+		gl.uniform2f(uniform.uCellsSize, Altitude.width, Altitude.height);
+		gl.uniform1f(uniform.uGridLine, GRID.line);
+		gl.uniform1f(uniform.uGridBlocked, GRID.blocked);
+	}
+
 	// Enable all attributes
 	gl.enableVertexAttribArray(attribute.aPosition);
 	gl.enableVertexAttribArray(attribute.aVertexNormal);
@@ -149,6 +169,41 @@ function render(gl, modelView, projection, normalMat, fog, light) {
 	// own ground textures, and why hovering walkable ground hid it: GridSelector
 	// sets TEXTURE0 itself, and only runs when the mouse hits the ground.
 	gl.activeTexture(gl.TEXTURE0);
+}
+
+/**
+ * The walkable-cell texture (built from the map's GAT the first time the grid is drawn) on texture unit 3.
+ *
+ * @param {object} gl context
+ * @returns {boolean} false while the map's cells aren't known
+ */
+function bindCells(gl) {
+	if (!_cells) {
+		const width = Altitude.width;
+		const height = Altitude.height;
+		if (!width || !height) {
+			return false;
+		}
+		const data = new Uint8Array(width * height);
+		for (let y = 0; y < height; ++y) {
+			for (let x = 0; x < width; ++x) {
+				data[x + y * width] = Altitude.getCellType(x, y) & Altitude.TYPE.WALKABLE ? 255 : 0;
+			}
+		}
+		_cells = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, _cells);
+		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, width, height, 0, gl.RED, gl.UNSIGNED_BYTE, data);
+		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	}
+	gl.activeTexture(gl.TEXTURE3);
+	gl.bindTexture(gl.TEXTURE_2D, _cells);
+	gl.activeTexture(gl.TEXTURE0);
+	return true;
 }
 
 /**
@@ -378,6 +433,11 @@ function free(gl) {
 	if (_buffer) {
 		gl.deleteBuffer(_buffer);
 		_buffer = null;
+	}
+
+	if (_cells) {
+		gl.deleteTexture(_cells);
+		_cells = null;
 	}
 
 	_shadowMap = null;

@@ -76,6 +76,18 @@ function spam(position, tick) {
 }
 
 /**
+ * Start the map's effects again (after the low effects settings change, so the ones they now keep come back)
+ */
+function respawn() {
+	_list.forEach(mapEffect => {
+		if (mapEffect.isVisible) {
+			EffectManager.remove(null, mapEffect.name);
+			mapEffect.isVisible = false;
+		}
+	});
+}
+
+/**
  * Export
  */
 export default {
@@ -83,5 +95,6 @@ export default {
 	free: free,
 	get: get,
 	remove: remove,
+	respawn: respawn,
 	spam: spam
 };

@@ -5,6 +5,8 @@ in vec2 vTextureCoord;
 in vec2 vLightmapCoord;
 in vec2 vTileColorCoord;
 in float vLightWeighting;
+in vec2 vCell;
+in float vUp;
 out vec4 fragColor;
 
 uniform sampler2D uDiffuse;
@@ -25,6 +27,17 @@ uniform float uLightOpacity;
 uniform vec3  uLightDirection;
 uniform vec3 uLightEnv;
 
+// Display helpers (Renderer/VisualOptions.js): flat grey ground, the cell grid with blocked cells darkened (uCells:
+// one texel per cell, red 1 = walkable), and the least lightmap shadow (bright maps; 0 = as the map has it).
+uniform bool  uFlat;
+uniform float uFlatGrey;
+uniform bool  uGrid;
+uniform sampler2D uCells;
+uniform vec2  uCellsSize;
+uniform float uGridLine;
+uniform float uGridBlocked;
+uniform float uMinShadow;
+
 vec3 posterize(vec3 c) {
     c *= 255.0;
     c = floor(c / 16.0) * 16.0;
@@ -36,6 +49,10 @@ void main(void) {
     vec4 textureSample = texture(uDiffuse, vTextureCoord.st);
     if (textureSample.a < 0.1)
         discard;
+
+    if (uFlat) {
+        textureSample = vec4(vec3(uFlatGrey), 1.0);
+    }
 
     if (vTileColorCoord.st != vec2(0.0,0.0)) {
         textureSample    *= texture( uTileColor, vTileColorCoord.st);
@@ -52,8 +69,19 @@ void main(void) {
         } else if(uGammaCorrection){
             lightmap.rgb = pow(lightmap.rgb, vec3(1.1));
         }
-        textureSample.rgb *= lightmap.a;
+        textureSample.rgb *= max(lightmap.a, uMinShadow);
         textureSample.rgb += clamp(lightmap.rgb, 0.0, 1.0);
+    }
+
+    // cell grid on the ground's top surfaces (walls stay as they are)
+    if (uGrid && vUp > 0.5) {
+        vec2 cell = floor(vCell);
+        float walkable = texture(uCells, (cell + 0.5) / uCellsSize).r;
+        textureSample.rgb *= mix(uGridBlocked, 1.0, step(0.5, walkable));
+        vec2 f = fract(vCell);
+        vec2 w = fwidth(vCell) * 1.2;
+        vec2 line = 1.0 - smoothstep(vec2(0.0), w, min(f, 1.0 - f));
+        textureSample.rgb *= mix(1.0, uGridLine, max(line.x, line.y));
     }
 
     fragColor = textureSample;
@@ -64,4 +92,4 @@ void main(void) {
         fragColor    = mix( fragColor, vec4(uFogColor, fragColor.w), fogFactor );
     }
 
-}
+}

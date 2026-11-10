@@ -8,6 +8,7 @@
 //   3 - alpha, blend pass: draw only fragments inside the fade capsule, translucent
 //   4 - line of sight query: keep only fragments inside the (narrow) capsule,
 //       used with an occlusion query to detect geometry covering the entity
+//   5 - see-through props (display helper): every fragment, at uOccluderFadeOpacity
 
 uniform int   uOccluderFadeMode;
 uniform vec3  uOccluderFadeEye;
@@ -55,6 +56,11 @@ float occluderFadeAmount(vec3 worldPos) {
 // Applies the fade to the fragment alpha. Returns false when the fragment must be discarded.
 bool occluderFade(vec3 worldPos, inout float alpha) {
 	if (uOccluderFadeMode == 0) {
+		return true;
+	}
+
+	if (uOccluderFadeMode == 5) {
+		alpha *= uOccluderFadeOpacity;
 		return true;
 	}
 

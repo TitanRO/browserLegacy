@@ -8,6 +8,11 @@ out vec4 fragColor;
 uniform sampler2D uDiffuse;
 uniform float uAlpha;
 
+// Bright cast circles (display helper, Renderer/VisualOptions.js CAST_CIRCLE): the least opacity and a brightness gain
+uniform bool  uBoost;
+uniform float uBoostMinAlpha;
+uniform float uBoostBrighten;
+
 uniform bool  uFogUse;
 uniform float uFogNear;
 uniform float uFogFar;
@@ -26,9 +31,14 @@ void main(void) {
 
     fragColor = vec4(textureSample.rgb, textureSample.a * uAlpha);
 
+    if (uBoost) {
+        fragColor.rgb = min(fragColor.rgb * uBoostBrighten, vec3(1.0));
+        fragColor.a = max(fragColor.a, textureSample.a * uBoostMinAlpha);
+    }
+
     if (uFogUse) {
         float depth     = gl_FragCoord.z / gl_FragCoord.w;
         float fogFactor = smoothstep( uFogNear, uFogFar, depth );
         fragColor    = mix( fragColor, vec4( uFogColor, fragColor.w ), fogFactor );
     }
-}
+}

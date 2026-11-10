@@ -24,7 +24,15 @@ const _position = vec3.create();
  * @const {number} camera min-max constants
  */
 const C_MIN_ZOOM = 1;
-const C_MAX_ZOOM = 5;
+
+/**
+ * TitanRO's zoom-out cap, the same for every player and in both clients (Build-in roadmap decision 7: medium, WARP's
+ * "Increase Zoom Out (to 75%)"): the Windows client's camera may pull back 840 world units (5 per cell), so here
+ * 168 cells, which is a zoom of 336 (the camera stands zoom / 2 cells away). A config can lower it, never raise it.
+ */
+const C_ZOOM_CAP_CELLS = 840 / 5;
+const C_ALTITUDE_RANGE = 65;
+const C_MAX_ZOOM_CAP = (C_ZOOM_CAP_CELLS * 2) / C_ALTITUDE_RANGE;
 
 const C_MIN_V_ANGLE_ISOMETRIC = 190;
 const C_MAX_V_ANGLE_ISOMETRIC = 270;
@@ -106,7 +114,7 @@ class Camera {
 	 * @type {number} camera min-max variables
 	 */
 	static MIN_ZOOM = C_MIN_ZOOM;
-	static MAX_ZOOM = C_MAX_ZOOM;
+	static MAX_ZOOM = C_MAX_ZOOM_CAP;
 	static MIN_V_ANGLE = C_MIN_V_ANGLE_ISOMETRIC;
 	static MAX_V_ANGLE = C_MAX_V_ANGLE_ISOMETRIC;
 
@@ -268,7 +276,7 @@ class Camera {
 	static init() {
 		Camera.enable3RDPerson = Configs.get('ThirdPersonCamera', false);
 		Camera.enable1STPerson = Configs.get('FirstPersonCamera', false);
-		Camera.MAX_ZOOM = Configs.get('CameraMaxZoomOut', C_MAX_ZOOM);
+		Camera.MAX_ZOOM = Math.min(Configs.get('CameraMaxZoomOut', C_MAX_ZOOM_CAP), C_MAX_ZOOM_CAP);
 
 		this.lastTick = Date.now();
 
@@ -302,7 +310,19 @@ class Camera {
 			} else {
 				this.zoomFinal = Preferences.zoom || 125;
 			}
+			// a saved zoom never starts past the cap
+			this.zoomFinal = Math.min(this.zoomFinal, Camera.maxZoomDistance());
 		});
+	}
+
+	/**
+	 * The farthest zoom out allowed now (indoor maps allow less)
+	 *
+	 * @returns {number} zoom
+	 */
+	static maxZoomDistance() {
+		const indoor = DB.isIndoor(this.currentMap);
+		return Math.abs(this.altitudeRange) * (indoor ? this.MAX_ZOOM_INDOOR : this.MAX_ZOOM);
 	}
 
 	/**

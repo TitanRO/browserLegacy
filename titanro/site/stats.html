@@ -100,12 +100,15 @@ const mobsReady = fetch('calc/mobs.json').then((r) => r.json()).then((m) => {
 const SUPPORTED = new Set(weaponSkills(data));
 const skillNames = new Map(data.skills.map((x) => [x.id, x.desc]));
 const state = { skill: 0, skilllv: 1, mob: 1002, job: 4008, blv: 99, jlv: 70, stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, wtype: 0, watk: 0, wmatk: 0, wlv: 1, refine: 0, shield: false, edef: 0, emdef: 0 };
+const DEFAULTS = JSON.parse(JSON.stringify(state));
 
 function readHash() {
 	const p = new URLSearchParams(location.hash.slice(1));
 	const num = (k, d) => (p.has(k) && isFinite(+p.get(k)) ? Math.trunc(+p.get(k)) : d);
-	state.job = jobs.has(num('job', state.job)) ? num('job', state.job) : data.jobs[0].id;
-	for (const k of ['blv', 'jlv', 'wtype', 'watk', 'wmatk', 'wlv', 'refine', 'edef', 'emdef', 'mob', 'skill', 'skilllv']) state[k] = num(k, state[k]);
+	state.job = jobs.has(num('job', DEFAULTS.job)) ? num('job', DEFAULTS.job) : data.jobs[0].id;
+	// a key missing from the link takes its default, so an edited link never keeps an earlier build's value
+	for (const k of ['blv', 'jlv', 'wtype', 'watk', 'wmatk', 'wlv', 'refine', 'edef', 'emdef', 'mob', 'skill', 'skilllv']) state[k] = num(k, DEFAULTS[k]);
+	state.stats = { ...DEFAULTS.stats };
 	if (p.has('s')) p.get('s').split('.').forEach((v, i) => { if (i < 6 && isFinite(+v)) state.stats[STATS[i]] = Math.max(1, Math.trunc(+v)); });
 	state.shield = p.get('shield') === '1';
 }

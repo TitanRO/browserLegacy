@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TitanRO Stat Calculator</title>
+<title>TitanRO Stat and Damage Calculator</title>
 <link rel="stylesheet" href="site.css">
 <link rel="stylesheet" href="calc/calc.css">
 </head>
 <body>
 <header>
-	<h1>TitanRO Stat Calculator</h1>
+	<h1>TitanRO Stat and Damage Calculator</h1>
 	<nav><a href="./">Play</a><a href="market.html">Market</a><a href="woe.html">WoE</a><a href="search.html">Database</a><a href="stats.html">Stats</a><a href="skills.html">Skills</a><a href="tools.html">Tools</a></nav>
 </header>
 <main class="calc">
@@ -55,24 +55,46 @@
 				the DEF and MDEF you enter. Not counted: cards, item bonuses, passive skills and buffs.</p>
 			<p><button type="button" class="link" id="share">Copy a link to this build</button> <span class="muted" id="shared"></span></p>
 		</section>
+		<section class="panel">
+			<h2>Normal attack on a monster</h2>
+			<div class="row">
+				<label>Monster <input id="mobq" list="moblist" placeholder="Name or id" autocomplete="off"></label>
+				<datalist id="moblist"></datalist>
+			</div>
+			<p class="muted" id="mobinfo"></p>
+			<table class="window"><tbody id="attack"></tbody></table>
+			<p class="muted">The server's normal-attack formula: status ATK, the weapon (with refine and over-refine), size and
+				element, the monster's DEF, critical hits. Not counted yet: cards, item bonuses, skills, buffs, arrows,
+				elemental weapons, and double attacks.</p>
+		</section>
 	</div>
 	<p class="muted" id="source"></p>
 </main>
 <script type="module">
 import { STATS, WEAPON_TYPES, statusWindow, statCost, totalStatPoints, spentStatPoints, jobBonus, aspd } from './calc/calc.js';
 import { jobGroups } from './calc/jobs.js';
+import { normalAttack, mobList } from './calc/damage.js';
 
 const $ = (id) => document.getElementById(id);
 const LABEL = { str: 'STR', agi: 'AGI', vit: 'VIT', int: 'INT', dex: 'DEX', luk: 'LUK' };
 const data = await fetch('calc/data.json').then((r) => r.json());
 const jobs = new Map(data.jobs.map((j) => [j.id, j]));
-const state = { job: 4008, blv: 99, jlv: 70, stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, wtype: 0, watk: 0, wmatk: 0, wlv: 1, refine: 0, shield: false, edef: 0, emdef: 0 };
+const SIZES = ['Small', 'Medium', 'Large'];
+const ELEMENTS = ['Neutral', 'Water', 'Earth', 'Fire', 'Wind', 'Poison', 'Holy', 'Shadow', 'Ghost', 'Undead'];
+const RACES = ['Formless', 'Undead', 'Brute', 'Plant', 'Insect', 'Fish', 'Demon', 'Demi-Human', 'Angel', 'Dragon'];
+let mobs = null;
+const mobsReady = fetch('calc/mobs.json').then((r) => r.json()).then((m) => {
+	mobs = new Map(mobList(m).map((x) => [x.id, x]));
+	const dl = $('moblist');
+	for (const x of mobs.values()) dl.appendChild(new Option(`${x.name} (${x.id})`, `${x.name} (${x.id})`));
+});
+const state = { mob: 1002, job: 4008, blv: 99, jlv: 70, stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, wtype: 0, watk: 0, wmatk: 0, wlv: 1, refine: 0, shield: false, edef: 0, emdef: 0 };
 
 function readHash() {
 	const p = new URLSearchParams(location.hash.slice(1));
 	const num = (k, d) => (p.has(k) && isFinite(+p.get(k)) ? Math.trunc(+p.get(k)) : d);
 	state.job = jobs.has(num('job', state.job)) ? num('job', state.job) : data.jobs[0].id;
-	for (const k of ['blv', 'jlv', 'wtype', 'watk', 'wmatk', 'wlv', 'refine', 'edef', 'emdef']) state[k] = num(k, state[k]);
+	for (const k of ['blv', 'jlv', 'wtype', 'watk', 'wmatk', 'wlv', 'refine', 'edef', 'emdef', 'mob']) state[k] = num(k, state[k]);
 	if (p.has('s')) p.get('s').split('.').forEach((v, i) => { if (i < 6 && isFinite(+v)) state.stats[STATS[i]] = Math.max(1, Math.trunc(+v)); });
 	state.shield = p.get('shield') === '1';
 }
@@ -85,6 +107,7 @@ function writeHash() {
 	if (state.shield) p.set('shield', '1');
 	if (state.edef) p.set('edef', state.edef);
 	if (state.emdef) p.set('emdef', state.emdef);
+	p.set('mob', state.mob);
 	history.replaceState(null, '', '#' + p.toString());
 }
 
@@ -157,7 +180,32 @@ function render() {
 		['MaxHP', w.max_hp.toLocaleString()], ['MaxSP', w.max_sp.toLocaleString()]
 	];
 	$('window').innerHTML = lines.map(([k, v]) => `<tr><th>${k}</th><td class="num">${v}</td></tr>`).join('');
+	renderAttack(input, w);
 	writeHash();
+}
+
+function renderAttack(input, w) {
+	const mob = mobs && mobs.get(state.mob);
+	if (!mob) { $('attack').textContent = ''; $('mobinfo').textContent = mobs ? 'Pick a monster.' : 'Loading monsters...'; return; }
+	if (document.activeElement !== $('mobq')) $('mobq').value = `${mob.name} (${mob.id})`;
+	$('mobinfo').textContent = `Level ${mob.lv}, ${mob.hp.toLocaleString()} HP, ${SIZES[mob.size]}, ${RACES[mob.race] || mob.race}, ` +
+		`${ELEMENTS[mob.element]} ${mob.element_lv}, DEF ${mob.def} + ${mob.def2}, FLEE ${mob.flee}` + (mob.boss ? ', boss' : '');
+	const a = normalAttack(data, input, mob);
+	const pct = (x) => `${Math.round(x * 1000) / 10} %`;
+	const avgHit = (a.minTotal + a.maxTotal) / 2;
+	const perAttack = a.critRate * a.critTotal + (1 - a.critRate) * a.hitRate * avgHit;
+	const lines = [
+		['Damage a hit', a.minTotal === a.maxTotal ? a.minTotal.toLocaleString() : `${a.minTotal.toLocaleString()} - ${a.maxTotal.toLocaleString()}`],
+		['Critical hit', a.critTotal.toLocaleString()],
+		['Hit chance', pct(a.hitRate)],
+		['Critical chance', pct(a.critRate)],
+		['Average an attack', Math.round(perAttack).toLocaleString()]
+	];
+	if (perAttack > 0 && w.amotion) {
+		const attacks = Math.ceil(mob.hp / perAttack);
+		lines.push(['Attacks to defeat', `about ${attacks.toLocaleString()} (${((attacks * w.amotion * 2) / 1000).toFixed(1)} s)`]);
+	}
+	$('attack').innerHTML = lines.map(([k, v]) => `<tr><th>${k}</th><td class="num">${v}</td></tr>`).join('');
 }
 
 fillJobs();
@@ -174,6 +222,14 @@ $('statrows').addEventListener('click', (e) => { const s = e.target.dataset.stat
 $('reset').addEventListener('click', () => { for (const s of STATS) state.stats[s] = 1; render(); });
 $('share').addEventListener('click', () => { navigator.clipboard.writeText(location.href).then(() => { $('shared').textContent = 'Copied.'; }, () => { $('shared').textContent = location.href; }); });
 window.addEventListener('hashchange', () => { readHash(); render(); });
+$('mobq').addEventListener('change', (e) => {
+	const v = e.target.value.trim();
+	const id = +(v.match(/\((\d+)\)\s*$/) || [])[1] || +v;
+	let mob = mobs && mobs.get(id);
+	if (!mob && mobs) { const q = v.toLowerCase(); mob = [...mobs.values()].find((x) => x.name.toLowerCase() === q) || [...mobs.values()].find((x) => x.name.toLowerCase().includes(q)); }
+	if (mob) { state.mob = mob.id; render(); }
+});
+mobsReady.then(render);
 </script>
 </body>
 </html>

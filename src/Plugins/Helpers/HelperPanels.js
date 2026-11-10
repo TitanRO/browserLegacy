@@ -43,7 +43,9 @@ function makeWindow(name, title, width, onClose, onMoved) {
 		const root = this.getRoot();
 		root.querySelector('.titlebar .text').textContent = title;
 		this._host.style.width = width + 'px';
-		root.querySelector('.titlebar .base:not(.close)').addEventListener('mousedown', event => event.stopImmediatePropagation());
+		root.querySelector('.titlebar .base:not(.close)').addEventListener('mousedown', event =>
+			event.stopImmediatePropagation()
+		);
 		root.querySelector('.close').addEventListener('click', event => {
 			event.preventDefault();
 			event.stopImmediatePropagation();
@@ -151,13 +153,20 @@ export class HelperPanels {
 
 	/** Called on every change of map or zone, so panels can show it. */
 	update() {
-		for (const panel of this.panels.values()) if (panel.view && panel.view.update && panel.window.__active) panel.view.update();
+		for (const panel of this.panels.values())
+			if (panel.view && panel.view.update && panel.window.__active) panel.view.update();
 	}
 
 	/** The "TitanRO helpers" window: every panel, with a box to turn it on. */
 	toggleOptions() {
 		if (!this._options) {
-			this._options = makeWindow(PREFIX + 'Options', 'TitanRO helpers', 200, () => this._options.remove(), () => {});
+			this._options = makeWindow(
+				PREFIX + 'Options',
+				'TitanRO helpers',
+				200,
+				() => this._options.remove(),
+				() => {}
+			);
 			this._options.onAppend = () => {
 				const host = this._options._host;
 				host.style.left = Math.max(0, Math.round((this._win.innerWidth - 200) / 2)) + 'px';

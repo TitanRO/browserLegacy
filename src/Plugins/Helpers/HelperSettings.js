@@ -58,7 +58,8 @@ export function mergePatch(target, patch) {
 function withDefaults(defaults, settings) {
 	const out = {};
 	for (const [section, values] of Object.entries(defaults)) {
-		out[section] = section === 'panels' ? { ...(settings?.panels || {}) } : { ...values, ...(settings?.[section] || {}) };
+		out[section] =
+			section === 'panels' ? { ...(settings?.panels || {}) } : { ...values, ...(settings?.[section] || {}) };
 	}
 	return out;
 }
@@ -223,7 +224,10 @@ export class HelperSettingsClient {
 	_accept(response, unsaved) {
 		this.revision = response.revision;
 		if (response.defaults) this.defaults = response.defaults;
-		this.settings = withDefaults(this.defaults, unsaved ? mergePatch(response.settings, unsaved) : response.settings);
+		this.settings = withDefaults(
+			this.defaults,
+			unsaved ? mergePatch(response.settings, unsaved) : response.settings
+		);
 		this._notify();
 	}
 

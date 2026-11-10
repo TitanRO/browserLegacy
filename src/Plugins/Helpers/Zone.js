@@ -38,7 +38,15 @@ export function zoneFromProperty(property) {
 
 export class ZoneSignal {
 	constructor() {
-		this.state = { map: null, zone: FIELD, pvp: false, gvg: false, castle: false, battleground: false, town: false };
+		this.state = {
+			map: null,
+			zone: FIELD,
+			pvp: false,
+			gvg: false,
+			castle: false,
+			battleground: false,
+			town: false
+		};
 		this._hasFlags = false;
 		this._entering = false;
 		this._listeners = new Set();
@@ -62,10 +70,25 @@ export class ZoneSignal {
 
 	/** A new map (map change, or a new map server): field until the server says otherwise. */
 	mapChanged(mapName) {
-		const map = mapName ? String(mapName).replace(/\.gat$/i, '').toLowerCase() : null;
+		const map = mapName
+			? String(mapName)
+					.replace(/\.gat$/i, '')
+					.toLowerCase()
+			: null;
 		this._hasFlags = false;
 		this._entering = true;
-		this._set({ map, zone: FIELD, pvp: false, gvg: false, castle: false, battleground: false, town: !!map && this.isTown(map) }, false);
+		this._set(
+			{
+				map,
+				zone: FIELD,
+				pvp: false,
+				gvg: false,
+				castle: false,
+				battleground: false,
+				town: !!map && this.isTown(map)
+			},
+			false
+		);
 	}
 
 	/** ZC_MAPPROPERTY_R2 (0x99b). */
@@ -101,7 +124,9 @@ export class ZoneSignal {
 		if (!this.state.map) {
 			const map = this.currentMap();
 			if (map) {
-				this.state.map = String(map).replace(/\.gat$/i, '').toLowerCase();
+				this.state.map = String(map)
+					.replace(/\.gat$/i, '')
+					.toLowerCase();
 				this.state.town = this.isTown(this.state.map);
 			}
 		}
@@ -128,7 +153,8 @@ export class ZoneSignal {
 		on(PACKET.ZC.NPCACK_SERVERMOVE, entered);
 		on(PACKET.ZC.NPCACK_SERVERMOVE2, entered);
 		// a new map server connection: the map name came with the char server's answer, MapRenderer has it later
-		for (const name of ['ACCEPT_ENTER', 'ACCEPT_ENTER2', 'ACCEPT_ENTER3']) on(PACKET.ZC[name], () => this.mapChanged(null));
+		for (const name of ['ACCEPT_ENTER', 'ACCEPT_ENTER2', 'ACCEPT_ENTER3'])
+			on(PACKET.ZC[name], () => this.mapChanged(null));
 		on(PACKET.ZC.MAPPROPERTY_R2, pkt => this.mapFlags(pkt.flag | 0));
 		on(PACKET.ZC.NOTIFY_MAPPROPERTY, pkt => this.mapProperty(pkt.type));
 		on(PACKET.ZC.MAPPROPERTY, pkt => this.mapProperty(pkt.type));

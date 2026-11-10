@@ -62,10 +62,13 @@
 			var i = s.info;
 			var still = JSON.parse(s.data);
 			$('still-title').textContent = (i.castleName || i.map) + (i.kind === 'BREAK' ? ': Emperium broken' : ': WoE ended');
+			// The guild names as they were then (the still's), else today's
+			var name = function (id, now) { return (still.guilds[id] && still.guilds[id].name) || now; };
+			var breaker = name(i.guildId, i.guildName), before = name(i.ownerBeforeId, i.ownerBeforeName);
 			$('note').textContent = new Date(i.time).toLocaleString() + ' · ' + still.units.length + ' units' +
 				(i.kind === 'BREAK'
-					? ' · ' + (i.guildName || 'a guild') + ' broke it' + (i.ownerBeforeName ? ' from ' + i.ownerBeforeName : '')
-					: ' · held by ' + (i.guildName || 'nobody'));
+					? ' · ' + (breaker || 'a guild') + ' broke it' + (before ? ' from ' + before : '')
+					: ' · held by ' + (breaker || 'nobody'));
 			var guilds = $('guilds');
 			var counts = {};
 			still.units.forEach(function (u) { if (u.t === 'pc') counts[u.guild || 0] = (counts[u.guild || 0] || 0) + 1; });

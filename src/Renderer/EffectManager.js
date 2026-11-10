@@ -28,6 +28,8 @@ import RsmEffect from 'Renderer/Effects/RsmEffect.js';
 import TwoDEffect from 'Renderer/Effects/TwoDEffect.js';
 import ThreeDEffect from 'Renderer/Effects/ThreeDEffect.js';
 import Entity from 'Renderer/Entity/Entity.js';
+import Footprint from 'Renderer/Effects/Footprint.js';
+import FootprintHook from 'Renderer/Entity/FootprintHook.js';
 import EntityManager from 'Renderer/EntityManager.js';
 import { screenAngle, screenSector, screenSide } from 'Renderer/Effects/ScreenDirection.js';
 import shuffledGrid from 'Renderer/Effects/ShuffledGrid.js';
@@ -383,6 +385,8 @@ class EffectManager {
 	 * Initialize effects manager
 	 */
 	static init(gl) {
+		// Entities leave their Chase Walk prints through this (EntityWalk can't import EffectManager)
+		FootprintHook.leave = EffectManager.footprint;
 		_gl = gl;
 
 		if (Configs.get('development')) {
@@ -636,6 +640,27 @@ class EffectManager {
 	 *     @param otherPosition {Array} target/source (other) position
 	 * }
 	 */
+	/**
+	 * A Chase Walk footprint on a cell (EF_FOOT / EF_FOOT2), turned the walker's way; it fades out by itself.
+	 *
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} direction - Entity.direction
+	 * @param {boolean} left - the left foot's
+	 */
+	static footprint(x, y, direction, left) {
+		if (!Preferences.effect) {
+			return;
+		}
+		const tick = Renderer.tick;
+		const print = new Footprint([x, y], tick, direction, left);
+		EffectManager.add(print, {
+			Inst: { startTick: tick, endTick: print.endTick, duration: Footprint.LIFETIME },
+			Init: {},
+			effect: {}
+		});
+	}
+
 	static spam(EF_Init_Par) {
 		// Empty call
 		if (!EF_Init_Par) {

@@ -82,8 +82,16 @@ spec:
                         exit $status
               workspaces:
                   - { name: github-app, workspace: github-app }
-    # Lint needs little CPU; at run-check's default 2-CPU request it could wait for a node while the tests run.
+    # Lint needs little CPU. The tests get their own request: four vitest workers (jsdom, about 1.3 GiB at peak) on
+    # run-check's default 250m CPU were starved whenever other checks shared the node, and a different test timed out
+    # on each run (5-10 s test and hook timeouts, a 600-700 s suite).
     taskRunSpecs:
+        - pipelineTaskName: tests
+          stepSpecs:
+              - name: run
+                computeResources:
+                    requests: { cpu: '2', memory: 1536Mi }
+                    limits: { memory: 2Gi }
         - pipelineTaskName: lint
           stepSpecs:
               - name: run

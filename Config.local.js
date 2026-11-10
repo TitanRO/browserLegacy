@@ -46,6 +46,12 @@ window.ROConfigLocal = {
 			path: 'Quickstart/Quickstart',
 			pars: { api: 'https://api.titanro.net/graphql', accountApi: 'https://account-api.titanro.net' }
 		},
+		// Built-in game helpers: packet events, zone signal, helper panels, asset swaps, and the master account's helper
+		// settings from the account service (shared with the launcher and the Windows client).
+		Helpers: {
+			path: 'Helpers/Helpers',
+			pars: { accountApi: 'https://account-api.titanro.net' }
+		},
 		// <URL> chat links (clif_format_url, e.g. the @quickinvite link) as links opening a new tab.
 		ChatUrlLinks: 'ChatUrlLinks/ChatUrlLinks'
 		// ServiceWorker: 'ServiceWorker/ServiceWorker', // not ported to this branch yet

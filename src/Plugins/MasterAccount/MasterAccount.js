@@ -131,7 +131,9 @@ export default function Init(params) {
 		await waitFor(loginReady, 60000).catch(() => {
 			throw new Error('The game is still loading; try again in a moment.');
 		});
-		const { username, token } = await login();
+		const { username, token, helperToken } = await login();
+		// The helper settings (Helpers plugin) are read with the helper token that comes with the launch token.
+		if (helperToken) window.dispatchEvent(new CustomEvent('titanro-helper-token', { detail: helperToken }));
 		launchedAt = Date.now();
 		hide();
 		restoreUnload();

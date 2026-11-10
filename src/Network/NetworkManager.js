@@ -330,6 +330,69 @@ function hookPacket(packet, callback) {
 }
 
 /**
+ * Read-only packet listeners: id -> Set of functions, and the ones for every packet.
+ * The engine's own handler (hookPacket) runs first; listeners only see what it has handled.
+ */
+const _listeners = new Map();
+const _anyListeners = new Set();
+
+/**
+ * Listen to a received packet without taking it over: the engine keeps its hookPacket handler, and any number of
+ * listeners (helper panels, trackers) get the parsed packet after it. Listeners must treat the packet as read-only
+ * (the engine may keep references to it) and must not send packets; an error in one is logged and doesn't reach the
+ * engine or the other listeners.
+ *
+ * @param {object} packet - packet structure (PACKET.ZC.*), registered for this packet version
+ * @param {function} listener - listener(pkt, id)
+ * @returns {function} call to stop listening
+ */
+function onPacket(packet, listener) {
+	if (!packet || !packet.id) {
+		throw new Error('NetworkManager::onPacket() - Packet not registered "' + (packet && packet.name) + '"');
+	}
+	// registerPacket keeps the opcode as PacketRegister's key (a string); received ids are numbers
+	const id = Number(packet.id);
+	let set = _listeners.get(id);
+	if (!set) {
+		set = new Set();
+		_listeners.set(id, set);
+	}
+	set.add(listener);
+	return () => set.delete(listener);
+}
+
+/**
+ * Listen to every received packet the client knows (read-only, as onPacket).
+ *
+ * @param {function} listener - listener(pkt, id)
+ * @returns {function} call to stop listening
+ */
+function onAnyPacket(listener) {
+	_anyListeners.add(listener);
+	return () => _anyListeners.delete(listener);
+}
+
+function notifyListeners(id, instance) {
+	const set = _listeners.get(id);
+	if (set) {
+		for (const listener of set) {
+			try {
+				listener(instance, id);
+			} catch (error) {
+				console.error('[Network] packet listener failed', error);
+			}
+		}
+	}
+	for (const listener of _anyListeners) {
+		try {
+			listener(instance, id);
+		} catch (error) {
+			console.error('[Network] packet listener failed', error);
+		}
+	}
+}
+
+/**
  * Force to read from a used version for the next receive data
  *
  * @param callback
@@ -548,6 +611,10 @@ function receive(buf) {
 			if (packet.callback) {
 				packet.callback(packet.instance);
 			}
+
+			if (_anyListeners.size || _listeners.has(id)) {
+				notifyListeners(id, packet.instance);
+			}
 		} else {
 			// Grab the slot BEFORE bumping tail. If the queue is full, this slot is the
 			// oldest unprocessed entry (tail & mask === head & mask), so overwriting it
@@ -731,6 +798,8 @@ const Network = (function network() {
 		setPing: setPing,
 		connect: connect,
 		hookPacket: hookPacket,
+		onPacket: onPacket,
+		onAnyPacket: onAnyPacket,
 		close: close,
 		expectClose: expectClose,
 		read: read,

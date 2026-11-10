@@ -117,7 +117,7 @@ function render(gl, modelView, projection, normalMat, fog, light) {
 		gl.uniform1i(uniform.uCells, 3);
 		gl.uniform2f(uniform.uCellsSize, Altitude.width, Altitude.height);
 		gl.uniform1f(uniform.uGridLine, GRID.line);
-		gl.uniform1f(uniform.uGridBlocked, GRID.blocked);
+		gl.uniform4fv(uniform.uDeadCell, GRID.deadCell);
 	}
 
 	// Enable all attributes

@@ -8,7 +8,8 @@
  * The still's units go through the same code as the map server's packets: a spawn packet for each unit (looks,
  * option, opt1-3, direction, guild), a status packet for each status with an icon, and each ground skill cell as its
  * skill unit entry; ground skills without a unit of their own (Storm Gust, Lord of Vermilion, Meteor Storm, ...) as
- * their ground effect. Units marked hidden are drawn see-through, as a client with intravision draws them.
+ * their ground effect, started as far in as it was at that moment. Guild emblems come from the still. Units marked
+ * hidden are drawn see-through, as a client with intravision draws them.
  *
  * Mouse: drag to turn, wheel to zoom, click to look at a cell. window.TitanROWoeViewer.lookAt(x, y) and .ready
  * (a promise, resolved once everything is placed) are for the page.
@@ -30,6 +31,9 @@ import EffectManager from 'Renderer/EffectManager.js';
 import Mouse from 'Controls/MouseEventHandler.js';
 import MapControl from 'Controls/MapControl.js';
 import PACKETVER from 'Network/PacketVerManager.js';
+import EntityManager from 'Renderer/EntityManager.js';
+import Inflate from 'Utils/Inflate.js';
+import Texture from 'Utils/Texture.js';
 import { onEntitySpam, onEntityStatusChange } from 'Engine/MapEngine/Entity.js';
 
 const TYPES = { pc: 0, mob: 5, npc: 6, pet: 7, hom: 8, mer: 9, elem: 10 };
@@ -133,18 +137,51 @@ function place(still) {
 			const ys = dummy.map(c => c[1]);
 			const x = Math.round((Math.min(...xs) + Math.max(...xs)) / 2);
 			const y = Math.round((Math.min(...ys) + Math.max(...ys)) / 2);
+			// From the moment of the still: started as long ago as the skill had been running then
+			const elapsed = Math.max(0, g.elapsed_ms || 0);
 			const play = () =>
 				EffectManager.spamSkill(
 					g.skill,
 					g.caster || 0,
 					[x, y, Altitude.getCellHeight(x, y)],
-					null,
+					Renderer.tick - elapsed,
 					g.caster || 0,
 					g.lv
 				);
 			play();
 			setInterval(play, GROUND_EFFECT_REPEAT_MS);
 			WoeViewer.placed.groundEffects++;
+		}
+	}
+}
+
+/**
+ * The guilds' emblems from the still (the client's data, zlib-compressed BMP), on their members.
+ * @param {object} still - the woe_snapshot JSON
+ */
+function emblems(still) {
+	const buffer = new Uint8Array(4 * 1024);
+	for (const [gid, guild] of Object.entries(still.guilds || {})) {
+		if (!guild.emblem) continue;
+		try {
+			const raw = Uint8Array.from(atob(guild.emblem), c => c.charCodeAt(0));
+			const len = new Inflate(raw).getBytes(buffer);
+			const src = URL.createObjectURL(new Blob([buffer.slice(0, len)], { type: 'image/bmp' }));
+			Texture.load(src, function () {
+				URL.revokeObjectURL(src);
+				const img = new Image();
+				img.onload = () => {
+					EntityManager.forEach(entity => {
+						if (entity.GUID === Number(gid)) {
+							entity.setEntityGuildEmblem(img);
+							entity.emblem.display = true;
+						}
+					});
+				};
+				img.src = this.toDataURL();
+			});
+		} catch (error) {
+			console.error('[WoeViewer] emblem of guild', gid, error);
 		}
 	}
 }
@@ -207,6 +244,7 @@ WoeViewer.init = function init() {
 		MapRenderer.onLoad = () => {
 			BGM.stop();
 			place(still);
+			emblems(still);
 			const [x, y] = focus(still);
 			WoeViewer.lookAt(x, y);
 			Camera.setTarget(WoeViewer.spot);

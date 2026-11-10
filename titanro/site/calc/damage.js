@@ -128,3 +128,64 @@ export function normalAttack(data, input, mob) {
 		total
 	};
 }
+
+const NK_NO_ELEFIX = 0x10;
+const NK_IGNORE_DEF = 0x20;
+
+/**
+ * Weapon skills whose damage has more to it than ratio x (status ATK + weapon) less DEF (hits by size, fixed damage,
+ * spheres, cart weight, HP or SP, a second formula): the calculator leaves them out until it has their formula.
+ */
+const SPECIAL_SKILLS = new Set([
+	52, 56, 62, 153, 212, 230, 251, 253, 266, 271, 365, 379, 382, 397, 480, 490, 501, 503, 507, 514, 521, 523, 524, 544,
+	2008, 2261, 2477, 2553, 2559, 2570, 2582, 2593, 3007, 3010, 5004, 5032,
+	// counters, reflects, traps and area effects; spirit spheres, cart weight and rage counters the probe's characters
+	// don't have
+	61, 121, 139, 252, 267, 372, 390, 428, 429, 430, 485, 2314, 2476
+]);
+
+/** The weapon skills the calculator knows: data.weapon_skills (their ratio doesn't depend on the caster), less the
+ * passive ones and SPECIAL_SKILLS. */
+export function weaponSkills(data) {
+	const passive = new Set(data.skills.filter((s) => s.passive).map((s) => s.id));
+	return Object.keys(data.weapon_skills || {})
+		.map(Number)
+		.filter((id) => !SPECIAL_SKILLS.has(id) && !passive.has(id));
+}
+
+function skillHitDamage(data, input, total, mob, skillId, lv, roll) {
+	const sk = data.weapon_skills[skillId];
+	const [ratio, skillEle, num] = sk.lv[lv - 1];
+	const type = input.weapon ? input.weapon.type : 0;
+	const ele = skillEle >= 0 ? skillEle : ELE_NEUTRAL; // -1: the weapon's element (neutral here)
+	const lvIdx = Math.max(mob.element_lv, 1) - 1;
+	const fix = (d, e) => (sk.nk & NK_NO_ELEFIX ? d : d + Math.trunc((d * (data.attr_fix[lvIdx][e][mob.element] - 100)) / 100));
+	const div = Math.abs(num) || 1;
+	if (mob.plant) return num > 1 ? num : 1;
+	const batk = fix(statusAtk(total, type), ELE_NEUTRAL); // status ATK stays neutral for skills
+	let weapon = weaponAtk(data, total, input.weapon, roll);
+	weapon = Math.trunc((weapon * data.size_fix[mob.size][type]) / 100);
+	weapon = fix(weapon, ele);
+	let damage = Math.trunc(((batk + weapon) * ratio) / 100);
+	if (!(sk.nk & NK_IGNORE_DEF)) damage = applyDef(damage, mob);
+	const hurts = data.attr_fix[lvIdx][ele][mob.element] > 0;
+	if (damage < 0) damage = 0;
+	if (num > 1) damage *= num;
+	if (damage < 1) damage = hurts ? 1 : 0; // at least 1 for the whole attack
+	return damage;
+}
+
+/** A weapon skill (`skillId` at `lv`) of `input` on `mob`: {min, max} damage, hits, hit chance. */
+export function skillAttack(data, input, mob, skillId, lv) {
+	const job = typeof input.job === 'object' ? input.job : jobById(data, input.job);
+	const total = totals(job, input);
+	const sk = data.weapon_skills[skillId];
+	if (!sk || lv < 1 || lv > sk.lv.length || SPECIAL_SKILLS.has(skillId)) return null;
+	const hit = input.blv + total.dex + Math.floor(total.luk / 3) + 175;
+	return {
+		min: skillHitDamage(data, input, total, mob, skillId, lv, 'min'),
+		max: skillHitDamage(data, input, total, mob, skillId, lv, 'max'),
+		hits: Math.abs(sk.lv[lv - 1][2]) || 1,
+		hitRate: sk.nk & 0x40 ? 1 : Math.min(Math.max(hit - mob.flee, MIN_HITRATE), MAX_HITRATE) / 100
+	};
+}

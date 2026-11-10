@@ -9,7 +9,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { statusWindow, jobById } from '../../titanro/site/calc/calc.js';
 import { tiersOf, treeOf, setLevel } from '../../titanro/site/calc/skilltree.js';
-import { normalAttack, mobList } from '../../titanro/site/calc/damage.js';
+import { normalAttack, mobList, weaponSkills, skillAttack } from '../../titanro/site/calc/damage.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const data = JSON.parse(fs.readFileSync(path.join(root, 'titanro/site/calc/data.json'), 'utf8'));
@@ -69,6 +69,7 @@ describe('damage calculator (normal attacks)', () => {
 	it('matches the server: lowest hit, critical hit, highest seen, hit and critical rates', () => {
 		const failures = [];
 		for (const c of damage.cases) {
+			if (c.skill) continue;
 			const mob = mobs.get(c.mob);
 			const got = normalAttack(data, c.input, mob);
 			const e = c.expect;
@@ -84,6 +85,25 @@ describe('damage calculator (normal attacks)', () => {
 				if (Math.abs(e.miss - e.n * pm) > tol(pm)) failures.push(`${c.id} misses: server ${e.miss}/${e.n}, calculator ${(pm * 100).toFixed(1)} %`);
 			}
 		}
+		expect(failures.slice(0, 40)).toEqual([]);
+	});
+
+	// Weapon skills: the server's min run (no critical hit) and the highest damage in its sample, for every skill
+	// the calculator offers (weaponSkills); a skill whose formula the calculator lacks is left out there.
+	it('matches the server for every weapon skill it offers', () => {
+		const offered = new Set(weaponSkills(data));
+		const failures = [];
+		let checked = 0;
+		for (const c of damage.cases) {
+			if (!c.skill || !offered.has(c.skill[0])) continue;
+			const got = skillAttack(data, c.input, mobs.get(c.mob), c.skill[0], c.skill[1]);
+			const e = c.expect;
+			checked++;
+			if (e.hit_kind !== 'hit') failures.push(`${c.id}: server min run was ${e.hit_kind}`);
+			else if (got.min !== e.hit) failures.push(`${c.id}: server ${e.hit}, calculator ${got.min}`);
+			if (e.hit_max != null && e.hit_max > got.max) failures.push(`${c.id}: server hit ${e.hit_max}, above ${got.max}`);
+		}
+		expect(checked).toBeGreaterThan(offered.size * 3);
 		expect(failures.slice(0, 40)).toEqual([]);
 	});
 });

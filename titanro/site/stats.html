@@ -63,9 +63,15 @@
 			</div>
 			<p class="muted" id="mobinfo"></p>
 			<table class="window"><tbody id="attack"></tbody></table>
+			<div class="row">
+				<label>Skill <select id="skill"></select></label>
+				<label>Level <select id="skilllv"></select></label>
+			</div>
+			<table class="window"><tbody id="skillattack"></tbody></table>
 			<p class="muted">The server's normal-attack formula: status ATK, the weapon (with refine and over-refine), size and
-				element, the monster's DEF, critical hits. Not counted yet: cards, item bonuses, skills, buffs, arrows,
-				elemental weapons, and double attacks.</p>
+				element, the monster's DEF, critical hits; for skills, their damage ratio, element and hits. Not counted yet:
+				cards, item bonuses, passive skills, buffs, arrows, elemental weapons, double attacks, and skills with a
+				formula of their own (they aren't listed).</p>
 		</section>
 	</div>
 	<p class="muted" id="source"></p>
@@ -73,7 +79,7 @@
 <script type="module">
 import { STATS, WEAPON_TYPES, statusWindow, statCost, totalStatPoints, spentStatPoints, jobBonus, aspd } from './calc/calc.js';
 import { jobGroups } from './calc/jobs.js';
-import { normalAttack, mobList } from './calc/damage.js';
+import { normalAttack, mobList, weaponSkills, skillAttack } from './calc/damage.js';
 
 const $ = (id) => document.getElementById(id);
 const LABEL = { str: 'STR', agi: 'AGI', vit: 'VIT', int: 'INT', dex: 'DEX', luk: 'LUK' };
@@ -88,13 +94,15 @@ const mobsReady = fetch('calc/mobs.json').then((r) => r.json()).then((m) => {
 	const dl = $('moblist');
 	for (const x of mobs.values()) dl.appendChild(new Option(`${x.name} (${x.id})`, `${x.name} (${x.id})`));
 });
-const state = { mob: 1002, job: 4008, blv: 99, jlv: 70, stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, wtype: 0, watk: 0, wmatk: 0, wlv: 1, refine: 0, shield: false, edef: 0, emdef: 0 };
+const SUPPORTED = new Set(weaponSkills(data));
+const skillNames = new Map(data.skills.map((x) => [x.id, x.desc]));
+const state = { skill: 0, skilllv: 1, mob: 1002, job: 4008, blv: 99, jlv: 70, stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, wtype: 0, watk: 0, wmatk: 0, wlv: 1, refine: 0, shield: false, edef: 0, emdef: 0 };
 
 function readHash() {
 	const p = new URLSearchParams(location.hash.slice(1));
 	const num = (k, d) => (p.has(k) && isFinite(+p.get(k)) ? Math.trunc(+p.get(k)) : d);
 	state.job = jobs.has(num('job', state.job)) ? num('job', state.job) : data.jobs[0].id;
-	for (const k of ['blv', 'jlv', 'wtype', 'watk', 'wmatk', 'wlv', 'refine', 'edef', 'emdef', 'mob']) state[k] = num(k, state[k]);
+	for (const k of ['blv', 'jlv', 'wtype', 'watk', 'wmatk', 'wlv', 'refine', 'edef', 'emdef', 'mob', 'skill', 'skilllv']) state[k] = num(k, state[k]);
 	if (p.has('s')) p.get('s').split('.').forEach((v, i) => { if (i < 6 && isFinite(+v)) state.stats[STATS[i]] = Math.max(1, Math.trunc(+v)); });
 	state.shield = p.get('shield') === '1';
 }
@@ -108,6 +116,7 @@ function writeHash() {
 	if (state.edef) p.set('edef', state.edef);
 	if (state.emdef) p.set('emdef', state.emdef);
 	p.set('mob', state.mob);
+	if (state.skill) { p.set('skill', state.skill); p.set('skilllv', state.skilllv); }
 	history.replaceState(null, '', '#' + p.toString());
 }
 
@@ -206,6 +215,31 @@ function renderAttack(input, w) {
 		lines.push(['Attacks to defeat', `about ${attacks.toLocaleString()} (${((attacks * w.amotion * 2) / 1000).toFixed(1)} s)`]);
 	}
 	$('attack').innerHTML = lines.map(([k, v]) => `<tr><th>${k}</th><td class="num">${v}</td></tr>`).join('');
+	renderSkill(input, mob);
+}
+
+function renderSkill(input, mob) {
+	const job = input.job;
+	const tree = job.tree.filter(([id]) => SUPPORTED.has(id));
+	const sel = $('skill');
+	sel.textContent = '';
+	sel.appendChild(new Option(tree.length ? 'Pick a skill' : 'None of this job\'s skills yet', 0));
+	for (const [id] of tree) sel.appendChild(new Option(skillNames.get(id) || id, id));
+	if (!tree.some(([id]) => id === state.skill)) state.skill = 0;
+	sel.value = state.skill;
+	const lvSel = $('skilllv');
+	lvSel.textContent = '';
+	const entry = tree.find(([id]) => id === state.skill);
+	const max = entry ? entry[1] : 0;
+	for (let l = 1; l <= max; l++) lvSel.appendChild(new Option(l, l));
+	state.skilllv = Math.min(Math.max(state.skilllv, 1), Math.max(max, 1));
+	lvSel.value = state.skilllv;
+	lvSel.disabled = !max;
+	const r = state.skill ? skillAttack(data, input, mob, state.skill, state.skilllv) : null;
+	$('skillattack').innerHTML = r ? [
+		['Damage', (r.min === r.max ? r.min : `${r.min} - ${r.max}`).toLocaleString() + (r.hits > 1 ? ` (${r.hits} hits)` : '')],
+		['Hit chance', `${Math.round(r.hitRate * 1000) / 10} %`]
+	].map(([k, v]) => `<tr><th>${k}</th><td class="num">${v}</td></tr>`).join('') : '';
 }
 
 fillJobs();
@@ -230,6 +264,8 @@ $('mobq').addEventListener('change', (e) => {
 	if (mob) { state.mob = mob.id; render(); }
 });
 mobsReady.then(render);
+$('skill').addEventListener('change', (e) => { state.skill = +e.target.value; state.skilllv = 99; render(); });
+$('skilllv').addEventListener('change', (e) => { state.skilllv = +e.target.value; render(); });
 </script>
 </body>
 </html>

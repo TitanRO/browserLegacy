@@ -20,6 +20,7 @@ export const HELPER_OPTIONS = [
 	{ section: 'Info', key: 'mvpTimers.panel', label: 'MVP timers', type: 'toggle' },
 	{ section: 'Info', key: 'damageLog.enabled', label: 'Damage log', type: 'toggle' },
 	{ section: 'Info', key: 'zonePanel.enabled', label: 'Zone', type: 'toggle' },
+	{ section: 'Info', key: 'woeTracker.panel', label: 'WoE tracker', type: 'toggle' },
 	{ section: 'Automation', key: 'autopot.panel', label: 'Autopot', type: 'toggle' },
 	{ section: 'Display', key: 'lowEffects.enabled', label: 'Low effects', type: 'toggle' },
 	{ section: 'Display', key: 'lowEffects.weather', label: 'Low effects: weather', type: 'toggle' },

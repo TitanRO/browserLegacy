@@ -10,6 +10,8 @@
  *   tinted, at once.
  * - Damage (panels.damage, damageLog.enabled): DPS and damage per skill of the player's own character, homunculus and
  *   mercenary.
+ * - WoE (panels.woe, woeTracker.panel): castle owners, the latest breaks, the last WoE's guild kills, from the map
+ *   server's woe_stats plugin ({"type":"woe"} beside the game data, every 30 s while the panel shows).
  * - MVP timers (panels.mvp, mvpTimers.panel): alive or the respawn window per permanent MVP spawn: every minute while
  *   the panel shows, a {"type":"mvps"} JSON message to the map server beside the game data, which the mvp_status
  *   plugin answers the same way (Network.sendJson / Network.onJson; no game packet changes).
@@ -35,12 +37,14 @@ import {
 	lootRules,
 	mvpLines,
 	duration,
-	targetText
+	targetText,
+	woeLines
 } from './InfoCore.js';
 
 const ALERT_SOUND = 'effect/number_change.wav';
 const TINT = [1, 225 / 255, 110 / 255, 1];
 const MVP_EVERY_MS = 60000;
+const WOE_EVERY_MS = 30000;
 
 const now = () => performance.now() / 1000;
 
@@ -100,6 +104,7 @@ export class Info {
 		this.rules = rules || lootRules();
 		this.owner = null;
 		this.mvps = null;
+		this.woe = null;
 	}
 
 	/** Returns a loot alert ({name, reason, ...}) when the event raises one. */
@@ -330,6 +335,40 @@ export function startInfoPanels({ network, settings, panels }) {
 							text: l.text,
 							cls: l.alive ? 'green' : ''
 						}))
+					);
+				},
+				unmount() {
+					clearInterval(timer);
+				}
+			});
+		}
+	});
+
+	// The WoE tracker: the map server's woe_stats plugin answers {"type":"woe"} beside the game data
+	let lastWoe = 0;
+	network.onJson('woe', answer => {
+		info.woe = answer;
+		refresh('woe');
+	});
+	panels.register({
+		id: 'woe',
+		title: 'WoE',
+		width: 290,
+		enabled: ['woeTracker', 'panel'],
+		mount(body) {
+			const tick = () => {
+				if (panels.shown('woe') && Date.now() - lastWoe >= WOE_EVERY_MS) {
+					lastWoe = Date.now();
+					network.sendJson({ type: 'woe' });
+				}
+			};
+			const timer = setInterval(tick, 5000);
+			tick();
+			return (views.woe = {
+				update() {
+					lines(
+						body,
+						woeLines(info.woe).map(l => ({ text: l.text, cls: l.heading ? 'gold' : '' }))
 					);
 				},
 				unmount() {

@@ -6,17 +6,17 @@
  * settings; nothing here changes what the server sends or what the game knows, only how it is drawn.
  *
  * The Windows client (TitanRONet.dll, src/visual.rs) draws the same options with the same constants (GRID,
- * CAST_CIRCLE): keep them in step. That client draws map models opaque whatever their alpha, so there see-through
+ * PROP_ALPHA): keep them in step. That client draws map models opaque whatever their alpha, so there see-through
  * props are hidden instead.
  *
  * @author Trojal
  */
 
-/** Flat map: the ground's grey; cell grid: the line darkness and how dark blocked cells are drawn. */
-export const GRID = Object.freeze({ flatGrey: 0.62, line: 0.55, blocked: 0.35 });
-
-/** Cast circles: the circle's least opacity and how much brighter it is drawn. */
-export const CAST_CIRCLE = Object.freeze({ minAlpha: 0.85, brighten: 1.6 });
+/**
+ * Flat map: the ground's grey; cell grid: the line darkness and the tint of cells nobody can walk on (RCX's dead
+ * cells: magenta at half strength).
+ */
+export const GRID = Object.freeze({ flatGrey: 0.62, line: 0.55, deadCell: Object.freeze([1, 0, 1, 0.5]) });
 
 /** See-through props: the opacity of map models. */
 export const PROP_ALPHA = 0.45;
@@ -26,7 +26,6 @@ const DEFAULTS = {
 	hideProps: false,
 	propAlpha: 1,
 	cellGrid: false,
-	castCircles: false,
 	/** Effects to leave out: filter(init) returns true to keep the effect (init: EffectManager.spam's parameters). */
 	effectFilter: null,
 	hideWeather: false

@@ -27,15 +27,15 @@ uniform float uLightOpacity;
 uniform vec3  uLightDirection;
 uniform vec3 uLightEnv;
 
-// Display helpers (Renderer/VisualOptions.js): flat grey ground, and the cell grid with blocked cells darkened
-// (uCells: one texel per cell, red 1 = walkable).
+// Display helpers (Renderer/VisualOptions.js): flat grey ground, and the cell grid with the cells nobody can walk on
+// tinted as RCX's dead cells (uCells: one texel per cell, red 1 = walkable).
 uniform bool  uFlat;
 uniform float uFlatGrey;
 uniform bool  uGrid;
 uniform sampler2D uCells;
 uniform vec2  uCellsSize;
 uniform float uGridLine;
-uniform float uGridBlocked;
+uniform vec4  uDeadCell;
 
 vec3 posterize(vec3 c) {
     c *= 255.0;
@@ -76,7 +76,7 @@ void main(void) {
     if (uGrid && vUp > 0.5) {
         vec2 cell = floor(vCell);
         float walkable = texture(uCells, (cell + 0.5) / uCellsSize).r;
-        textureSample.rgb *= mix(uGridBlocked, 1.0, step(0.5, walkable));
+        textureSample.rgb = mix(textureSample.rgb, uDeadCell.rgb, uDeadCell.a * (1.0 - step(0.5, walkable)));
         vec2 f = fract(vCell);
         vec2 w = fwidth(vCell) * 1.2;
         vec2 line = 1.0 - smoothstep(vec2(0.0), w, min(f, 1.0 - f));

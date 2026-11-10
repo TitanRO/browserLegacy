@@ -1,19 +1,29 @@
 /**
- * The display helpers: what each setting asks of the renderers, the low effects filter, the trap markers, the
- * options list both clients draw, and the camera's zoom cap.
+ * The display helpers: what each setting asks of the renderers, the effects levels, the RCX-style ground overlays
+ * (markers, cast targets, chat and cast ranges), and the options rows both clients draw.
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import VisualOptions, { PROP_ALPHA } from 'Renderer/VisualOptions.js';
+import { argb } from 'Renderer/Map/GroundMarkers.js';
 import {
 	ALWAYS_KEPT,
-	MARKED_UNITS,
+	COLORS,
+	CastTargets,
+	MINIMUM,
+	NONE,
+	NORMAL,
 	TrapMarkers,
 	WEATHER_EFFECTS,
+	castRangeCells,
+	castTargetCells,
+	chatScopeCells,
+	circleDistance,
 	effectFilter,
 	heavyEffects,
-	isCastle,
+	unitColor,
 	visualOptions
 } from 'Plugins/Helpers/VisualHelpers.js';
+import { HELPER_OPTIONS, optionSections } from 'Plugins/Helpers/HelperOptions.js';
 import { DEFAULT_SETTINGS } from 'Plugins/Helpers/HelperSettings.js';
 import SU from 'DB/Skills/SkillUnitConst.js';
 import SK from 'DB/Skills/SkillConst.js';
@@ -25,19 +35,16 @@ const settings = (overrides = {}) => {
 	for (const [section, values] of Object.entries(overrides)) Object.assign(doc[section], values);
 	return (section, key) => doc[section][key];
 };
-const context = { currentMap: () => 'prontera.gat', myId: () => 1, isPlayer: e => e.objecttype === 0 };
 
 afterEach(() => VisualOptions.reset());
 
 describe('display options', () => {
-	it('defaults draw the game as it is, with bright cast circles', () => {
-		const options = visualOptions(settings(), context);
-		expect(options).toMatchObject({
+	it('defaults draw the game as it is', () => {
+		expect(visualOptions(settings())).toMatchObject({
 			flatGround: false,
 			hideProps: false,
 			propAlpha: 1,
 			cellGrid: false,
-			castCircles: true,
 			hideWeather: false,
 			effectFilter: null
 		});
@@ -49,63 +56,55 @@ describe('display options', () => {
 				flatMap: { enabled: true, hideProps: true },
 				transparentProps: { enabled: true },
 				cellGrid: { enabled: true },
-				lowEffects: { enabled: true }
-			}),
-			context
+				lowEffects: { level: MINIMUM }
+			})
 		);
-		expect(options).toMatchObject({
-			flatGround: true,
-			hideProps: true,
-			propAlpha: PROP_ALPHA,
-			cellGrid: true,
-			hideWeather: true
-		});
+		expect(options).toMatchObject({ flatGround: true, hideProps: true, propAlpha: PROP_ALPHA, cellGrid: true });
+		expect(options.hideWeather).toBe(true);
 		expect(typeof options.effectFilter).toBe('function');
+	});
+
+	it('the window rows are settings with defaults; the effects level is one choice of three', () => {
+		for (const option of HELPER_OPTIONS) {
+			const [section, key] = option.key.split('.');
+			expect(DEFAULT_SETTINGS[section][key], option.key).toBeDefined();
+		}
+		const display = optionSections().find(s => s.section === 'Display').options;
+		const levels = display.filter(o => o.key === 'lowEffects.level');
+		expect(levels.map(o => [o.type, o.value])).toEqual([
+			['choice', NORMAL],
+			['choice', MINIMUM],
+			['choice', NONE]
+		]);
 	});
 });
 
-describe('low effects', () => {
-	const low = { enabled: true, weather: true, castle: true, heavyAoe: true, othersEffects: true };
-	const keep = (filter, init) => filter(init);
+describe('effects levels', () => {
+	const storm = SkillEffect[SK.WZ_STORMGUST].effectId;
 
-	it('is off unless enabled', () => {
-		expect(effectFilter({ ...low, enabled: false }, context)).toBeNull();
+	it('normal hides nothing', () => {
+		expect(effectFilter(NORMAL)).toBeNull();
 	});
 
-	it('hides weather, heavy area skills and other players effects, never the cast circle', () => {
-		const filter = effectFilter(low, context);
-		expect(keep(filter, { effectId: EC.EF_SNOW })).toBe(false);
-		expect(keep(filter, { effectId: SkillEffect[SK.WZ_STORMGUST].effectId })).toBe(false);
-		expect(keep(filter, { effectId: SkillEffect[SK.WZ_VERMILION].effectId })).toBe(false);
-		expect(keep(filter, { effectId: 513 })).toBe(true);
-		expect(ALWAYS_KEPT.has(513)).toBe(true);
-		expect(heavyEffects().has(513)).toBe(false);
-		// a heal on another player, and one on me
-		expect(keep(filter, { effectId: 312, ownerEntity: { objecttype: 0, GID: 2 } })).toBe(false);
-		expect(keep(filter, { effectId: 312, ownerEntity: { objecttype: 0, GID: 1 } })).toBe(true);
-		// a monster's effect, a ground unit's
-		expect(keep(filter, { effectId: 312, ownerEntity: { objecttype: 1, GID: 3 } })).toBe(true);
-	});
-
-	it('categories can be left on', () => {
-		const filter = effectFilter({ ...low, weather: false, othersEffects: false }, context);
-		expect(keep(filter, { effectId: EC.EF_SNOW })).toBe(true);
-		expect(keep(filter, { effectId: 312, ownerEntity: { objecttype: 0, GID: 2 } })).toBe(true);
+	it('minimum hides weather, map ambience and heavy area skills', () => {
+		const keep = effectFilter(MINIMUM);
+		expect(keep({ effectId: EC.EF_SNOW })).toBe(false);
+		expect(keep({ effectId: 47, ownerAID: 'torch01' })).toBe(false);
+		expect(keep({ effectId: storm })).toBe(false);
+		expect(keep({ effectId: 312, ownerAID: 5 })).toBe(true);
 		expect(WEATHER_EFFECTS.has(EC.EF_SAKURA)).toBe(true);
 	});
 
-	it('hides map effects on castles only', () => {
-		const filter = effectFilter(low, context);
-		expect(keep(filter, { effectId: 47, ownerAID: 'torch01' })).toBe(true);
-		const castle = effectFilter(low, { ...context, currentMap: () => 'prtg_cas01.gat' });
-		expect(keep(castle, { effectId: 47, ownerAID: 'torch01' })).toBe(false);
-		expect(isCastle('aldeg_cas03')).toBe(true);
-		expect(isCastle('te_prtcas01')).toBe(true);
-		expect(isCastle('prontera')).toBe(false);
+	it('none hides every effect but the cast circle', () => {
+		const keep = effectFilter(NONE);
+		expect(keep({ effectId: 312, ownerAID: 5 })).toBe(false);
+		expect(keep({ effectId: 513 })).toBe(true);
+		expect(ALWAYS_KEPT.has(513)).toBe(true);
+		expect(heavyEffects().has(513)).toBe(false);
 	});
 });
 
-describe('trap markers', () => {
+describe('ground overlays', () => {
 	const fake = () => {
 		const shown = new Map();
 		return {
@@ -116,31 +115,51 @@ describe('trap markers', () => {
 		};
 	};
 
-	it('marks traps and the listed ground skills while on', () => {
-		const markers = fake();
-		const traps = new TrapMarkers(markers);
-		traps.setEnabled(true);
-		traps.appear(10, SU.UNT_ANKLESNARE, 5, 6);
-		traps.appear(11, SU.UNT_LANDPROTECTOR, 7, 7);
-		traps.appear(12, SU.UNT_FIREWALL, 8, 8);
-		expect([...markers.shown.keys()]).toEqual([10, 11]);
-		expect(markers.shown.get(11).color).toEqual(MARKED_UNITS.get(SU.UNT_LANDPROTECTOR));
-		// a trap that went off turns into a used trap
-		traps.changed(10, SU.UNT_USED_TRAPS);
-		expect(markers.shown.has(10)).toBe(false);
-		traps.disappear(11);
-		expect(markers.shown.size).toBe(0);
+	it('colours are RCX colours (0xAARRGGBB)', () => {
+		expect(argb('7F00FF00')).toEqual([0, 1, 0, 127 / 255]);
+		expect(unitColor(SU.UNT_SAFETYWALL)).toEqual(argb('BFFF00FF'));
+		expect(unitColor(SU.UNT_LANDPROTECTOR)).toEqual(argb('7FFA00F6'));
+		expect(unitColor(999)).toBe(COLORS.default);
 	});
 
-	it('keeps following units while off, and shows them when turned on', () => {
+	it('marks every ground unit while on, and follows changes', () => {
 		const markers = fake();
 		const traps = new TrapMarkers(markers);
 		traps.appear(20, SU.UNT_SAFETYWALL, 1, 2);
 		expect(markers.shown.size).toBe(0);
 		traps.setEnabled(true);
+		traps.appear(21, SU.UNT_FOGWALL, 3, 3);
 		expect(markers.shown.get(20)).toMatchObject({ x: 1, y: 2 });
+		expect(markers.shown.get(21).color).toEqual(unitColor(SU.UNT_FOGWALL));
+		traps.changed(20, SU.UNT_USED_TRAPS);
+		expect(markers.shown.get(20).color).toEqual(unitColor(SU.UNT_USED_TRAPS));
+		traps.disappear(21);
 		traps.reset();
 		expect(markers.shown.size).toBe(0);
+	});
+
+	it('chat range is a square ring at 9 cells, cast range a circle at 9', () => {
+		const chat = chatScopeCells(100, 100);
+		expect(chat.length).toBe(4 * 18);
+		expect(chat.every(c => Math.max(Math.abs(c.x - 100), Math.abs(c.y - 100)) === 9)).toBe(true);
+		expect(circleDistance(9, 0)).toBe(8);
+		expect(circleDistance(10, 0)).toBe(9);
+		const cast = castRangeCells(0, 0);
+		expect(cast.every(c => circleDistance(c.x, c.y) === 9)).toBe(true);
+		expect(cast.some(c => c.x === 10 && c.y === 0)).toBe(true);
+	});
+
+	it('a ground cast shows its area until it ends or is cancelled', () => {
+		let now = 1000;
+		const casts = new CastTargets(() => now);
+		expect(castTargetCells(SK.WZ_STORMGUST, 50, 50).length).toBeGreaterThan(1);
+		casts.start(7, SK.WZ_STORMGUST, 50, 50, 2000);
+		expect(casts.cells().length).toBe(castTargetCells(SK.WZ_STORMGUST, 50, 50).length);
+		now = 3100;
+		expect(casts.cells()).toEqual([]);
+		casts.start(7, SK.WZ_STORMGUST, 50, 50, 2000);
+		casts.cancel(7);
+		expect(casts.cells()).toEqual([]);
 	});
 });
 

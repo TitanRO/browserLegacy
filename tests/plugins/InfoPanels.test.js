@@ -201,7 +201,7 @@ describe('the helpers window list', () => {
 	it('names boolean settings and groups them by section', () => {
 		for (const option of HELPER_OPTIONS) {
 			const [section, key] = option.key.split('.');
-			expect(typeof DEFAULT_SETTINGS[section][key], option.key).toBe('boolean');
+			expect(typeof DEFAULT_SETTINGS[section][key], option.key).toBe(option.type === 'choice' ? 'number' : 'boolean');
 		}
 		const sections = optionSections([
 			{ section: 'Info', key: 'a.enabled', label: 'A', type: 'toggle' },

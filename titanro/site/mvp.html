@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TitanRO MVP Timers</title>
+<link rel="stylesheet" href="site.css">
+<script src="data-api.js"></script>
+</head>
+<body>
+<header>
+	<h1>TitanRO MVP Timers</h1>
+	<nav><a href="./">Play</a><a href="market.html">Market</a><a href="woe.html">WoE</a><a href="mvp.html">MVP</a><a href="search.html">Database</a><a href="stats.html">Stats</a><a href="skills.html">Skills</a><a href="tools.html">Tools</a></nav>
+</header>
+<main>
+	<p class="muted" id="note">Loading...</p>
+	<section class="panel">
+		<h2>Respawning</h2>
+		<p class="muted">Permanent MVP spawns that are down: the window they come back in, soonest first. The same times as the MVP panel in game.</p>
+		<div class="table-wrap"><table>
+			<thead><tr><th>MVP</th><th>Map</th><th>Back</th></tr></thead>
+			<tbody id="dead"></tbody>
+		</table></div>
+	</section>
+	<section class="panel">
+		<h2>Alive</h2>
+		<div class="table-wrap"><table>
+			<thead><tr><th>MVP</th><th>Map</th></tr></thead>
+			<tbody id="alive"></tbody>
+		</table></div>
+	</section>
+</main>
+<script>
+(function () {
+	'use strict';
+	var Q_MVPS = '{ mvps { now mvps { id name map alive from to } } }';
+	var $ = function (id) { return document.getElementById(id); };
+	var list = null;   // the last answer
+	var skew = 0;      // the server's clock minus ours, in seconds
+
+	function el(tag, text, cls) {
+		var e = document.createElement(tag);
+		if (text != null) e.textContent = text;
+		if (cls) e.className = cls;
+		return e;
+	}
+	function row(cells) {
+		var tr = document.createElement('tr');
+		cells.forEach(function (c) { tr.appendChild(el('td', c[0], c[1])); });
+		return tr;
+	}
+	// minutes as the in-game panel writes them: rounded up, "1h05m" from an hour
+	function minutes(secs) {
+		var m = Math.floor((Math.max(0, secs) + 59) / 60);
+		return m >= 60 ? Math.floor(m / 60) + 'h' + String(m % 60).padStart(2, '0') + 'm' : m + 'm';
+	}
+	function back(m, now) {
+		if (m.from != null && m.to != null && now < m.from) return 'in ' + minutes(m.from - now) + '-' + minutes(m.to - now);
+		if (m.from != null && m.to != null && now <= m.to) return 'due, latest ' + minutes(m.to - now);
+		return 'due';
+	}
+
+	function render() {
+		if (!list) return;
+		var now = Date.now() / 1000 + skew;
+		var dead = list.filter(function (m) { return !m.alive; });
+		dead.sort(function (a, b) {
+			var fa = a.from == null ? Infinity : a.from, fb = b.from == null ? Infinity : b.from;
+			return (fa - fb) || a.name.localeCompare(b.name);
+		});
+		var alive = list.filter(function (m) { return m.alive; });
+		alive.sort(function (a, b) { return a.name.localeCompare(b.name); });
+
+		var d = $('dead');
+		d.textContent = '';
+		if (dead.length === 0) d.appendChild(row([['None down.', 'muted'], [''], ['']]));
+		dead.forEach(function (m) { d.appendChild(row([[m.name], [m.map, 'muted'], [back(m, now)]])); });
+		var a = $('alive');
+		a.textContent = '';
+		if (alive.length === 0) a.appendChild(row([['None alive.', 'muted'], ['']]));
+		alive.forEach(function (m) { a.appendChild(row([[m.name], [m.map, 'muted']])); });
+	}
+
+	function load() {
+		TitanROData.query(Q_MVPS).then(function (d) {
+			skew = d.mvps.now - Date.now() / 1000;
+			list = d.mvps.mvps;
+			$('note').textContent = list.length + ' permanent MVP spawns. Refreshes every minute.';
+			$('note').className = 'muted';
+			render();
+		}).catch(function (e) {
+			TitanROData.showError($('note'), e);
+		});
+	}
+	load();
+	setInterval(load, 60000);
+	setInterval(render, 15000); // the windows count down between loads
+})();
+</script>
+</body>
+</html>

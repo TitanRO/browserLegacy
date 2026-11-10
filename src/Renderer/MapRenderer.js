@@ -37,6 +37,7 @@ import SignboardManager from 'Renderer/SignboardManager.js';
 import ScreenEffectManager from 'Renderer/ScreenEffectManager.js';
 import Sky from 'Renderer/Effects/Sky.js';
 import Damage from 'Renderer/Effects/Damage.js';
+import GroundMarkers from 'Renderer/Map/GroundMarkers.js';
 import GraphicsSettings from 'Preferences/Graphics.js';
 import MapPreferences from 'Preferences/Map.js';
 import glMatrix from 'Utils/gl-matrix.js';
@@ -238,6 +239,7 @@ class MapRenderer {
 		EntityManager.free();
 		Damage.free(gl);
 		EffectManager.free(gl);
+		GroundMarkers.clear();
 		JoystickUI.onRestore();
 
 		// Basic TP
@@ -286,6 +288,7 @@ class MapRenderer {
 		GR2ModelRenderer.free(gl);
 		Damage.free(gl);
 		EffectManager.free(gl);
+		GroundMarkers.free(gl);
 		SignboardManager.free();
 		SoundManager.stop();
 		BGM.stop();
@@ -402,6 +405,9 @@ class MapRenderer {
 
 		EffectManager.render(gl, modelView, projection, fog, tick, false);
 		EntityManager.render(gl, modelView, projection, fog, true);
+
+		// Trap and ground-skill markers, over everything on the ground so nothing hides them
+		GroundMarkers.render(gl, modelView, projection, tick);
 
 		Damage.render(gl, modelView, projection, fog, tick);
 

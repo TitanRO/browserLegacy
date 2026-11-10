@@ -20,7 +20,23 @@ export const HELPER_OPTIONS = [
 	{ section: 'Info', key: 'mvpTimers.panel', label: 'MVP timers', type: 'toggle' },
 	{ section: 'Info', key: 'damageLog.enabled', label: 'Damage log', type: 'toggle' },
 	{ section: 'Info', key: 'zonePanel.enabled', label: 'Zone', type: 'toggle' },
-	{ section: 'Automation', key: 'autopot.panel', label: 'Autopot', type: 'toggle' }
+	{ section: 'Automation', key: 'autopot.panel', label: 'Autopot', type: 'toggle' },
+	{ section: 'Display', key: 'lowEffects.enabled', label: 'Low effects', type: 'toggle' },
+	{ section: 'Display', key: 'lowEffects.weather', label: 'Low effects: weather', type: 'toggle' },
+	{ section: 'Display', key: 'lowEffects.castle', label: 'Low effects: castle effects', type: 'toggle' },
+	{ section: 'Display', key: 'lowEffects.heavyAoe', label: 'Low effects: heavy area skills', type: 'toggle' },
+	{
+		section: 'Display',
+		key: 'lowEffects.othersEffects',
+		label: "Low effects: other players' effects",
+		type: 'toggle'
+	},
+	{ section: 'Display', key: 'castCircles.enabled', label: 'Bright cast circles', type: 'toggle' },
+	{ section: 'Display', key: 'trapMarkers.enabled', label: 'Trap and ground-skill markers', type: 'toggle' },
+	{ section: 'Display', key: 'flatMap.enabled', label: 'Flat map', type: 'toggle' },
+	{ section: 'Display', key: 'flatMap.hideProps', label: 'Hide props', type: 'toggle' },
+	{ section: 'Display', key: 'transparentProps.enabled', label: 'See-through props', type: 'toggle' },
+	{ section: 'Display', key: 'cellGrid.enabled', label: 'Cell grid', type: 'toggle' }
 ];
 
 /** The entries this window can show, grouped: [{section, options: [...]}] in first-appearance order. */

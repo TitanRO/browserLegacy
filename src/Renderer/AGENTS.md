@@ -24,6 +24,7 @@ Instructions for working on the WebGL renderer, Entity composition system (`src/
 - `SpriteRenderer.js` — 2D/3D billboarded sprite drawing and canvas fallback.
 - `SpriteBatch.js` & `SpriteAtlas.js` — Instanced entity sprite batching and shared sprite frame/palette texture atlases (with companion `.vs`/`.fs` shaders).
 - `ItemObject.js` — Ground item drop rendering.
+- `VisualOptions.js` — Display helpers' state (low effects filter, no fog, bright maps, flat ground, cell grid, see-through or hidden props, bright cast circles), read by the renderers every frame; set by the Helpers plugin.
 
 ### Entity Modules (`src/Renderer/Entity/`, 20 files)
 
@@ -48,7 +49,7 @@ Instructions for working on the WebGL renderer, Entity composition system (`src/
 
 ### Map Rendering (`src/Renderer/Map/`)
 
-- `Altitude.js`, `AnimatedModels.js`, `Effects.js`, `GridSelector.js`, `Ground.js`, `Models.js`, `OccluderFade.js`, `Sounds.js`, `Water.js` (plus `.vs`/`.fs` shaders).
+- `Altitude.js`, `AnimatedModels.js`, `Effects.js`, `GridSelector.js`, `Ground.js`, `GroundMarkers.js` (trap and ground-skill cell markers), `Models.js`, `OccluderFade.js`, `Sounds.js`, `Water.js` (plus `.vs`/`.fs` shaders).
 
 ### Granny3D Skeletal Models (`src/Renderer/GR2/`)
 

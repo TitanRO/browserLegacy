@@ -28,8 +28,6 @@ export const DEFAULT_SETTINGS = {
 	mvpTimers: { panel: false },
 	vendingSearch: { enabled: true },
 	lowEffects: { enabled: false, weather: true, castle: true, heavyAoe: true, othersEffects: true },
-	noFog: { enabled: false },
-	brightMaps: { enabled: false },
 	castCircles: { enabled: true },
 	trapMarkers: { enabled: true },
 	flatMap: { enabled: false, hideProps: false },

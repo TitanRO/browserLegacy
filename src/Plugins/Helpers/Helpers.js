@@ -13,6 +13,9 @@
  * - helper settings (HelperSettings.js): the master account's settings from the account service, shared with the
  *   launcher and the Windows client.
  * - the information panels (InfoPanels.js, InfoCore.js): target, exp tracker, loot alerts, damage log, MVP timers.
+ * - display helpers (VisualHelpers.js): low effects, cast circles, trap
+ *   markers, flat map, see-through props and the cell grid, drawn by the renderers from Renderer/VisualOptions.js;
+ *   their rows in the helpers window are in HelperOptions.js.
  *
  * Helper features import the shared pieces from here: `import { helpers } from 'Plugins/Helpers/Helpers.js'`.
  *
@@ -34,9 +37,16 @@ import { autopotPanel } from './AutopotPanel.js';
 import Inventory from 'UI/Components/Inventory/Inventory.js';
 import ItemType from 'DB/Items/ItemType.js';
 import { startInfoPanels } from './InfoPanels.js';
+import { startVisualHelpers } from './VisualHelpers.js';
+import Session from 'Engine/SessionStorage.js';
+import Entity from 'Renderer/Entity/Entity.js';
+import EffectManager from 'Renderer/EffectManager.js';
+import MapEffects from 'Renderer/Map/Effects.js';
+import ScreenEffectManager from 'Renderer/ScreenEffectManager.js';
+import VisualOptions from 'Renderer/VisualOptions.js';
 
 /** The shared pieces, once the plugin has started. */
-export const helpers = { settings: null, zone: null, panels: null, info: null };
+export const helpers = { settings: null, zone: null, panels: null, info: null, visual: null };
 
 let started = false;
 
@@ -80,6 +90,26 @@ export default function Init(params) {
 	);
 	const info = startInfoPanels({ network: Network, settings, panels });
 
+	// Display helpers (low effects, cast circles, markers, flat map, props, grid): live, every zone
+	const visual = startVisualHelpers({
+		settings,
+		network: Network,
+		packets: PACKET,
+		context: {
+			currentMap: () => MapRenderer.currentMap,
+			myId: () => Session.Entity && Session.Entity.GID,
+			isPlayer: entity => entity.objecttype === Entity.TYPE_PC
+		},
+		onApplied: before => {
+			if (before.filter !== VisualOptions.effectFilter) {
+				EffectManager.refilter();
+				MapEffects.respawn();
+			}
+			if (before.weather !== VisualOptions.hideWeather)
+				ScreenEffectManager.setWeatherHidden(VisualOptions.hideWeather);
+		}
+	});
+
 	zone.onChange((_state, entered) => {
 		if (entered) panels.refresh();
 		panels.update();
@@ -92,6 +122,6 @@ export default function Init(params) {
 	settings.restoreToken();
 	window.addEventListener('pagehide', () => settings.flush());
 
-	Object.assign(helpers, { settings, zone, panels, info });
+	Object.assign(helpers, { settings, zone, panels, info, visual });
 	return true;
 }

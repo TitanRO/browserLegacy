@@ -11,6 +11,8 @@ out vec2 vTextureCoord;
 out vec2 vLightmapCoord;
 out vec2 vTileColorCoord;
 out float vLightWeighting;
+out vec2 vCell;
+out float vUp;
 
 uniform mat4 uModelViewMat;
 uniform mat4 uProjectionMat;
@@ -24,7 +26,10 @@ void main(void) {
     vTextureCoord   = aTextureCoord;
     vLightmapCoord  = aLightmapCoord;
     vTileColorCoord = aTileColorCoord;
+    // the ground is two cells per tile: x and z are cell coordinates
+    vCell           = aPosition.xz;
+    vUp             = abs(aVertexNormal.y);
 
     float dotProduct = dot(aVertexNormal, uLightDirection );
     vLightWeighting = max(dotProduct, 0.0);
-}
+}

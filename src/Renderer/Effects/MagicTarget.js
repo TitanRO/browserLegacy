@@ -13,6 +13,7 @@ import glMatrix from 'Utils/gl-matrix.js';
 import Client from 'Core/Client.js';
 import Altitude from 'Renderer/Map/Altitude.js';
 import Camera from 'Renderer/Camera.js';
+import VisualOptions, { CAST_CIRCLE } from 'Renderer/VisualOptions.js';
 import { TARGET_TICK_MS, castSize, spinAngle, targetAlpha } from './MagicTargetSim.js';
 import _vertexShader from './MagicTarget.vs?raw';
 import _fragmentShader from './MagicTarget.fs?raw';
@@ -170,6 +171,10 @@ class MagicTarget {
 		gl.uniformMatrix4fv(uniform.uProjectionMat, false, projection);
 
 		// Fog settings
+		gl.uniform1i(uniform.uBoost, VisualOptions.castCircles);
+		gl.uniform1f(uniform.uBoostMinAlpha, CAST_CIRCLE.minAlpha);
+		gl.uniform1f(uniform.uBoostBrighten, CAST_CIRCLE.brighten);
+
 		gl.uniform1i(uniform.uFogUse, fog.use && fog.exist);
 		gl.uniform1f(uniform.uFogNear, fog.near);
 		gl.uniform1f(uniform.uFogFar, fog.far);

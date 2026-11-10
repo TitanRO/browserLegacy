@@ -18,6 +18,7 @@ import _shaderSource from 'Renderer/Effects/Shaders/GLSL/OccluderFade.glsl?raw';
 import Camera from 'Renderer/Camera.js';
 import GraphicsSettings from 'Preferences/Graphics.js';
 import SpriteRenderer from 'Renderer/SpriteRenderer.js';
+import VisualOptions from 'Renderer/VisualOptions.js';
 import glMatrix from 'Utils/gl-matrix.js';
 
 const { mat4, vec3 } = glMatrix;
@@ -32,7 +33,8 @@ const MODE = {
 	DITHER: 1,
 	ALPHA_OPAQUE: 2,
 	ALPHA_BLEND: 3,
-	QUERY: 4
+	QUERY: 4,
+	SEE_THROUGH: 5
 };
 
 /**
@@ -210,7 +212,18 @@ class OccluderFade {
 	 * @return {boolean}
 	 */
 	static needsBlendPass() {
-		return OccluderFade.isFading() && OccluderFade.useAlpha();
+		if (VisualOptions.hideProps) {
+			return false;
+		}
+		return OccluderFade.seeThrough() || (OccluderFade.isFading() && OccluderFade.useAlpha());
+	}
+
+	/**
+	 * See-through props (display helper): every map model drawn translucent, in the blend pass only.
+	 * @return {boolean}
+	 */
+	static seeThrough() {
+		return !VisualOptions.hideProps && VisualOptions.propAlpha < 1;
 	}
 
 	/**
@@ -233,6 +246,10 @@ class OccluderFade {
 	 * @param {function} draw issues the draw calls
 	 */
 	static renderOpaque(gl, uniform, draw) {
+		// hidden props are not drawn; see-through props only in the blend pass
+		if (VisualOptions.hideProps || OccluderFade.seeThrough()) {
+			return;
+		}
 		OccluderFade.setUniforms(gl, uniform, OccluderFade.opaqueMode());
 		SpriteRenderer.runWithDepth(true, true, true, draw);
 	}
@@ -248,7 +265,7 @@ class OccluderFade {
 	 * @param {number} slot one of QUERY
 	 */
 	static renderQuery(gl, uniform, draw, slot) {
-		if (!OccluderFade.isActive() || _queryPending[slot]) {
+		if (!OccluderFade.isActive() || _queryPending[slot] || VisualOptions.hideProps || OccluderFade.seeThrough()) {
 			return;
 		}
 
@@ -275,7 +292,15 @@ class OccluderFade {
 	 * @param {function} draw issues the draw calls
 	 */
 	static renderBlend(gl, uniform, draw) {
-		OccluderFade.setUniforms(gl, uniform, MODE.ALPHA_BLEND);
+		if (VisualOptions.hideProps) {
+			return;
+		}
+		if (OccluderFade.seeThrough()) {
+			gl.uniform1i(uniform.uOccluderFadeMode, MODE.SEE_THROUGH);
+			gl.uniform1f(uniform.uOccluderFadeOpacity, VisualOptions.propAlpha);
+		} else {
+			OccluderFade.setUniforms(gl, uniform, MODE.ALPHA_BLEND);
+		}
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		SpriteRenderer.runWithDepth(true, false, true, draw);
 	}

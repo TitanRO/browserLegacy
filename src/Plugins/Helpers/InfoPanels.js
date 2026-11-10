@@ -10,8 +10,9 @@
  *   tinted, at once.
  * - Damage (panels.damage, damageLog.enabled): DPS and damage per skill of the player's own character, homunculus and
  *   mercenary.
- * - MVP timers (panels.mvp, mvpTimers.panel): alive or the respawn window per permanent MVP spawn, from the account
- *   service's GET /v1/public/mvps, every minute while the panel shows.
+ * - MVP timers (panels.mvp, mvpTimers.panel): alive or the respawn window per permanent MVP spawn: every minute while
+ *   the panel shows, a {"type":"mvps"} JSON message to the map server beside the game data, which the mvp_status
+ *   plugin answers the same way (Network.sendJson / Network.onJson; no game packet changes).
  *
  * The state and text are InfoCore.js; this file turns received packets into its events (read-only, after the game
  * has handled them) and draws the panels.
@@ -299,19 +300,16 @@ export function startInfoPanels({ network, settings, panels }) {
 		}
 	});
 
+	// The map server's mvp_status plugin answers {"type":"mvps"} beside the game data
 	let lastFetch = 0;
-	const fetchMvps = async () => {
+	const fetchMvps = () => {
 		lastFetch = Date.now();
-		try {
-			const r = await fetch(settings.accountApi + '/v1/public/mvps');
-			if (!r.ok) return;
-			const answer = await r.json();
-			info.mvps = { mvps: answer.mvps || [], skew: answer.now - Math.floor(Date.now() / 1000) };
-			refresh('mvp');
-		} catch (error) {
-			console.warn('[Helpers] MVP timers unreachable', error);
-		}
+		network.sendJson({ type: 'mvps' });
 	};
+	network.onJson('mvps', answer => {
+		info.mvps = { mvps: answer.mvps || [], skew: answer.now - Math.floor(Date.now() / 1000) };
+		refresh('mvp');
+	});
 	panels.register({
 		id: 'mvp',
 		title: 'MVP timers',

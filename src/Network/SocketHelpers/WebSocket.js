@@ -25,6 +25,8 @@ function Socket(host, port, proxy, urlTemplate, role) {
 	const url = buildUrl(host, port, proxy, urlTemplate, role);
 	const self = this;
 	this.connected = false;
+	// Straight to a game server (client_transport), which takes JSON text messages beside the game data
+	this.direct = !!urlTemplate;
 
 	// Open Websocket
 	this.ws = new WebSocket(url);
@@ -69,6 +71,19 @@ Socket.prototype.send = function Send(buffer) {
 	if (this.connected) {
 		this.ws.send(buffer);
 	}
+};
+
+/**
+ * Sends a JSON text message beside the game data (only straight to a game server: a wsProxy would put the text into
+ * the game stream).
+ *
+ * @param {string} text
+ * @return {boolean} whether it was sent
+ */
+Socket.prototype.sendText = function SendText(text) {
+	if (!this.connected || !this.direct) return false;
+	this.ws.send(text);
+	return true;
 };
 
 /**

@@ -38,6 +38,7 @@ import CastCone from 'Renderer/Effects/CastCone.js';
 import CastCircle from 'Renderer/Effects/CastCircle.js';
 import CastRing from 'Renderer/Effects/CastRing.js';
 import { endureEffect } from 'DB/Effects/EndureEffect.js';
+import GroundUnitEffects from 'DB/Effects/GroundUnitEffects.js';
 import { arrowShowerEffects } from 'DB/Effects/ArrowShowerEffects.js';
 import { arrowFlightBetween } from 'Renderer/Effects/ArrowFlight.js';
 import BoltRain from 'Renderer/Effects/BoltRain.js';
@@ -24621,5 +24622,8 @@ export default {
 				);
 			}
 		}
-	]
+	],
+
+	// Ground skill units the official client draws in code (DB/Effects/GroundUnitEffects.js)
+	...GroundUnitEffects
 };

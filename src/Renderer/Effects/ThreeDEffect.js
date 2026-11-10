@@ -106,6 +106,9 @@ class ThreeDEffect {
 		this.spriteRessource = null;
 		this.playSprite = effect.playSprite ? true : false;
 		this.sprDelay = effect.sprDelay ? effect.sprDelay : 0;
+		// sprAction: the .act action to play, as the official client picks it for an effect sprite
+		// (a number, or a function giving one per instance). Without it the action follows the camera.
+		this.sprAction = typeof effect.sprAction === 'function' ? effect.sprAction() : effect.sprAction;
 		if (effect.rotatePosX > 0) {
 			this.rotatePosX = effect.rotatePosX;
 		} else {
@@ -796,11 +799,10 @@ class ThreeDEffect {
 				EntityManager.add(entity);
 				this.ownerEntity = entity;
 			}
-			const actions =
-				this.actRessource.actions[
-					(entity.action * 8 + ((Camera.direction + entity.direction + 8) % 8)) %
-						this.actRessource.actions.length
-				];
+			const actionIndex = Number.isInteger(this.sprAction)
+				? this.sprAction
+				: entity.action * 8 + ((Camera.direction + entity.direction + 8) % 8);
+			const actions = this.actRessource.actions[actionIndex % this.actRessource.actions.length];
 			let animations;
 			const delay = this.sprDelay || actions.delay;
 			if (this.playSprite) {

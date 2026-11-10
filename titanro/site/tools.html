@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TitanRO Allowed Tools</title>
 <link rel="stylesheet" href="site.css">
+<style>.wrap td { white-space: normal; }</style>
 </head>
 <body>
 <header>
@@ -18,7 +19,7 @@
 	</section>
 	<section class="panel">
 		<h2>Built in</h2>
-		<div class="table-wrap"><table>
+		<div class="table-wrap"><table class="wrap">
 			<thead><tr><th>Built-in</th><th>Where</th><th>Replaces (not allowed)</th><th>Status</th></tr></thead>
 			<tbody id="builtins"></tbody>
 		</table></div>
@@ -47,7 +48,7 @@
 	// status: 'live' (in the game now) or 'soon' (before launch). Kept here so the page is updated with each release.
 	var BUILTINS = [
 		['Autopot', '@autopot (2 rules per character, server-side); autopot panel', 'Autopot programs and scripts', 'live'],
-		['Market search and price history', '@market, @price, the vending search panel, market.html', 'Vending scanners and market bots', 'live'],
+		['Market search and price history', '@market (shop search window), @price, market.html', 'Vending scanners and market bots', 'live'],
 		['WoE tracker', 'woe.html', 'WoE trackers', 'soon'],
 		['Item, monster and drop search', 'search.html', 'Database and calculator sites (drop search)', 'soon'],
 		['Stat, damage and skill calculators', 'this site', 'Calculators and simulators (ROTool, rocalc-style)', 'soon'],

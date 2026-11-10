@@ -236,10 +236,13 @@ export function castRangeCells(x, y, color = COLORS.castRange) {
 	return cells;
 }
 
-/** The cells a ground cast will hit: the skill's N x N area (the client's cast circle size) around the target. */
+/**
+ * The cells a ground cast will hit: the skill's N x N area around the target (the client draws its cast circle one
+ * cell wider each way: castSize).
+ */
 export function castTargetCells(skill, x, y, color = COLORS.castTarget) {
-	const size = castSize(skill);
-	if (!size) return [];
+	const size = castSize(skill) - 2;
+	if (size < 1) return [];
 	const half = Math.floor(size / 2);
 	const cells = [];
 	for (let dy = -half; dy < size - half; ++dy)

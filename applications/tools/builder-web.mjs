@@ -74,7 +74,8 @@ const entryMap = {
 	ModelViewer: 'src/App/ModelViewer.js',
 	Online: 'src/App/Online.js',
 	StrViewer: 'src/App/StrViewer.js',
-	EffectViewer: 'src/App/EffectViewer.js'
+	EffectViewer: 'src/App/EffectViewer.js',
+	WoeViewer: 'src/App/WoeViewer.js'
 };
 
 (async function build() {
@@ -88,6 +89,7 @@ const entryMap = {
 		O: { path: '/Online.js', action: () => compile('Online', args['m']) },
 		S: { path: '/StrViewer.js', action: () => compile('StrViewer', args['m']) },
 		E: { path: '/EffectViewer.js', action: () => compile('EffectViewer', args['m']) },
+		W: { path: '/WoeViewer.js', action: () => compile('WoeViewer', args['m']) },
 		T: { path: '/ThreadEventHandler.js', action: () => compile('ThreadEventHandler', args['m']) },
 		H: { path: '/index.html', action: () => createHTML(false, args, isAll) },
 		PWA: {

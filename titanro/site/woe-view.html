@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TitanRO WoE Still</title>
+<link rel="stylesheet" href="site.css">
+<script src="data-api.js"></script>
+<style>
+	html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+	#still-info {
+		position: fixed; top: 8px; left: 8px; z-index: 100; max-width: min(420px, calc(100vw - 16px));
+		background: rgba(16, 20, 28, 0.86); color: #e6e8ec; border-radius: 6px; padding: 10px 12px; font-size: 13px;
+	}
+	#still-info h1 { font-size: 16px; margin: 0 0 4px; }
+	#still-info a { color: #9cc4ff; }
+	#still-info .muted { color: #a3a9b4; }
+	#still-info ul { margin: 6px 0 0; padding-left: 18px; }
+	#still-info .error { color: #ff9c9c; }
+</style>
+</head>
+<body>
+<div id="still-info">
+	<h1 id="still-title">WoE still</h1>
+	<p class="muted" id="note">Loading...</p>
+	<ul id="guilds"></ul>
+	<p class="muted">Drag to turn, scroll to zoom, click to look at a cell. <a href="woe.html">Back to the WoE tracker</a></p>
+</div>
+<script src="Config.js"></script>
+<script src="Config.local.js"></script>
+<script>
+(function () {
+	'use strict';
+	var Q = 'query ($id: ID!) { woeSnapshot(id: $id) { info { kind castleName map time guildId guildName ownerBeforeId' +
+		' ownerBeforeName units } data } }';
+	var $ = function (id) { return document.getElementById(id); };
+	var id = new URLSearchParams(location.search).get('id');
+
+	function deepMerge(target, source) {
+		for (var key in source) {
+			if (Object.prototype.hasOwnProperty.call(source, key)) {
+				if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+					target[key] = deepMerge(target[key] || {}, source[key]);
+				} else {
+					target[key] = source[key];
+				}
+			}
+		}
+		return target;
+	}
+
+	// The game client's settings (remote client files from grf.titanro.net), without its plugins
+	var config = deepMerge(deepMerge({}, window.ROConfigBase || {}), window.ROConfigLocal || {});
+	config.plugins = {};
+	config.skipIntro = true;
+	window.ROConfig = config;
+
+	window.TitanROWoeStill = (id ? TitanROData.query(Q, { id: id }) : Promise.reject(new Error('No still chosen: open one from the WoE tracker.')))
+		.then(function (d) {
+			var s = d.woeSnapshot;
+			if (!s) throw new Error('There is no such still.');
+			var i = s.info;
+			var still = JSON.parse(s.data);
+			$('still-title').textContent = (i.castleName || i.map) + (i.kind === 'BREAK' ? ': Emperium broken' : ': WoE ended');
+			// The guild names as they were then (the still's), else today's
+			var name = function (id, now) { return (still.guilds[id] && still.guilds[id].name) || now; };
+			var breaker = name(i.guildId, i.guildName), before = name(i.ownerBeforeId, i.ownerBeforeName);
+			$('note').textContent = new Date(i.time).toLocaleString() + ' · ' + still.units.length + ' units' +
+				(i.kind === 'BREAK'
+					? ' · ' + (breaker || 'a guild') + ' broke it' + (before ? ' from ' + before : '')
+					: ' · held by ' + (breaker || 'nobody'));
+			var guilds = $('guilds');
+			var counts = {};
+			still.units.forEach(function (u) { if (u.t === 'pc') counts[u.guild || 0] = (counts[u.guild || 0] || 0) + 1; });
+			Object.keys(counts).forEach(function (g) {
+				var li = document.createElement('li');
+				li.textContent = (g === '0' ? 'No guild' : (still.guilds[g] ? still.guilds[g].name : '#' + g)) + ': ' + counts[g];
+				guilds.appendChild(li);
+			});
+			return still;
+		});
+	window.TitanROWoeStill.catch(function (e) { TitanROData.showError($('note'), e); });
+
+	window.TitanROWoeStill.then(function () {
+		var script = document.createElement('script');
+		script.type = 'module';
+		script.src = 'WoeViewer.js';
+		document.body.appendChild(script);
+	}, function () {});
+})();
+</script>
+</body>
+</html>

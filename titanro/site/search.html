@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TitanRO Database</title>
+<link rel="stylesheet" href="site.css">
+<script src="data-api.js"></script>
+</head>
+<body>
+<header>
+	<h1>TitanRO Database</h1>
+	<nav><a href="./">Play</a><a href="market.html">Market</a><a href="woe.html">WoE</a><a href="search.html">Database</a><a href="tools.html">Tools</a></nav>
+</header>
+<main>
+	<section class="panel">
+		<form class="search" id="search">
+			<input id="q" type="search" placeholder="Item or monster name, or an id" autocomplete="off" maxlength="50" required>
+			<button type="submit">Search</button>
+		</form>
+		<p class="muted" id="note">Our server's own data: drop rates as players get them, monsters' stats and where they spawn.</p>
+	</section>
+	<section class="panel" id="lists" hidden>
+		<div class="stats">
+			<div><b>Items</b><div id="items"></div></div>
+			<div><b>Monsters</b><div id="monsters"></div></div>
+		</div>
+	</section>
+	<section class="panel" id="detail" hidden></section>
+</main>
+<script>
+(function () {
+	'use strict';
+	var Q_SEARCH = 'query ($q: String!) { itemSearch(query: $q) { id name slots } monsterSearch(query: $q) { id name level } }';
+	var Q_DROPS = 'query ($id: Int!) { itemDrops(itemId: $id) { item { id name } droppedBy { mobId name level rate mvpReward } } }';
+	var Q_MONSTER = 'query ($id: Int!) { monster(id: $id) { id name level hp baseExp jobExp race element elementLevel size boss mvp' +
+		' drops { itemId name rate mvpReward } spawns { map amount } } }';
+	var $ = function (id) { return document.getElementById(id); };
+	var ELEMENTS = ['Neutral', 'Water', 'Earth', 'Fire', 'Wind', 'Poison', 'Holy', 'Shadow', 'Ghost', 'Undead'];
+	var RACES = ['Formless', 'Undead', 'Brute', 'Plant', 'Insect', 'Fish', 'Demon', 'Demi-Human', 'Angel', 'Dragon'];
+	var SIZES = ['Small', 'Medium', 'Large'];
+
+	function el(tag, text, cls) {
+		var e = document.createElement(tag);
+		if (text != null) e.textContent = text;
+		if (cls) e.className = cls;
+		return e;
+	}
+	function rate(r) { return (r / 100).toFixed(r < 100 ? 2 : 1).replace(/\.?0+$/, '') + ' %'; }
+	function link(text, fn) {
+		var b = el('button', text, 'link');
+		b.addEventListener('click', fn);
+		return b;
+	}
+	function table(head, rows) {
+		var wrap = el('div', null, 'table-wrap');
+		var t = document.createElement('table');
+		var tr = document.createElement('tr');
+		head.forEach(function (h) { tr.appendChild(el('th', h[0], h[1])); });
+		var thead = document.createElement('thead');
+		thead.appendChild(tr);
+		t.appendChild(thead);
+		var body = document.createElement('tbody');
+		rows.forEach(function (cells) {
+			var r = document.createElement('tr');
+			cells.forEach(function (c) {
+				var td = el('td', null, c[1]);
+				if (c[0] instanceof Node) td.appendChild(c[0]); else td.textContent = c[0];
+				r.appendChild(td);
+			});
+			body.appendChild(r);
+		});
+		t.appendChild(body);
+		wrap.appendChild(t);
+		return wrap;
+	}
+	function fail(e) {
+		TitanROData.showError($('note'), e);
+	}
+
+	function search(q) {
+		$('note').textContent = 'Searching...';
+		$('note').className = 'muted';
+		TitanROData.query(Q_SEARCH, { q: q })
+			.then(function (d) {
+				var r = [{ items: d.itemSearch }, { monsters: d.monsterSearch }];
+				var items = $('items'), monsters = $('monsters');
+				items.textContent = '';
+				monsters.textContent = '';
+				r[0].items.forEach(function (i) {
+					items.appendChild(el('div')).appendChild(link(i.name + (i.slots ? ' [' + i.slots + ']' : '') + ' (' + i.id + ')', function () { showItem(i); }));
+				});
+				r[1].monsters.forEach(function (m) {
+					monsters.appendChild(el('div')).appendChild(link(m.name + ' (Lv ' + m.level + ')', function () { showMonster(m.id); }));
+				});
+				if (!r[0].items.length) items.appendChild(el('span', 'none', 'muted'));
+				if (!r[1].monsters.length) monsters.appendChild(el('span', 'none', 'muted'));
+				$('lists').hidden = false;
+				$('note').textContent = r[0].items.length + ' items, ' + r[1].monsters.length + ' monsters.';
+			}).catch(fail);
+	}
+
+	function showItem(item) {
+		TitanROData.query(Q_DROPS, { id: item.id }).then(function (res) {
+			var d = res.itemDrops;
+			if (!d) throw new Error('No item with that id.');
+			var box = $('detail');
+			box.textContent = '';
+			box.appendChild(el('h2', d.item.name + ' (' + d.item.id + ')'));
+			var market = el('a', 'Prices and open shops');
+			market.href = 'market.html?q=' + encodeURIComponent(d.item.name);
+			box.appendChild(el('p')).appendChild(market);
+			if (!d.droppedBy.length) box.appendChild(el('p', 'No monster drops it.', 'muted'));
+			else box.appendChild(table([['Monster'], ['Level', 'num'], ['Rate', 'num'], ['']], d.droppedBy.map(function (m) {
+				return [[link(m.name, function () { showMonster(m.mobId); })], [String(m.level), 'num'], [rate(m.rate), 'num'], [m.mvpReward ? 'MVP reward' : '']];
+			})));
+			box.hidden = false;
+		}).catch(fail);
+	}
+
+	function showMonster(id) {
+		TitanROData.query(Q_MONSTER, { id: id }).then(function (res) {
+			var r = res.monster;
+			if (!r) throw new Error('No monster with that id.');
+			var m = r, box = $('detail');
+			box.textContent = '';
+			box.appendChild(el('h2', m.name + ' (' + m.id + ')' + (m.mvp ? ' MVP' : m.boss ? ' Boss' : '')));
+			var ele = ELEMENTS[m.element % 20] || ('#' + m.element);
+			var stats = el('div', null, 'stats');
+			[['Level', m.level], ['HP', m.hp.toLocaleString('en-US')], ['Base exp', m.baseExp.toLocaleString('en-US')],
+				['Job exp', m.jobExp.toLocaleString('en-US')], ['Element', ele + ' ' + m.elementLevel],
+				['Race', RACES[m.race] || '#' + m.race], ['Size', SIZES[m.size] || '#' + m.size]].forEach(function (s) {
+				var d = el('div');
+				d.appendChild(el('b', String(s[1])));
+				d.appendChild(el('span', s[0], 'muted'));
+				stats.appendChild(d);
+			});
+			box.appendChild(stats);
+			box.appendChild(el('h3', 'Drops'));
+			box.appendChild(table([['Item'], ['Rate', 'num'], ['']], r.drops.map(function (d) {
+				return [[link(d.name || '#' + d.itemId, function () { showItem({ id: d.itemId }); })], [rate(d.rate), 'num'], [d.mvpReward ? 'MVP reward' : '']];
+			})));
+			box.appendChild(el('h3', 'Spawns'));
+			if (!r.spawns.length) box.appendChild(el('p', 'No permanent spawn.', 'muted'));
+			else box.appendChild(table([['Map'], ['Amount', 'num']], r.spawns.map(function (s) { return [[s.map], [String(s.amount), 'num']]; })));
+			box.hidden = false;
+		}).catch(fail);
+	}
+
+	$('search').addEventListener('submit', function (e) {
+		e.preventDefault();
+		var q = $('q').value.trim();
+		history.replaceState(null, '', '?q=' + encodeURIComponent(q));
+		search(q);
+	});
+	var initial = new URLSearchParams(location.search).get('q');
+	if (initial) { $('q').value = initial; search(initial); }
+})();
+</script>
+</body>
+</html>

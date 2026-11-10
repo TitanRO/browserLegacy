@@ -27,8 +27,8 @@ uniform float uLightOpacity;
 uniform vec3  uLightDirection;
 uniform vec3 uLightEnv;
 
-// Display helpers (Renderer/VisualOptions.js): flat grey ground, the cell grid with blocked cells darkened (uCells:
-// one texel per cell, red 1 = walkable), and the least lightmap shadow (bright maps; 0 = as the map has it).
+// Display helpers (Renderer/VisualOptions.js): flat grey ground, and the cell grid with blocked cells darkened
+// (uCells: one texel per cell, red 1 = walkable).
 uniform bool  uFlat;
 uniform float uFlatGrey;
 uniform bool  uGrid;
@@ -36,7 +36,6 @@ uniform sampler2D uCells;
 uniform vec2  uCellsSize;
 uniform float uGridLine;
 uniform float uGridBlocked;
-uniform float uMinShadow;
 
 vec3 posterize(vec3 c) {
     c *= 255.0;
@@ -69,7 +68,7 @@ void main(void) {
         } else if(uGammaCorrection){
             lightmap.rgb = pow(lightmap.rgb, vec3(1.1));
         }
-        textureSample.rgb *= max(lightmap.a, uMinShadow);
+        textureSample.rgb *= lightmap.a;
         textureSample.rgb += clamp(lightmap.rgb, 0.0, 1.0);
     }
 

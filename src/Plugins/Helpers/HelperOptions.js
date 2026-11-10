@@ -30,8 +30,6 @@ export const HELPER_OPTIONS = [
 		label: "Low effects: other players' effects",
 		type: 'toggle'
 	},
-	{ section: 'Display', key: 'noFog.enabled', label: 'No fog', type: 'toggle' },
-	{ section: 'Display', key: 'brightMaps.enabled', label: 'Bright maps', type: 'toggle' },
 	{ section: 'Display', key: 'castCircles.enabled', label: 'Bright cast circles', type: 'toggle' },
 	{ section: 'Display', key: 'trapMarkers.enabled', label: 'Trap and ground-skill markers', type: 'toggle' },
 	{ section: 'Display', key: 'flatMap.enabled', label: 'Flat map', type: 'toggle' },

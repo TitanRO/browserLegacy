@@ -1,9 +1,9 @@
 /**
  * Plugins/Helpers/VisualHelpers.js
  *
- * The display helpers (Build-in roadmap features 9 to 15) in the web client: low effects by category, no fog, bright
- * maps, bright cast circles, trap and ground-skill markers, flat map with hidden props, see-through props and the cell
- * grid. The player's helper settings turn them on; Renderer/VisualOptions.js carries them to the renderers, which
+ * The display helpers (Build-in roadmap features 9 to 15) in the web client: low effects by category, bright cast
+ * circles, trap and ground-skill markers, flat map with hidden props, see-through props and the cell
+ * grid (fog and lighting are the client's own /fog and /lightmap). The player's helper settings turn them on; Renderer/VisualOptions.js carries them to the renderers, which
  * draw them from the next frame. The Windows client (TitanRONet.dll src/visual.rs) has the same options.
  *
  * Zone rules: none of these hides or shows anything the server didn't send, so they work the same in every zone
@@ -181,8 +181,6 @@ export function visualOptions(get, context, heavy) {
 		othersEffects: get('lowEffects', 'othersEffects') === true
 	};
 	return {
-		noFog: get('noFog', 'enabled') === true,
-		brightMaps: get('brightMaps', 'enabled') === true,
 		flatGround: get('flatMap', 'enabled') === true,
 		hideProps: get('flatMap', 'hideProps') === true,
 		propAlpha: get('transparentProps', 'enabled') === true ? PROP_ALPHA : 1,

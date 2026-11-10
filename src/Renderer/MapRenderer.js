@@ -38,7 +38,6 @@ import ScreenEffectManager from 'Renderer/ScreenEffectManager.js';
 import Sky from 'Renderer/Effects/Sky.js';
 import Damage from 'Renderer/Effects/Damage.js';
 import GroundMarkers from 'Renderer/Map/GroundMarkers.js';
-import VisualOptions from 'Renderer/VisualOptions.js';
 import GraphicsSettings from 'Preferences/Graphics.js';
 import MapPreferences from 'Preferences/Map.js';
 import glMatrix from 'Utils/gl-matrix.js';
@@ -61,11 +60,6 @@ import PerfProbe from 'Core/PerfProbe.js';
 
 const mat4 = glMatrix.mat4;
 const _pos = new Uint16Array(2);
-
-/**
- * The map light as drawn with bright maps on (VisualOptions.light fills it every frame)
- */
-const _brightLight = {};
 
 /**
  * Set while a loaded map's loading image fades out (onMapComplete). A map
@@ -321,8 +315,8 @@ class MapRenderer {
 		PostProcess.prepare(gl);
 
 		const fog = MapRenderer.fog;
-		fog.use = MapPreferences.fog && !VisualOptions.noFog;
-		const light = VisualOptions.light(MapRenderer.light, _brightLight);
+		fog.use = MapPreferences.fog;
+		const light = MapRenderer.light;
 
 		let x, y;
 

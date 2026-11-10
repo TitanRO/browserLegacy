@@ -3,7 +3,7 @@
  * options list both clients draw, and the camera's zoom cap.
  */
 import { afterEach, describe, expect, it } from 'vitest';
-import VisualOptions, { BRIGHT, PROP_ALPHA, brightLight } from 'Renderer/VisualOptions.js';
+import VisualOptions, { PROP_ALPHA } from 'Renderer/VisualOptions.js';
 import {
 	ALWAYS_KEPT,
 	MARKED_UNITS,
@@ -33,8 +33,6 @@ describe('display options', () => {
 	it('defaults draw the game as it is, with bright cast circles', () => {
 		const options = visualOptions(settings(), context);
 		expect(options).toMatchObject({
-			noFog: false,
-			brightMaps: false,
 			flatGround: false,
 			hideProps: false,
 			propAlpha: 1,
@@ -48,8 +46,6 @@ describe('display options', () => {
 	it('each setting turns its option on', () => {
 		const options = visualOptions(
 			settings({
-				noFog: { enabled: true },
-				brightMaps: { enabled: true },
 				flatMap: { enabled: true, hideProps: true },
 				transparentProps: { enabled: true },
 				cellGrid: { enabled: true },
@@ -58,8 +54,6 @@ describe('display options', () => {
 			context
 		);
 		expect(options).toMatchObject({
-			noFog: true,
-			brightMaps: true,
 			flatGround: true,
 			hideProps: true,
 			propAlpha: PROP_ALPHA,
@@ -151,22 +145,11 @@ describe('trap markers', () => {
 });
 
 describe('the renderers options', () => {
-	it('bright maps raise the light to a floor and keep brighter light', () => {
-		const light = { ambient: [0.1, 0.7, 0.2], diffuse: [0.2, 0.3, 0.9], opacity: 1, direction: [0, 1, 0] };
-		const out = brightLight(light);
-		expect([...out.ambient]).toEqual([expect.closeTo(BRIGHT.ambient), expect.closeTo(0.7), expect.closeTo(BRIGHT.ambient)]);
-		expect([...out.diffuse]).toEqual([expect.closeTo(BRIGHT.diffuse), expect.closeTo(BRIGHT.diffuse), expect.closeTo(0.9)]);
-		expect(out.env[0]).toBeCloseTo(1 - (1 - BRIGHT.diffuse) * (1 - BRIGHT.ambient));
-		expect(VisualOptions.light(light, {})).toBe(light);
-		VisualOptions.set({ brightMaps: true });
-		expect(VisualOptions.light(light, {})).not.toBe(light);
-	});
-
 	it('tells listeners about changes and rejects unknown options', () => {
 		let calls = 0;
 		const stop = VisualOptions.onChange(() => calls++);
-		VisualOptions.set({ noFog: true });
-		VisualOptions.set({ noFog: true });
+		VisualOptions.set({ cellGrid: true });
+		VisualOptions.set({ cellGrid: true });
 		stop();
 		expect(calls).toBe(1);
 		expect(() => VisualOptions.set({ nope: 1 })).toThrow();

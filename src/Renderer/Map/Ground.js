@@ -13,7 +13,7 @@ import Texture from 'Utils/Texture.js';
 import Preferences from 'Preferences/Map.js';
 import Configs from 'Core/Configs.js';
 import Altitude from 'Renderer/Map/Altitude.js';
-import VisualOptions, { BRIGHT, GRID } from 'Renderer/VisualOptions.js';
+import VisualOptions, { GRID } from 'Renderer/VisualOptions.js';
 import _vertexShader from './Ground.vs?raw';
 import _fragmentShader from './Ground.fs?raw';
 
@@ -111,7 +111,6 @@ function render(gl, modelView, projection, normalMat, fog, light) {
 	// Display helpers
 	gl.uniform1i(uniform.uFlat, VisualOptions.flatGround);
 	gl.uniform1f(uniform.uFlatGrey, GRID.flatGrey);
-	gl.uniform1f(uniform.uMinShadow, VisualOptions.brightMaps ? BRIGHT.shadow : 0.0);
 	const grid = VisualOptions.cellGrid && bindCells(gl);
 	gl.uniform1i(uniform.uGrid, !!grid);
 	if (grid) {

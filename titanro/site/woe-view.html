@@ -17,6 +17,7 @@
 	#still-info .muted { color: #a3a9b4; }
 	#still-info ul { margin: 6px 0 0; padding-left: 18px; }
 	#still-info .error { color: #ff9c9c; }
+	#still-info button { font: inherit; padding: 1px 10px; }
 </style>
 </head>
 <body>
@@ -24,7 +25,8 @@
 	<h1 id="still-title">WoE still</h1>
 	<p class="muted" id="note">Loading...</p>
 	<ul id="guilds"></ul>
-	<p class="muted">Drag to turn, scroll to zoom, click to look at a cell. <a href="woe.html">Back to the WoE tracker</a></p>
+	<p class="muted">Drag to turn, scroll to zoom, click to look at a cell; click a portal to go where it leads.
+		<button type="button" id="back" hidden>Back</button> <a href="woe.html">Back to the WoE tracker</a></p>
 </div>
 <script src="Config.js"></script>
 <script src="Config.local.js"></script>
@@ -81,7 +83,13 @@
 		});
 	window.TitanROWoeStill.catch(function (e) { TitanROData.showError($('note'), e); });
 
+	$('back').addEventListener('click', function () { window.TitanROWoeViewer && window.TitanROWoeViewer.back(); });
 	window.TitanROWoeStill.then(function () {
+		var wait = setInterval(function () {
+			if (!window.TitanROWoeViewer) return;
+			clearInterval(wait);
+			window.TitanROWoeViewer.onMove = function (canGoBack) { $('back').hidden = !canGoBack; };
+		}, 200);
 		var script = document.createElement('script');
 		script.type = 'module';
 		script.src = 'WoeViewer.js';

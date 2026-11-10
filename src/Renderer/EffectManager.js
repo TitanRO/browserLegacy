@@ -385,6 +385,8 @@ class EffectManager {
 	 * Initialize effects manager
 	 */
 	static init(gl) {
+		// Entities leave their Chase Walk prints through this (EntityWalk can't import EffectManager)
+		FootprintHook.leave = EffectManager.footprint;
 		_gl = gl;
 
 		if (Configs.get('development')) {
@@ -1804,6 +1806,4 @@ class EffectManager {
 /**
  * Export
  */
-FootprintHook.leave = EffectManager.footprint;
-
 export default EffectManager;

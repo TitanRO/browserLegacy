@@ -1,5 +1,5 @@
 /**
- * The site pages' game data: TitanRO's data API (titanro-api, GraphQL), for signed-in players. The pages load Clerk's
+ * The site pages' game data: TitanRO's game data API (titanro-api, GraphQL at api.titanro.net), for signed-in players. The pages load Clerk's
  * browser SDK from TitanRO's Clerk instance and send its session token (a short-lived JWT the API checks with Clerk's
  * public keys) with each query. A player signed in on the play page is signed in here too (the same Clerk session).
  *
@@ -10,7 +10,7 @@
  */
 (function () {
 	'use strict';
-	var API = new URLSearchParams(location.search).get('api') || 'https://data-api.titanro.net';
+	var API = new URLSearchParams(location.search).get('api') || 'https://api.titanro.net';
 	var CLERK_FRONTEND = 'https://clerk.titanro.net';
 	// The publishable key names the Frontend API (base64 of "clerk.titanro.net$"); it's public by design.
 	var PUBLISHABLE_KEY = 'pk_live_' + btoa('clerk.titanro.net$');

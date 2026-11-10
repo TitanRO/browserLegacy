@@ -48,7 +48,7 @@ class EffectPrim {
 		this.buffer = gl.createBuffer();
 
 		Client.loadFile(
-			`data/texture/effect/${this.effect.texture}.tga`,
+			`data/texture/effect/${this.effect.texture}${/\.(tga|bmp)$/i.test(this.effect.texture) ? '' : '.tga'}`,
 			buffer => {
 				WebGL.texture(gl, buffer, texture => {
 					if (this.freed) {

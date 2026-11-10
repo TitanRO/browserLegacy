@@ -33,6 +33,8 @@ import Network from 'Network/NetworkManager.js';
 import Events from 'Core/Events.js';
 import CaptchaSelector from 'UI/Components/Captcha/CaptchaSelector.js';
 import 'Controls/ScreenShot.js';
+import { helpers } from 'Plugins/Helpers/Helpers.js';
+import { FIELD } from 'Plugins/Helpers/Zone.js';
 
 /**
  * @var {int16[2]} screen position
@@ -189,8 +191,8 @@ function onMouseDown(event) {
 					entityOver.objecttype != Entity.TYPE_EFFECT &&
 					entityOver.objecttype != Entity.TYPE_TRAP
 				) {
-					if (KEYS.SHIFT) {
-						// Shift + Right click on an entity
+					if (KEYS.SHIFT && entityOver.objecttype === Entity.TYPE_PC && followAllowed()) {
+						// Shift + Right click on a character: walk after it, as the Windows client does
 						Session.autoFollowTarget = entityOver;
 						Session.autoFollow = true;
 						onAutoFollow();
@@ -356,10 +358,25 @@ function onDrop(event) {
 /**
  * Auto follow logic
  */
+/**
+ * Auto-follow works on field maps only (Build-in roadmap decision 4): not in PvP or WoE, by the helpers' zone signal.
+ * Without the helpers plugin there's no zone signal, and follow works as before.
+ */
+function followAllowed() {
+	return !helpers.zone || helpers.zone.state.zone === FIELD;
+}
+
 function onAutoFollow() {
 	if (Session.autoFollow) {
 		const player = Session.Entity;
 		const target = Session.autoFollowTarget;
+
+		// Stop when the target has left view (or the map) or the zone isn't a field any more
+		if (!target || EntityManager.get(target.GID) !== target || !followAllowed()) {
+			Session.autoFollow = false;
+			Session.autoFollowTarget = null;
+			return;
+		}
 
 		const dx = Math.abs(player.position[0] - target.position[0]);
 		const dy = Math.abs(player.position[1] - target.position[1]);

@@ -35,6 +35,7 @@ export const DEFAULT_SETTINGS = {
 	cellGrid: { enabled: false },
 	damageLog: { enabled: false },
 	autopot: { panel: false },
+	woeTracker: { panel: false },
 	zonePanel: { enabled: false },
 	panels: {}
 };

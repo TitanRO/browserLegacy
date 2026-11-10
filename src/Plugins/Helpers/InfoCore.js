@@ -395,3 +395,31 @@ export function damageLines(combat, skillName) {
 		lines.push(`${name(h.skill)} ${shortNumber(h.damage)} > ${h.target}`);
 	return lines;
 }
+
+/**
+ * The WoE panel's lines from the map server's {"type":"woe",...} answer (the woe_stats plugin): [{text, heading}].
+ * The same text as the Windows client's (woe.rs).
+ */
+export function woeLines(w) {
+	if (!w) return [{ text: 'Loading...', heading: false }];
+	const ago = at => duration(w.now - at);
+	const out = [{ text: w.running ? 'WoE is on' : 'No WoE now', heading: true }];
+	const castles = w.castles || [];
+	const owned = castles.filter(c => c.guild);
+	out.push({ text: `Castles: ${owned.length} of ${castles.length} owned`, heading: false });
+	for (const c of owned.slice(0, 8)) out.push({ text: `  ${c.name}: ${c.guild}`, heading: false });
+	if (w.events && w.events.length) {
+		out.push({ text: 'Latest', heading: true });
+		for (const e of w.events.slice(0, 3)) {
+			const what = e.kind === 'break' ? 'broke the Emperium in' : 'took';
+			out.push({ text: `  ${ago(e.at)} ago: ${e.guild} ${what} ${e.castle}`, heading: false });
+		}
+	}
+	if (w.last) {
+		out.push({ text: `Last WoE (${ago(w.last.start)} ago)`, heading: true });
+		if (!w.last.guilds.length) out.push({ text: '  no kills', heading: false });
+		for (const g of w.last.guilds.slice(0, 3))
+			out.push({ text: `  ${g.guild}: ${g.kills} kills, ${g.deaths} deaths`, heading: false });
+	}
+	return out;
+}

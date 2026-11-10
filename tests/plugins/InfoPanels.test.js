@@ -15,7 +15,8 @@ import {
 	lootRules,
 	mvpLines,
 	shortNumber,
-	targetText
+	targetText,
+	woeLines
 } from 'Plugins/Helpers/InfoCore.js';
 import { HELPER_OPTIONS, optionSections } from 'Plugins/Helpers/HelperOptions.js';
 import { DEFAULT_SETTINGS } from 'Plugins/Helpers/HelperSettings.js';
@@ -212,5 +213,34 @@ describe('the helpers window list', () => {
 			['Info', ['A', 'C']],
 			['Display', ['B']]
 		]);
+	});
+});
+
+describe('the WoE panel', () => {
+	it('writes the same lines as the Windows client', () => {
+		const w = {
+			now: 100000,
+			running: true,
+			castles: [
+				{ name: 'Kriemhild', map: 'prtg_cas01', guild: 'Knights' },
+				{ name: 'Swanhild', map: 'prtg_cas02', guild: null }
+			],
+			events: [
+				{ at: 99400, kind: 'break', castle: 'Kriemhild', guild: 'Knights' },
+				{ at: 99000, kind: 'owner', castle: 'Kriemhild', guild: 'Knights' }
+			],
+			last: { start: 13600, guilds: [{ guild: 'Knights', kills: 12, deaths: 3 }] }
+		};
+		expect(woeLines(w).map(l => l.text)).toEqual([
+			'WoE is on',
+			'Castles: 1 of 2 owned',
+			'  Kriemhild: Knights',
+			'Latest',
+			'  10m 00s ago: Knights broke the Emperium in Kriemhild',
+			'  16m 40s ago: Knights took Kriemhild',
+			'Last WoE (24h 00m ago)',
+			'  Knights: 12 kills, 3 deaths'
+		]);
+		expect(woeLines(null)[0].text).toBe('Loading...');
 	});
 });

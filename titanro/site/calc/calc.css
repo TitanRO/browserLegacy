@@ -1,0 +1,19 @@
+/* Stat calculator and skill tree simulator (stats.html, skills.html). */
+.calc h2 { font-size: 16px; margin: 0 0 8px; }
+.calc .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+.calc label { display: inline-flex; gap: 6px; align-items: center; }
+.calc input[type="number"], .calc select { padding: 4px 6px; font: inherit; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--ink); }
+.calc input[type="number"] { width: 5.5em; }
+.calc .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.calc .cols > .panel { margin-bottom: 0; }
+.calc .pm button { padding: 2px 9px; margin-right: 4px; }
+.calc table.window th { width: 40%; }
+.calc table.window td { font-size: 16px; }
+.calc .tier { min-width: 0; }
+.calc .tier h2 { display: flex; justify-content: space-between; gap: 8px; }
+.calc .skill td:first-child { white-space: normal; }
+.calc .skill.off td:first-child { color: var(--muted); }
+.calc .skill .lv { font-variant-numeric: tabular-nums; min-width: 4.5em; display: inline-block; text-align: center; }
+.calc .need { font-size: 12px; color: var(--muted); }
+.calc .warn { color: var(--buy); }
+.calc #source { margin-top: 16px; }

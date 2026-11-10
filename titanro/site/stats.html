@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TitanRO Stat Calculator</title>
+<link rel="stylesheet" href="site.css">
+<link rel="stylesheet" href="calc/calc.css">
+</head>
+<body>
+<header>
+	<h1>TitanRO Stat Calculator</h1>
+	<nav><a href="./">Play</a><a href="market.html">Market</a><a href="woe.html">WoE</a><a href="search.html">Database</a><a href="stats.html">Stats</a><a href="skills.html">Skills</a><a href="tools.html">Tools</a></nav>
+</header>
+<main class="calc">
+	<section class="panel">
+		<div class="row">
+			<label>Job <select id="job"></select></label>
+			<label>Base level <input id="blv" type="number" min="1" value="99"></label>
+			<label>Job level <input id="jlv" type="number" min="1" value="50"></label>
+		</div>
+		<p class="muted" id="caps"></p>
+	</section>
+	<div class="cols">
+		<section class="panel">
+			<h2>Stats</h2>
+			<table class="statin">
+				<thead><tr><th>Stat</th><th class="num">Base</th><th></th><th class="num">Job</th><th class="num">Next</th></tr></thead>
+				<tbody id="statrows"></tbody>
+			</table>
+			<p><b id="points"></b> <span class="muted" id="pointsnote"></span></p>
+			<p><button type="button" class="link" id="reset">Reset stats to 1</button></p>
+			<h2>Weapon</h2>
+			<div class="row">
+				<label>Type <select id="wtype"></select></label>
+				<label><input id="shield" type="checkbox"> Shield</label>
+			</div>
+			<div class="row" id="wfields">
+				<label>ATK <input id="watk" type="number" min="0" value="0"></label>
+				<label>MATK <input id="wmatk" type="number" min="0" value="0"></label>
+				<label>Weapon level <select id="wlv"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+				<label>Refine <select id="refine"></select></label>
+			</div>
+			<div class="row">
+				<label>Equipment DEF <input id="edef" type="number" min="0" value="0"></label>
+				<label>Equipment MDEF <input id="emdef" type="number" min="0" value="0"></label>
+			</div>
+		</section>
+		<section class="panel">
+			<h2>Status window</h2>
+			<table class="window">
+				<tbody id="window"></tbody>
+			</table>
+			<p class="muted">Counted: base stats, the job's stat bonus, a weapon's ATK, MATK and refine, a shield's attack delay, and
+				the DEF and MDEF you enter. Not counted: cards, item bonuses, passive skills and buffs.</p>
+			<p><button type="button" class="link" id="share">Copy a link to this build</button> <span class="muted" id="shared"></span></p>
+		</section>
+	</div>
+	<p class="muted" id="source"></p>
+</main>
+<script type="module">
+import { STATS, WEAPON_TYPES, statusWindow, statCost, totalStatPoints, spentStatPoints, jobBonus, aspd } from './calc/calc.js';
+import { jobGroups } from './calc/jobs.js';
+
+const $ = (id) => document.getElementById(id);
+const LABEL = { str: 'STR', agi: 'AGI', vit: 'VIT', int: 'INT', dex: 'DEX', luk: 'LUK' };
+const data = await fetch('calc/data.json').then((r) => r.json());
+const jobs = new Map(data.jobs.map((j) => [j.id, j]));
+const state = { job: 4008, blv: 99, jlv: 70, stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, wtype: 0, watk: 0, wmatk: 0, wlv: 1, refine: 0, shield: false, edef: 0, emdef: 0 };
+
+function readHash() {
+	const p = new URLSearchParams(location.hash.slice(1));
+	const num = (k, d) => (p.has(k) && isFinite(+p.get(k)) ? Math.trunc(+p.get(k)) : d);
+	state.job = jobs.has(num('job', state.job)) ? num('job', state.job) : data.jobs[0].id;
+	for (const k of ['blv', 'jlv', 'wtype', 'watk', 'wmatk', 'wlv', 'refine', 'edef', 'emdef']) state[k] = num(k, state[k]);
+	if (p.has('s')) p.get('s').split('.').forEach((v, i) => { if (i < 6 && isFinite(+v)) state.stats[STATS[i]] = Math.max(1, Math.trunc(+v)); });
+	state.shield = p.get('shield') === '1';
+}
+
+function writeHash() {
+	const p = new URLSearchParams();
+	p.set('job', state.job); p.set('blv', state.blv); p.set('jlv', state.jlv);
+	p.set('s', STATS.map((s) => state.stats[s]).join('.'));
+	if (state.wtype) { p.set('wtype', state.wtype); p.set('watk', state.watk); p.set('wmatk', state.wmatk); p.set('wlv', state.wlv); p.set('refine', state.refine); }
+	if (state.shield) p.set('shield', '1');
+	if (state.edef) p.set('edef', state.edef);
+	if (state.emdef) p.set('emdef', state.emdef);
+	history.replaceState(null, '', '#' + p.toString());
+}
+
+function fillJobs() {
+	const sel = $('job');
+	for (const [name, list] of jobGroups(data)) {
+		const g = document.createElement('optgroup');
+		g.label = name;
+		for (const j of list) g.appendChild(new Option(j.name, j.id));
+		sel.appendChild(g);
+	}
+	for (let r = 0; r < data.refine[0].length; r++) $('refine').appendChild(new Option('+' + r, r));
+}
+
+function clamp(v, lo, hi) { return Math.min(Math.max(v, lo), hi); }
+
+function sanitize() {
+	const job = jobs.get(state.job);
+	state.blv = clamp(state.blv || 1, 1, job.maxblv);
+	state.jlv = clamp(state.jlv || 1, 1, job.maxjlv);
+	for (const s of STATS) state.stats[s] = clamp(state.stats[s] || 1, 1, job.maxstats);
+	if (!job.aspd[state.wtype]) state.wtype = 0;
+	state.wlv = clamp(state.wlv || 1, 1, 5);
+	state.refine = clamp(state.refine || 0, 0, data.refine[0].length - 1);
+	return job;
+}
+
+function render() {
+	const job = sanitize();
+	$('job').value = job.id;
+	$('blv').value = state.blv; $('blv').max = job.maxblv;
+	$('jlv').value = state.jlv; $('jlv').max = job.maxjlv;
+	$('caps').textContent = `Base level up to ${job.maxblv}, job level up to ${job.maxjlv}, stats up to ${job.maxstats}.`;
+
+	const bonus = jobBonus(job, state.jlv);
+	const rows = $('statrows');
+	rows.textContent = '';
+	STATS.forEach((s, i) => {
+		const tr = document.createElement('tr');
+		const v = state.stats[s];
+		tr.innerHTML = `<td><b>${LABEL[s]}</b></td><td class="num"><input type="number" min="1" max="${job.maxstats}" value="${v}" data-stat="${s}"></td>` +
+			`<td class="pm"><button type="button" data-stat="${s}" data-d="-1">-</button><button type="button" data-stat="${s}" data-d="1">+</button></td>` +
+			`<td class="num">+${bonus[i]}</td><td class="num muted">${v < job.maxstats ? statCost(v, v + 1) : '-'}</td>`;
+		rows.appendChild(tr);
+	});
+	const total = totalStatPoints(data, job, state.blv);
+	const left = total - spentStatPoints(state.stats);
+	$('points').textContent = `${left} status points left`;
+	$('points').className = left < 0 ? 'error' : '';
+	$('pointsnote').textContent = `of ${total} at base level ${state.blv}` + (job.upper ? ' (transcendent: 52 more)' : '');
+
+	const wsel = $('wtype');
+	wsel.textContent = '';
+	job.aspd.forEach((base, w) => { if (base) wsel.appendChild(new Option(WEAPON_TYPES[w], w)); });
+	wsel.value = state.wtype;
+	$('wfields').hidden = state.wtype === 0;
+	$('watk').value = state.watk; $('wmatk').value = state.wmatk; $('wlv').value = state.wlv; $('refine').value = state.refine;
+	$('shield').checked = state.shield;
+	$('shield').disabled = !job.shield;
+	$('edef').value = state.edef; $('emdef').value = state.emdef;
+
+	const input = { job, blv: state.blv, jlv: state.jlv, stats: state.stats, shield: state.shield, equipDef: state.edef, equipMdef: state.emdef };
+	if (state.wtype) input.weapon = { type: state.wtype, atk: state.watk, matk: state.wmatk, wlv: state.wlv, refine: state.refine };
+	const w = statusWindow(data, input);
+	const lines = [
+		['ATK', `${w.atk1} + ${w.atk2}`], ['MATK', `${w.matk2} + ${w.matk1}`],
+		['HIT', w.hit], ['CRIT', w.cri],
+		['DEF', `${w.def2} + ${w.def1}`], ['MDEF', `${w.mdef2} + ${w.mdef1}`],
+		['FLEE', `${w.flee1} + ${w.flee2}`], ['ASPD', w.amotion == null ? '-' : `${aspd(w.amotion)} (${(w.amotion * 2).toLocaleString()} ms between attacks)`],
+		['MaxHP', w.max_hp.toLocaleString()], ['MaxSP', w.max_sp.toLocaleString()]
+	];
+	$('window').innerHTML = lines.map(([k, v]) => `<tr><th>${k}</th><td class="num">${v}</td></tr>`).join('');
+	writeHash();
+}
+
+fillJobs();
+readHash();
+render();
+$('source').textContent = `Numbers from the TitanRO game server's own tables and formulas (server build ${data.source.titanro2}).`;
+
+$('job').addEventListener('change', (e) => { state.job = +e.target.value; render(); });
+for (const k of ['blv', 'jlv', 'watk', 'wmatk', 'edef', 'emdef']) $(k).addEventListener('change', (e) => { state[k] = Math.trunc(+e.target.value) || 0; render(); });
+for (const k of ['wtype', 'wlv', 'refine']) $(k).addEventListener('change', (e) => { state[k] = +e.target.value; render(); });
+$('shield').addEventListener('change', (e) => { state.shield = e.target.checked; render(); });
+$('statrows').addEventListener('change', (e) => { const s = e.target.dataset.stat; if (s) { state.stats[s] = Math.trunc(+e.target.value) || 1; render(); } });
+$('statrows').addEventListener('click', (e) => { const s = e.target.dataset.stat; if (s && e.target.dataset.d) { state.stats[s] += +e.target.dataset.d * (e.shiftKey ? 10 : 1); render(); } });
+$('reset').addEventListener('click', () => { for (const s of STATS) state.stats[s] = 1; render(); });
+$('share').addEventListener('click', () => { navigator.clipboard.writeText(location.href).then(() => { $('shared').textContent = 'Copied.'; }, () => { $('shared').textContent = location.href; }); });
+window.addEventListener('hashchange', () => { readHash(); render(); });
+</script>
+</body>
+</html>

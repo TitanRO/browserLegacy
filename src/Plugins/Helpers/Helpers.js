@@ -12,6 +12,7 @@
  * - asset swaps: Client.addFileSwap (Core/Client.js) serves another file in place of a game file.
  * - helper settings (HelperSettings.js): the master account's settings from the account service, shared with the
  *   launcher and the Windows client.
+ * - the information panels (InfoPanels.js, InfoCore.js): target, exp tracker, loot alerts, damage log, MVP timers.
  *
  * Helper features import the shared pieces from here: `import { helpers } from 'Plugins/Helpers/Helpers.js'`.
  *
@@ -29,9 +30,10 @@ import { HelperSettingsClient, TOKEN_EVENT } from './HelperSettings.js';
 import { ZoneSignal } from './Zone.js';
 import { HelperPanels } from './HelperPanels.js';
 import { zonePanel } from './ZonePanel.js';
+import { startInfoPanels } from './InfoPanels.js';
 
 /** The shared pieces, once the plugin has started. */
-export const helpers = { settings: null, zone: null, panels: null };
+export const helpers = { settings: null, zone: null, panels: null, info: null };
 
 let started = false;
 
@@ -48,6 +50,7 @@ export default function Init(params) {
 	// In the game: the map's UI is up (the chat box comes and goes with it).
 	const panels = new HelperPanels({ settings, inGame: () => !!ChatBox.__active });
 	panels.register(zonePanel(zone));
+	const info = startInfoPanels({ network: Network, settings, panels });
 
 	zone.onChange((_state, entered) => {
 		if (entered) panels.refresh();
@@ -61,6 +64,6 @@ export default function Init(params) {
 	settings.restoreToken();
 	window.addEventListener('pagehide', () => settings.flush());
 
-	Object.assign(helpers, { settings, zone, panels });
+	Object.assign(helpers, { settings, zone, panels, info });
 	return true;
 }

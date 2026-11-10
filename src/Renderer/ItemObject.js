@@ -19,6 +19,9 @@ import Altitude from 'Renderer/Map/Altitude.js';
  * @description Manages the rendering of items on the ground.
  */
 class ItemObject {
+	/** Called with each dropped item's entity before it's shown (the helpers' enlarged rare drops). */
+	static decorate = null;
+
 	/**
 	 * Find an Entity and return its index
 	 *
@@ -63,6 +66,8 @@ class ItemObject {
 			entity.position[2] = Math.max(level, z - tick / 40);
 			return entity.position[2] === level;
 		});
+
+		if (ItemObject.decorate) ItemObject.decorate(entity, itemid);
 
 		EntityManager.add(entity);
 	}

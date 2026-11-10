@@ -7,12 +7,17 @@
  * the monster's DEF, the critical bonus, hit and critical chances. Not counted: cards, item bonuses, skills, buffs,
  * arrows and elemental weapons.
  */
-import { jobById, jobBonus, STATS } from './calc.js';
+import { resolve } from './calc.js';
 
 const W_BOW = 11;
 const W_KATAR = 16;
 const DEX_WEAPONS = new Set([11, 13, 14, 17, 18, 19, 20, 21]);
 const GUNS = new Set([17, 18, 19, 20, 21]);
+/** Normal attacks from a distance (bows and guns): bLongAtkRate counts. */
+const LONG_WEAPONS = new Set([11, 17, 18, 19, 20, 21]);
+const RC_BOSS = 12;
+const RC_NONBOSS = 13;
+const NK_NO_CARDFIX_ATK = 0x08;
 const ELE_NEUTRAL = 0;
 const MIN_HITRATE = 5;
 const MAX_HITRATE = 100;
@@ -23,14 +28,6 @@ export function mobList(mobs) {
 	return mobs.mobs.map((row) => Object.fromEntries(mobs.columns.map((c, i) => [c, row[i]])));
 }
 
-function totals(job, input) {
-	const bonus = jobBonus(job, input.jlv);
-	const total = {};
-	STATS.forEach((s, i) => {
-		total[s] = input.stats[s] + bonus[i];
-	});
-	return total;
-}
 
 /** Status ATK (the status window's left ATK). */
 function statusAtk(total, type) {
@@ -78,17 +75,51 @@ function applyDef(damage, mob) {
 	return Math.trunc(f(f(f(f(100 - f(f(def1 / f(def1 + 400)) * 90)) / 100) * damage) - vitDef));
 }
 
-function hitDamage(data, job, input, total, mob, roll, critical, overRoll = roll) {
-	const type = input.weapon ? input.weapon.type : 0;
-	const ratio = attrRatio(data, mob);
-	const ele = (d) => d + Math.trunc((d * (ratio - 100)) / 100);
-	const batk = ele(statusAtk(total, type));
-	let weapon = weaponAtk(data, total, input.weapon, critical ? 'max' : roll, overRoll);
-	weapon = Math.trunc((weapon * data.size_fix[mob.size][type]) / 100);
-	weapon = ele(weapon);
+/** The weapon part: size, ATK %, equipment ATK, element, the card and equipment % against the monster. */
+function weaponDamage(data, c, mob, roll, overRoll, ele, nk = 0) {
+	const type = c.weapon ? c.weapon.type : 0;
+	let d = weaponAtk(data, c.total, c.weapon, roll, overRoll);
+	d = Math.trunc((d * data.size_fix[mob.size][type]) / 100);
+	if (c.eq.atkRate) d += Math.trunc((d * c.eq.atkRate) / 100);
+	d += c.eq.equipAtk;
+	if (!(nk & NK_NO_ELEFIX)) d = eleFix(data, d, ele, mob);
+	return cardFix(c.eq, d, mob, nk);
+}
+
+function eleFix(data, d, ele, mob) {
+	const r = data.attr_fix[Math.max(mob.element_lv, 1) - 1][ele][mob.element];
+	return d + Math.trunc((d * (r - 100)) / 100);
+}
+
+/** The attacker's card and equipment bonuses (Hercules' calc_cardfix, in thousandths). */
+function cardFix(eq, d, mob, nk = 0) {
+	if (nk & NK_NO_CARDFIX_ATK) return d;
+	let fix = 1000;
+	fix = Math.trunc((fix * (100 + eq.addrace[mob.race])) / 100);
+	if (!(nk & NK_NO_ELEFIX)) fix = Math.trunc((fix * (100 + eq.addele[mob.element])) / 100);
+	fix = Math.trunc((fix * (100 + eq.addsize[mob.size])) / 100);
+	fix = Math.trunc((fix * (100 + eq.addrace[mob.boss ? RC_BOSS : RC_NONBOSS])) / 100);
+	return fix !== 1000 ? Math.trunc((d * fix) / 1000) : d;
+}
+
+function defOf(c, mob) {
+	let def1 = mob.def;
+	const ignore = Math.min(c.eq.ignoreDef[mob.race] + c.eq.ignoreDef[mob.boss ? RC_BOSS : RC_NONBOSS], 100);
+	if (ignore) def1 -= Math.trunc((def1 * ignore) / 100);
+	return { ...mob, def: def1 };
+}
+
+function hitDamage(data, c, mob, roll, critical, overRoll = roll) {
+	const type = c.weapon ? c.weapon.type : 0;
+	const weaponEle = c.eq.weaponEle || ELE_NEUTRAL;
+	const batk = eleFix(data, statusAtk(c.total, type), ELE_NEUTRAL, mob);
 	if (mob.plant) return 1; // plants take 1 damage a hit
-	let damage = applyDef(batk + weapon, mob);
-	if (damage < 1) damage = ratio > 0 ? 1 : 0; // a hit does at least 1, unless the element can't hurt the monster
+	let damage = batk + weaponDamage(data, c, mob, critical ? 'max' : roll, overRoll, weaponEle);
+	if (critical && c.eq.critAtkRate) damage += Math.trunc((damage * c.eq.critAtkRate) / 100);
+	if (LONG_WEAPONS.has(type) && c.eq.longAtkRate) damage += Math.trunc((damage * c.eq.longAtkRate) / 100);
+	damage = applyDef(damage, defOf(c, mob));
+	const hurts = data.attr_fix[Math.max(mob.element_lv, 1) - 1][weaponEle][mob.element] > 0;
+	if (damage < 1) damage = hurts ? 1 : 0; // a hit does at least 1, unless the element can't hurt the monster
 	if (critical) damage += Math.trunc((damage * 40) / 100);
 	return damage;
 }
@@ -98,21 +129,20 @@ function hitDamage(data, job, input, total, mob, roll, critical, overRoll = roll
  * the critical hit's damage, hit and critical chances (0..1), and the character's total stats.
  */
 export function normalAttack(data, input, mob) {
-	const job = typeof input.job === 'object' ? input.job : jobById(data, input.job);
-	const total = totals(job, input);
-	const type = input.weapon ? input.weapon.type : 0;
-	const blv = input.blv;
-	const hit = blv + total.dex + Math.floor(total.luk / 3) + 175;
+	const c = resolve(data, input);
+	const { total, eq } = c;
+	const type = c.weapon ? c.weapon.type : 0;
+	const hit = c.blv + total.dex + Math.floor(total.luk / 3) + 175 + eq.hit;
 	const hitRate = Math.min(Math.max(hit - mob.flee, MIN_HITRATE), MAX_HITRATE) / 100;
-	let cri = 10 + Math.floor(total.luk / 3) * 10;
+	let cri = 10 + Math.floor(total.luk / 3) * 10 + eq.cri;
 	if (type === W_KATAR) cri *= 2;
 	cri -= Math.trunc(mob.lv / 15) + 2 * mob.luk;
 	const critRate = Math.min(Math.max(cri, 0), 1000) / 1000;
 	// a katar's normal attack adds a second hit of 1 % (+ 2 % per Double Attack level, not counted here)
 	const katar = (d) => (type === W_KATAR ? Math.trunc(d / 100) : 0);
-	const min = hitDamage(data, job, input, total, mob, 'min', false);
-	const max = hitDamage(data, job, input, total, mob, 'max', false);
-	const crit = hitDamage(data, job, input, total, mob, 'max', true);
+	const min = hitDamage(data, c, mob, 'min', false);
+	const max = hitDamage(data, c, mob, 'max', false);
+	const crit = hitDamage(data, c, mob, 'max', true);
 	return {
 		min,
 		max,
@@ -120,9 +150,7 @@ export function normalAttack(data, input, mob) {
 		minTotal: min + katar(min),
 		maxTotal: max + katar(max),
 		critTotal: crit + katar(crit),
-		max: hitDamage(data, job, input, total, mob, 'max', false),
-		crit: hitDamage(data, job, input, total, mob, 'max', true),
-		critMin: hitDamage(data, job, input, total, mob, 'max', true, 'min'),
+		critMin: hitDamage(data, c, mob, 'max', true, 'min'),
 		hitRate,
 		critRate,
 		total
@@ -153,22 +181,17 @@ export function weaponSkills(data) {
 		.filter((id) => !SPECIAL_SKILLS.has(id) && !passive.has(id));
 }
 
-function skillHitDamage(data, input, total, mob, skillId, lv, roll) {
+function skillHitDamage(data, c, mob, skillId, lv, roll) {
 	const sk = data.weapon_skills[skillId];
 	const [ratio, skillEle, num] = sk.lv[lv - 1];
-	const type = input.weapon ? input.weapon.type : 0;
-	const ele = skillEle >= 0 ? skillEle : ELE_NEUTRAL; // -1: the weapon's element (neutral here)
-	const lvIdx = Math.max(mob.element_lv, 1) - 1;
-	const fix = (d, e) => (sk.nk & NK_NO_ELEFIX ? d : d + Math.trunc((d * (data.attr_fix[lvIdx][e][mob.element] - 100)) / 100));
-	const div = Math.abs(num) || 1;
+	const type = c.weapon ? c.weapon.type : 0;
+	const ele = skillEle >= 0 ? skillEle : c.eq.weaponEle || ELE_NEUTRAL; // -1: the weapon's element
 	if (mob.plant) return num > 1 ? num : 1;
-	const batk = fix(statusAtk(total, type), ELE_NEUTRAL); // status ATK stays neutral for skills
-	let weapon = weaponAtk(data, total, input.weapon, roll);
-	weapon = Math.trunc((weapon * data.size_fix[mob.size][type]) / 100);
-	weapon = fix(weapon, ele);
-	let damage = Math.trunc(((batk + weapon) * ratio) / 100);
-	if (!(sk.nk & NK_IGNORE_DEF)) damage = applyDef(damage, mob);
-	const hurts = data.attr_fix[lvIdx][ele][mob.element] > 0;
+	const batk = sk.nk & NK_NO_ELEFIX ? statusAtk(c.total, type) : eleFix(data, statusAtk(c.total, type), ELE_NEUTRAL, mob);
+	let damage = batk + weaponDamage(data, c, mob, roll, roll, ele, sk.nk);
+	damage = Math.trunc((damage * ratio) / 100);
+	if (!(sk.nk & NK_IGNORE_DEF)) damage = applyDef(damage, defOf(c, mob));
+	const hurts = data.attr_fix[Math.max(mob.element_lv, 1) - 1][ele][mob.element] > 0;
 	if (damage < 0) damage = 0;
 	if (num > 1) damage *= num;
 	if (damage < 1) damage = hurts ? 1 : 0; // at least 1 for the whole attack
@@ -177,14 +200,13 @@ function skillHitDamage(data, input, total, mob, skillId, lv, roll) {
 
 /** A weapon skill (`skillId` at `lv`) of `input` on `mob`: {min, max} damage, hits, hit chance. */
 export function skillAttack(data, input, mob, skillId, lv) {
-	const job = typeof input.job === 'object' ? input.job : jobById(data, input.job);
-	const total = totals(job, input);
+	const c = resolve(data, input);
 	const sk = data.weapon_skills[skillId];
 	if (!sk || lv < 1 || lv > sk.lv.length || SPECIAL_SKILLS.has(skillId)) return null;
-	const hit = input.blv + total.dex + Math.floor(total.luk / 3) + 175;
+	const hit = c.blv + c.total.dex + Math.floor(c.total.luk / 3) + 175 + c.eq.hit;
 	return {
-		min: skillHitDamage(data, input, total, mob, skillId, lv, 'min'),
-		max: skillHitDamage(data, input, total, mob, skillId, lv, 'max'),
+		min: skillHitDamage(data, c, mob, skillId, lv, 'min'),
+		max: skillHitDamage(data, c, mob, skillId, lv, 'max'),
 		hits: Math.abs(sk.lv[lv - 1][2]) || 1,
 		hitRate: sk.nk & 0x40 ? 1 : Math.min(Math.max(hit - mob.flee, MIN_HITRATE), MAX_HITRATE) / 100
 	};

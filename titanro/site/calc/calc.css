@@ -62,3 +62,6 @@ main.wide { max-width: 1240px; }
 .calc .remain .num { font-weight: 600; }
 .calc .duo { margin-bottom: 12px; }
 .calc .table-wrap { max-width: 100%; }
+.calc table.slots input.item { min-width: 16em; padding: 2px 4px; font: inherit; font-size: 13px; }
+.calc table.slots input.card { width: 10em; margin: 0 4px 2px 0; padding: 2px 4px; font: inherit; font-size: 13px; }
+.calc table.slots td.cards { white-space: normal; }

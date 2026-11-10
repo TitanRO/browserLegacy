@@ -193,10 +193,21 @@ export class HelperPanels {
 				const [group, key] = option.key.split('.');
 				const label = document.createElement('label');
 				const box = document.createElement('input');
-				box.type = 'checkbox';
 				box.dataset.key = option.key;
-				box.checked = this.settings.get(group, key) === true;
-				box.addEventListener('change', () => this.setOption(group, key, box.checked));
+				if (option.type === 'choice') {
+					// one of several rows for the same setting: a radio button with the row's value
+					box.type = 'radio';
+					box.name = PREFIX + option.key;
+					box.dataset.value = String(option.value);
+					box.checked = this.settings.get(group, key) === option.value;
+					box.addEventListener('change', () => {
+						if (box.checked) this.settings.set({ [group]: { [key]: option.value } });
+					});
+				} else {
+					box.type = 'checkbox';
+					box.checked = this.settings.get(group, key) === true;
+					box.addEventListener('change', () => this.setOption(group, key, box.checked));
+				}
 				label.append(box, ' ' + option.label);
 				list.append(label);
 			}

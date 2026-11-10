@@ -13,7 +13,7 @@
  * - helper settings (HelperSettings.js): the master account's settings from the account service, shared with the
  *   launcher and the Windows client.
  * - the information panels (InfoPanels.js, InfoCore.js): target, exp tracker, loot alerts, damage log, MVP timers.
- * - display helpers (VisualHelpers.js): low effects, cast circles, trap
+ * - display helpers (VisualHelpers.js): effects level, ground-skill markers, cast circles, chat and cast ranges, trap
  *   markers, flat map, see-through props and the cell grid, drawn by the renderers from Renderer/VisualOptions.js;
  *   their rows in the helpers window are in HelperOptions.js.
  *
@@ -39,7 +39,6 @@ import ItemType from 'DB/Items/ItemType.js';
 import { startInfoPanels } from './InfoPanels.js';
 import { startVisualHelpers } from './VisualHelpers.js';
 import Session from 'Engine/SessionStorage.js';
-import Entity from 'Renderer/Entity/Entity.js';
 import EffectManager from 'Renderer/EffectManager.js';
 import MapEffects from 'Renderer/Map/Effects.js';
 import ScreenEffectManager from 'Renderer/ScreenEffectManager.js';
@@ -90,15 +89,16 @@ export default function Init(params) {
 	);
 	const info = startInfoPanels({ network: Network, settings, panels });
 
-	// Display helpers (low effects, cast circles, markers, flat map, props, grid): live, every zone
+	// Display helpers (effects level, RCX-style ground overlays, flat map, props, grid): live, every zone
 	const visual = startVisualHelpers({
 		settings,
 		network: Network,
 		packets: PACKET,
 		context: {
-			currentMap: () => MapRenderer.currentMap,
-			myId: () => Session.Entity && Session.Entity.GID,
-			isPlayer: entity => entity.objecttype === Entity.TYPE_PC
+			player: () =>
+				Session.Entity && Session.Entity.position
+					? { x: Math.round(Session.Entity.position[0]), y: Math.round(Session.Entity.position[1]) }
+					: null
 		},
 		onApplied: before => {
 			if (before.filter !== VisualOptions.effectFilter) {

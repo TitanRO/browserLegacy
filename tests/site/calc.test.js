@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 import { statusWindow, jobById } from '../../titanro/site/calc/calc.js';
 import { tiersOf, treeOf, setLevel } from '../../titanro/site/calc/skilltree.js';
 import { normalAttack, mobList, weaponSkills, skillAttack } from '../../titanro/site/calc/damage.js';
+import { itemMap, sumEquipment } from '../../titanro/site/calc/items.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const data = JSON.parse(fs.readFileSync(path.join(root, 'titanro/site/calc/data.json'), 'utf8'));
@@ -104,6 +105,50 @@ describe('damage calculator (normal attacks)', () => {
 			if (e.hit_max != null && e.hit_max > got.max) failures.push(`${c.id}: server hit ${e.hit_max}, above ${got.max}`);
 		}
 		expect(checked).toBeGreaterThan(offered.size * 3);
+		expect(failures.slice(0, 40)).toEqual([]);
+	});
+});
+
+describe('equipment and cards', () => {
+	const itemsJson = JSON.parse(fs.readFileSync(path.join(root, 'titanro/site/calc/items.json'), 'utf8'));
+	const items = itemMap(itemsJson);
+	const mobs = new Map(mobList(JSON.parse(fs.readFileSync(path.join(root, 'titanro/site/calc/mobs.json'), 'utf8'))).map((m) => [m.id, m]));
+	const equip = JSON.parse(fs.readFileSync(path.join(root, 'tests/site/equip-cases.json'), 'utf8'));
+
+	it('uses items and cases from the same server build', () => {
+		expect(itemsJson.source.titanro2).toBe(data.source.titanro2);
+		expect(equip.source.titanro2).toBe(data.source.titanro2);
+	});
+
+	// Characters in random equipment and cards: the status window and a normal attack, as the server computed them.
+	// A build with anything the calculator marks "not counted" is left out (it says so on the page). ASPD may be 1 ms
+	// off when equipment changes it by a percentage (the server's rounding there isn't understood yet).
+	it('matches the server for every build whose items it counts', () => {
+		const failures = [];
+		let checked = 0;
+		for (const c of equip.cases) {
+			const equips = c.input.equips.map((e) => ({ item: items.get(e.item), refine: e.refine, cards: e.cards.map((x) => items.get(x)) }));
+			const eq = sumEquipment(data, equips, itemsJson.combos);
+			if (eq.notCounted.length) continue;
+			checked++;
+			const w = equips.find((e) => e.item.type === 4);
+			const input = {
+				job: c.input.job, blv: c.input.blv, jlv: c.input.jlv, stats: c.input.stats, eq,
+				weapon: w ? { type: w.item.sub, atk: w.item.atk, matk: w.item.matk, wlv: w.item.wlv, refine: w.refine } : null,
+				shield: equips.some((e) => e.item.type === 5 && e.item.loc & 32)
+			};
+			const got = statusWindow(data, input);
+			for (const [field, want] of Object.entries(c.status)) {
+				const tol = field === 'amotion' && eq.aspdRate ? 1 : 0;
+				if (Math.abs(got[field] - want) > tol) failures.push(`${c.id} ${field}: server ${want}, calculator ${got[field]}`);
+			}
+			const a = normalAttack(data, input, mobs.get(c.mob));
+			const e = c.expect;
+			if (e.hit_kind === 'hit' && a.min !== e.hit) failures.push(`${c.id} hit: server ${e.hit}, calculator ${a.min}`);
+			if (e.min_kind === 'crit' && a.critMin !== e.min) failures.push(`${c.id} crit: server ${e.min}, calculator ${a.critMin}`);
+			if (e.hit_max != null && (e.hit_max > a.maxTotal || e.hit_max < a.minTotal)) failures.push(`${c.id} hit seen ${e.hit_max} outside ${a.minTotal}-${a.maxTotal}`);
+		}
+		expect(checked).toBeGreaterThan(400);
 		expect(failures.slice(0, 40)).toEqual([]);
 	});
 });

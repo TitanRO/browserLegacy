@@ -25,7 +25,7 @@
 	</section>
 	<div class="strip" id="window"></div>
 	<section class="box">
-		<h2 class="bar">Weapon settings</h2>
+		<h2 class="bar">Weapon settings <span class="barnote" id="wnote"></span></h2>
 		<div class="boxbody row">
 			<label>Weapon type <select id="wtype"></select></label>
 			<span id="wfields" class="row">
@@ -39,12 +39,14 @@
 		</div>
 	</section>
 	<section class="box">
-		<h2 class="bar">Weapon &amp; armor / cards <span class="barnote">equipment bonuses, cards and enchants: not counted yet</span></h2>
-		<div class="boxbody table-wrap">
-			<table class="grid slots" id="slots"></table>
+		<h2 class="bar">Weapon &amp; armor / cards <span class="barnote">bonuses as the server's item scripts give them</span></h2>
+		<div class="boxbody">
+			<div class="table-wrap"><table class="grid slots" id="slots"></table></div>
+			<div id="dls"></div>
+			<p class="muted" id="eqnote"></p>
 			<div class="row">
-				<label>Equipment DEF <input id="edef" type="number" min="0" value="0"></label>
-				<label>Equipment MDEF <input id="emdef" type="number" min="0" value="0"></label>
+				<label>Other DEF <input id="edef" type="number" min="0" value="0"></label>
+				<label>Other MDEF <input id="emdef" type="number" min="0" value="0"></label>
 			</div>
 		</div>
 	</section>
@@ -70,9 +72,9 @@
 					<table class="grid kv" id="results"></table>
 				</div>
 			</div>
-			<p class="muted">Counted: status ATK, the weapon (refine and over-refine), size and element, the monster's DEF and
-				FLEE, critical hits; for skills, their damage ratio, element and hits. Not counted yet: cards, equipment and
-				item bonuses, passive skills, buffs, arrows, elemental weapons, double attacks, skill cast and delay, and
+			<p class="muted">Counted: status ATK, the weapon (refine and over-refine), equipment and card bonuses (as listed
+				above), size and element, the monster's DEF and FLEE, critical hits; for skills, their damage ratio, element and
+				hits. Not counted yet: set bonuses, passive skills, buffs, arrows, double attacks, skill cast and delay, and
 				skills with a formula of their own (they aren't listed).</p>
 		</div>
 	</section>
@@ -83,6 +85,7 @@
 import { STATS, WEAPON_TYPES, statusWindow, statCost, totalStatPoints, spentStatPoints, jobBonus, aspd } from './calc/calc.js';
 import { jobGroups } from './calc/jobs.js';
 import { normalAttack, mobList, weaponSkills, skillAttack } from './calc/damage.js';
+import { SLOTS as EQ_SLOTS, itemMap, canEquip, sumEquipment } from './calc/items.js';
 
 const $ = (id) => document.getElementById(id);
 const LABEL = { str: 'STR', agi: 'AGI', vit: 'VIT', int: 'INT', dex: 'DEX', luk: 'LUK' };
@@ -98,8 +101,12 @@ const mobsReady = fetch('calc/mobs.json').then((r) => r.json()).then((m) => {
 	for (const x of mobs.values()) dl.appendChild(new Option(`${x.name} (${x.id})`, `${x.name} (${x.id})`));
 });
 const SUPPORTED = new Set(weaponSkills(data));
+let itemsJson = null;
+let items = null;
+const itemsReady = fetch('calc/items.json').then((r) => r.json()).then((j) => { itemsJson = j; items = itemMap(j); });
+const jobIndex = new Map(data.jobs.map((j, i) => [j.id, i]));
 const skillNames = new Map(data.skills.map((x) => [x.id, x.desc]));
-const state = { skill: 0, skilllv: 1, mob: 1002, job: 4008, blv: 99, jlv: 70, stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, wtype: 0, watk: 0, wmatk: 0, wlv: 1, refine: 0, shield: false, edef: 0, emdef: 0 };
+const state = { eq: {}, skill: 0, skilllv: 1, mob: 1002, job: 4008, blv: 99, jlv: 70, stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, wtype: 0, watk: 0, wmatk: 0, wlv: 1, refine: 0, shield: false, edef: 0, emdef: 0 };
 const DEFAULTS = JSON.parse(JSON.stringify(state));
 
 function readHash() {
@@ -111,6 +118,12 @@ function readHash() {
 	state.stats = { ...DEFAULTS.stats };
 	if (p.has('s')) p.get('s').split('.').forEach((v, i) => { if (i < 6 && isFinite(+v)) state.stats[STATS[i]] = Math.max(1, Math.trunc(+v)); });
 	state.shield = p.get('shield') === '1';
+	// eq=slot:item:refine:card:card...;...
+	state.eq = {};
+	for (const part of (p.get('eq') || '').split(';')) {
+		const [slot, item, refine, ...cards] = part.split(':');
+		if (slot && +item) state.eq[slot] = { item: +item, refine: +refine || 0, cards: cards.map(Number).filter(Boolean) };
+	}
 }
 
 function writeHash() {
@@ -121,6 +134,8 @@ function writeHash() {
 	if (state.shield) p.set('shield', '1');
 	if (state.edef) p.set('edef', state.edef);
 	if (state.emdef) p.set('emdef', state.emdef);
+	const eqs = Object.entries(state.eq).filter(([, e]) => e && e.item).map(([k, e]) => [k, e.item, e.refine].concat(e.cards).join(':'));
+	if (eqs.length) p.set('eq', eqs.join(';'));
 	p.set('mob', state.mob);
 	if (state.skill) { p.set('skill', state.skill); p.set('skilllv', state.skilllv); }
 	history.replaceState(null, '', '#' + p.toString());
@@ -150,12 +165,57 @@ function sanitize() {
 	return job;
 }
 
-const SLOTS = ['Upper headgear', 'Middle headgear', 'Lower headgear', 'Armor', 'Shield', 'Garment', 'Footgear', 'Accessory', 'Accessory'];
+const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const label = (it) => `${it.name} (${it.id})`;
+const parseId = (v) => +((v.match(/\((\d+)\)\s*$/) || [])[1] || v) || 0;
 
-function fillSlots() {
-	const ro = (t) => `<select disabled><option>${t}</option></select>`;
-	$('slots').innerHTML = '<tr><th>Slot</th><th>Refine</th><th>Item</th><th>Card</th><th>Enchant</th></tr>' +
-		SLOTS.map((name) => `<tr><th>${name}</th><td>${ro('+0')}</td><td>${ro('not counted yet')}</td><td>${ro('not counted yet')}</td><td>${ro('not counted yet')}</td></tr>`).join('');
+/** The equipment grid: per slot a refine, an item (the job's equippable items for the slot) and its card slots. */
+function renderSlots(job) {
+	if (!items) {
+		$('slots').innerHTML = '<tr><td>Loading items...</td></tr>';
+		return;
+	}
+	const ji = jobIndex.get(job.id);
+	let h = '<tr><th>Slot</th><th>Refine</th><th>Item</th><th>Cards</th></tr>';
+	for (const [key, name, loc] of EQ_SLOTS) {
+		const e = state.eq[key] || {};
+		const it = e.item && items.get(e.item);
+		const refines = it && it.refinable ? Array.from({ length: data.refine_armor.length }, (_, r) => `<option value="${r}"${r === e.refine ? ' selected' : ''}>+${r}</option>`).join('') : '<option>-</option>';
+		let cards = '';
+		for (let c = 0; c < (it ? it.slots : 0); c++) {
+			const cd = e.cards && e.cards[c] && items.get(e.cards[c]);
+			cards += `<input class="card" data-slot="${key}" data-card="${c}" list="dl-card-${key}" placeholder="Card" value="${cd ? esc(label(cd)) : ''}">`;
+		}
+		h += `<tr><th>${name}</th><td><select data-slot="${key}" data-k="refine"${it && it.refinable ? '' : ' disabled'}>${refines}</select></td>` +
+			`<td><input class="item" data-slot="${key}" list="dl-${key}" placeholder="None" value="${it ? esc(label(it)) : ''}"></td><td class="cards">${cards}</td></tr>`;
+	}
+	$('slots').innerHTML = h;
+	// datalists: what the job can wear in each slot, and cards for the slot's location
+	let dl = '';
+	for (const [key, , loc] of EQ_SLOTS) {
+		const opts = [];
+		const copts = [];
+		for (const it of items.values()) {
+			if (it.type === 6) {
+				if (it.loc & loc) copts.push(it);
+			} else if (it.loc & loc && canEquip(it, ji) && it.elv <= state.blv) opts.push(it);
+		}
+		dl += `<datalist id="dl-${key}">${opts.map((x) => `<option value="${esc(label(x))}">`).join('')}</datalist>`;
+		dl += `<datalist id="dl-card-${key}">${copts.map((x) => `<option value="${esc(label(x))}">`).join('')}</datalist>`;
+	}
+	$('dls').innerHTML = dl;
+}
+
+/** The equipped items as items.js wants them, the weapon from the weapon slot, and whether a shield is worn. */
+function equipment() {
+	if (!items) return null;
+	const equips = [];
+	for (const [key] of EQ_SLOTS) {
+		const e = state.eq[key];
+		const it = e && e.item && items.get(e.item);
+		if (it) equips.push({ slot: key, item: it, refine: e.refine || 0, cards: (e.cards || []).map((c) => items.get(c)).filter(Boolean) });
+	}
+	return equips;
 }
 
 function render() {
@@ -188,8 +248,30 @@ function render() {
 	$('shield').disabled = !job.shield;
 	$('edef').value = state.edef; $('emdef').value = state.emdef;
 
+	renderSlots(job);
 	const input = { job, blv: state.blv, jlv: state.jlv, stats: state.stats, shield: state.shield, equipDef: state.edef, equipMdef: state.emdef };
 	if (state.wtype) input.weapon = { type: state.wtype, atk: state.watk, matk: state.wmatk, wlv: state.wlv, refine: state.refine };
+	const equips = equipment();
+	let notes = '';
+	if (equips && equips.length) {
+		input.eq = sumEquipment(data, equips, itemsJson.combos || []);
+		const w = equips.find((e) => e.item.type === 4);
+		if (w) {
+			input.weapon = { type: w.item.sub, atk: w.item.atk, matk: w.item.matk, wlv: w.item.wlv, refine: w.refine };
+			if (![...$('wtype').options].some((o) => +o.value === w.item.sub)) $('wtype').appendChild(new Option(WEAPON_TYPES[w.item.sub], w.item.sub));
+			$('wtype').value = w.item.sub;
+			$('watk').value = w.item.atk; $('wmatk').value = w.item.matk; $('wlv').value = Math.min(w.item.wlv, 5) || 1; $('refine').value = w.refine;
+			$('wfields').hidden = false;
+		}
+		if (equips.some((e) => e.item.type === 5 && e.item.loc & 32)) input.shield = true;
+		const nc = [...new Set(input.eq.notCounted)];
+		const other = [...new Set(input.eq.other)];
+		if (nc.length) notes += `<b>Not counted yet:</b> ${nc.map(esc).join('; ')}. `;
+		if (other.length) notes += `<span class="muted">Effects these numbers don't show: ${other.map(esc).join('; ')}.</span>`;
+	}
+	$('eqnote').innerHTML = notes;
+	$('wnote').textContent = equips && equips.some((e) => e.item.type === 4) ? 'from the weapon slot' : 'or pick a weapon below';
+	for (const id of ['wtype', 'watk', 'wmatk', 'wlv', 'refine']) $(id).disabled = !!(equips && equips.some((e) => e.item.type === 4));
 	const w = statusWindow(data, input);
 	const cells = [
 		['Max HP', w.max_hp.toLocaleString()], ['Max SP', w.max_sp.toLocaleString()],
@@ -272,7 +354,6 @@ function renderCombat(input, w) {
 }
 
 fillJobs();
-fillSlots();
 readHash();
 render();
 $('source').textContent = `Numbers from the TitanRO game server's own tables and formulas (server build ${data.source.titanro2}).`;
@@ -293,6 +374,25 @@ $('mobq').addEventListener('change', (e) => {
 	if (mob) { state.mob = mob.id; render(); }
 });
 mobsReady.then(render);
+itemsReady.then(render);
+$('slots').addEventListener('change', (e) => {
+	const t = e.target;
+	const key = t.dataset.slot;
+	if (!key) return;
+	const cur = state.eq[key] || { item: 0, refine: 0, cards: [] };
+	if (t.classList.contains('item')) {
+		const id = parseId(t.value.trim());
+		state.eq[key] = id && items.get(id) ? { item: id, refine: 0, cards: [] } : null;
+	} else if (t.classList.contains('card')) {
+		const id = parseId(t.value.trim());
+		const cards = (cur.cards || []).slice();
+		cards[+t.dataset.card] = id && items.get(id) && items.get(id).type === 6 ? id : 0;
+		state.eq[key] = { ...cur, cards };
+	} else if (t.dataset.k === 'refine') {
+		state.eq[key] = { ...cur, refine: +t.value };
+	}
+	render();
+});
 $('skill').addEventListener('change', (e) => { state.skill = +e.target.value; state.skilllv = 99; render(); });
 $('skilllv').addEventListener('change', (e) => { state.skilllv = +e.target.value; render(); });
 </script>

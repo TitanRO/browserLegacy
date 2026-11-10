@@ -3058,4 +3058,4 @@ export default function EntityEngine() {
 	Network.hookPacket(PACKET.ZC.HAT_EFFECT, onHatEffects);
 }
 
-export { onEntityActionPosition, onEntityAction, onEntitySpam, onEntityViewChange };
+export { onEntityActionPosition, onEntityAction, onEntitySpam, onEntityViewChange, onEntityStatusChange };

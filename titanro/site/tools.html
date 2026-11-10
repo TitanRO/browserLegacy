@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TitanRO Allowed Tools</title>
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<header>
+	<h1>TitanRO Allowed Tools</h1>
+	<nav><a href="./">Play</a><a href="market.html">Market</a><a href="woe.html">WoE</a><a href="search.html">Database</a><a href="tools.html">Tools</a></nav>
+</header>
+<main>
+	<section class="panel">
+		<p>TitanRO builds the helpers players used to download into both game clients (Windows and web) and this site, the same for everyone. Each built-in below names the tool it replaces: <b>once the built-in is out, that tool is not allowed</b>. Helper panels open with <code>Ctrl+H</code> in game.</p>
+		<p class="muted">Not allowed at any time: bots, automated buying, client or packet edits that change what the client sends, and anything that shows what the game hides (hidden players, traps). Edited GRFs are replaced by the built-in views below.</p>
+	</section>
+	<section class="panel">
+		<h2>Built in</h2>
+		<div class="table-wrap"><table>
+			<thead><tr><th>Built-in</th><th>Where</th><th>Replaces (not allowed)</th><th>Status</th></tr></thead>
+			<tbody id="builtins"></tbody>
+		</table></div>
+	</section>
+	<section class="panel">
+		<h2>Allowed</h2>
+		<div class="table-wrap"><table>
+			<thead><tr><th>Tool</th><th>Notes</th></tr></thead>
+			<tbody id="allowed"></tbody>
+		</table></div>
+	</section>
+	<section class="panel">
+		<h2>Limits for everyone</h2>
+		<ul>
+			<li><b>Two characters online per TitanRO account</b>, on any mix of clients; the launcher and the server both enforce it.</li>
+			<li><b>One character per account inside a WoE castle.</b></li>
+			<li><b>Item use</b>: one item every 250 ms for everyone, by hand or with <code>@autopot</code>.</li>
+			<li><b>Market search</b>: one query every 2 seconds; no alerts on new listings.</li>
+			<li><b>Auto-follow</b> (Shift + right-click a character) walks only, and only on field maps.</li>
+		</ul>
+	</section>
+</main>
+<script>
+(function () {
+	'use strict';
+	// status: 'live' (in the game now) or 'soon' (before launch). Kept here so the page is updated with each release.
+	var BUILTINS = [
+		['Autopot', '@autopot (2 rules per character, server-side); autopot panel', 'Autopot programs and scripts', 'live'],
+		['Market search and price history', '@market, @price, the vending search panel, market.html', 'Vending scanners and market bots', 'live'],
+		['WoE tracker', 'woe.html', 'WoE trackers', 'soon'],
+		['Item, monster and drop search', 'search.html', 'Database and calculator sites (drop search)', 'soon'],
+		['Stat, damage and skill calculators', 'this site', 'Calculators and simulators (ROTool, rocalc-style)', 'soon'],
+		['Multi-client', 'the launcher (up to two characters)', 'Multi-client launchers and mutex patches', 'live'],
+		['Auto-follow', 'Shift + right-click a character', 'Auto-follow scripts and bot follow modes', 'soon'],
+		['Monster HP bars', 'over monsters and MVPs; target panel', 'HP-display hacks', 'live'],
+		['MVP timers', 'panel and site page', 'MVP timer sheets, Discord bots, spotters', 'soon'],
+		['Exp tracker', 'helper panel', 'Exp viewers (Vanirs Watch and others)', 'soon'],
+		['Loot and drop alerts', 'helper panel and sound', 'Drop alert tools', 'soon'],
+		['Enlarged drop sprites', 'game option', 'Enlarged or recolored drop sprite GRFs', 'soon'],
+		['Damage log and DPS', 'helper panel (own units only)', 'Damage and DPS meters', 'soon'],
+		['Camera zoom and angle', 'both clients, one cap', 'Zoom and camera unlock patches', 'soon'],
+		['Window, resolution, borderless', 'launcher graphics settings', 'Window wrappers (DxWnd, dgVoodoo)', 'soon'],
+		['Low effects', 'game option', 'Low-effect skins, "No Castle Effects" GRFs', 'soon'],
+		['No fog and bright maps', 'game option', 'No-fog and bright map GRFs', 'soon'],
+		['Cast-circle visibility', 'game option', 'Cast-circle effect mods', 'soon'],
+		['Trap and ground-skill markers', 'game option', 'Trap and ground-skill marker GRFs', 'soon'],
+		['Flat map mode', 'game option', 'Grayworld', 'soon'],
+		['White cells and grid', 'game option', 'White-cell and grid GRFs', 'soon'],
+		['Transparent props', 'game option', 'Transparent tree and wall GRFs', 'soon'],
+		['Player reports', '@report', 'Replay files sent to support', 'soon']
+	];
+	var ALLOWED = [
+		['Chat loggers', 'Keep your own chat history.'],
+		['Bigger fonts and UI skins', 'Readability and themes.'],
+		['Key remappers', 'One key, one action.']
+	];
+	function el(tag, text, cls) {
+		var e = document.createElement(tag);
+		if (text != null) e.textContent = text;
+		if (cls) e.className = cls;
+		return e;
+	}
+	var rows = document.getElementById('builtins');
+	BUILTINS.forEach(function (b) {
+		var tr = document.createElement('tr');
+		tr.appendChild(el('td', b[0]));
+		tr.appendChild(el('td', b[1], 'muted'));
+		tr.appendChild(el('td', b[2]));
+		tr.appendChild(el('td', b[3] === 'live' ? 'In the game' : 'Before launch', b[3] === 'live' ? 'sell' : 'muted'));
+		rows.appendChild(tr);
+	});
+	var allowed = document.getElementById('allowed');
+	ALLOWED.forEach(function (a) {
+		var tr = document.createElement('tr');
+		tr.appendChild(el('td', a[0]));
+		tr.appendChild(el('td', a[1], 'muted'));
+		allowed.appendChild(tr);
+	});
+})();
+</script>
+</body>
+</html>

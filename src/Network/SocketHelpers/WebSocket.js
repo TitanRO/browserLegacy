@@ -17,6 +17,10 @@
  * @param {?string} urlTemplate - direct WebSocket URL with {role}/{host}/{port} (server option `socketUrl`)
  * @param {?string} role - 'login', 'char' or 'map'
  */
+/* global __TITANRO_BUILD__ */
+/** This bundle's build (applications/tools/builder-web.mjs); 'dev' when run unbundled. */
+const BUILD = typeof __TITANRO_BUILD__ !== 'undefined' ? __TITANRO_BUILD__ : 'dev';
+
 function Socket(host, port, proxy, urlTemplate, role) {
 	const url = buildUrl(host, port, proxy, urlTemplate, role);
 	const self = this;
@@ -28,6 +32,11 @@ function Socket(host, port, proxy, urlTemplate, role) {
 
 	this.ws.onopen = function OnOpen() {
 		self.connected = true;
+		// Straight to a TitanRO game server (not through wsProxy, which would pass text into the game stream): the
+		// client_transport hello, naming this client and its build.
+		if (urlTemplate) {
+			self.ws.send(JSON.stringify({ type: 'hello', features: [], client: { kind: 'web', build: BUILD } }));
+		}
 		self.onComplete(true);
 	};
 

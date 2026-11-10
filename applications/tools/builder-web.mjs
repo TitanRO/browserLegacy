@@ -1,3 +1,5 @@
+import { execSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 /* eslint-disable */
 import fs from 'fs';
 import path from 'path';
@@ -13,6 +15,26 @@ const startTime = Date.now();
 const args = getArgs();
 
 const buildDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+// The build the game servers see in the WebSocket hello (Network/SocketHelpers/WebSocket.js): TITANRO_BUILD, else the
+// git commit, else a hash of src/.
+const buildId = (() => {
+	if (process.env.TITANRO_BUILD) return process.env.TITANRO_BUILD.slice(0, 64);
+	try {
+		return execSync('git rev-parse --short=12 HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+	} catch {
+		// No git in the image build (.dockerignore): the same sources always give the same id
+		const hash = createHash('sha256');
+		const walk = (dir) => {
+			for (const name of fs.readdirSync(dir).sort()) {
+				const file = path.join(dir, name);
+				if (fs.statSync(file).isDirectory()) walk(file);
+				else hash.update(name).update(fs.readFileSync(file));
+			}
+		};
+		walk(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../src'));
+		return 'src-' + hash.digest('hex').slice(0, 12);
+	}
+})();
 const dist = './dist/';
 const platform = 'Web';
 
@@ -115,6 +137,9 @@ async function compile(appName, isMinify) {
 			logLevel: 'warn',
 			resolve: {
 				alias: aliases
+			},
+			define: {
+				__TITANRO_BUILD__: JSON.stringify(buildId)
 			},
 			worker: {
 				rollupOptions: {

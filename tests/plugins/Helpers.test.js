@@ -186,6 +186,23 @@ describe('packet events', () => {
 		]);
 		expect(() => Network.onPacket({ name: 'unregistered' }, () => {})).toThrow();
 	});
+
+	it('JSON messages beside the game data reach their listeners and never the packet stream', () => {
+		let socket;
+		Network.setSocketFactory(() => (socket = { connected: true, close: vi.fn(), send: vi.fn(), sendText: vi.fn(() => true) }));
+		Network.connect('map', 1, () => {}, true);
+		socket.onComplete(true);
+		const got = [];
+		Network.onJson('mvps', message => got.push(message.mvps.length));
+		Network.onAnyPacket((pkt, id) => got.push(id));
+		socket.onMessage('{"type":"mvps","now":1,"mvps":[{"id":1039}]}');
+		socket.onMessage('{"type":"other"}');
+		socket.onMessage('not json');
+		socket.onMessage(new Uint8Array([0x9b, 0x09, 0x28, 0x00, 0x01, 0x02, 0x00, 0x00]));
+		expect(got).toEqual([1, 0x99b]);
+		expect(Network.sendJson({ type: 'mvps' })).toBe(true);
+		expect(socket.sendText).toHaveBeenCalledWith('{"type":"mvps"}');
+	});
 });
 
 describe('asset swaps', () => {

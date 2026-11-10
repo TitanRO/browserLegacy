@@ -29,11 +29,29 @@ import { HelperSettingsClient, TOKEN_EVENT } from './HelperSettings.js';
 import { ZoneSignal } from './Zone.js';
 import { HelperPanels } from './HelperPanels.js';
 import { zonePanel } from './ZonePanel.js';
+import { autopotPanel } from './AutopotPanel.js';
+import Inventory from 'UI/Components/Inventory/Inventory.js';
+import ItemType from 'DB/Items/ItemType.js';
 
 /** The shared pieces, once the plugin has started. */
 export const helpers = { settings: null, zone: null, panels: null };
 
 let started = false;
+
+/** The healing items in the inventory (the autopot panel's choices). */
+function healingItems() {
+	try {
+		const list = (Inventory.getUI && Inventory.getUI().list) || [];
+		const seen = new Map();
+		for (const item of list) {
+			if (item.type === ItemType.HEALING && !seen.has(item.ITID))
+				seen.set(item.ITID, { id: item.ITID, name: DB.getItemName(item) });
+		}
+		return [...seen.values()];
+	} catch {
+		return [];
+	}
+}
 
 export default function Init(params) {
 	if (started) return true;
@@ -48,6 +66,16 @@ export default function Init(params) {
 	// In the game: the map's UI is up (the chat box comes and goes with it).
 	const panels = new HelperPanels({ settings, inGame: () => !!ChatBox.__active });
 	panels.register(zonePanel(zone));
+	panels.register(
+		autopotPanel(
+			{
+				// The command goes out as if typed in the chat box; the server's answers come back as its messages.
+				send: text => ChatBox.onRequestTalk('', text, ChatBox.TYPE.PUBLIC),
+				onServerMessage: listener => Network.onPacket(PACKET.ZC.NOTIFY_PLAYERCHAT, pkt => listener(pkt.msg))
+			},
+			healingItems
+		)
+	);
 
 	zone.onChange((_state, entered) => {
 		if (entered) panels.refresh();

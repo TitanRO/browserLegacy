@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TitanRO Market</title>
+<link rel="stylesheet" href="site.css">
+<script src="data-api.js"></script>
+</head>
+<body>
+<header>
+	<h1>TitanRO Market</h1>
+	<nav><a href="./">Play</a><a href="market.html">Market</a><a href="woe.html">WoE</a><a href="search.html">Database</a><a href="tools.html">Tools</a></nav>
+</header>
+<main>
+	<section class="panel">
+		<form class="search" id="search">
+			<input id="q" type="search" placeholder="Item name or id, e.g. White Potion" autocomplete="off" minlength="2" maxlength="50" required>
+			<button type="submit">Search</button>
+		</form>
+		<p class="muted" id="note">Every open vending shop and buying store, refreshed every 2 minutes; sign in with your TitanRO account to search. In game: <code>@market</code> opens the shop search, <code>@price &lt;item&gt;</code> shows prices.</p>
+	</section>
+	<section class="panel" id="history" hidden>
+		<h2 id="h-title"></h2>
+		<div class="stats" id="h-stats"></div>
+		<div class="tabs" id="h-tabs"></div>
+		<div id="h-chart"></div>
+		<p class="muted">Daily median of vending sales of the plain item (no refine, no cards), weighted by amount; the bar runs from the day's lowest to highest sale.</p>
+	</section>
+	<section class="panel" id="results" hidden>
+		<div class="table-wrap"><table>
+			<thead><tr><th>Item</th><th></th><th class="num">Price (z)</th><th class="num">Amount</th><th>Shop</th><th>Owner</th><th>Where</th></tr></thead>
+			<tbody id="rows"></tbody>
+		</table></div>
+	</section>
+</main>
+<script>
+(function () {
+	'use strict';
+	var $ = function (id) { return document.getElementById(id); };
+	var names = {};
+	var current = { item: null, days: 30 };
+	var Q_MARKET = 'query ($q: String) { market(query: $q) { at items { id name slots } cards { id name slots }' +
+		' offers { kind itemId refine cards amount price owner shop map x y } } }';
+	var Q_HISTORY = 'query ($id: Int!, $days: Int) { priceHistory(itemId: $id, days: $days) { days median7 sales7 median30 sales30' +
+		' item { id name } daily { day sales volume median low high } } }';
+
+	function zeny(n) { return n == null ? '-' : Number(n).toLocaleString('en-US'); }
+	function el(tag, text, cls) {
+		var e = document.createElement(tag);
+		if (text != null) e.textContent = text;
+		if (cls) e.className = cls;
+		return e;
+	}
+	function itemLabel(o) {
+		var label = (o.refine > 0 ? '+' + o.refine + ' ' : '') + (names[o.itemId] || ('#' + o.itemId));
+		var cards = o.cards.filter(function (c) { return c > 0; }).map(function (c) { return names[c] || ('#' + c); });
+		return cards.length ? label + ' [' + cards.join(', ') + ']' : label;
+	}
+
+	function search(q) {
+		$('note').textContent = 'Searching...';
+		$('note').className = 'muted';
+		TitanROData.query(Q_MARKET, { q: q }).then(function (d) {
+			var r = d.market;
+			r.items.concat(r.cards).forEach(function (i) { names[i.id] = i.name + (i.slots ? ' [' + i.slots + ']' : ''); });
+			var rows = $('rows');
+			rows.textContent = '';
+			r.offers.forEach(function (o) {
+				var tr = document.createElement('tr');
+				var name = el('td');
+				var link = el('button', itemLabel(o), 'link');
+				link.addEventListener('click', function () { showHistory(o.itemId); });
+				name.appendChild(link);
+				tr.appendChild(name);
+				tr.appendChild(el('td', o.kind === 'SELL' ? 'Selling' : 'Buying', o.kind === 'SELL' ? 'sell' : 'buy'));
+				tr.appendChild(el('td', zeny(o.price), 'num'));
+				tr.appendChild(el('td', zeny(o.amount), 'num'));
+				tr.appendChild(el('td', o.shop));
+				tr.appendChild(el('td', o.owner));
+				tr.appendChild(el('td', o.map + ' ' + o.x + ', ' + o.y));
+				rows.appendChild(tr);
+			});
+			$('results').hidden = r.offers.length === 0;
+			var found = r.items.length;
+			$('note').textContent = found === 0 ? 'No item matches.' :
+				r.offers.length + ' open offer' + (r.offers.length === 1 ? '' : 's') + ' for ' + found + ' matching item' + (found === 1 ? '' : 's') +
+				' (as of ' + new Date(r.at).toLocaleTimeString() + ').';
+			if (found === 1) showHistory(r.items[0].id);
+			else if (found > 1 && r.offers.length === 0) {
+				$('note').textContent += ' Matches: ' + r.items.slice(0, 8).map(function (i) { return i.name; }).join(', ') + '.';
+			}
+		}).catch(function (e) {
+			TitanROData.showError($('note'), e);
+		});
+	}
+
+	function showHistory(itemId) {
+		current.item = itemId;
+		TitanROData.query(Q_HISTORY, { id: itemId, days: current.days }).then(function (d) {
+			var h = d.priceHistory;
+			if (!h) throw new Error('No item with that id.');
+			$('history').hidden = false;
+			$('h-title').textContent = h.item.name + ' (' + h.item.id + ')';
+			var stats = $('h-stats');
+			stats.textContent = '';
+			[['Median, 7 days', h.median7, h.sales7], ['Median, 30 days', h.median30, h.sales30]].forEach(function (s) {
+				var d = el('div');
+				d.appendChild(el('b', s[1] == null ? 'no sales' : zeny(s[1]) + ' z'));
+				d.appendChild(el('span', s[2] + ' sale' + (s[2] === 1 ? '' : 's'), 'muted'));
+				stats.appendChild(d);
+			});
+			var tabs = $('h-tabs');
+			tabs.textContent = '';
+			[7, 30, 90, 365].forEach(function (d) {
+				var b = el('button', d + ' days', d === current.days ? 'on' : '');
+				b.addEventListener('click', function () { current.days = d; showHistory(itemId); });
+				tabs.appendChild(b);
+			});
+			drawChart(h.daily, current.days);
+		}).catch(function (e) {
+			$('history').hidden = false;
+			$('h-chart').textContent = e.message;
+		});
+	}
+
+	// Daily median as a line with points; each day's low-high range as a whisker.
+	function drawChart(daily, days) {
+		var box = $('h-chart');
+		box.textContent = '';
+		if (daily.length === 0) { box.appendChild(el('p', 'No sales in this period.', 'muted')); return; }
+		var W = Math.max(320, Math.min(box.clientWidth || 700, 1060)), H = 220, L = 64, R = 12, T = 10, B = 26;
+		var end = Date.now(), start = end - days * 86400000;
+		var hi = Math.max.apply(null, daily.map(function (d) { return d.high; }));
+		var max = hi > 0 ? hi * 1.08 : 1;
+		var x = function (day) { return L + (Date.parse(day + 'T12:00:00Z') - start) / (end - start) * (W - L - R); };
+		var y = function (v) { return T + (1 - v / max) * (H - T - B); };
+		var ns = 'http://www.w3.org/2000/svg';
+		var svg = document.createElementNS(ns, 'svg');
+		svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+		svg.setAttribute('width', '100%');
+		svg.setAttribute('role', 'img');
+		svg.setAttribute('aria-label', 'Daily median sale price');
+		function add(tag, attrs, text) {
+			var e = document.createElementNS(ns, tag);
+			for (var k in attrs) e.setAttribute(k, attrs[k]);
+			if (text != null) e.textContent = text;
+			svg.appendChild(e);
+			return e;
+		}
+		for (var i = 0; i <= 4; i++) {
+			var v = max * i / 4, yy = y(v);
+			add('line', { x1: L, x2: W - R, y1: yy, y2: yy, stroke: 'var(--line)' });
+			add('text', { x: L - 6, y: yy + 4, 'text-anchor': 'end' }, zeny(Math.round(v)));
+		}
+		[start, (start + end) / 2, end].forEach(function (t, j) {
+			add('text', { x: L + j * (W - L - R) / 2, y: H - 6, 'text-anchor': ['start', 'middle', 'end'][j] },
+				new Date(t).toISOString().slice(5, 10));
+		});
+		daily.forEach(function (d) {
+			add('line', { x1: x(d.day), x2: x(d.day), y1: y(d.low), y2: y(d.high), stroke: 'var(--chart)', 'stroke-opacity': 0.45, 'stroke-width': 3 });
+		});
+		add('polyline', { points: daily.map(function (d) { return x(d.day) + ',' + y(d.median); }).join(' '), fill: 'none', stroke: 'var(--chart)', 'stroke-width': 2 });
+		daily.forEach(function (d) {
+			var c = add('circle', { cx: x(d.day), cy: y(d.median), r: 3.5, fill: 'var(--chart)' });
+			var t = document.createElementNS(ns, 'title');
+			t.textContent = d.day + ': median ' + zeny(d.median) + ' z, ' + zeny(d.low) + '-' + zeny(d.high) + ' z, ' + d.sales + ' sales, ' + zeny(d.volume) + ' sold';
+			c.appendChild(t);
+		});
+		box.appendChild(svg);
+	}
+
+	$('search').addEventListener('submit', function (e) {
+		e.preventDefault();
+		var q = $('q').value.trim();
+		history.replaceState(null, '', '?q=' + encodeURIComponent(q));
+		search(q);
+	});
+	var initial = new URLSearchParams(location.search).get('q');
+	if (initial) { $('q').value = initial; search(initial); }
+})();
+</script>
+</body>
+</html>

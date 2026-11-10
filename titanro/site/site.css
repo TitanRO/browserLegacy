@@ -1,0 +1,35 @@
+/* TitanRO site pages (market, WoE, tools): served next to the web client on play.titanro.net. */
+:root {
+	--bg: #f6f4ef; --panel: #ffffff; --ink: #222; --muted: #6b6b6b; --line: #ddd8cc;
+	--accent: #3a6ea5; --sell: #2a7a2a; --buy: #8a5a00; --chart: #3a6ea5; --band: rgba(58, 110, 165, 0.18);
+}
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #17191c; --panel: #202328; --ink: #e8e6e1; --muted: #9a9890; --line: #33373d;
+		--accent: #7fb0e6; --sell: #6cc36c; --buy: #e0a84a; --chart: #7fb0e6; --band: rgba(127, 176, 230, 0.2);
+	}
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap; }
+header h1 { margin: 0; font-size: 20px; }
+header nav a { color: var(--accent); margin-right: 12px; text-decoration: none; }
+main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px; margin-bottom: 16px; }
+.muted { color: var(--muted); }
+form.search { display: flex; gap: 8px; }
+form.search input { flex: 1; min-width: 0; padding: 8px 10px; font: inherit; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--ink); }
+button { padding: 8px 14px; font: inherit; border: 1px solid var(--accent); background: var(--accent); color: #fff; border-radius: 4px; cursor: pointer; }
+button.link { background: none; border: none; color: var(--accent); padding: 0; cursor: pointer; text-align: left; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; }
+th, td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+th { font-weight: 600; color: var(--muted); font-size: 13px; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.sell { color: var(--sell); } .buy { color: var(--buy); }
+.stats { display: flex; gap: 24px; flex-wrap: wrap; margin: 8px 0 12px; }
+.stats div b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+.tabs button { background: none; color: var(--accent); border: 1px solid var(--line); padding: 4px 10px; margin-right: 4px; }
+.tabs button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+svg text { fill: var(--muted); font-size: 11px; }
+.error { color: #b03030; }

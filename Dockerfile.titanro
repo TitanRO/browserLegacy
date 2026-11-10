@@ -36,3 +36,5 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 # --chown instead of a later `RUN chown -R`, which re-wrote every file into a second layer.
 COPY --chown=www-data:www-data --from=node /usr/app/dist/Web /var/www/html
 COPY --chown=www-data:www-data ./Config.local.js /var/www/html/
+# TitanRO's own pages next to the client (market, ...): they read public game data from the account service at runtime.
+COPY --chown=www-data:www-data ./titanro/site/ /var/www/html/

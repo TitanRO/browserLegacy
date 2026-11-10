@@ -27,6 +27,14 @@
 		<div id="sessions"></div>
 	</section>
 	<section class="panel">
+		<h2>Castle stills</h2>
+		<p class="muted">Each castle the moment its Emperium broke, and at the end of WoE, shown once that WoE has ended.</p>
+		<div class="table-wrap"><table>
+			<thead><tr><th>Time</th><th>Castle</th><th>Moment</th><th>Guild</th><th class="num">Units</th></tr></thead>
+			<tbody id="stills"></tbody>
+		</table></div>
+	</section>
+	<section class="panel">
 		<h2>Breaks and owner changes</h2>
 		<div class="table-wrap"><table>
 			<thead><tr><th>Time</th><th>Castle</th><th>Event</th><th>Guild</th></tr></thead>
@@ -52,6 +60,32 @@
 		return tr;
 	}
 	function when(t) { return new Date(t).toLocaleString(); }
+
+	var Q_STILLS = '{ woeSnapshots { id kind castleName map time guildId guildName units } }';
+	function loadStills() {
+		TitanROData.query(Q_STILLS).then(function (d) {
+			var stills = $('stills');
+			stills.textContent = '';
+			if (d.woeSnapshots.length === 0) {
+				var tr = row([['No stills yet.', 'muted']]);
+				tr.firstChild.colSpan = 5;
+				stills.appendChild(tr);
+			}
+			d.woeSnapshots.forEach(function (s) {
+				var tr = row([
+					[when(s.time)],
+					[s.castleName || s.map || '-'],
+					[''],
+					[s.guildName || (s.guildId ? '#' + s.guildId : '-')],
+					[String(s.units), 'num']
+				]);
+				var a = el('a', s.kind === 'BREAK' ? 'Emperium broken' : 'WoE ended');
+				a.href = 'woe-view.html?id=' + encodeURIComponent(s.id);
+				tr.children[2].appendChild(a);
+				stills.appendChild(tr);
+			});
+		}).catch(function () {});
+	}
 
 	function load() {
 		TitanROData.query(Q_WOE).then(function (d) {
@@ -102,7 +136,9 @@
 		});
 	}
 	load();
+	loadStills();
 	setInterval(load, 60000);
+	setInterval(loadStills, 300000);
 })();
 </script>
 </body>

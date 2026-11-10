@@ -11,8 +11,12 @@
  * their ground effect, started as far in as it was at that moment. Guild emblems come from the still. Units marked
  * hidden are drawn see-through, as a client with intravision draws them.
  *
- * Mouse: drag to turn, wheel to zoom, click to look at a cell. window.TitanROWoeViewer.lookAt(x, y) and .ready
- * (a promise, resolved once everything is placed) are for the page.
+ * The castle's warps (the still's own list, or woe-castle-warps.json for stills taken before stills had one) are drawn
+ * as portals, and clicking a portal to elsewhere on the castle map looks at where it leads, as walking through it
+ * would; portals to other maps are drawn but lead nowhere here. back() returns to the spot before.
+ *
+ * Mouse: drag to turn, wheel to zoom, click to look at a cell. window.TitanROWoeViewer.lookAt(x, y), .clickCell(x, y),
+ * .back() and .ready (a promise, resolved once everything is placed) are for the page.
  */
 
 import Queue from 'Utils/Queue.js';
@@ -50,9 +54,15 @@ const WoeViewer = {};
 WoeViewer.spot = Session.Entity = new Entity();
 WoeViewer.spot.intravision = true;
 
+// Ids for the portals (the still lists warps apart from its units)
+let _warpId = 0x7e000000;
+let _warps = [];
+let _map = '';
+const _history = [];
+
 let _resolveReady;
 WoeViewer.ready = new Promise(resolve => (_resolveReady = resolve));
-WoeViewer.placed = { units: 0, statuses: 0, cells: 0, groundEffects: 0 };
+WoeViewer.placed = { units: 0, statuses: 0, cells: 0, groundEffects: 0, warps: 0 };
 
 /**
  * The spawn packet of a unit of the still (PACKET.ZC.NOTIFY_STANDENTRY11's fields).
@@ -186,6 +196,65 @@ function emblems(still) {
 	}
 }
 
+/**
+ * The castle's portals: the still's warps, or the table exported from the server's scripts for older stills.
+ * @param {object} still - the woe_snapshot JSON
+ * @returns {Promise<object[]>} the warps ({x, y, xs, ys, to_map, to_x, to_y, hidden})
+ */
+function loadWarps(still) {
+	if (Array.isArray(still.warps)) return Promise.resolve(still.warps);
+	return fetch('woe-castle-warps.json')
+		.then(r => (r.ok ? r.json() : { castles: {} }))
+		.then(t => (t.castles && t.castles[still.map]) || [])
+		.catch(() => []);
+}
+
+/** Draws the portals players see (the warp NPC's sprite and effect, as the client draws a warp). */
+function placeWarps(warps) {
+	_warps = warps;
+	for (const w of warps) {
+		if (w.hidden) continue;
+		onEntitySpam({
+			objecttype: 6,
+			GID: _warpId++,
+			job: 45,
+			PosDir: [w.x, w.y, 0],
+			name: w.to_map === _map ? '' : w.to_map,
+			hp: -1,
+			maxhp: -1
+		});
+		WoeViewer.placed.warps++;
+	}
+}
+
+/**
+ * A click on a cell: through a portal to elsewhere on the castle map (it leads to its destination), else that cell.
+ * @returns {boolean} whether the click went through a portal
+ */
+WoeViewer.clickCell = function clickCell(x, y) {
+	const w = _warps.find(v => Math.abs(v.x - x) <= Math.max(v.xs, 1) && Math.abs(v.y - y) <= Math.max(v.ys, 1));
+	const from = [WoeViewer.spot.position[0], WoeViewer.spot.position[1]];
+	if (w && w.to_map === _map) {
+		_history.push(from);
+		WoeViewer.lookAt(w.to_x, w.to_y);
+		WoeViewer.onMove(true);
+		return true;
+	}
+	if (w) return false; // to another map: nowhere to go in a castle still
+	WoeViewer.lookAt(x, y);
+	return false;
+};
+
+/** Back to the spot before the last portal. */
+WoeViewer.back = function back() {
+	const spot = _history.pop();
+	if (spot) WoeViewer.lookAt(spot[0], spot[1]);
+	WoeViewer.onMove(_history.length > 0);
+};
+
+/** Set by the page: called after a portal or back(), with whether there is a spot to go back to. */
+WoeViewer.onMove = function onMove() {};
+
 /** The cell to look at first: the Emperium, else the middle of the units. */
 function focus(still) {
 	const units = still.units || [];
@@ -241,10 +310,12 @@ WoeViewer.init = function init() {
 	});
 
 	q.add(() => {
-		MapRenderer.onLoad = () => {
+		MapRenderer.onLoad = async () => {
 			BGM.stop();
+			_map = still.map;
 			place(still);
 			emblems(still);
+			placeWarps(await loadWarps(still));
 			const [x, y] = focus(still);
 			WoeViewer.lookAt(x, y);
 			Camera.setTarget(WoeViewer.spot);
@@ -256,7 +327,7 @@ WoeViewer.init = function init() {
 		MapControl.init();
 		MapControl.onRequestWalk = () => {
 			if (Mouse.world.x > -1 && Mouse.world.y > -1) {
-				WoeViewer.lookAt(Mouse.world.x, Mouse.world.y);
+				WoeViewer.clickCell(Mouse.world.x, Mouse.world.y);
 			}
 		};
 		MapRenderer.setMap(`${still.map}.rsw`);

@@ -19,7 +19,8 @@ export const HELPER_OPTIONS = [
 	{ section: 'Info', key: 'dropSprites.enabled', label: 'Large rare drops', type: 'toggle' },
 	{ section: 'Info', key: 'mvpTimers.panel', label: 'MVP timers', type: 'toggle' },
 	{ section: 'Info', key: 'damageLog.enabled', label: 'Damage log', type: 'toggle' },
-	{ section: 'Info', key: 'zonePanel.enabled', label: 'Zone', type: 'toggle' }
+	{ section: 'Info', key: 'zonePanel.enabled', label: 'Zone', type: 'toggle' },
+	{ section: 'Automation', key: 'autopot.panel', label: 'Autopot', type: 'toggle' }
 ];
 
 /** The entries this window can show, grouped: [{section, options: [...]}] in first-appearance order. */

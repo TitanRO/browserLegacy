@@ -4,7 +4,8 @@
  * public keys) with each query. A player signed in on the play page is signed in here too (the same Clerk session).
  *
  * window.TitanROData.query(gql, variables) resolves to the query's data, or rejects with an Error whose
- * `signIn` is true when the player has to sign in first. window.TitanROData.signIn() opens Clerk's sign-in.
+ * `signIn` is true when the player has to sign in first. With {signedOut: true} as a third argument, a player who
+ * isn't signed in asks without a token, and only gets the sign-in error if the API asks for one. window.TitanROData.signIn() opens Clerk's sign-in.
  *
  * ?api= overrides the API (testing).
  */
@@ -39,15 +40,21 @@
 		return e;
 	}
 
-	function query(gql, variables) {
+	function query(gql, variables, options) {
+		var signedOut = !!(options && options.signedOut);
 		return loadClerk().then(function (clerk) {
-			if (!clerk.session) throw needSignIn();
+			if (!clerk.session) {
+				if (signedOut) return null;
+				throw needSignIn();
+			}
 			return clerk.session.getToken();
 		}).then(function (token) {
-			if (!token) throw needSignIn();
+			if (!token && !signedOut) throw needSignIn();
+			var headers = { 'Content-Type': 'application/json' };
+			if (token) headers.Authorization = 'Bearer ' + token;
 			return fetch(API + '/graphql', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+				headers: headers,
 				body: JSON.stringify({ query: gql, variables: variables || {} })
 			});
 		}).then(function (r) {

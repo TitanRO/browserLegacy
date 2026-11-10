@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TitanRO Skill Simulator</title>
+<link rel="stylesheet" href="site.css">
+<link rel="stylesheet" href="calc/calc.css">
+</head>
+<body>
+<header>
+	<h1>TitanRO Skill Simulator</h1>
+	<nav><a href="./">Play</a><a href="market.html">Market</a><a href="woe.html">WoE</a><a href="search.html">Database</a><a href="stats.html">Stats</a><a href="skills.html">Skills</a><a href="tools.html">Tools</a></nav>
+</header>
+<main class="calc">
+	<section class="panel">
+		<div class="row">
+			<label>Job <select id="job"></select></label>
+			<button type="button" class="link" id="reset">Unlearn all</button>
+			<button type="button" class="link" id="share">Copy a link to this build</button> <span class="muted" id="shared"></span>
+		</div>
+		<p class="muted">Each job's skill points are its job levels less one, counted as if you changed jobs at the job's top
+			level. The server makes you spend a job's points before you learn the next job's skills. Raising a skill also
+			raises what it needs; lowering one unlearns the skills that need it. Quest skills (marked) cost no points.
+			Shift-click to go straight to the top or to 0.</p>
+	</section>
+	<div class="cols" id="tiers"></div>
+	<p class="muted" id="source"></p>
+</main>
+<script type="module">
+import { jobGroups } from './calc/jobs.js';
+import { skillMap, treeOf, tiersOf, pointsUsed, setLevel } from './calc/skilltree.js';
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const data = await fetch('calc/data.json').then((r) => r.json());
+const jobs = new Map(data.jobs.map((j) => [j.id, j]));
+const skills = skillMap(data);
+let job = jobs.get(4008) || data.jobs[0];
+let tree = treeOf(job);
+let levels = new Map();
+
+function readHash() {
+	const p = new URLSearchParams(location.hash.slice(1));
+	const id = +p.get('job');
+	if (jobs.has(id)) job = jobs.get(id);
+	tree = treeOf(job);
+	levels = new Map();
+	for (const pair of (p.get('s') || '').split('.')) {
+		const [sid, lv] = pair.split('-').map(Number);
+		if (tree.has(sid) && lv > 0) levels = setLevel(tree, levels, sid, lv);
+	}
+}
+
+function writeHash() {
+	const p = new URLSearchParams();
+	p.set('job', job.id);
+	const s = [...levels].filter(([, lv]) => lv > 0).map(([id, lv]) => `${id}-${lv}`).join('.');
+	if (s) p.set('s', s);
+	history.replaceState(null, '', '#' + p.toString());
+}
+
+function render() {
+	$('job').value = job.id;
+	const tiers = tiersOf(data, job);
+	const used = pointsUsed(data, tiers, levels);
+	const html = tiers.map((t, i) => {
+		const over = used[i] > t.points;
+		const early = i > 0 && used[i] > 0 && used[i - 1] < tiers[i - 1].points;
+		let h = `<section class="panel tier"><h2><span>${esc(t.job.name)}</span><span class="${over ? 'error' : ''}">${used[i]} / ${t.points}</span></h2>`;
+		if (over) h += `<p class="error">${used[i] - t.points} points more than ${esc(t.job.name)} has.</p>`;
+		if (early) h += `<p class="warn">The server asks for all ${tiers[i - 1].points} ${esc(tiers[i - 1].job.name)} points first.</p>`;
+		h += '<table>';
+		for (const id of t.skills) {
+			const e = tree.get(id);
+			const s = skills.get(id);
+			const lv = levels.get(id) || 0;
+			const need = e.need.map(([rid, rlv]) => `${esc(skills.get(rid)?.desc || rid)} ${rlv}`).join(', ');
+			const notes = [];
+			if (s.quest) notes.push('quest skill');
+			if (s.passive) notes.push('passive');
+			if (e.joblv) notes.push(`job level ${e.joblv}`);
+			h += `<tr class="skill${lv ? '' : ' off'}"><td>${esc(s.desc)}` +
+				(need ? `<div class="need">Needs ${need}</div>` : '') +
+				(notes.length ? `<div class="need">${notes.join(', ')}</div>` : '') +
+				`</td><td class="num pm"><button type="button" data-id="${id}" data-d="-1">-</button>` +
+				`<span class="lv">${lv} / ${e.max}</span><button type="button" data-id="${id}" data-d="1">+</button></td></tr>`;
+		}
+		return h + '</table></section>';
+	});
+	$('tiers').innerHTML = html.join('');
+	writeHash();
+}
+
+for (const [name, list] of jobGroups(data)) {
+	const g = document.createElement('optgroup');
+	g.label = name;
+	for (const j of list) g.appendChild(new Option(j.name, j.id));
+	$('job').appendChild(g);
+}
+readHash();
+render();
+$('source').textContent = `Skill trees as the TitanRO game server has them (server build ${data.source.titanro2}).`;
+
+$('job').addEventListener('change', (e) => { job = jobs.get(+e.target.value); tree = treeOf(job); levels = new Map(); render(); });
+$('tiers').addEventListener('click', (e) => {
+	const id = +e.target.dataset.id;
+	if (!id) return;
+	const cur = levels.get(id) || 0;
+	const d = +e.target.dataset.d;
+	const lv = e.shiftKey ? (d > 0 ? tree.get(id).max : 0) : cur + d;
+	levels = setLevel(tree, levels, id, lv);
+	render();
+});
+$('reset').addEventListener('click', () => { levels = new Map(); render(); });
+$('share').addEventListener('click', () => { navigator.clipboard.writeText(location.href).then(() => { $('shared').textContent = 'Copied.'; }, () => { $('shared').textContent = location.href; }); });
+window.addEventListener('hashchange', () => { readHash(); render(); });
+</script>
+</body>
+</html>

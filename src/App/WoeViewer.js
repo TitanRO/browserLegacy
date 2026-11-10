@@ -15,6 +15,8 @@
  * as portals, and clicking a portal to elsewhere on the castle map looks at where it leads, as walking through it
  * would; portals to other maps are drawn but lead nowhere here. back() returns to the spot before.
  *
+ * Hovering a unit shows its name as the client does (and a player's party, guild and title).
+ *
  * Mouse: drag to turn, wheel to zoom, click to look at a cell. window.TitanROWoeViewer.lookAt(x, y), .clickCell(x, y),
  * .back() and .ready (a promise, resolved once everything is placed) are for the page.
  */
@@ -112,12 +114,33 @@ function spawnPacket(u) {
 }
 
 /**
+ * What the client shows on hover (its own name display): the name, and for a player what a name request answers in
+ * game (party name, guild name and position, title) as the still has them. The still only has units the viewer may
+ * see, so nothing else gets a label.
+ * @param {object} u - a unit of the still
+ * @param {object} guilds - the still's guilds
+ */
+function nameDisplay(u, guilds) {
+	const entity = EntityManager.get(u.id);
+	if (!entity) return;
+	const display = entity.display;
+	display.name = u.name || '';
+	display.party_name = u.party_name || '';
+	display.guild_name = (u.t === 'pc' && u.guild && guilds[u.guild] && guilds[u.guild].name) || '';
+	display.guild_rank = u.guild_rank || '';
+	display.title_name = u.title ? DB.getTitleString(u.title) || '' : '';
+	display.load = display.TYPE.COMPLETE;
+	display.refresh(entity);
+}
+
+/**
  * Places the still's units, statuses and ground skills.
  * @param {object} still - the woe_snapshot JSON
  */
 function place(still) {
 	for (const u of still.units || []) {
 		onEntitySpam(spawnPacket(u));
+		nameDisplay(u, still.guilds || {});
 		WoeViewer.placed.units++;
 		for (const [, icon, ms, val] of u.sc || []) {
 			onEntityStatusChange({

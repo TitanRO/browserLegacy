@@ -21,6 +21,7 @@ export const HELPER_OPTIONS = [
 	{ section: 'Info', key: 'mvpTimers.panel', label: 'MVP timers', type: 'toggle' },
 	{ section: 'Info', key: 'damageLog.enabled', label: 'Damage log', type: 'toggle' },
 	{ section: 'Info', key: 'zonePanel.enabled', label: 'Zone', type: 'toggle' },
+	{ section: 'Info', key: 'performance.enabled', label: 'Performance (FPS, latency)', type: 'toggle' },
 	{ section: 'Info', key: 'woeTracker.panel', label: 'WoE tracker', type: 'toggle' },
 	{ section: 'Automation', key: 'autopot.panel', label: 'Autopot', type: 'toggle' },
 	{ section: 'Display', key: 'lowEffects.level', label: 'Effects: normal', type: 'choice', value: 0 },

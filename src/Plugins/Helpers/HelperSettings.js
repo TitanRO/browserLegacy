@@ -39,6 +39,7 @@ export const DEFAULT_SETTINGS = {
 	autopot: { panel: false },
 	woeTracker: { panel: false },
 	zonePanel: { enabled: false },
+	performance: { enabled: false },
 	// the chat window's tabs (Plugins/Helpers/ChatSync.js); no tabs = never saved
 	chat: { tabs: [], active: 0, window: null },
 	panels: {}

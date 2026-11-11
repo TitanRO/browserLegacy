@@ -231,6 +231,8 @@ function skillHitDamage(data, c, mob, skillId, lv, roll) {
 	const batk = sk.nk & NK_NO_ELEFIX ? statusAtk(c.total, type) : eleFix(data, statusAtk(c.total, type), ELE_NEUTRAL, mob);
 	let damage = batk + weaponDamage(data, c, mob, roll, roll, ele, sk.nk);
 	damage = Math.trunc((damage * ratio) / 100);
+	const skillAtk = (c.eq.skillAtk && c.eq.skillAtk[skillId]) || 0; // the equipment's damage % for this skill
+	if (skillAtk) damage += Math.trunc((damage * skillAtk) / 100);
 	if (c.eq.longAtkRate && longSkill(sk, lv, skillId)) damage += Math.trunc((damage * c.eq.longAtkRate) / 100);
 	if (!(sk.nk & NK_IGNORE_DEF)) damage = applyDef(damage, defOf(c, mob));
 	const hurts = data.attr_fix[Math.max(mob.element_lv, 1) - 1][ele][mob.element] > 0;

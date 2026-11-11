@@ -86,7 +86,7 @@ export const NO_EQUIPMENT = {
 	atkRate: 0, critAtkRate: 0, longAtkRate: 0, addrace: new Array(14).fill(0), addele: new Array(10).fill(0),
 	addsize: [0, 0, 0], ignoreDef: new Array(14).fill(0), weaponEle: 0, arrowAtk: 0, arrowCri: 0, doubleRate: 0, doubleAddRate: 0,
 	varCastRate: 0, fixCastRate: 0, addVarCast: 0, addFixCast: 0, delayRate: 0, skillCast: {}, skillFixCastRate: {},
-	skillVarCast: {}, skillFixCast: {}, notCounted: [], other: []
+	skillVarCast: {}, skillFixCast: {}, skillAtk: {}, notCounted: [], other: []
 };
 
 /**

@@ -34,7 +34,7 @@ const IT_WEAPON = 4;
  * Items whose effect in some builds differs from their recorded bonuses (found by tests/site's server cases): shown
  * as not counted until the difference is understood.
  */
-const UNVERIFIED = new Set([4835, 4839, 4841, 20742, 2646, 490206, 28520]);
+const UNVERIFIED = new Set([20742]);
 const IT_CARD = 6;
 
 /** items.json rows as objects (keyed by id). */
@@ -119,7 +119,7 @@ export function sumEquipment(data, equips, combos = [], weaponType = null) {
 		addrace: new Array(RC_MAX).fill(0), addele: new Array(10).fill(0), addsize: [0, 0, 0],
 		ignoreDef: new Array(RC_MAX).fill(0), weaponEle: 0, arrowAtk: 0, arrowCri: 0, doubleRate: 0, doubleAddRate: 0,
 		varCastRate: 0, fixCastRate: 0, addVarCast: 0, addFixCast: 0, delayRate: 0,
-		skillCast: {}, skillFixCastRate: {}, skillVarCast: {}, skillFixCast: {},
+		skillCast: {}, skillFixCastRate: {}, skillVarCast: {}, skillFixCast: {}, skillAtk: {},
 		refineDef: 0, notCounted: [], other: []
 	};
 	const weapon = equips.find((e) => e && e.item && e.item.type === IT_WEAPON);
@@ -234,6 +234,10 @@ function apply(t, b, src, isCard, shield = '') {
 	if (CAST_BONUS.has(name) && !(name === 'SP_CASTRATE' && args.length < 2)) {
 		if (shield === 'ammo') return; // not from ammunition (lr_flag 2)
 		castBonus(t, name, args);
+		return;
+	}
+	if (name === 'SP_SKILL_ATK') {
+		if (shield !== 'ammo') t.skillAtk[args[0]] = (t.skillAtk[args[0]] || 0) + val; // bonus2 bSkillAtk: one skill's damage %
 		return;
 	}
 	if (name === 'SP_DOUBLE_RATE' || name === 'SP_DOUBLE_ADD_RATE') {

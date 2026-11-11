@@ -48,8 +48,12 @@ number of characters.
 - A click inside the name being edited only moves the caret: the rename stays
   open, as in the client.
 - A tab added with `+` starts with every filter off, as in the client.
-- The filter window's `All on` box (label included) does the same as the
-  client's.
+- The filter window has `All on` and `All off` buttons instead of the
+  client's `all on` box (same effect: every filter of the tab on, or off).
+- Per tab, the filter window also sets a font size (10-20 px, or the default)
+  and family, and "Show type tags" (a `[Party]`-style tag before each line).
+  Tabs, filters, fonts and tags are kept in the master account's helper
+  settings (`Plugins/Helpers/ChatSync.js`).
 
 ## Deviations
 

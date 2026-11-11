@@ -18,7 +18,8 @@
 		<div class="clear"></div>
 	</div>
 	<div class="panel" data-background="basic_interface/chatwin1_mid.bmp">
-		<div class="content resize">
+		<div class="content">
+			<div class="section">Message filters (this tab)</div>
 			<div class="listoption">
 				<button data-id="0" data-background="basic_interface/grp_offline.bmp" data-text="1291">
 					Public Log
@@ -68,14 +69,28 @@
 					Battlefield
 				</button>
 				<button data-id="21" data-background="basic_interface/grp_offline.bmp" data-text="2365">Clan</button>
-				<!--<button data-id="22" data-background="basic_interface/grp_offline.bmp" data-text="">Call</button>-->
 			</div>
-			<div class="clear"></div>
-			<div class="footer-opt">
-				<button class="allon" data-background="checkbox_0.bmp" data-preload="checkbox_1.bmp"></button>
-				All on
+			<div class="filter-actions">
+				<button class="btn allon" type="button">All on</button>
+				<button class="btn alloff" type="button">All off</button>
+				<span class="typetags"
+					><button
+						class="check"
+						type="button"
+						data-background="checkbox_0.bmp"
+						data-preload="checkbox_1.bmp"
+					></button>
+					Show type tags</span
+				>
 			</div>
+			<div class="section">Font (this tab)</div>
+			<div class="font-size">
+				<button class="btn smaller" type="button" title="Smaller">&minus;</button>
+				<span class="size">Default</span>
+				<button class="btn larger" type="button" title="Larger">+</button>
+				<button class="btn reset" type="button">Reset</button>
+			</div>
+			<div class="families"></div>
 		</div>
 	</div>
-	<button class="extend"></button>
 </div>

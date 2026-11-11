@@ -40,7 +40,7 @@ const MI_ECHOSONG = 2382;
 const WM_LERADS_DEW = 2431;
 const WM_FRIGG_SONG = 5007;
 /** Buffs counted by formula (the caster's or the character's own levels and stats), not data.json's table. */
-const FORMULA_BUFFS = new Set([AC_CONCENTRATION, AB_CLEMENTIA, AB_CANTO, BA_APPLEIDUN, DC_SERVICEFORYOU, WA_SWING_DANCE,
+export const FORMULA_BUFFS = new Set([AC_CONCENTRATION, AB_CLEMENTIA, AB_CANTO, BA_APPLEIDUN, DC_SERVICEFORYOU, WA_SWING_DANCE,
 	WA_SYMPHONY_OF_LOVER, MI_RUSH_WINDMILL, MI_ECHOSONG, WM_LERADS_DEW, WM_FRIGG_SONG]);
 /** Songs that end each other (one of each group at a time): the Bard and Dancer songs; the Voice Lesson songs. */
 export const SONG_GROUPS = [[319, 320, 321, 322, 327, 329, 330], [2350, 2351, 2352, 2381, 2382]];

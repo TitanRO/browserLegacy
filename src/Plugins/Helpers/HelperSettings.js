@@ -34,7 +34,6 @@ export const DEFAULT_SETTINGS = {
 	castRange: { enabled: false },
 	flatMap: { enabled: false, hideProps: false },
 	transparentProps: { enabled: false },
-	cellGrid: { enabled: false },
 	damageLog: { enabled: false },
 	autopot: { panel: false },
 	woeTracker: { panel: false },
@@ -55,8 +54,14 @@ export function mergePatch(target, patch) {
 	return out;
 }
 
-/** The document with the defaults under it (a reset setting falls back to its default). */
+/**
+ * The document with the defaults under it (a reset setting falls back to its default). The cell grid used to be its
+ * own setting (cellGrid.enabled); it is part of Grayworld (flatMap.enabled) now, so a grid that was on turns Grayworld on.
+ */
 function withDefaults(defaults, settings) {
+	if (settings?.cellGrid?.enabled === true && settings?.flatMap?.enabled !== true) {
+		settings = { ...settings, flatMap: { ...(settings.flatMap || {}), enabled: true } };
+	}
 	const out = {};
 	for (const [section, values] of Object.entries(defaults)) {
 		out[section] =

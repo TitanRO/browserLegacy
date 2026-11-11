@@ -2,8 +2,8 @@
  * Plugins/Helpers/VisualHelpers.js
  *
  * The display helpers (Build-in roadmap features 9 to 15, and RCX parity) in the web client: the effects level,
- * ground-skill and trap markers, cast circles, the chat and cast ranges, flat map with hidden props, see-through props
- * and the cell grid (fog and lighting are the client's own /fog and /lightmap). The player's helper settings turn
+ * ground-skill and trap markers, cast circles, the chat and cast ranges, Grayworld (flat map and cell grid together)
+ * with hidden props, see-through props (fog and lighting are the client's own /fog and /lightmap). The player's helper settings turn
  * them on; Renderer/VisualOptions.js and Renderer/Map/GroundMarkers.js draw them from the next frame. The Windows
  * client (TitanRONet.dll) has the same options, with the same colours (GroundColors.json).
  *
@@ -161,7 +161,7 @@ export function visualOptions(get, heavy) {
 		flatGround: get('flatMap', 'enabled') === true,
 		hideProps: get('flatMap', 'hideProps') === true,
 		propAlpha: get('transparentProps', 'enabled') === true ? PROP_ALPHA : 1,
-		cellGrid: get('cellGrid', 'enabled') === true,
+		cellGrid: get('flatMap', 'enabled') === true, // Grayworld: flat ground and the cell grid together
 		hideWeather: level >= MINIMUM,
 		effectFilter: effectFilter(level, heavy)
 	};

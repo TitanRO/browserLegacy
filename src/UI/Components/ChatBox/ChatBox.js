@@ -8,6 +8,7 @@
  * @author Vincent Thibault
  */
 
+import { tabFontCss } from './ChatFonts.js';
 import DB from 'DB/DBManager.js';
 import Renderer from 'Renderer/Renderer.js';
 import Client from 'Core/Client.js';
@@ -170,6 +171,60 @@ ChatBox.tabCount = 0;
 ChatBox.activeTab = 0;
 
 ChatBox.tabs = [];
+
+/**
+ * The [tag] a tab with type tags puts before each line, by filter (ChatBox.FILTER).
+ */
+ChatBox.TYPE_TAGS = [
+	'Public',
+	'Chat',
+	'Whisper',
+	'Party',
+	'Guild',
+	'Item',
+	'Equip',
+	'Status',
+	'Party item',
+	'Party status',
+	'Skill',
+	'Party setup',
+	'Damage',
+	'WoE',
+	'Party search',
+	'Battle',
+	'Party battle',
+	'EXP',
+	'Party EXP',
+	'Quest',
+	'Battlefield',
+	'Clan'
+];
+
+/** At most this many tabs (the client's limit, which the account settings keep too). */
+ChatBox.MAX_TABS = 10;
+/** A tab's name in the account settings: at most this many characters. */
+ChatBox.MAX_TAB_NAME = 24;
+
+const _chatListeners = new Set();
+
+/**
+ * listener() after the player changes the tabs: added, removed, renamed, switched, their filters, font or type tags.
+ * Returns a function that stops it. (Plugins/Helpers/ChatSync.js keeps them in the account's helper settings.)
+ */
+ChatBox.onChatChange = function onChatChange(listener) {
+	_chatListeners.add(listener);
+	return () => _chatListeners.delete(listener);
+};
+
+ChatBox.notifyChatChange = function notifyChatChange() {
+	for (const listener of _chatListeners) {
+		try {
+			listener();
+		} catch (error) {
+			console.warn('[ChatBox] chat change listener', error);
+		}
+	}
+};
 
 /**
  * Initialize UI
@@ -396,6 +451,7 @@ ChatBox.init = function init() {
 			if (name) {
 				ChatBox.tabs[input.closest('td.tab').dataset.tab].name = name;
 				input.blur();
+				ChatBox.notifyChatChange();
 			}
 		} else if (event.key === 'Escape') {
 			event.stopPropagation();
@@ -620,6 +676,7 @@ ChatBox.init = function init() {
 				// As in the client, a tab the player adds starts with every filter off
 				ChatBox.addNewTab(undefined, []);
 				ChatBox.onAppend();
+				ChatBox.notifyChatChange();
 			}
 		});
 	}
@@ -661,6 +718,10 @@ ChatBox.init = function init() {
 	}
 
 	// Init settings window as well
+	// The settings window edits the tabs this box owns
+	ChatBoxSettings.styleOf = tabID => ChatBox.tabs[tabID] || null;
+	ChatBoxSettings.setStyle = (tabID, change) => ChatBox.setTabStyle(tabID, change);
+	ChatBoxSettings.onFiltersChanged = () => ChatBox.notifyChatChange();
 	ChatBoxSettings.append();
 
 	if (_preferences.tabs.length > 0 && _preferences.tabs.length == _preferences.tabOption.length) {
@@ -669,7 +730,7 @@ ChatBox.init = function init() {
 			if (_preferences.tabs[i]) {
 				const tabName = _preferences.tabs[i].name;
 				const tabSettings = _preferences.tabOption[i];
-				ChatBox.addNewTab(tabName, tabSettings);
+				ChatBox.addNewTab(tabName, tabSettings, _preferences.tabs[i]);
 			}
 		}
 
@@ -779,9 +840,10 @@ ChatBox.removeTab = function removeTab() {
 	const onInput = root.querySelector('.header tr td div.on input');
 	const tabName = onInput ? onInput.value : '';
 	ChatBoxSettings.updateTab(this.activeTab, tabName);
+	ChatBox.notifyChatChange();
 };
 
-ChatBox.addNewTab = function addNewTab(name, settings) {
+ChatBox.addNewTab = function addNewTab(name, settings, style) {
 	const root = _root();
 
 	if (!name) {
@@ -820,6 +882,11 @@ ChatBox.addNewTab = function addNewTab(name, settings) {
 	const tab = {};
 	tab.id = tabID;
 	tab.name = tabName;
+	tab.font = {
+		size: Number.isInteger(style?.font?.size) ? style.font.size : null,
+		family: style?.font?.family || 'default'
+	};
+	tab.typeTags = style?.typeTags === true;
 
 	// Remove current active state
 	root.querySelectorAll('table.header tr td.tab div').forEach(el => el.classList.remove('on'));
@@ -860,6 +927,7 @@ ChatBox.addNewTab = function addNewTab(name, settings) {
 	this.activeTab = tabID;
 
 	this.tabCount++;
+	ChatBox.applyTabStyle(tabID);
 
 	ChatBoxSettings.updateTab(this.activeTab, tabName);
 
@@ -887,6 +955,73 @@ ChatBox.switchTab = function switchTab(tabID) {
 	const tabName = onInput ? onInput.value : '';
 
 	ChatBoxSettings.updateTab(this.activeTab, tabName);
+	ChatBox.notifyChatChange();
+};
+
+/**
+ * A tab's font (size in px or null for the chat's default, and family) and type tags, applied at once.
+ * @param {number} tabID
+ * @param {{font?: {size: number|null, family: string}, typeTags?: boolean}} change
+ */
+ChatBox.setTabStyle = function setTabStyle(tabID, change) {
+	const tab = this.tabs[tabID];
+	if (!tab) return;
+	if (change.font) tab.font = { ...tab.font, ...change.font };
+	if (typeof change.typeTags === 'boolean') tab.typeTags = change.typeTags;
+	ChatBox.applyTabStyle(tabID);
+	ChatBox.notifyChatChange();
+};
+
+/** Draws a tab's messages in its font: the tab's size and family over the chat's own (applyFontScale). */
+ChatBox.applyTabStyle = function applyTabStyle(tabID) {
+	const tab = this.tabs[tabID];
+	const content = _root().querySelector(`.body .content[data-content="${tabID}"]`);
+	if (!tab || !content) return;
+	const css = tabFontCss(tab.font);
+	const scaled = scaledChatFont();
+	content.style.fontSize = css.fontSize || `${scaled.fontSize}px`;
+	content.style.lineHeight = css.lineHeight || `${scaled.lineHeight}px`;
+	content.style.fontFamily = css.fontFamily;
+};
+
+/**
+ * The tabs as the account settings keep them (account-service `chat` section): in tab order, the one shown as
+ * `active`. The web client has no torn-off tabs, so `window` is null.
+ */
+ChatBox.exportChat = function exportChat() {
+	const tabs = [];
+	let active = 0;
+	this.tabs.forEach((tab, id) => {
+		if (!tab || tabs.length >= ChatBox.MAX_TABS) return;
+		if (String(id) === String(this.activeTab)) active = tabs.length;
+		const name = [...(tab.name || '').trim()].slice(0, ChatBox.MAX_TAB_NAME).join('') || 'Tab';
+		tabs.push({
+			name,
+			filters: [...new Set(ChatBoxSettings.tabOption[id] || [])].sort((a, b) => a - b),
+			font: {
+				size: Number.isInteger(tab.font?.size) ? tab.font.size : null,
+				family: tab.font?.family || 'default'
+			},
+			typeTags: !!tab.typeTags,
+			window: null
+		});
+	});
+	return { tabs, active };
+};
+
+/** Replaces every tab with the account's (`chat` section); nothing happens for an empty list. */
+ChatBox.importChat = function importChat(chat) {
+	if (!chat || !Array.isArray(chat.tabs) || !chat.tabs.length) return;
+	const root = _root();
+	root.querySelectorAll('table.header tr td.tab').forEach(el => el.remove());
+	root.querySelectorAll('.body .content').forEach(el => el.remove());
+	this.tabs = [];
+	ChatBoxSettings.tabOption = [];
+	this.tabCount = 0;
+	const ids = chat.tabs
+		.slice(0, ChatBox.MAX_TABS)
+		.map(tab => ChatBox.addNewTab(tab.name, [...(tab.filters || [])], tab));
+	ChatBox.switchTab(ids[chat.active] ?? ids[0]);
 };
 
 /**
@@ -1389,14 +1524,16 @@ function flushMessageBuffer() {
 		const fragment = document.createDocumentFragment();
 		const wasAtBottom = shouldScrollDownBeforeAdd(content, content.offsetHeight);
 
+		const tagged = !!ChatBox.tabs[TabNum]?.typeTags;
 		messagesByTab[TabNum].forEach(msg => {
 			const color = msg.color || getColorForType(msg.colorType);
 			const div = document.createElement('div');
 			div.style.color = color;
+			const tag = tagged ? `[${ChatBox.TYPE_TAGS[msg.filterType] || 'Public'}] ` : '';
 			if (!msg.override) {
-				div.textContent = msg.text;
+				div.textContent = tag + msg.text;
 			} else {
-				div.innerHTML = msg.text;
+				div.innerHTML = ChatBox.escapeHTML(tag) + msg.text;
 			}
 			fragment.appendChild(div);
 		});
@@ -1764,16 +1901,20 @@ function getScrollLineHeightPx(element) {
 	return 14;
 }
 
+/** The chat's own font size and line height (its font scale), for tabs without a size of their own. */
+function scaledChatFont() {
+	const scale = clampChatFontScale(_preferences.fontScale || 1.0);
+	return {
+		scale,
+		fontSize: Math.max(10, Math.round(12 * scale)),
+		lineHeight: Math.max(12, Math.round(14 * scale)),
+		inputLineHeight: Math.max(14, Math.round(18 * scale))
+	};
+}
+
 ChatBox.applyFontScale = function applyFontScale() {
 	const root = _root();
-	const scale = clampChatFontScale(_preferences.fontScale || 1.0);
-	const baseFont = 12;
-	const baseLineHeight = 14;
-	const baseInputLineHeight = 18;
-
-	const fontSize = Math.max(10, Math.round(baseFont * scale));
-	const lineHeight = Math.max(12, Math.round(baseLineHeight * scale));
-	const inputLineHeight = Math.max(14, Math.round(baseInputLineHeight * scale));
+	const { scale, fontSize, lineHeight, inputLineHeight } = scaledChatFont();
 
 	_preferences.fontScale = scale;
 
@@ -1782,6 +1923,8 @@ ChatBox.applyFontScale = function applyFontScale() {
 		el.style.fontSize = `${fontSize}px`;
 		el.style.lineHeight = `${lineHeight}px`;
 	});
+	// tabs with a font of their own
+	ChatBox.tabs.forEach((_tab, id) => ChatBox.applyTabStyle(id));
 
 	// Chat input
 	root.querySelectorAll('.input input, .input .message').forEach(el => {

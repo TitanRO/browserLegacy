@@ -39,6 +39,8 @@ export const DEFAULT_SETTINGS = {
 	autopot: { panel: false },
 	woeTracker: { panel: false },
 	zonePanel: { enabled: false },
+	// the chat window's tabs (Plugins/Helpers/ChatSync.js); no tabs = never saved
+	chat: { tabs: [], active: 0, window: null },
 	panels: {}
 };
 
@@ -229,6 +231,8 @@ export class HelperSettingsClient {
 
 	/** The service's answer, with any change made since it was sent still over it. */
 	_accept(response, unsaved) {
+		/** The service has answered this session: the account's settings are known. */
+		this.answered = true;
 		this.revision = response.revision;
 		if (response.defaults) this.defaults = response.defaults;
 		this.settings = withDefaults(

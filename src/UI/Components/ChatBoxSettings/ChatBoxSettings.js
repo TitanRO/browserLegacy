@@ -10,9 +10,15 @@ import DB from 'DB/DBManager.js';
 import Preferences from 'Core/Preferences.js';
 import Renderer from 'Renderer/Renderer.js';
 import Client from 'Core/Client.js';
-import Mouse from 'Controls/MouseEventHandler.js';
 import UIManager from 'UI/UIManager.js';
 import GUIComponent from 'UI/GUIComponent.js';
+import {
+	CHAT_FONT_FAMILIES,
+	CHAT_FONT_LABELS,
+	CHAT_FONT_SIZE,
+	UI_FONT_STACK,
+	fontInstalled
+} from 'UI/Components/ChatBox/ChatFonts.js';
 import htmlText from './ChatBoxSettings.html?raw';
 import cssText from './ChatBoxSettings.css?raw';
 
@@ -42,23 +48,24 @@ const _preferences = Preferences.get(
 	'ChatBoxSettings',
 	{
 		x: 480,
-		y: 200,
-		width: 7,
-		height: 4
+		y: 200
 	},
 	1.0
 );
+
+/**
+ * The active tab's font and type tags, and how to change them: ChatBox fills these in (it owns the tabs; this window
+ * only shows and edits them). `onFiltersChanged` runs after the player changes a tab's filters.
+ */
+ChatBoxSettings.styleOf = () => null;
+ChatBoxSettings.setStyle = () => {};
+ChatBoxSettings.onFiltersChanged = () => {};
 
 /**
  * Initialize UI
  */
 ChatBoxSettings.init = function init() {
 	const root = this.getRoot();
-
-	const extendBtn = root.querySelector('.extend');
-	if (extendBtn) {
-		extendBtn.addEventListener('mousedown', onResize);
-	}
 
 	const closeBtn = root.querySelector('.close');
 	if (closeBtn) {
@@ -78,12 +85,39 @@ ChatBoxSettings.init = function init() {
 		});
 	}
 
-	// "All on" turns every filter of the tab on, or every one off when they all are
-	const allOn = root.querySelector('.footer-opt');
-	if (allOn) {
-		allOn.addEventListener('click', () => {
-			ChatBoxSettings.tabOption[ChatBoxSettings.activeTab] = isAllOn() ? [] : filterIds();
-			ChatBoxSettings.updateTab(ChatBoxSettings.activeTab, root.querySelector('.tabname').textContent);
+	root.querySelector('.allon')?.addEventListener('click', () => setAllFilters(true));
+	root.querySelector('.alloff')?.addEventListener('click', () => setAllFilters(false));
+	root.querySelector('.typetags')?.addEventListener('click', () => {
+		const style = ChatBoxSettings.styleOf(ChatBoxSettings.activeTab);
+		if (style) ChatBoxSettings.setStyle(ChatBoxSettings.activeTab, { typeTags: !style.typeTags });
+		updateStyle();
+	});
+
+	root.querySelector('.smaller')?.addEventListener('click', () => stepSize(-1));
+	root.querySelector('.larger')?.addEventListener('click', () => stepSize(1));
+	root.querySelector('.reset')?.addEventListener('click', () => {
+		ChatBoxSettings.setStyle(ChatBoxSettings.activeTab, { font: { size: null } });
+		updateStyle();
+	});
+
+	const families = root.querySelector('.families');
+	if (families) {
+		for (const [id, label] of Object.entries(CHAT_FONT_LABELS)) {
+			const btn = document.createElement('button');
+			btn.type = 'button';
+			btn.dataset.family = id;
+			const face = CHAT_FONT_FAMILIES[id];
+			const installed = fontInstalled(face);
+			btn.textContent = installed ? label : `${label} (not installed)`;
+			btn.disabled = !installed;
+			if (face && installed) btn.style.fontFamily = `"${face}", ${UI_FONT_STACK}`;
+			families.appendChild(btn);
+		}
+		families.addEventListener('click', event => {
+			const btn = event.target.closest('button');
+			if (!btn || btn.disabled) return;
+			ChatBoxSettings.setStyle(ChatBoxSettings.activeTab, { font: { family: btn.dataset.family } });
+			updateStyle();
 		});
 	}
 
@@ -98,34 +132,60 @@ function filterIds() {
 	return Array.from(buttons, btn => parseInt(btn.getAttribute('data-id'), 10));
 }
 
-/**
- * @returns {boolean} every filter of the active tab is on
- */
-function isAllOn() {
-	const optList = ChatBoxSettings.tabOption[ChatBoxSettings.activeTab] || [];
-	return filterIds().every(id => optList.includes(id));
+/** Every filter of the active tab on, or every one off. */
+function setAllFilters(on) {
+	ChatBoxSettings.tabOption[ChatBoxSettings.activeTab] = on ? filterIds() : [];
+	ChatBoxSettings.updateTab(
+		ChatBoxSettings.activeTab,
+		ChatBoxSettings.getRoot().querySelector('.tabname').textContent
+	);
+	ChatBoxSettings.onFiltersChanged();
 }
 
-/**
- * Tick the "All on" box when every filter of the active tab is on
- */
-function updateAllOn() {
-	const box = ChatBoxSettings.getRoot().querySelector('.footer-opt .allon');
-	if (!box) {
-		return;
-	}
-	Client.loadFile(`${DB.INTERFACE_PATH}checkbox_${isAllOn() ? 1 : 0}.bmp`, data => {
-		box.style.backgroundImage = `url(${data})`;
+/** One pixel bigger or smaller; from the default, the step starts at the chat's 12 px. */
+function stepSize(delta) {
+	const style = ChatBoxSettings.styleOf(ChatBoxSettings.activeTab);
+	if (!style) return;
+	const current = Number.isInteger(style.font?.size) ? style.font.size : DEFAULT_SIZE;
+	const size = Math.min(Math.max(current + delta, CHAT_FONT_SIZE.min), CHAT_FONT_SIZE.max);
+	ChatBoxSettings.setStyle(ChatBoxSettings.activeTab, { font: { size } });
+	updateStyle();
+}
+
+/** The chat's own size (12 px), where - and + start from a tab without a size. */
+const DEFAULT_SIZE = 12;
+
+/** Shows the active tab's size, family and type tags. */
+function updateStyle() {
+	const root = ChatBoxSettings.getRoot();
+	const style = ChatBoxSettings.styleOf(ChatBoxSettings.activeTab);
+	const size = style && Number.isInteger(style.font?.size) ? style.font.size : null;
+	const sizeEl = root.querySelector('.font-size .size');
+	if (sizeEl) sizeEl.textContent = size ? `${size} px` : 'Default';
+	const smaller = root.querySelector('.smaller');
+	const larger = root.querySelector('.larger');
+	if (smaller) smaller.disabled = size !== null && size <= CHAT_FONT_SIZE.min;
+	if (larger) larger.disabled = size !== null && size >= CHAT_FONT_SIZE.max;
+	const family = style?.font?.family || 'default';
+	root.querySelectorAll('.families button').forEach(btn => {
+		const picked = btn.dataset.family === family;
+		btn.classList.toggle('on', picked);
+		Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/grp_' + (picked ? 'online' : 'offline') + '.bmp', data => {
+			btn.style.backgroundImage = 'url(' + data + ')';
+		});
 	});
+	const check = root.querySelector('.typetags .check');
+	if (check) {
+		Client.loadFile(`${DB.INTERFACE_PATH}checkbox_${style?.typeTags ? 1 : 0}.bmp`, data => {
+			check.style.backgroundImage = `url(${data})`;
+		});
+	}
 }
 
 /**
  * Once in HTML
  */
 ChatBoxSettings.onAppend = function onAppend() {
-	// Call resize first while visible so scrollHeight works and host height is updated
-	resize(_preferences.height);
-
 	const rect = this._host.getBoundingClientRect();
 	this._host.style.top = Math.min(Math.max(0, _preferences.y), Renderer.height - rect.height) + 'px';
 	this._host.style.left = Math.min(Math.max(0, _preferences.x), Renderer.width - rect.width) + 'px';
@@ -142,61 +202,23 @@ ChatBoxSettings.onKeyDown = function onKeyDown(event) {};
  */
 function onClickOption(btn) {
 	const dataId = parseInt(btn.getAttribute('data-id'), 10);
-	let isOn = btn.classList.contains('on');
-
-	if (isOn) {
-		btn.classList.remove('on');
-		isOn = false;
-	} else {
-		btn.classList.add('on');
-		isOn = true;
-	}
+	const isOn = !btn.classList.contains('on');
+	btn.classList.toggle('on', isOn);
 
 	Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/grp_' + (isOn ? 'online' : 'offline') + '.bmp', data => {
 		btn.style.backgroundImage = 'url(' + data + ')';
 	});
 
 	if (!isNaN(dataId)) {
-		const idsIndex = ChatBoxSettings.tabOption[ChatBoxSettings.activeTab].indexOf(dataId);
-
+		const list = (ChatBoxSettings.tabOption[ChatBoxSettings.activeTab] ||= []);
+		const idsIndex = list.indexOf(dataId);
 		if (idsIndex > -1) {
-			ChatBoxSettings.tabOption[ChatBoxSettings.activeTab].splice(idsIndex, 1);
+			list.splice(idsIndex, 1);
 		} else {
-			ChatBoxSettings.tabOption[ChatBoxSettings.activeTab].push(dataId);
+			list.push(dataId);
 		}
 	}
-
-	updateAllOn();
-}
-
-/**
- * Resize ChatBoxSettings
- */
-function onResize() {
-	const rect = ChatBoxSettings._host.getBoundingClientRect();
-	const top = rect.top;
-	let lastHeight = 0;
-
-	function resizeProcess() {
-		const extraY = 31 + 19 - 30;
-		let h = Math.floor((Mouse.screen.y - top - extraY) / 32);
-		h = Math.min(Math.max(h, 3), 8);
-		if (h === lastHeight) {
-			return;
-		}
-		resize(h);
-		lastHeight = h;
-	}
-
-	const interval = setInterval(resizeProcess, 30);
-
-	const onMouseUp = event => {
-		if (event.which === 1) {
-			clearInterval(interval);
-			window.removeEventListener('mouseup', onMouseUp);
-		}
-	};
-	window.addEventListener('mouseup', onMouseUp);
+	ChatBoxSettings.onFiltersChanged();
 }
 
 ChatBoxSettings.toggle = function toggle() {
@@ -217,47 +239,16 @@ ChatBoxSettings.updateTab = function updateTab(tabID, tabName) {
 	root.querySelector('.tabname').textContent = tabName;
 
 	buttons.forEach(btn => {
-		btn.classList.remove('on');
-		Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/grp_offline.bmp', data => {
+		const id = parseInt(btn.getAttribute('data-id'), 10);
+		const on = !!(optList && optList.includes(id));
+		btn.classList.toggle('on', on);
+		Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/grp_' + (on ? 'online' : 'offline') + '.bmp', data => {
 			btn.style.backgroundImage = 'url(' + data + ')';
 		});
 	});
 
-	buttons.forEach(btn => {
-		const id = parseInt(btn.getAttribute('data-id'), 10);
-
-		if (optList && optList.includes(id)) {
-			Client.loadFile(DB.INTERFACE_PATH + 'basic_interface/grp_online.bmp', data => {
-				btn.style.backgroundImage = 'url(' + data + ')';
-			});
-			btn.classList.add('on');
-		}
-	});
-
-	updateAllOn();
+	updateStyle();
 };
-
-/**
- * Extend window size
- */
-function resize(height) {
-	height = Math.min(Math.max(height, 3), 8);
-	const root = ChatBoxSettings.getRoot();
-	const content = root.querySelector('.content');
-	if (content) {
-		content.style.height = height * 32 + 'px';
-	}
-	const list = root.querySelector('.listoption');
-	if (list) {
-		list.style.height = height * 32 - 31 + 'px';
-	}
-	const inner = root.querySelector('#ChatBoxSettings');
-	if (inner) {
-		ChatBoxSettings._host.style.height = inner.offsetHeight + 'px';
-	}
-	_preferences.height = height;
-	_preferences.save();
-}
 
 ChatBoxSettings.onRemove = function onRemove() {
 	_preferences.y = parseInt(this._host.style.top, 10) || 0;

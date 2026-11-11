@@ -38,6 +38,7 @@ import Inventory from 'UI/Components/Inventory/Inventory.js';
 import ItemType from 'DB/Items/ItemType.js';
 import { startInfoPanels } from './InfoPanels.js';
 import { startVisualHelpers } from './VisualHelpers.js';
+import { startChatSync } from './ChatSync.js';
 import Session from 'Engine/SessionStorage.js';
 import EffectManager from 'Renderer/EffectManager.js';
 import MapEffects from 'Renderer/Map/Effects.js';
@@ -122,6 +123,9 @@ export default function Init(params) {
 	settings.restoreToken();
 	window.addEventListener('pagehide', () => settings.flush());
 
-	Object.assign(helpers, { settings, zone, panels, info, visual });
+	// The chat window's tabs, per master account
+	const chat = startChatSync({ settings, chatBox: ChatBox });
+
+	Object.assign(helpers, { settings, zone, panels, info, visual, chat });
 	return true;
 }

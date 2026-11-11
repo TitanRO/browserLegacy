@@ -113,3 +113,59 @@ describe('ChatBox tabs after the window is removed and shown again', () => {
 		expect(tabIds()).toEqual(['0']);
 	});
 });
+
+describe('ChatBox tabs in the account settings', () => {
+	beforeEach(() => {
+		document.body.innerHTML = '';
+		const host = document.createElement('div');
+		host.innerHTML = ChatBox.render();
+		document.body.appendChild(host);
+		ChatBox._host = host;
+		ChatBox.magnet = {};
+		ChatBox.tabs = [];
+		ChatBox.tabCount = 0;
+		ChatBox.lastTabID = -1;
+		ChatBox.activeTab = 0;
+	});
+
+	it('exports the tabs in order with their filters, font and type tags; imports them back', () => {
+		ChatBox.addNewTab('Regular Chat', [3, 1]);
+		const battle = ChatBox.addNewTab('Battle Log', [15], { font: { size: 14, family: 'consolas' }, typeTags: true });
+		ChatBox.switchTab(battle);
+		const chat = ChatBox.exportChat();
+		expect(chat).toEqual({
+			tabs: [
+				{ name: 'Regular Chat', filters: [1, 3], font: { size: null, family: 'default' }, typeTags: false, window: null },
+				{ name: 'Battle Log', filters: [15], font: { size: 14, family: 'consolas' }, typeTags: true, window: null }
+			],
+			active: 1
+		});
+
+		ChatBox.importChat({ tabs: [{ name: 'Only', filters: [2], font: { size: 16, family: 'default' } }], active: 0 });
+		expect(ChatBox._host.querySelectorAll('td.tab')).toHaveLength(1);
+		expect(ChatBox.exportChat().tabs[0]).toEqual({
+			name: 'Only', filters: [2], font: { size: 16, family: 'default' }, typeTags: false, window: null
+		});
+		const content = ChatBox._host.querySelector('.body .content');
+		expect(content.style.fontSize).toBe('16px');
+		expect(content.style.lineHeight).toBe('18px');
+	});
+
+	it('a tab with type tags puts [type] before each line', async () => {
+		const id = ChatBox.addNewTab('Tagged', [ChatBox.FILTER.PARTY], { typeTags: true });
+		ChatBox.addText('hi', ChatBox.TYPE.PARTY, ChatBox.FILTER.PARTY);
+		await new Promise(requestAnimationFrame);
+		const content = ChatBox._host.querySelector(`.body .content[data-content="${id}"]`);
+		expect(content.textContent).toBe('[Party] hi');
+	});
+
+	it('tells the listeners when the player changes a tab\'s style', () => {
+		const id = ChatBox.addNewTab('T', []);
+		let calls = 0;
+		const stop = ChatBox.onChatChange(() => calls++);
+		ChatBox.setTabStyle(id, { font: { size: 18 } });
+		stop();
+		expect(calls).toBe(1);
+		expect(ChatBox.tabs[id].font).toEqual({ size: 18, family: 'default' });
+	});
+});

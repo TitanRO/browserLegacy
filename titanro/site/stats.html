@@ -60,6 +60,9 @@
 			<div class="row">
 				<label>Attack <select id="skill"></select></label>
 				<label>Level <select id="skilllv"></select></label>
+				<label id="spheresrow" hidden>Spirit spheres <input id="spheres" type="number" min="0" max="15" value="0" style="width:4em"></label>
+				<label id="cartrow" hidden>Cart load <input id="cartweight" type="number" min="0" max="10500" value="0" style="width:6em"> <span class="muted">(of 8000, + 500 a Remodel Cart level)</span></label>
+				<label id="ragerow" hidden>Rage counters <input id="rage" type="number" min="0" max="15" value="0" style="width:4em"></label>
 			</div>
 			<div class="duo">
 				<div class="sub">
@@ -86,7 +89,7 @@
 <script type="module">
 import { STATS, WEAPON_TYPES, statusWindow, statCost, totalStatPoints, spentStatPoints, jobBonus, aspd } from './calc/calc.js';
 import { jobGroups } from './calc/jobs.js';
-import { normalAttack, mobList, weaponSkills, skillAttack, skillTimes, ATTACK_PASSIVES, ATTACK_BUFFS, ENDOWS } from './calc/damage.js';
+import { normalAttack, mobList, weaponSkills, skillAttack, skillTimes, ATTACK_PASSIVES, ATTACK_BUFFS, ENDOWS, SKILL_RESOURCES } from './calc/damage.js';
 import { SLOTS as EQ_SLOTS, AMMO_OF, itemMap, canEquip, sumEquipment } from './calc/items.js';
 import { withPassives } from './calc/passives.js';
 import { BUFF_ORDER, withBuffs, WM_DANCE_WITH_WUG } from './calc/buffs.js';
@@ -114,7 +117,7 @@ const skillMax = new Map(data.skills.map((x) => [x.id, x.max]));
 /** The buffs the page offers ([[id, max level], ...]): those the calculator counts at some level. */
 const BUFF_LIST = BUFF_ORDER.filter((id) => ATTACK_BUFFS.has(id) || (data.buffs && (data.buffs[id] || []).some(Boolean)))
 	.map((id) => [id, (data.buffs && data.buffs[id] ? data.buffs[id].length : skillMax.get(id)) || 1]);
-const state = { eq: {}, passives: {}, buffs: {}, skill: 0, skilllv: 1, mob: 1002, job: 4008, blv: 99, jlv: 70, stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, wtype: 0, watk: 0, wmatk: 0, wlv: 1, refine: 0, shield: false, edef: 0, emdef: 0, performers: 0 };
+const state = { eq: {}, passives: {}, buffs: {}, skill: 0, skilllv: 1, mob: 1002, job: 4008, blv: 99, jlv: 70, stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, wtype: 0, watk: 0, wmatk: 0, wlv: 1, refine: 0, shield: false, edef: 0, emdef: 0, performers: 0, spheres: 0, cartweight: 0, rage: 0 };
 const DEFAULTS = JSON.parse(JSON.stringify(state));
 
 function readHash() {
@@ -122,7 +125,7 @@ function readHash() {
 	const num = (k, d) => (p.has(k) && isFinite(+p.get(k)) ? Math.trunc(+p.get(k)) : d);
 	state.job = jobs.has(num('job', DEFAULTS.job)) ? num('job', DEFAULTS.job) : data.jobs[0].id;
 	// a key missing from the link takes its default, so an edited link never keeps an earlier build's value
-	for (const k of ['blv', 'jlv', 'wtype', 'watk', 'wmatk', 'wlv', 'refine', 'edef', 'emdef', 'mob', 'skill', 'skilllv', 'performers']) state[k] = num(k, DEFAULTS[k]);
+	for (const k of ['blv', 'jlv', 'wtype', 'watk', 'wmatk', 'wlv', 'refine', 'edef', 'emdef', 'mob', 'skill', 'skilllv', 'performers', 'spheres', 'cartweight', 'rage']) state[k] = num(k, DEFAULTS[k]);
 	state.stats = { ...DEFAULTS.stats };
 	if (p.has('s')) p.get('s').split('.').forEach((v, i) => { if (i < 6 && isFinite(+v)) state.stats[STATS[i]] = Math.max(1, Math.trunc(+v)); });
 	state.shield = p.get('shield') === '1';
@@ -162,6 +165,7 @@ function writeHash() {
 	const bf = Object.entries(state.buffs).filter(([, lv]) => lv > 0).map(([id, lv]) => `${id}:${lv}`);
 	if (bf.length) p.set('bf', bf.join(','));
 	if (state.performers) p.set('performers', state.performers);
+	for (const k of ['spheres', 'cartweight', 'rage']) if (state[k]) p.set(k, state[k]);
 	p.set('mob', state.mob);
 	if (state.skill) { p.set('skill', state.skill); p.set('skilllv', state.skilllv); }
 	history.replaceState(null, '', '#' + p.toString());
@@ -302,6 +306,9 @@ function render() {
 	}
 	input.buffs = activeBuffs();
 	input.performers = state.performers;
+	input.spheres = state.spheres; // the attack's resources (SKILL_RESOURCES)
+	input.cartWeight = state.cartweight * 10; // the load as the client shows it, in the server's tenths
+	input.rage = state.rage;
 	input.eq = withBuffs(data, input.eq, input.buffs, input.weapon ? input.weapon.type : 0, skillNames, state.performers);
 	const nc = [...new Set(input.eq.notCounted)];
 	const other = [...new Set(input.eq.other)];
@@ -383,6 +390,11 @@ function renderCombat(input, w) {
 	state.skilllv = Math.min(Math.max(state.skilllv, 1), Math.max(max, 1));
 	lvSel.value = state.skilllv;
 	lvSel.disabled = !max;
+	const resource = SKILL_RESOURCES.get(state.skill);
+	for (const [row, k, id] of [['spheresrow', 'spheres', 'spheres'], ['cartrow', 'cart', 'cartweight'], ['ragerow', 'rage', 'rage']]) {
+		$(row).hidden = resource !== k;
+		$(id).value = state[id];
+	}
 
 	const mob = mobs && mobs.get(state.mob);
 	if (!mob) {
@@ -493,6 +505,9 @@ $('buffs').addEventListener('change', (e) => {
 	state.buffs[id] = +e.target.value;
 	render();
 });
+for (const [id, max] of [['spheres', 15], ['cartweight', 10500], ['rage', 15]]) {
+	$(id).addEventListener('change', (e) => { state[id] = Math.max(0, Math.min(max, Math.trunc(+e.target.value) || 0)); render(); });
+}
 $('performers').addEventListener('change', (e) => { state.performers = Math.max(0, Math.min(12, Math.trunc(+e.target.value) || 0)); render(); });
 $('skill').addEventListener('change', (e) => { state.skill = +e.target.value; state.skilllv = 99; render(); });
 $('skilllv').addEventListener('change', (e) => { state.skilllv = +e.target.value; render(); });

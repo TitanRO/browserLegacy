@@ -62,6 +62,8 @@ export function isAttackOrCast(entity, action) {
  * the same sprites with the same numbers; keep them in step.
  */
 export const STATUS_SCALE = 2.0;
+/** The frozen ice block (a stone curse has no sprite, only a grey body). */
+export const ICE_SCALE = 1.5;
 export const WOE_SCALE = 0.6;
 export const MVP_SCALE = 1.5;
 export const EMPERIUM_SCALE = 0.6;
@@ -70,6 +72,13 @@ const EMPERIUM_MODEL = 'empelium90_0.gr2';
 const FLAG_MODEL = 'guildflag90_1.gr2';
 /** Status icons drawn at STATUS_SCALE (attachment uids, which are the sprite names). */
 export const BIG_STATUS_ICONS = new Set(['status-stun', 'status-sleep']);
+/** How much bigger a status attachment (its uid) is drawn; 1 for most. */
+export function statusIconScale(options, uid) {
+	if (!options.bigStatusIcons) return 1;
+	if (uid === 'status-freeze') return ICE_SCALE;
+	return BIG_STATUS_ICONS.has(uid) ? STATUS_SCALE : 1;
+}
+
 /** Barricades and guardian stones (monster sprite names): small, and gone at once when they break. */
 export const BREAKABLE_SPRITES = new Set(['barricade', 's_empel_1', 's_empel_2']);
 /** Castle flags (small only). */

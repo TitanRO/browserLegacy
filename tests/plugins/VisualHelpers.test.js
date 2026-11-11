@@ -6,6 +6,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import VisualOptions, {
 	isAttackOrCast,
 	effectTexture,
+	ICE_SCALE,
+	statusIconScale,
+	STATUS_SCALE,
 	EMPERIUM_SCALE,
 	MVP_SCALE,
 	PROP_ALPHA,
@@ -103,6 +106,15 @@ describe('display options', () => {
 		expect(vanishesAtOnce(on, 1906)).toBe(true);
 		expect(vanishesAtOnce(on, 973)).toBe(false); // flags don't break
 		expect(vanishesAtOnce({}, 1906)).toBe(false);
+	});
+
+	it('big status icons: stun and sleep 2x, the ice block 1.5x', () => {
+		const on = { bigStatusIcons: true };
+		expect(statusIconScale(on, 'status-stun')).toBe(STATUS_SCALE);
+		expect(statusIconScale(on, 'status-sleep')).toBe(STATUS_SCALE);
+		expect(statusIconScale(on, 'status-freeze')).toBe(ICE_SCALE);
+		expect(statusIconScale(on, 'status-curse')).toBe(1);
+		expect(statusIconScale({}, 'status-stun')).toBe(1);
 	});
 
 	it('tarot cards come from the release when they print their effect', () => {

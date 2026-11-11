@@ -93,6 +93,18 @@ describe('ChatSync: the account is the source, the first client to start wins', 
 		expect(box.tabs).toEqual(account);
 	});
 
+	it('a helper token after a guest decision: decides again from the account once it answers', () => {
+		const settings = fakeSettings({ signedIn: false });
+		const box = fakeChatBox(local);
+		startChatSync({ settings, chatBox: box });
+		expect(settings.sets).toHaveLength(1); // guest: uploaded to the browser's copy
+		settings.signedIn = true;
+		settings.answer(account);
+		expect(box.tabs).toEqual(account);
+		settings.answer([{ name: 'Later', filters: [] }]);
+		expect(box.tabs).toEqual(account); // only once
+	});
+
 	it('waits for the chat box to have tabs', () => {
 		const settings = fakeSettings({ answered: true, tabs: account });
 		const box = fakeChatBox([]);

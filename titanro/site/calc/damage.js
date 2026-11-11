@@ -187,6 +187,16 @@ function doubleAttack(c, type, passives, hit, mob) {
 	return { rate: Math.min(Math.max(chance, 0), 100) / 100, hitAdd: bonusLv && base > 0 ? Math.trunc((base * bonusLv) / 100) : 0 };
 }
 
+/** The critical chance (0..1) on `mob`, with a skill's own Critical in tenths (`add`). */
+function critChance(c, type, mob, add = 0) {
+	let cri = 10 + Math.floor(c.total.luk / 3) * 10 + c.eq.cri;
+	if (type === W_KATAR) cri *= 2;
+	if (LONG_WEAPONS.has(type)) cri += c.eq.arrowCri || 0; // the ammunition's Critical
+	cri -= Math.trunc(mob.lv / 15) + 2 * mob.luk;
+	cri += add;
+	return Math.min(Math.max(cri, 0), 1000) / 1000;
+}
+
 /**
  * A normal attack of `input` (the stat calculator's input; `input.passives` {skill id: level} for ATTACK_PASSIVES)
  * on `mob` (a mobList row): {min, max} damage of a hit, the critical hit's damage, hit and critical chances (0..1),
@@ -198,11 +208,7 @@ export function normalAttack(data, input, mob) {
 	const type = c.weapon ? c.weapon.type : 0;
 	const hit = c.blv + total.dex + Math.floor(total.luk / 3) + 175 + eq.hit;
 	const hitRate = Math.min(Math.max(hit - mob.flee, MIN_HITRATE), MAX_HITRATE) / 100;
-	let cri = 10 + Math.floor(total.luk / 3) * 10 + eq.cri;
-	if (type === W_KATAR) cri *= 2;
-	if (LONG_WEAPONS.has(type)) cri += eq.arrowCri || 0; // the ammunition's Critical
-	cri -= Math.trunc(mob.lv / 15) + 2 * mob.luk;
-	const critRate = Math.min(Math.max(cri, 0), 1000) / 1000;
+	const critRate = critChance(c, type, mob);
 	const da = doubleAttack(c, type, input.passives, hit, mob);
 	// a katar's normal attack adds a second hit of 1 % + 2 % per Double Attack level
 	const katarLv = (input.passives && input.passives[TF_DOUBLE]) || 0;
@@ -382,6 +388,10 @@ const MC_CARTREVOLUTION = 153;
 const NC_ARMSCANNON = 2261;
 const NEUTRAL_AGAIN = new Set([MC_CARTREVOLUTION, NC_ARMSCANNON]);
 
+const SN_SHARPSHOOTING = 382;
+/** Weapon skills that can hit critically (the server's battle_calc_weapon_attack critical check). */
+const CRIT_SKILLS = new Map([[SN_SHARPSHOOTING, 200]]); // skill: its own Critical (tenths)
+
 const KN_PIERCE = 56;
 const KN_BOWLINGBASH = 62;
 const RG_BACKSTAP = 212;
@@ -415,7 +425,7 @@ function skillRow(c, mob, skillId, lv, row) {
 	return [ratio, ele, num];
 }
 
-function skillHitDamage(data, c, mob, skillId, lv, roll, passives) {
+function skillHitDamage(data, c, mob, skillId, lv, roll, passives, critical = false) {
 	const sk = data.weapon_skills[skillId];
 	const [ratio, skillEle, num] = skillRow(c, mob, skillId, lv, sk.lv[lv - 1]);
 	const type = c.weapon ? c.weapon.type : 0;
@@ -443,12 +453,14 @@ function skillHitDamage(data, c, mob, skillId, lv, roll, passives) {
 	damage += 2 * danceStep;
 	const skillAtk = (c.eq.skillAtk && c.eq.skillAtk[skillId]) || 0; // the equipment's damage % for this skill
 	if (skillAtk) damage += Math.trunc((damage * skillAtk) / 100);
+	if (critical && c.eq.critAtkRate) damage += Math.trunc((damage * c.eq.critAtkRate) / 100);
 	if (c.eq.longAtkRate && longSkill(sk, lv, skillId)) damage += Math.trunc((damage * c.eq.longAtkRate) / 100);
 	if (skillId === MC_CARTREVOLUTION) {
 		// jRO: ATK x 150 % + ATK x the cart's weight / its capacity, DEF and soft DEF off flat
 		const cart = Math.trunc((damage * Math.min(Math.max(c.cartWeight || 0, 0), 100)) / 100);
 		damage = Math.max(Math.trunc((damage * 150) / 100) + cart - (mob.def + mob.def2), 0);
 	} else if (!(sk.nk & NK_IGNORE_DEF)) damage = applyDef(damage, defOf(c, mob));
+	if (critical && damage > 0) damage += Math.trunc((damage * 40) / 100); // a critical hit: 40 % more, after DEF
 	damage += 20 * buffLv(c, LK_AURABLADE);
 	const hurts = data.attr_fix[Math.max(mob.element_lv, 1) - 1][ele][mob.element] > 0;
 	if (damage < 0) damage = 0;
@@ -543,6 +555,10 @@ export function skillAttack(data, input, mob, skillId, lv) {
 	return {
 		min: skillHitDamage(data, c, mob, skillId, lv, 'min', input.passives),
 		max: skillHitDamage(data, c, mob, skillId, lv, 'max', input.passives),
+		// a skill that can hit critically (Focused Arrow Strike): its critical hit, every roll at its highest
+		crit: CRIT_SKILLS.has(skillId) ? skillHitDamage(data, c, mob, skillId, lv, 'max', input.passives, true) : null,
+		// Focused Arrow Strike: 20 Critical more (jRO; the server takes 30 off Hercules' 50)
+		critRate: CRIT_SKILLS.has(skillId) ? critChance(c, c.weapon ? c.weapon.type : 0, mob, CRIT_SKILLS.get(skillId)) : 0,
 		hits: Math.abs(skillRow(c, mob, skillId, lv, sk.lv[lv - 1])[2]) || 1,
 		hitRate: sk.nk & 0x40 ? 1 : skillHitRate(hit - mob.flee, skillId, lv)
 	};

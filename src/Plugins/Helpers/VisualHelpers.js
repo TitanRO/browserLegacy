@@ -162,6 +162,7 @@ export function visualOptions(get, heavy) {
 		hideProps: get('flatMap', 'hideProps') === true,
 		propAlpha: get('transparentProps', 'enabled') === true ? PROP_ALPHA : 1,
 		cellGrid: get('flatMap', 'enabled') === true, // Grayworld: flat ground and the cell grid together
+		instantActions: get('noAdelay', 'enabled') === true,
 		hideWeather: level >= MINIMUM,
 		effectFilter: effectFilter(level, heavy)
 	};

@@ -32,7 +32,13 @@ export const HELPER_OPTIONS = [
 	{ section: 'Display', key: 'castRange.enabled', label: 'Cast range', type: 'toggle' },
 	{ section: 'Display', key: 'flatMap.enabled', label: 'Grayworld (flat map + grid)', type: 'toggle' },
 	{ section: 'Display', key: 'flatMap.hideProps', label: 'Hide props', type: 'toggle' },
-	{ section: 'Display', key: 'transparentProps.enabled', label: 'See-through props', type: 'toggle' }
+	{ section: 'Display', key: 'transparentProps.enabled', label: 'See-through props', type: 'toggle' },
+	{
+		section: 'Display',
+		key: 'noAdelay.enabled',
+		label: 'No adelay (attacks and casts shown at once)',
+		type: 'toggle'
+	}
 ];
 
 /** The entries this window can show, grouped: [{section, options: [...]}] in first-appearance order. */

@@ -28,8 +28,26 @@ const DEFAULTS = {
 	cellGrid: false,
 	/** Effects to leave out: filter(init) returns true to keep the effect (init: EffectManager.spam's parameters). */
 	effectFilter: null,
-	hideWeather: false
+	hideWeather: false,
+	/** No adelay: attack and cast animations shown at once (frames only; hits and damage keep the server's timing). */
+	instantActions: false
 };
+
+/** No adelay: the frame time of attack and cast animations, in ms. */
+export const INSTANT_FRAME_MS = 1;
+
+/** Whether `action` is one of the entity's attack or cast animations (the ones no adelay shows at once). */
+export function isAttackOrCast(entity, action) {
+	const A = entity.ACTION;
+	return (
+		action >= 0 &&
+		(action === A.ATTACK ||
+			action === A.ATTACK1 ||
+			action === A.ATTACK2 ||
+			action === A.ATTACK3 ||
+			action === A.SKILL)
+	);
+}
 
 const _listeners = new Set();
 

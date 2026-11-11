@@ -3032,6 +3032,20 @@ class DB {
 	}
 
 	/**
+	 * Which shout table a chat text is a line of: 'scream' (Scream), 'joke' (Frost Joker), or null.
+	 *
+	 * @param {string} text
+	 * @return {string|null}
+	 */
+	static shoutKind(text) {
+		const t = typeof text === 'string' ? text.trim() : '';
+		if (!t) return null;
+		if (ScreamTable.some(line => typeof line === 'string' && line.trim() === t)) return 'scream';
+		if (JokeTable.some(line => typeof line === 'string' && line.trim() === t)) return 'joke';
+		return null;
+	}
+
+	/**
 	 * @type {Object<number, Function[]>} Pending name-resolution callbacks keyed by GID
 	 * @private
 	 */

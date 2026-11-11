@@ -55,7 +55,13 @@ export const HELPER_OPTIONS = [
 	},
 	{ section: 'Display', key: 'bigMvps.enabled', label: 'Bigger MVPs', type: 'toggle' },
 	{ section: 'Display', key: 'smallEmperium.enabled', label: 'Small Emperium', type: 'toggle' },
-	{ section: 'Display', key: 'tarotCards.enabled', label: 'Tarot cards show their effect', type: 'toggle' }
+	{ section: 'Display', key: 'tarotCards.enabled', label: 'Tarot cards show their effect', type: 'toggle' },
+	{
+		section: 'Display',
+		key: 'stunFreezeShouts.enabled',
+		label: 'Scream and Frost Joker say STUN and FREEZE',
+		type: 'toggle'
+	}
 ];
 
 /** The entries this window can show, grouped: [{section, options: [...]}] in first-appearance order. */

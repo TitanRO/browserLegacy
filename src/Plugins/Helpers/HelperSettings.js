@@ -41,6 +41,7 @@ export const DEFAULT_SETTINGS = {
 	bigMvps: { enabled: false },
 	smallEmperium: { enabled: false },
 	tarotCards: { enabled: false },
+	stunFreezeShouts: { enabled: false },
 	damageLog: { enabled: false },
 	autopot: { panel: false },
 	woeTracker: { panel: false },

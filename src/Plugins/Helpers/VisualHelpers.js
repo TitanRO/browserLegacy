@@ -169,6 +169,7 @@ export function visualOptions(get, heavy) {
 		bigMvps: get('bigMvps', 'enabled') === true,
 		smallEmperium: get('smallEmperium', 'enabled') === true,
 		tarotCards: get('tarotCards', 'enabled') === true,
+		stunFreezeShouts: get('stunFreezeShouts', 'enabled') === true,
 		hideWeather: level >= MINIMUM,
 		effectFilter: effectFilter(level, heavy)
 	};

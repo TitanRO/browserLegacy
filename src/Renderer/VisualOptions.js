@@ -38,7 +38,8 @@ const DEFAULTS = {
 	instantVanish: false,
 	bigMvps: false,
 	smallEmperium: false,
-	tarotCards: false
+	tarotCards: false,
+	stunFreezeShouts: false
 };
 
 /** No adelay: the frame time of attack and cast animations, in ms. */
@@ -175,6 +176,22 @@ export function effectTexture(options, file) {
 		if (m) return 'titanro/tarot/' + m[1].toLowerCase();
 	}
 	return file;
+}
+
+/**
+ * Scream (Dazzler) and Frost Joker shout a random line of their table as public chat. With stunFreezeShouts the
+ * player's own shout is STUN or FREEZE (as Titan's GRF did), and another player's shout, a line of those tables
+ * exactly, is shown as one too. The DLL swaps the Windows client's tables the same way.
+ */
+export const SHOUT_TEXT = Object.freeze({ scream: 'STUN', joke: 'FREEZE' });
+
+/** A public chat message ("Name : text") with a shout line shown as STUN or FREEZE; `kindOf(text)` names the table. */
+export function shoutShown(options, msg, kindOf) {
+	if (!options.stunFreezeShouts || typeof msg !== 'string') return msg;
+	const at = msg.indexOf(' : ');
+	if (at < 0) return msg;
+	const kind = kindOf(msg.slice(at + 3));
+	return kind ? msg.slice(0, at + 3) + SHOUT_TEXT[kind] : msg;
 }
 
 /** Whether a unit of this job id vanishes at once when it breaks (instantVanish). */

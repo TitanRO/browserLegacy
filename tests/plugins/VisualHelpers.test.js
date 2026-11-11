@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import VisualOptions, {
 	isAttackOrCast,
 	effectTexture,
+	shoutShown,
 	ICE_SCALE,
 	statusIconScale,
 	STATUS_SCALE,
@@ -85,7 +86,8 @@ describe('display options', () => {
 			['instantVanish', 'instantVanish'],
 			['bigMvps', 'bigMvps'],
 			['smallEmperium', 'smallEmperium'],
-			['tarotCards', 'tarotCards']
+			['tarotCards', 'tarotCards'],
+			['stunFreezeShouts', 'stunFreezeShouts']
 		]) {
 			expect(visualOptions(settings({ [section]: { enabled: true } }))[option]).toBe(true);
 			expect(visualOptions(settings())[option]).toBe(false);
@@ -115,6 +117,16 @@ describe('display options', () => {
 		expect(statusIconScale(on, 'status-freeze')).toBe(ICE_SCALE);
 		expect(statusIconScale(on, 'status-curse')).toBe(1);
 		expect(statusIconScale({}, 'status-stun')).toBe(1);
+	});
+
+	it('shout lines show as STUN and FREEZE', () => {
+		const kind = text => ({ 'Kyaaaa----!': 'scream', 'Me..me..mememe...': 'joke' })[text] || null;
+		const on = { stunFreezeShouts: true };
+		expect(shoutShown(on, 'Bard : Kyaaaa----!', kind)).toBe('Bard : STUN');
+		expect(shoutShown(on, 'Clown : Me..me..mememe...', kind)).toBe('Clown : FREEZE');
+		expect(shoutShown(on, 'Bard : hello', kind)).toBe('Bard : hello');
+		expect(shoutShown({}, 'Bard : Kyaaaa----!', kind)).toBe('Bard : Kyaaaa----!');
+		expect(shoutShown(on, 'no separator', kind)).toBe('no separator');
 	});
 
 	it('tarot cards come from the release when they print their effect', () => {

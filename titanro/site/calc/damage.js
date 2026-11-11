@@ -187,13 +187,13 @@ function doubleAttack(c, type, passives, hit, mob) {
 	return { rate: Math.min(Math.max(chance, 0), 100) / 100, hitAdd: bonusLv && base > 0 ? Math.trunc((base * bonusLv) / 100) : 0 };
 }
 
-/** The critical chance (0..1) on `mob`, with a skill's own Critical in tenths (`add`). */
-function critChance(c, type, mob, add = 0) {
+/** The critical chance (0..1) on `mob`, x a skill's factor (`mult`) and + its own Critical in tenths (`add`). */
+function critChance(c, type, mob, add = 0, mult = 1) {
 	let cri = 10 + Math.floor(c.total.luk / 3) * 10 + c.eq.cri;
 	if (type === W_KATAR) cri *= 2;
 	if (LONG_WEAPONS.has(type)) cri += c.eq.arrowCri || 0; // the ammunition's Critical
 	cri -= Math.trunc(mob.lv / 15) + 2 * mob.luk;
-	cri += add;
+	cri = cri * mult + add;
 	return Math.min(Math.max(cri, 0), 1000) / 1000;
 }
 
@@ -239,11 +239,8 @@ const NK_IGNORE_DEF = 0x20;
  * spheres, cart weight, HP or SP, a second formula): the calculator leaves them out until it has their formula.
  */
 const SPECIAL_SKILLS = new Set([
-	251, 365,
-	2559, 3010,
-	// counters, reflects, traps and area effects; spirit spheres, cart weight and rage counters the probe's characters
-	// don't have
-	61, 121, 139, 252, 267, 372, 390, 428, 429, 430, 485, 2314, 2476
+	251, // Shield Boomerang: its damage is an open decision (jRO design doc)
+	252, 390 // Reflect Shield, Counter Instinct: they reflect the damage taken, not an attack
 ]);
 
 /** The weapon skills the calculator knows: data.weapon_skills (their ratio doesn't depend on the caster), less the
@@ -276,6 +273,8 @@ const NJ_SYURIKEN = 523;
 const NJ_KUNAI = 524;
 const NJ_TOBIDOUGU = 522;
 const KO_HAPPOKUNAI = 3007;
+const KO_MAKIBISHI = 3010;
+const HW_MAGICCRASHER = 365;
 const LK_SPIRALPIERCE = 397;
 const GS_PIERCINGSHOT = 514;
 const NJ_ISSEN = 544;
@@ -416,6 +415,13 @@ function ownFormula(data, c, mob, skillId, lv, roll, nk) {
 		if (mob.boss) d = Math.trunc(d / 2);
 		return eleFix(data, Math.max(d, 0), ELE_NEUTRAL, mob);
 	}
+	case KO_MAKIBISHI: { // 20 x level in place of the attack's ATK, then DEF as usual
+		const ele = data.weapon_skills[skillId].lv[lv - 1][1];
+		const e = ele >= 0 ? ele : attackEle(c);
+		let d = applyDef(20 * lv, defOf(c, mob));
+		if (d < 1) d = c.attrFix[Math.max(mob.element_lv, 1) - 1][e][mob.element] > 0 ? 1 : 0;
+		return d;
+	}
 	case GS_FLING: // the job level
 		return c.jlv;
 	case MO_EXTREMITYFIST: { // ATK x (800 + 10 x SP) % + 250 + 150 x level - DEF, neutral (all the SP: the maximum)
@@ -436,6 +442,8 @@ const GS_MAGICALBULLET = 507;
 const GN_CARTCANNON = 2477;
 /** DEF and soft DEF off flat (Hercules renewal's flag.tdef); the element once more at the end (flag.distinct). */
 const FLAT_DEF_SKILLS = new Set([PA_SHIELDCHAIN, GS_MAGICALBULLET, GN_CARTCANNON]);
+/** DEF and soft DEF off flat, without the element again (flag.tdef alone). */
+const FLAT_DEF_ONLY = new Set([365]);
 const SU_SCAROFTAROU = 5032;
 const RL_MASS_SPIRAL = 2553;
 const RL_SLUGSHOT = 2570;
@@ -446,7 +454,33 @@ const GS_BULLSEYE = 503;
 const RC_BRUTE = 2;
 const RC_DEMIHUMAN = 7;
 /** Weapon skills that can hit critically (the server's battle_calc_weapon_attack critical check). */
-const CRIT_SKILLS = new Map([[SN_SHARPSHOOTING, 200]]); // skill: its own Critical (tenths)
+// skill: [its own Critical (tenths), x the chance]: Focused Arrow Strike + 20 (jRO), Counter Attack twice the chance
+const CRIT_SKILLS = new Map([[SN_SHARPSHOOTING, [200, 1]], [61, [0, 2]]]);
+
+const KN_AUTOCOUNTER = 61;
+const MO_FINGEROFFENSIVE = 267;
+const WS_CARTTERMINATION = 485;
+const LG_RAGEBURST = 2314;
+const GN_REMODELING_CART = 2475;
+const GN_CART_TORNADO = 2476;
+const RL_QD_SHOT = 2559;
+const MAX_CART_WEIGHT = 80000; // the server's max_cart_weight (8000, in tenths), + 5000 a Remodel Cart level
+
+/** The caster's resources a skill reads (the page shows their inputs): spirit spheres, the cart's load, rage. */
+export const SKILL_RESOURCES = new Map([
+	[MO_FINGEROFFENSIVE, 'spheres'], [MC_CARTREVOLUTION, 'cart'], [WS_CARTTERMINATION, 'cart'], [GN_CART_TORNADO, 'cart'],
+	[LG_RAGEBURST, 'rage']
+]);
+
+/** The cart's capacity in the server's units (tenths of the weight shown): 80000, + 5000 a Remodel Cart level. */
+function cartMax(c) {
+	return MAX_CART_WEIGHT + 5000 * ((c.passives && c.passives[GN_REMODELING_CART]) || 0);
+}
+
+/** The cart's load (tenths of the weight shown), within its capacity. */
+function cartLoad(c) {
+	return Math.min(Math.max(c.cartWeight || 0, 0), cartMax(c));
+}
 
 const KN_PIERCE = 56;
 const KN_BOWLINGBASH = 62;
@@ -494,6 +528,21 @@ function skillRow(c, mob, skillId, lv, row) {
 	case SU_SCAROFTAROU: // twice the ratio on a boss
 		if (mob.boss) ratio *= 2;
 		break;
+	case RL_QD_SHOT: // 1 + JobLv / 20 hits
+		num = 1 + Math.trunc(c.jlv / 20);
+		break;
+	case WS_CARTTERMINATION: { // the cart's load / (10 x (16 - level)) x 10 % (none with an empty cart)
+		const load = cartLoad(c);
+		if (load > 0) ratio = Math.trunc((Math.trunc(load / Math.max(1, 10 * (16 - lv))) * 80000) / MAX_CART_WEIGHT);
+		break;
+	}
+	case GN_CART_TORNADO: // jRO and auriga: 100 x level + 50 x Remodel Cart + the load / 10 / (150 - base STR)
+		ratio = 100 * lv + 50 * ((c.passives && c.passives[GN_REMODELING_CART]) || 0)
+			+ Math.trunc(Math.trunc(cartLoad(c) / 10) / (150 - Math.min(c.baseStr || 1, 130)));
+		break;
+	case LG_RAGEBURST: // 200 % a rage counter (at full HP), x BaseLv / 100
+		ratio = Math.trunc((200 * Math.max(c.rage || 0, 0) * c.blv) / 100);
+		break;
 	case NC_ARMSCANNON: // jRO: 300 + 400 x level on small targets, 350 on medium, 300 on large
 		ratio = 300 + [400, 350, 300][mob.size] * lv;
 		break;
@@ -521,6 +570,7 @@ function skillHitDamage(data, c, mob, skillId, lv, roll, passives, critical = fa
 	if (warg) damage += 10 * ((passives && passives[RA_TOOTHOFWUG]) || 0);
 	damage += buffAtk(c);
 	if (skillId === MO_INVESTIGATE) damage += Math.trunc(mob.def / 2); // half the target's hard DEF, before the ratio
+	if (c.spheres > 0) damage += 3 * c.spheres; // 3 ATK a spirit sphere held (the server's mastery step)
 	// Magical Bullet: a MATK roll, neutral, added to the ATK
 	if (skillId === GS_MAGICALBULLET) damage += eleFix(data, matkRoll(data, c, roll), ELE_NEUTRAL, mob);
 	// Shield Chain: the shield's weight / 10 + 4 x its refine, before the ratio
@@ -532,15 +582,21 @@ function skillHitDamage(data, c, mob, skillId, lv, roll, passives, critical = fa
 	damage = Math.trunc((damage * (ratio + buffRatio(c) + danceRatio)) / 100);
 	// and 2 x level x (2 + the chorus bonus) ATK on the three Warg skills, after the ratio (Hercules battle.cpp)
 	damage += 2 * danceStep;
+	// Stave Crasher: a fifth of its magic attack (a MATK roll, renewal MDEF as auriga's integers), after the ratio
+	if (skillId === HW_MAGICCRASHER) {
+		const mdef = Math.max(mob.mdef, 0);
+		const magic = Math.trunc((matkRoll(data, c, roll) * (1000 + mdef)) / (1000 + 10 * mdef)) - mob.mdef2;
+		damage += Math.trunc(Math.max(magic, 0) / 5);
+	}
 	const skillAtk = (c.eq.skillAtk && c.eq.skillAtk[skillId]) || 0; // the equipment's damage % for this skill
 	if (skillAtk) damage += Math.trunc((damage * skillAtk) / 100);
 	if (critical && c.eq.critAtkRate) damage += Math.trunc((damage * c.eq.critAtkRate) / 100);
 	if (c.eq.longAtkRate && longSkill(sk, lv, skillId)) damage += Math.trunc((damage * c.eq.longAtkRate) / 100);
 	if (skillId === MC_CARTREVOLUTION) {
 		// jRO: ATK x 150 % + ATK x the cart's weight / its capacity, DEF and soft DEF off flat
-		const cart = Math.trunc((damage * Math.min(Math.max(c.cartWeight || 0, 0), 100)) / 100);
+		const cart = Math.trunc((damage * cartLoad(c)) / cartMax(c));
 		damage = Math.max(Math.trunc((damage * 150) / 100) + cart - (mob.def + mob.def2), 0);
-	} else if (FLAT_DEF_SKILLS.has(skillId)) damage -= defOf(c, mob).def + Math.max(mob.def2, 1);
+	} else if (FLAT_DEF_SKILLS.has(skillId) || FLAT_DEF_ONLY.has(skillId)) damage -= defOf(c, mob).def + Math.max(mob.def2, 1);
 	else if (!(sk.nk & NK_IGNORE_DEF)) damage = applyDef(damage, defOf(c, mob));
 	if (critical && damage > 0) damage += Math.trunc((damage * 40) / 100); // a critical hit: 40 % more, after DEF
 	damage += 20 * buffLv(c, LK_AURABLADE);
@@ -552,6 +608,8 @@ function skillHitDamage(data, c, mob, skillId, lv, roll, passives, critical = fa
 	if (skillEle === ELE_NEUTRAL || FLAT_DEF_SKILLS.has(skillId)) damage = eleFix(data, damage, ele, mob);
 	if (damage < 1) damage = hurts ? 1 : 0; // at least 1 for the whole attack
 	if (skillId === PA_SHIELDCHAIN) damage *= 5; // five hits, each in full (auriga), after everything
+	// Throw Spirit Sphere: a hit a sphere, up to the level, each through DEF (one with none)
+	if (skillId === MO_FINGEROFFENSIVE) damage *= Math.min(Math.max(c.spheres || 0, 1), lv);
 	// Nova Explosion: MaxHP / (6 - level) + MaxSP x 2 x level more, after everything (jRO)
 	if (skillId === SJ_NOVAEXPLOSING) damage += Math.trunc(c.maxHp / (6 - Math.min(5, lv))) + c.maxSp * 2 * lv;
 	return damage;
@@ -638,7 +696,10 @@ export function skillAttack(data, input, mob, skillId, lv) {
 	c.attrFix = data.attr_fix;
 	c.shieldWeight = input.shieldWeight; // the shield's weight (tenths) and refine: Shield Chain
 	c.shieldRefine = input.shieldRefine;
-	c.cartWeight = input.cartWeight; // % of the cart's capacity
+	c.cartWeight = input.cartWeight; // the cart's load (the server's units: tenths of the weight shown)
+	c.spheres = input.spheres; // spirit spheres
+	c.rage = input.rage; // Force of Vanguard's rage counters
+	c.baseStr = input.stats ? input.stats.str : 1;
 	if (!sk || lv < 1 || lv > sk.lv.length || SPECIAL_SKILLS.has(skillId)) return null;
 	const hit = c.blv + c.total.dex + Math.floor(c.total.luk / 3) + 175 + c.eq.hit;
 	return {
@@ -647,7 +708,7 @@ export function skillAttack(data, input, mob, skillId, lv) {
 		// a skill that can hit critically (Focused Arrow Strike): its critical hit, every roll at its highest
 		crit: CRIT_SKILLS.has(skillId) ? skillHitDamage(data, c, mob, skillId, lv, 'max', input.passives, true) : null,
 		// Focused Arrow Strike: 20 Critical more (jRO; the server takes 30 off Hercules' 50)
-		critRate: CRIT_SKILLS.has(skillId) ? critChance(c, c.weapon ? c.weapon.type : 0, mob, CRIT_SKILLS.get(skillId)) : 0,
+		critRate: CRIT_SKILLS.has(skillId) ? critChance(c, c.weapon ? c.weapon.type : 0, mob, ...CRIT_SKILLS.get(skillId)) : 0,
 		hits: Math.abs(skillRow(c, mob, skillId, lv, sk.lv[lv - 1])[2]) || 1,
 		hitRate: sk.nk & 0x40 ? 1 : skillHitRate(hit - mob.flee, skillId, lv)
 	};

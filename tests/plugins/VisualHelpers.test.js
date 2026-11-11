@@ -5,6 +5,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import VisualOptions, {
 	isAttackOrCast,
+	effectTexture,
 	EMPERIUM_SCALE,
 	MVP_SCALE,
 	PROP_ALPHA,
@@ -80,7 +81,8 @@ describe('display options', () => {
 			['smallWoeObjects', 'smallWoeObjects'],
 			['instantVanish', 'instantVanish'],
 			['bigMvps', 'bigMvps'],
-			['smallEmperium', 'smallEmperium']
+			['smallEmperium', 'smallEmperium'],
+			['tarotCards', 'tarotCards']
 		]) {
 			expect(visualOptions(settings({ [section]: { enabled: true } }))[option]).toBe(true);
 			expect(visualOptions(settings())[option]).toBe(false);
@@ -101,6 +103,13 @@ describe('display options', () => {
 		expect(vanishesAtOnce(on, 1906)).toBe(true);
 		expect(vanishesAtOnce(on, 973)).toBe(false); // flags don't break
 		expect(vanishesAtOnce({}, 1906)).toBe(false);
+	});
+
+	it('tarot cards come from the release when they print their effect', () => {
+		expect(effectTexture({ tarotCards: true }, 'effect/tarot07.tga')).toBe('titanro/tarot/tarot07.tga');
+		expect(effectTexture({ tarotCards: true }, 'effect/tarot15.tga')).toBe('effect/tarot15.tga');
+		expect(effectTexture({}, 'effect/tarot07.tga')).toBe('effect/tarot07.tga');
+		expect(effectTexture({ tarotCards: true }, undefined)).toBe(undefined);
 	});
 
 	it('Grayworld is the flat map and the cell grid together', () => {

@@ -5,6 +5,7 @@ import EntityManager from 'Renderer/EntityManager.js';
 import Altitude from 'Renderer/Map/Altitude.js';
 import Camera from 'Renderer/Camera.js';
 import Entity from 'Renderer/Entity/Entity.js';
+import VisualOptions, { effectTexture } from 'Renderer/VisualOptions.js';
 
 function randBetween(minimum, maximum) {
 	return parseFloat(Math.min(minimum + Math.random() * (maximum - minimum), maximum).toFixed(3));
@@ -89,7 +90,8 @@ class ThreeDEffect {
 		this.ownerEntity = EF_Init_Par.ownerEntity;
 		this.otherEntity = EF_Init_Par.otherEntity;
 
-		this.textureName = effect.file;
+		// Display helpers: tarot cards that print their effect (VisualOptions.effectTexture)
+		this.textureName = effectTexture(VisualOptions, effect.file);
 		// Many instances of one row (particles): load the effect/ texture once and share it. The class
 		// frees it when its last instance goes.
 		this.sharedTexture = !!effect.sharedTexture && /^effect\//.test(effect.file || '');

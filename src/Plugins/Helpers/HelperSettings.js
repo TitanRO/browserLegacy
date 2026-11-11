@@ -40,6 +40,7 @@ export const DEFAULT_SETTINGS = {
 	instantVanish: { enabled: false },
 	bigMvps: { enabled: false },
 	smallEmperium: { enabled: false },
+	tarotCards: { enabled: false },
 	damageLog: { enabled: false },
 	autopot: { panel: false },
 	woeTracker: { panel: false },

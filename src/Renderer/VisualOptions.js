@@ -37,7 +37,8 @@ const DEFAULTS = {
 	smallWoeObjects: false,
 	instantVanish: false,
 	bigMvps: false,
-	smallEmperium: false
+	smallEmperium: false,
+	tarotCards: false
 };
 
 /** No adelay: the frame time of attack and cast animations, in ms. */
@@ -153,6 +154,18 @@ export function spriteScale(options, job) {
 	if (options.smallWoeObjects && (BREAKABLE_SPRITES.has(name) || FLAG_SPRITES.has(name))) return WOE_SCALE;
 	if (options.bigMvps && MVP_SPRITES.has(name)) return MVP_SCALE;
 	return 1;
+}
+
+/**
+ * The texture an effect draws (a path under data/texture/): with tarotCards, Tarot Card of Fate's cards are the
+ * release's, which print each card's effect (TitanRO/client tools/tarot/make.py; the DLL swaps the same files).
+ */
+export function effectTexture(options, file) {
+	if (options.tarotCards && typeof file === 'string') {
+		const m = /^effect\/(tarot(0[1-9]|1[0-4])\.tga)$/i.exec(file);
+		if (m) return 'titanro/tarot/' + m[1].toLowerCase();
+	}
+	return file;
 }
 
 /** Whether a unit of this job id vanishes at once when it breaks (instantVanish). */

@@ -168,6 +168,7 @@ export function visualOptions(get, heavy) {
 		instantVanish: get('instantVanish', 'enabled') === true,
 		bigMvps: get('bigMvps', 'enabled') === true,
 		smallEmperium: get('smallEmperium', 'enabled') === true,
+		tarotCards: get('tarotCards', 'enabled') === true,
 		hideWeather: level >= MINIMUM,
 		effectFilter: effectFilter(level, heavy)
 	};

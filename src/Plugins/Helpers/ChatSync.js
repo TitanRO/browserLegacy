@@ -10,6 +10,8 @@
  *   has none yet, the box's tabs are uploaded: the first client to start wins.
  * - After that, every change the player makes sends the whole tab list (last write wins). A change another client
  *   makes during this session is not taken in; the next start reads it.
+ * - A helper token that comes after a decision made from the browser's copy (a guest's) leads to one more decision
+ *   from the account's settings when the service answers.
  *
  * @author Trojal
  */
@@ -22,6 +24,8 @@
  */
 export function startChatSync({ settings, chatBox }) {
 	let decided = false;
+	/** Decided from the account's settings (not only the browser's, before a helper token came). */
+	let fromAccount = false;
 	let applying = false;
 
 	const known = () => !settings.signedIn || settings.answered;
@@ -35,6 +39,7 @@ export function startChatSync({ settings, chatBox }) {
 	function decide() {
 		if (decided || !known() || !hasTabs()) return;
 		decided = true;
+		fromAccount = settings.signedIn && settings.answered;
 		const chat = settings.get('chat', 'tabs');
 		if (Array.isArray(chat) && chat.length) {
 			applying = true;
@@ -54,6 +59,8 @@ export function startChatSync({ settings, chatBox }) {
 		else upload();
 	});
 	const stopSettings = settings.onChange(() => {
+		// a helper token that came after a decision from the browser's copy: decide again, once, from the account's
+		if (decided && !fromAccount && settings.signedIn && settings.answered) decided = false;
 		if (!decided) decide();
 	});
 	decide();

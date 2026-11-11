@@ -20,6 +20,7 @@ const potion = lang =>
 const options = (language, itemTable) => ({
 	language,
 	itemTable,
+	pause: () => Promise.resolve(),
 	decodeText: bytes => TextEncoding.decodeText(bytes, 'windows-1252'),
 	decodeName: bytes => TextEncoding.decode(bytes, 'windows-1252')
 });
@@ -37,9 +38,9 @@ describe('prebuilt item table (SystemEN/itemInfo.json)', () => {
 		expect(loadedLanguage(undefined)).toBe('');
 	});
 
-	it('fills the item table as the Lua loader does: text decoded, resource names as the bytes in the charset', () => {
+	it('fills the item table as the Lua loader does: text decoded, resource names as the bytes in the charset', async () => {
 		const table = { 501: { keep: 1 } };
-		expect(applyItemInfoJson(potion('pt-BR'), options('pt-BR', table))).toBe(1);
+		expect(await applyItemInfoJson(potion('pt-BR'), options('pt-BR', table))).toBe(1);
 		expect(table[501]).toEqual({
 			keep: 1,
 			unidentifiedDisplayName: 'Poção',
@@ -56,10 +57,35 @@ describe('prebuilt item table (SystemEN/itemInfo.json)', () => {
 		});
 	});
 
-	it("isn't used for another language (the release's table served for a pack that lacks one)", () => {
+	it("isn't used for another language (the release's table served for a pack that lacks one)", async () => {
 		const table = {};
-		expect(applyItemInfoJson(potion(''), options('pt-BR', table))).toBe(0);
+		expect(await applyItemInfoJson(potion(''), options('pt-BR', table))).toBe(0);
 		expect(table).toEqual({});
+	});
+
+	it('decodes descriptions when first read, and keeps one assigned before', async () => {
+		const table = {};
+		let decoded = 0;
+		const opts = options('pt-BR', table);
+		const decodeText = opts.decodeText;
+		opts.decodeText = bytes => (decoded++, decodeText(bytes));
+		await applyItemInfoJson(potion('pt-BR'), opts);
+		expect(decoded).toBe(2); // the two display names
+		expect(table[501].identifiedDescriptionName).toEqual(['Cura 45 HP.', 'Peso: 7']);
+		expect(decoded).toBe(4);
+		table[501].unidentifiedDescriptionName = ['set'];
+		expect(table[501].unidentifiedDescriptionName).toEqual(['set']);
+		expect(decoded).toBe(4);
+	});
+
+	it('yields to the browser between slices of a large table', async () => {
+		const items = Array.from({ length: 3000 }, (_, i) => `"${i + 1}":["a","b","c","d",["x"],["y"],0,0,null,false,null]`);
+		const text = `{"format":1,"lang":"","source":"x","items":{${items.join(',')}}}`;
+		let pauses = 0;
+		const table = {};
+		const opts = { ...options('', table), pause: () => (pauses++, Promise.resolve()), budget: 0 };
+		expect(await applyItemInfoJson(Uint8Array.from(text, c => c.charCodeAt(0)), opts)).toBe(3000);
+		expect(pauses).toBeGreaterThan(100);
 	});
 
 	it('reads bytes one character per byte, also past a chunk', () => {

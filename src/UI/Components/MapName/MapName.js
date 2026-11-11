@@ -68,11 +68,12 @@ MapName.onAppend = function onAppend() {
 	_removeTimeoutId = null;
 
 	if (_mapinfo && _mapinfo.notifyEnter && _newMap) {
-		// Force browser to acknowledge opacity:0 from :host before transitioning
-		// eslint-disable-next-line no-unused-expressions
-		this._host.offsetHeight;
-
-		this._host.style.opacity = '1';
+		// The fade-in starts on the next frame, once the banner was laid out at :host's opacity 0 (reading
+		// offsetHeight here forced a layout of every window just appended with it, ~50 ms when entering the game)
+		const host = this._host;
+		requestAnimationFrame(() => {
+			host.style.opacity = '1';
+		});
 
 		// After 5s, start fade-out (CSS transition handles the animation)
 		_fadeTimeoutId = setTimeout(() => {

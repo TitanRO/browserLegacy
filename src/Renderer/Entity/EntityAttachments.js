@@ -14,6 +14,7 @@ import Camera from 'Renderer/Camera.js';
 import Ground from 'Renderer/Map/Ground.js';
 import StrEffect from 'Renderer/Effects/StrEffect.js';
 import Renderer from 'Renderer/Renderer.js';
+import VisualOptions, { statusIconScale } from 'Renderer/VisualOptions.js';
 
 // Default fog for STR attachments
 const _defaultFog = {
@@ -344,10 +345,20 @@ class AttachmentManager {
 		const self = this;
 		const zIdx = attachment.renderBefore ? 1 : 500;
 
+		// Display helper: big stun and sleep icons (layers and their offsets, as the DLL scales the .act)
+		const scale = statusIconScale(VisualOptions, attachment.uid);
+
 		SpriteRenderer.runWithDepth(true, false, false, function () {
 			SpriteRenderer.zIndex = zIdx;
 			for (i = 0, count = layers.length; i < count; ++i) {
-				self.entity.renderLayer(layers[i], spr, spr, 1.0, _position, false);
+				const layer = layers[i];
+				const x = layer.pos[0];
+				const y = layer.pos[1];
+				layer.pos[0] = x * scale;
+				layer.pos[1] = y * scale;
+				self.entity.renderLayer(layer, spr, spr, scale, _position, false);
+				layer.pos[0] = x;
+				layer.pos[1] = y;
 			}
 		});
 

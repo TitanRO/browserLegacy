@@ -39,6 +39,28 @@ export const HELPER_OPTIONS = [
 		key: 'noAdelay.enabled',
 		label: 'No adelay (attacks and casts shown at once)',
 		type: 'toggle'
+	},
+	{ section: 'Display', key: 'bigStatusIcons.enabled', label: 'Big stun and sleep icons', type: 'toggle' },
+	{
+		section: 'Display',
+		key: 'smallWoeObjects.enabled',
+		label: 'Small barricades, guardian stones and flags',
+		type: 'toggle'
+	},
+	{
+		section: 'Display',
+		key: 'instantVanish.enabled',
+		label: 'Broken barricades and stones vanish at once',
+		type: 'toggle'
+	},
+	{ section: 'Display', key: 'bigMvps.enabled', label: 'Bigger MVPs', type: 'toggle' },
+	{ section: 'Display', key: 'smallEmperium.enabled', label: 'Small Emperium', type: 'toggle' },
+	{ section: 'Display', key: 'tarotCards.enabled', label: 'Tarot cards show their effect', type: 'toggle' },
+	{
+		section: 'Display',
+		key: 'stunFreezeShouts.enabled',
+		label: 'Scream and Frost Joker say STUN and FREEZE',
+		type: 'toggle'
 	}
 ];
 

@@ -750,11 +750,18 @@ function render(gl, modelView, projection, normalMat, fog, light, tick) {
 			// NEGATED terrain height). roBrowser's world-Y (up) is -position[2] (see the 2D sprite
 			// Project(): `y = -pos.z`), so negate p[2] into buildWorld's up axis — else the
 			// placement error is proportional to the terrain height (flat OK, hills sink/vanish).
-			if (!inst.worldBuilt) {
+			// Display helpers: a smaller Emperium or guild flag (VisualOptions.spriteScale, set by the entity's render)
+			const scale = inst.entity.helperScale || 1;
+			if (!inst.worldBuilt || inst.worldScale !== scale) {
 				const p = inst.pos;
 				inst.world = buildWorld(inst.dir * DIR_STEP_DEG, [p[0], -p[2], p[1]], type.ipRow, {
 					heightOffset: type.groundOffset
 				});
+				// row-vector world: scaling its first three rows scales the model about its own origin
+				for (let k = 0; k < 12; k++) {
+					inst.world[k] *= scale;
+				}
+				inst.worldScale = scale;
 				inst.worldBuilt = true;
 			}
 

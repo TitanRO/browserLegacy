@@ -35,6 +35,7 @@ import entityAura from './EntityAura.js';
 import entityDropEffect from './EntityDropEffect.js';
 import entityEmblem from './EntityEmblem.js';
 import EntityManager from 'Renderer/EntityManager.js';
+import VisualOptions, { vanishesAtOnce } from 'Renderer/VisualOptions.js';
 
 const vec3 = glMatrix.vec3;
 const mat4 = glMatrix.mat4;
@@ -513,7 +514,8 @@ class Entity {
 					if (!is_pc && !is_wug) {
 						this.clean();
 						this.remove_tick = +Date.now();
-						this.remove_delay = 5000;
+						// Display helper: broken barricades and guardian stones vanish at once
+						this.remove_delay = vanishesAtOnce(VisualOptions, this.job) ? 0 : 5000;
 					}
 				}
 				break;
@@ -757,6 +759,8 @@ Entity.prototype.virtue = 0;
 Entity.prototype.isPKModeON = 0;
 Entity.prototype.xSize = 5;
 Entity.prototype.ySize = 5;
+/** The display helpers' scale of the unit's sprite (EntityRender, VisualOptions.spriteScale). */
+Entity.prototype.helperScale = 1;
 Entity.prototype.state = 0;
 Entity.prototype.clevel = 0;
 Entity.prototype.action = 0;

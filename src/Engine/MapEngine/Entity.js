@@ -55,6 +55,7 @@ import CartItems from 'UI/Components/CartItems/CartItems.js';
 import ScreenEffectManager from 'Renderer/ScreenEffectManager.js';
 import { updateStatusEffects } from 'Engine/MapEngine/StatusEffects.js';
 import { bowAttackTiming } from 'Renderer/Effects/ArrowFlight.js';
+import VisualOptions, { shoutShown } from 'Renderer/VisualOptions.js';
 
 // Excludes for skill name display
 const SkillNameDisplayExclude = [
@@ -1026,6 +1027,8 @@ function onEntityTalk(pkt) {
 
 	// Remove "pseudo : |00Dialogue
 	pkt.msg = pkt.msg.replace(/\: \|\d{2}/, ': ');
+	// Display helper: another player's Scream or Frost Joker line shown as STUN or FREEZE
+	pkt.msg = shoutShown(VisualOptions, pkt.msg, text => DB.shoutKind(text));
 
 	if (ChatRoom.isOpen) {
 		ChatRoom.message(pkt.msg);

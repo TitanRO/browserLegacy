@@ -3,7 +3,20 @@
  * (markers, cast targets, chat and cast ranges), and the options rows both clients draw.
  */
 import { afterEach, describe, expect, it } from 'vitest';
-import VisualOptions, { isAttackOrCast, PROP_ALPHA } from 'Renderer/VisualOptions.js';
+import VisualOptions, {
+	isAttackOrCast,
+	effectTexture,
+	shoutShown,
+	ICE_SCALE,
+	statusIconScale,
+	STATUS_SCALE,
+	EMPERIUM_SCALE,
+	MVP_SCALE,
+	PROP_ALPHA,
+	spriteScale,
+	vanishesAtOnce,
+	WOE_SCALE
+} from 'Renderer/VisualOptions.js';
 import { argb } from 'Renderer/Map/GroundMarkers.js';
 import {
 	ALWAYS_KEPT,
@@ -64,6 +77,63 @@ describe('display options', () => {
 		const mob = { ACTION: { ATTACK: -2, ATTACK1: 3, ATTACK2: -1, ATTACK3: -1, SKILL: -1 } };
 		expect(isAttackOrCast(mob, 3)).toBe(true);
 		expect(isAttackOrCast(mob, -1)).toBe(false);
+	});
+
+	it('the WoE GRF helpers each follow their setting', () => {
+		for (const [section, option] of [
+			['bigStatusIcons', 'bigStatusIcons'],
+			['smallWoeObjects', 'smallWoeObjects'],
+			['instantVanish', 'instantVanish'],
+			['bigMvps', 'bigMvps'],
+			['smallEmperium', 'smallEmperium'],
+			['tarotCards', 'tarotCards'],
+			['stunFreezeShouts', 'stunFreezeShouts']
+		]) {
+			expect(visualOptions(settings({ [section]: { enabled: true } }))[option]).toBe(true);
+			expect(visualOptions(settings())[option]).toBe(false);
+		}
+	});
+
+	it('bigger MVPs, smaller WoE objects, by sprite', () => {
+		const on = { bigMvps: true, smallWoeObjects: true, instantVanish: true };
+		expect(spriteScale(on, 1039)).toBe(MVP_SCALE); // Baphomet
+		expect(spriteScale(on, 1002)).toBe(1); // Poring
+		expect(spriteScale(on, 1905)).toBe(WOE_SCALE); // barricade
+		expect(spriteScale(on, 1907)).toBe(WOE_SCALE); // guardian stone
+		expect(spriteScale(on, 973)).toBe(WOE_SCALE); // castle flag
+		expect(spriteScale(on, 1288)).toBe(1); // the Emperium has its own option
+		expect(spriteScale({ smallEmperium: true }, 1288)).toBe(EMPERIUM_SCALE);
+		expect(spriteScale(on, 722)).toBe(WOE_SCALE); // the 3D guild flag
+		expect(spriteScale({}, 1039)).toBe(1);
+		expect(vanishesAtOnce(on, 1906)).toBe(true);
+		expect(vanishesAtOnce(on, 973)).toBe(false); // flags don't break
+		expect(vanishesAtOnce({}, 1906)).toBe(false);
+	});
+
+	it('big status icons: stun and sleep 2x, the ice block 1.5x', () => {
+		const on = { bigStatusIcons: true };
+		expect(statusIconScale(on, 'status-stun')).toBe(STATUS_SCALE);
+		expect(statusIconScale(on, 'status-sleep')).toBe(STATUS_SCALE);
+		expect(statusIconScale(on, 'status-freeze')).toBe(ICE_SCALE);
+		expect(statusIconScale(on, 'status-curse')).toBe(1);
+		expect(statusIconScale({}, 'status-stun')).toBe(1);
+	});
+
+	it('shout lines show as STUN and FREEZE', () => {
+		const kind = text => ({ 'Kyaaaa----!': 'scream', 'Me..me..mememe...': 'joke' })[text] || null;
+		const on = { stunFreezeShouts: true };
+		expect(shoutShown(on, 'Bard : Kyaaaa----!', kind)).toBe('Bard : STUN');
+		expect(shoutShown(on, 'Clown : Me..me..mememe...', kind)).toBe('Clown : FREEZE');
+		expect(shoutShown(on, 'Bard : hello', kind)).toBe('Bard : hello');
+		expect(shoutShown({}, 'Bard : Kyaaaa----!', kind)).toBe('Bard : Kyaaaa----!');
+		expect(shoutShown(on, 'no separator', kind)).toBe('no separator');
+	});
+
+	it('tarot cards come from the release when they print their effect', () => {
+		expect(effectTexture({ tarotCards: true }, 'effect/tarot07.tga')).toBe('titanro/tarot/tarot07.tga');
+		expect(effectTexture({ tarotCards: true }, 'effect/tarot15.tga')).toBe('effect/tarot15.tga');
+		expect(effectTexture({}, 'effect/tarot07.tga')).toBe('effect/tarot07.tga');
+		expect(effectTexture({ tarotCards: true }, undefined)).toBe(undefined);
 	});
 
 	it('Grayworld is the flat map and the cell grid together', () => {

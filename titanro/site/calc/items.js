@@ -1,8 +1,11 @@
 /**
  * TitanRO calculator: equipment, cards and their bonuses. items.json lists every item and card with the bonuses the
  * game server's own script evaluation gives it (exported by TitanRO's server tools: each script run on the server, its
- * bonus calls recorded). Items whose bonuses depend on the wearer (job, level, stats) are marked `varies` and
- * not counted. tests/site/calc.test.js checks equipped characters against the server (tests/site/equip-cases.json).
+ * bonus calls recorded). Items whose bonuses depend on the wearer (job, level, stats, another slot's refine) are
+ * marked `varies` and not counted. Sets count once: Hercules' combos (items.json `combos`) and sets written in an
+ * item's own script (`partners`: the items it checks for; `sets`: what it adds with each group of them worn, as the
+ * server evaluated it). tests/site/calc.test.js checks equipped characters against the server
+ * (tests/site/equip-cases.json), a fifth of them built around a set.
  */
 
 /** Equipment slots: [key, label, item location bits]. */
@@ -16,8 +19,14 @@ export const SLOTS = [
 	['mid', 'Middle headgear', 512],
 	['low', 'Lower headgear', 1],
 	['acc1', 'Accessory', 8 | 128],
-	['acc2', 'Accessory', 8 | 128]
+	['acc2', 'Accessory', 8 | 128],
+	['ammo', 'Ammunition', 32768]
 ];
+
+const IT_AMMO = 10;
+/** The ammunition type (item subtype) each shooting weapon type loads (battle_check_arrows): bows arrows, guns
+ * bullets, grenade launchers grenades. */
+export const AMMO_OF = { 11: 1, 17: 3, 18: 3, 19: 3, 20: 3, 21: 5 };
 
 const IT_WEAPON = 4;
 
@@ -25,7 +34,7 @@ const IT_WEAPON = 4;
  * Items whose effect in some builds differs from their recorded bonuses (found by tests/site's server cases): shown
  * as not counted until the difference is understood.
  */
-const UNVERIFIED = new Set([4835, 4839, 4841, 20742, 2646, 490206, 28520]);
+const UNVERIFIED = new Set([20742]);
 const IT_CARD = 6;
 
 /** items.json rows as objects (keyed by id). */
@@ -95,10 +104,11 @@ const OTHER = new Set([
 ]);
 
 /**
- * Sums the bonuses of equipped items (each {item, refine, cards: [card items]}): the totals the calculator applies,
+ * Sums the bonuses of equipped items (each {item, refine, cards: [card items]}; `weaponType` the weapon type when no
+ * weapon item is worn, for the ammunition): the totals the calculator applies,
  * the item DEF and refine DEF, and per item what isn't counted (`notCounted`) or doesn't show here (`other`).
  */
-export function sumEquipment(data, equips, combos = []) {
+export function sumEquipment(data, equips, combos = [], weaponType = null) {
 	const t = {
 		param: [0, 0, 0, 0, 0, 0], // from equipment and cards
 		paramEquip: [0, 0, 0, 0, 0, 0], // from equipment scripts only (not cards): auriga adds VIT/INT to MaxHP/SP
@@ -107,13 +117,38 @@ export function sumEquipment(data, equips, combos = []) {
 		equipAtk: 0, watk: 0, latk: 0, ematk: 0, aspdRate: 0, aspdAdd: 0,
 		atkRate: 0, critAtkRate: 0, longAtkRate: 0,
 		addrace: new Array(RC_MAX).fill(0), addele: new Array(10).fill(0), addsize: [0, 0, 0],
-		ignoreDef: new Array(RC_MAX).fill(0), weaponEle: 0,
+		ignoreDef: new Array(RC_MAX).fill(0), weaponEle: 0, arrowAtk: 0, arrowCri: 0, doubleRate: 0, doubleAddRate: 0,
+		varCastRate: 0, fixCastRate: 0, addVarCast: 0, addFixCast: 0, delayRate: 0,
+		skillCast: {}, skillFixCastRate: {}, skillVarCast: {}, skillFixCast: {}, skillAtk: {},
 		refineDef: 0, notCounted: [], other: []
 	};
+	const weapon = equips.find((e) => e && e.item && e.item.type === IT_WEAPON);
+	const wtype = weapon ? weapon.item.sub : weaponType; // the weapon slot's, else the page's weapon type
+	// what's worn (cards count), for sets
+	const have = new Map();
+	const names = new Map();
+	const off = new Set(); // disabled on field maps: no set with them counts
+	for (const e of equips) {
+		if (!e || !e.item) continue;
+		if (e.item.bonuses.disabled) off.add(e.item.id);
+		for (const x of [e.item].concat((e.cards || []).filter(Boolean))) {
+			have.set(x.id, (have.get(x.id) || 0) + 1);
+			names.set(x.id, x.name);
+		}
+	}
 	for (const e of equips) {
 		if (!e || !e.item) continue;
 		const it = e.item;
 		const disabled = !!it.bonuses.disabled; // the item gives nothing on field maps; its cards still count
+		if (it.type === IT_AMMO) {
+			// ammunition counts in a weapon that shoots it (a bow's arrows, a gun's bullets): its ATK and its script
+			// (lr_flag 2): its element becomes the weapon's, its Critical counts for its attacks only
+			if (AMMO_OF[wtype] !== it.sub) {
+				t.other.push(`${it.name}: not shot by this weapon`);
+				continue;
+			}
+			t.arrowAtk += it.atk;
+		}
 		if (disabled) t.other.push(`${it.name}: disabled on field maps`);
 		if (!disabled && it.type !== IT_WEAPON && it.type !== IT_CARD) {
 			t.def += it.def;
@@ -134,34 +169,29 @@ export function sumEquipment(data, equips, combos = []) {
 				t.notCounted.push(`${src.name}: depends on the wearer`);
 				continue;
 			}
-			for (const b of list) apply(t, b, src, isCard, shield ? (isCard ? 'card' : 'script') : '');
+			const where = it.type === IT_AMMO ? 'ammo' : shield ? (isCard ? 'card' : 'script') : '';
+			for (const b of list) apply(t, b, src, isCard, where);
+			// a set written in its own script: what it adds with the worn items it checks for
+			const worn = (src.bonuses.partners || []).filter((id) => (have.get(id) || 0) > (id === src.id ? 1 : 0)); // itself: a second one
+			if (worn.length) {
+				const set = (src.bonuses.sets || []).find(([p]) => p.length === worn.length && p.every((id) => worn.includes(id)));
+				if (set) for (const b of set[1]) apply(t, b, src, isCard, where);
+				else t.notCounted.push(`${src.name}: a set effect with other worn items`);
+			}
 		}
 	}
-	// item combos (sets): every listed item equipped (cards count), each combo once
-	const have = new Map();
-	const names = new Map();
-	for (const e of equips) {
-		if (!e || !e.item) continue;
-		for (const x of [e.item].concat((e.cards || []).filter(Boolean))) {
-			have.set(x.id, (have.get(x.id) || 0) + 1);
-			names.set(x.id, x.name);
-		}
-	}
+	// item combos (sets): every listed item equipped (cards count), each combo once; the server runs their scripts
+	// after the equipment's, as neither an equipment script nor a weapon hand's (stats count as a card's)
 	for (const [ids, b] of combos) {
 		const need = new Map();
 		for (const id of ids) need.set(id, (need.get(id) || 0) + 1);
-		if (![...need].every(([id, n]) => (have.get(id) || 0) >= n)) continue;
-		// set bonuses aren't counted yet: the server's totals for some sets don't match their scripts' bonuses
-		t.notCounted.push('Set bonus (' + ids.map((id) => names.get(id) || id).join(' + ') + ')');
-		void b;
-	}
-	// items whose own script checks for other items (a set inside the script): not counted when one of those is worn
-	for (const e of equips) {
-		if (!e || !e.item) continue;
-		for (const x of [e.item].concat((e.cards || []).filter(Boolean))) {
-			const p = x.bonuses.partners;
-			if (p && p.some((id) => have.has(id))) t.notCounted.push(`${x.name}: a set effect with other worn items`);
+		if (![...need].every(([id, n]) => (have.get(id) || 0) >= n) || ids.some((id) => off.has(id))) continue;
+		const label = 'Set bonus (' + ids.map((id) => names.get(id) || id).join(' + ') + ')';
+		if (!b.fixed) {
+			t.notCounted.push(label + ': depends on the wearer');
+			continue;
 		}
+		for (const x of b.fixed) apply(t, x, { name: label }, true, '');
 	}
 	t.def += Math.trunc((t.refineDef + 50) / 100);
 	return t;
@@ -169,6 +199,25 @@ export function sumEquipment(data, equips, combos = []) {
 
 /** Bonuses kept in the hand's weapon data (Hercules' right_weapon / left_weapon): the left hand's don't count here. */
 const WEAPON_HAND = new Set(['SP_ADDRACE', 'SP_ADDELE', 'SP_ADDSIZE', 'SP_ATK1', 'SP_ATKELE', 'SP_ADDRACE2', 'SP_ADD_DAMAGE_CLASS']);
+
+/** Cast and delay bonuses, kept as the server keeps them (pc_bonus / pc_bonus2 with RENEWAL_CAST). */
+const CAST_BONUS = new Set(['SP_VARCASTRATE', 'SP_CASTRATE', 'SP_FIXCASTRATE', 'SP_ADD_VARIABLECAST', 'SP_ADD_FIXEDCAST',
+	'SP_SKILL_VARIABLECAST', 'SP_SKILL_FIXEDCAST', 'SP_DELAYRATE']);
+function castBonus(t, name, args) {
+	const val = args[args.length - 1];
+	const per = args.length > 1 ? args[0] : null; // bonus2: one skill
+	const add = (o, k, v) => { o[k] = (o[k] || 0) + v; };
+	switch (name) {
+		case 'SP_VARCASTRATE': if (per === null) t.varCastRate -= val; else add(t.skillCast, per, -val); return;
+		case 'SP_CASTRATE': add(t.skillCast, per, val); return; // bonus2 bCastrate: the same per-skill rate, other sign
+		case 'SP_FIXCASTRATE': if (per === null) t.fixCastRate -= val; else add(t.skillFixCastRate, per, -val); return;
+		case 'SP_ADD_VARIABLECAST': t.addVarCast += val; return;
+		case 'SP_ADD_FIXEDCAST': t.addFixCast += val; return;
+		case 'SP_SKILL_VARIABLECAST': add(t.skillVarCast, per, val); return;
+		case 'SP_SKILL_FIXEDCAST': add(t.skillFixCast, per, val); return;
+		case 'SP_DELAYRATE': t.delayRate += val; return;
+	}
+}
 
 function apply(t, b, src, isCard, shield = '') {
 	const [name, ...args] = b;
@@ -178,6 +227,25 @@ function apply(t, b, src, isCard, shield = '') {
 		return;
 	}
 	const val = args[args.length - 1];
+	if (shield === 'ammo' && name === 'SP_CRITICAL') {
+		t.arrowCri += val * 10;
+		return;
+	}
+	if (CAST_BONUS.has(name) && !(name === 'SP_CASTRATE' && args.length < 2)) {
+		if (shield === 'ammo') return; // not from ammunition (lr_flag 2)
+		castBonus(t, name, args);
+		return;
+	}
+	if (name === 'SP_SKILL_ATK') {
+		if (shield !== 'ammo') t.skillAtk[args[0]] = (t.skillAtk[args[0]] || 0) + val; // bonus2 bSkillAtk: one skill's damage %
+		return;
+	}
+	if (name === 'SP_DOUBLE_RATE' || name === 'SP_DOUBLE_ADD_RATE') {
+		if (shield) return; // the weapon hand's only (lr_flag 0)
+		if (name === 'SP_DOUBLE_RATE') t.doubleRate = Math.max(t.doubleRate, val);
+		else t.doubleAddRate += val;
+		return;
+	}
 	const a1 = args[0];
 	const a2 = args[1];
 	const stat = ['SP_STR', 'SP_AGI', 'SP_VIT', 'SP_INT', 'SP_DEX', 'SP_LUK'].indexOf(name);
@@ -219,7 +287,7 @@ function apply(t, b, src, isCard, shield = '') {
 			return;
 		}
 		case 'SP_ADDELE':
-			if (a1 === 10) for (let e = 0; e < 10; e++) t.addele[e] += val; // ELE_ALL
+			if (a1 === 255) for (let e = 0; e < 10; e++) t.addele[e] += val; // ELE_ALL
 			else if (a1 >= 0 && a1 < 10) t.addele[a1] += val;
 			return;
 		case 'SP_ADDSIZE':

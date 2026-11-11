@@ -4,12 +4,16 @@
  * characters and monsters (tests/site/damage-cases.json).
  *
  * Counted: status ATK, the weapon (ATK, level, refine and over-refine), size and element modifiers (neutral attacks),
- * the monster's DEF, the critical bonus, hit and critical chances. Not counted: cards, item bonuses, skills, buffs,
- * arrows and elemental weapons.
+ * the monster's DEF, the critical bonus, hit and critical chances, equipment, cards and ammunition (items.js).
  */
 import { resolve } from './calc.js';
 
+const W_FIST = 0;
+const W_DAGGER = 1;
 const W_BOW = 11;
+const TF_DOUBLE = 48;
+/** Passive skills that change normal attacks (the page's passive skill panel lists them too). */
+export const ATTACK_PASSIVES = new Set([TF_DOUBLE]);
 const W_KATAR = 16;
 const DEX_WEAPONS = new Set([11, 13, 14, 17, 18, 19, 20, 21]);
 const GUNS = new Set([17, 18, 19, 20, 21]);
@@ -72,7 +76,10 @@ function attrRatio(data, mob) {
 function applyDef(damage, mob) {
 	const def1 = Math.max(mob.def, 0);
 	const vitDef = Math.max(mob.def2, 1);
-	return Math.trunc(f(f(f(f(100 - f(f(def1 / f(def1 + 400)) * 90)) / 100) * damage) - vitDef));
+	// the server is built with -ffast-math, which computes (100 - q × 90) / 100 × damage as damage - q × 0.9 × damage
+	// in floats (1 more than the plain formula at DEF 160 or 500)
+	const q = f(def1 / f(def1 + 400));
+	return Math.trunc(f(f(damage - f(f(q * f(0.9)) * damage)) - vitDef));
 }
 
 /** The weapon part: size, ATK %, equipment ATK, element, the card and equipment % against the monster. */
@@ -80,6 +87,7 @@ function weaponDamage(data, c, mob, roll, overRoll, ele, nk = 0) {
 	const type = c.weapon ? c.weapon.type : 0;
 	let d = weaponAtk(data, c.total, c.weapon, roll, overRoll);
 	d = Math.trunc((d * data.size_fix[mob.size][type]) / 100);
+	if (LONG_WEAPONS.has(type)) d += c.eq.arrowAtk || 0; // the ammunition's ATK, after the size fix
 	if (c.eq.atkRate) d += Math.trunc((d * c.eq.atkRate) / 100);
 	d += c.eq.equipAtk;
 	if (!(nk & NK_NO_ELEFIX)) d = eleFix(data, d, ele, mob);
@@ -125,8 +133,25 @@ function hitDamage(data, c, mob, roll, critical, overRoll = roll) {
 }
 
 /**
- * A normal attack of `input` (the stat calculator's input) on `mob` (a mobList row): {min, max} damage of a hit,
- * the critical hit's damage, hit and critical chances (0..1), and the character's total stats.
+ * Double Attack on a normal attack (TitanRO's auriga_stats plugin, as Hercules decides it): Double Attack with a
+ * dagger (5 % a level) or the equipment's double attack chance with any weapon, the higher one; two hits. A dagger's
+ * Double Attack also raises the hit chance by its level in percent of HIT - FLEE when it triggers.
+ * {rate (0..1), hitAdd} or null.
+ */
+function doubleAttack(c, type, passives, hit, mob) {
+	const lv = type === W_DAGGER ? (passives && passives[TF_DOUBLE]) || 0 : 0;
+	const itemRate = type !== W_FIST ? c.eq.doubleRate + c.eq.doubleAddRate : 0;
+	if (lv <= 0 && itemRate <= 0) return null;
+	const chance = 5 * lv > itemRate ? 5 * lv : itemRate;
+	const bonusLv = lv > 0 && 5 * lv >= itemRate ? lv : 0;
+	const base = hit - mob.flee;
+	return { rate: Math.min(Math.max(chance, 0), 100) / 100, hitAdd: bonusLv && base > 0 ? Math.trunc((base * bonusLv) / 100) : 0 };
+}
+
+/**
+ * A normal attack of `input` (the stat calculator's input; `input.passives` {skill id: level} for ATTACK_PASSIVES)
+ * on `mob` (a mobList row): {min, max} damage of a hit, the critical hit's damage, hit and critical chances (0..1),
+ * Double Attack (`double`: {rate, hitRate} when it can trigger; it hits twice, critical too), and the total stats.
  */
 export function normalAttack(data, input, mob) {
 	const c = resolve(data, input);
@@ -136,10 +161,13 @@ export function normalAttack(data, input, mob) {
 	const hitRate = Math.min(Math.max(hit - mob.flee, MIN_HITRATE), MAX_HITRATE) / 100;
 	let cri = 10 + Math.floor(total.luk / 3) * 10 + eq.cri;
 	if (type === W_KATAR) cri *= 2;
+	if (LONG_WEAPONS.has(type)) cri += eq.arrowCri || 0; // the ammunition's Critical
 	cri -= Math.trunc(mob.lv / 15) + 2 * mob.luk;
 	const critRate = Math.min(Math.max(cri, 0), 1000) / 1000;
-	// a katar's normal attack adds a second hit of 1 % (+ 2 % per Double Attack level, not counted here)
-	const katar = (d) => (type === W_KATAR ? Math.trunc(d / 100) : 0);
+	const da = doubleAttack(c, type, input.passives, hit, mob);
+	// a katar's normal attack adds a second hit of 1 % + 2 % per Double Attack level
+	const katarLv = (input.passives && input.passives[TF_DOUBLE]) || 0;
+	const katar = (d) => (type === W_KATAR ? Math.trunc((d * (1 + 2 * katarLv)) / 100) : 0);
 	const min = hitDamage(data, c, mob, 'min', false);
 	const max = hitDamage(data, c, mob, 'max', false);
 	const crit = hitDamage(data, c, mob, 'max', true);
@@ -153,6 +181,7 @@ export function normalAttack(data, input, mob) {
 		critMin: hitDamage(data, c, mob, 'max', true, 'min'),
 		hitRate,
 		critRate,
+		double: da && { rate: da.rate, hitRate: Math.min(Math.max(hit + da.hitAdd - mob.flee, MIN_HITRATE), MAX_HITRATE) / 100 },
 		total
 	};
 }
@@ -169,7 +198,9 @@ const SPECIAL_SKILLS = new Set([
 	2008, 2261, 2477, 2553, 2559, 2570, 2582, 2593, 3007, 3010, 5004, 5032,
 	// counters, reflects, traps and area effects; spirit spheres, cart weight and rage counters the probe's characters
 	// don't have
-	61, 121, 139, 252, 267, 372, 390, 428, 429, 430, 485, 2314, 2476
+	61, 121, 139, 252, 267, 372, 390, 428, 429, 430, 485, 2314, 2476,
+	// Warg Strike, Warg Bite: the warg's element against non-neutral monsters
+	2243, 2244
 ]);
 
 /** The weapon skills the calculator knows: data.weapon_skills (their ratio doesn't depend on the caster), less the
@@ -181,6 +212,16 @@ export function weaponSkills(data) {
 		.filter((id) => !SPECIAL_SKILLS.has(id) && !passive.has(id));
 }
 
+const KN_BRANDISHSPEAR = 57;
+
+/** A long-range skill (the server's battle_range_type for players: its skill db range 5 or more, a negative one as
+ * its size; Brandish Spear in renewal): the equipment's long-range damage % counts. */
+function longSkill(sk, lv, skillId) {
+	if (skillId === KN_BRANDISHSPEAR) return true;
+	const range = sk.time && sk.time[lv - 1][6];
+	return range != null && Math.abs(range) >= 5;
+}
+
 function skillHitDamage(data, c, mob, skillId, lv, roll) {
 	const sk = data.weapon_skills[skillId];
 	const [ratio, skillEle, num] = sk.lv[lv - 1];
@@ -190,12 +231,74 @@ function skillHitDamage(data, c, mob, skillId, lv, roll) {
 	const batk = sk.nk & NK_NO_ELEFIX ? statusAtk(c.total, type) : eleFix(data, statusAtk(c.total, type), ELE_NEUTRAL, mob);
 	let damage = batk + weaponDamage(data, c, mob, roll, roll, ele, sk.nk);
 	damage = Math.trunc((damage * ratio) / 100);
+	const skillAtk = (c.eq.skillAtk && c.eq.skillAtk[skillId]) || 0; // the equipment's damage % for this skill
+	if (skillAtk) damage += Math.trunc((damage * skillAtk) / 100);
+	if (c.eq.longAtkRate && longSkill(sk, lv, skillId)) damage += Math.trunc((damage * c.eq.longAtkRate) / 100);
 	if (!(sk.nk & NK_IGNORE_DEF)) damage = applyDef(damage, defOf(c, mob));
 	const hurts = data.attr_fix[Math.max(mob.element_lv, 1) - 1][ele][mob.element] > 0;
 	if (damage < 0) damage = 0;
 	if (num > 1) damage *= num;
 	if (damage < 1) damage = hurts ? 1 : 0; // at least 1 for the whole attack
 	return damage;
+}
+
+const WL_RADIUS = 2208;
+/** Monk combo skills: their after-cast delay isn't reduced by AGI / DEX on this server (auriga_stats). */
+const COMBO_SKILLS = new Set([263, 272, 273, 371, 372, 2326, 2329, 2593]);
+
+/**
+ * Cast time and after-cast delay of a weapon skill (ms), as the server's auriga_stats plugin computes them (auriga
+ * RR's skill_castfix and jRO's delay floor): variable cast reduced by DEX + INT / 2 on a square-root curve (none at
+ * 265) and the equipment's percentages added up; fixed cast with flat additions, then the largest reduction;
+ * after-cast delay scaled by the equipment's delay rate, at least the attack motion. `amotion` from statusWindow.
+ */
+export function skillTimes(data, input, skillId, lv, amotion) {
+	const c = input.total ? input : resolve(data, input);
+	const sk = data.weapon_skills[skillId];
+	if (!sk || !sk.time) return null;
+	const [cast, fixcast, delay, cooldown, castnodex, delaynodex] = sk.time[lv - 1];
+	const eq = c.eq;
+	const own = (o) => (o && o[skillId]) || 0;
+	// variable cast
+	let time = Math.max(cast, 0);
+	let skillRate = 0;
+	if (!(castnodex & 4)) {
+		time += eq.addVarCast + own(eq.skillVarCast);
+		skillRate = own(eq.skillCast);
+	}
+	if (time > 0) {
+		if (!(castnodex & 1)) {
+			const stat = c.total.dex + Math.trunc(c.total.int / 2);
+			const max = 265;
+			time = stat >= max ? 0 : Math.trunc(time * f(1 - f(Math.sqrt(f(stat / max)))));
+		}
+		const reduce = castnodex & 4 ? 0 : eq.varCastRate;
+		if (skillRate) time = (time * (100 - skillRate)) / 100;
+		time = (time * (100 - reduce)) / 100;
+	}
+	time = Math.max(time, 0);
+	// fixed cast
+	let fixed = Math.max(fixcast, 0);
+	if (!(castnodex & 4)) fixed += eq.addFixCast + own(eq.skillFixCast);
+	if (fixed > 0) {
+		const radius = (input.passives && input.passives[WL_RADIUS]) || 0;
+		let largest = radius > 0 ? 5 + radius * 5 : 0;
+		let added = 0;
+		if (!(castnodex & 4)) {
+			largest = Math.max(largest, own(eq.skillFixCastRate), eq.fixCastRate);
+			added += Math.min(eq.fixCastRate, 0);
+		}
+		fixed = Math.trunc((fixed * (100 - Math.min(largest + added, 100))) / 100);
+	}
+	fixed = Math.max(fixed, 0);
+	// after-cast delay
+	let d = delay < 0 ? -delay + amotion : delay;
+	const combo = COMBO_SKILLS.has(skillId) ? 4 * c.total.agi + 2 * c.total.dex : 0;
+	d -= combo;
+	if (!(delaynodex & 4) && eq.delayRate) d = Math.trunc((d * (100 + eq.delayRate)) / 100);
+	d = Math.max(d, 0);
+	if (combo) d = Math.min(d + combo, delay);
+	return { cast: Math.trunc(time) + fixed, delay: Math.max(d, amotion), cooldown };
 }
 
 /** A weapon skill (`skillId` at `lv`) of `input` on `mob`: {min, max} damage, hits, hit chance. */

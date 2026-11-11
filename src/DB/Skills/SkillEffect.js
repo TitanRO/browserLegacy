@@ -821,7 +821,7 @@ SkillEffect[SK.GC_WEAPONBLOCKING] = {}; //Weapon Blocking
 SkillEffect[SK.GC_COUNTERSLASH] = { effectId: 'ef_gc_counterslash' }; //Counter Slash
 SkillEffect[SK.GC_WEAPONCRUSH] = {}; //Weapon Crush
 SkillEffect[SK.GC_VENOMPRESSURE] = {}; //Venom Pressure
-SkillEffect[SK.GC_POISONSMOKE] = {}; //Poison Smoke (its cells draw ef_gc_poisonsmoke: SkillUnit)
+SkillEffect[SK.GC_POISONSMOKE] = {}; //Poison Smoke (its cells draw effect 772 and new_poisonsmoke puffs: SkillUnit)
 SkillEffect[SK.GC_CLOAKINGEXCEED] = {}; //Cloaking Exceed
 SkillEffect[SK.GC_PHANTOMMENACE] = {}; //Phantom Menace
 SkillEffect[SK.GC_HALLUCINATIONWALK] = { effectId: 'ef_hallucinationwalk' }; //Hallucination Walk
@@ -1040,7 +1040,7 @@ SkillEffect[SK.SO_EARTHGRAVE] = { effectId: 'ef_so_earthgrave', hitEffectId: 'ef
 SkillEffect[SK.SO_DIAMONDDUST] = { effectId: [928, 'ef_so_diamonddust'], effectIdOnCaster: 'ef_so_diamonddust_cast' }; //Diamond Dust
 SkillEffect[SK.SO_POISON_BUSTER] = { effectId: 'ef_so_poison_buster' }; //Poison Buster
 SkillEffect[SK.SO_PSYCHIC_WAVE] = {
-	effectId: 922, // the sound; its unit draws ef_so_psychic_wave (SkillUnit)
+	effectId: [922, 'ef_so_psychic_wave'],
 	effectIdOnCaster: 'ef_so_psychic_wave_cast'
 }; //Psychic Wave
 SkillEffect[SK.SO_CLOUD_KILL] = {}; //Cloud Kill

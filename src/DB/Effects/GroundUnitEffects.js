@@ -216,6 +216,40 @@ const GroundUnitEffects = {
 		duration: (40 * 1000) / 60
 	})),
 
+	// EF_POISONSMOKE, Poison Smoke's cells: a particle3 sprite every 9 ticks, 2-7 units out in a
+	// random direction, scaled (40 + r(50)) / 170, rising for 40 ticks
+	772: [
+		{
+			type: '3D',
+			spriteName: 'particle3',
+			attachedEntity: false,
+			duplicate: 4,
+			timeBetweenDupli: 150,
+			posxRandDiff: 1.4,
+			posyRandDiff: 1.4,
+			poszStart: 0,
+			poszEnd: 1.5,
+			size: 38,
+			sizeRand: 15,
+			fadeIn: true,
+			fadeOut: true,
+			duration: (40 * 1000) / 60
+		}
+	],
+
+	// Poison Smoke's puffs: on about one tick in fifty the client plays new_poisonsmoke_1 or _2
+	// on the cell (effects 1546 and 1547)
+	ef_poisonsmoke_puff: [
+		{
+			type: 'STR',
+			file: 'new_poisonsmoke/new_poisonsmoke/new_poisonsmoke_%d',
+			rand: [1, 2],
+			texturePath: 'new_poisonsmoke/new_poisonsmoke/',
+			attachedEntity: false,
+			repeatDelay: 800
+		}
+	],
+
 	// EF_POWER_OF_GAIA: ring_yellow light standing on a 3 x 3 grid
 	1088: gaiaGrid().map(point => ({
 		type: 'CYLINDER',

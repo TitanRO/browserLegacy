@@ -9,7 +9,7 @@
 import { NO_EQUIPMENT } from './calc.js';
 
 /** The buffs the calculator offers, in the order the page lists them. */
-export const BUFF_ORDER = [34, 29, 33, 75, 66, 2041, 2042, 155, 111, 112, 113, 45, 60, 258, 355, 380, 383, 8];
+export const BUFF_ORDER = [34, 29, 33, 75, 66, 2041, 2042, 155, 111, 112, 113, 45, 60, 258, 355, 380, 383, 8, 68, 138, 280, 281, 282, 283];
 /** Buffs that need a weapon type ({skill id: [weapon types]}); the server ends them with another weapon. */
 export const BUFF_WEAPONS = { 60: [3], 258: [5], 111: [6, 7, 8, 9] };
 

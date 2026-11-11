@@ -86,7 +86,7 @@
 <script type="module">
 import { STATS, WEAPON_TYPES, statusWindow, statCost, totalStatPoints, spentStatPoints, jobBonus, aspd } from './calc/calc.js';
 import { jobGroups } from './calc/jobs.js';
-import { normalAttack, mobList, weaponSkills, skillAttack, skillTimes, ATTACK_PASSIVES, ATTACK_BUFFS } from './calc/damage.js';
+import { normalAttack, mobList, weaponSkills, skillAttack, skillTimes, ATTACK_PASSIVES, ATTACK_BUFFS, ENDOWS } from './calc/damage.js';
 import { SLOTS as EQ_SLOTS, AMMO_OF, itemMap, canEquip, sumEquipment } from './calc/items.js';
 import { withPassives } from './calc/passives.js';
 import { BUFF_ORDER, withBuffs } from './calc/buffs.js';
@@ -476,7 +476,11 @@ $('passives').addEventListener('change', (e) => {
 });
 $('buffs').addEventListener('change', (e) => {
 	const id = +e.target.dataset.buff;
-	if (id) { state.buffs[id] = +e.target.value; render(); }
+	if (!id) return;
+	// one endowment at a time: a new one ends the one before, as in the game
+	if (id in ENDOWS && +e.target.value) for (const other of Object.keys(ENDOWS)) delete state.buffs[other];
+	state.buffs[id] = +e.target.value;
+	render();
 });
 $('skill').addEventListener('change', (e) => { state.skill = +e.target.value; state.skilllv = 99; render(); });
 $('skilllv').addEventListener('change', (e) => { state.skilllv = +e.target.value; render(); });

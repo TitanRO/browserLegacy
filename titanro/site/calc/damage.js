@@ -24,10 +24,18 @@ const BS_OVERTHRUST = 113;
 const LK_AURABLADE = 355;
 const SN_SIGHT = 380;
 /** Buffs that change attacks (input.buffs {skill id: level}); buffs.js has what they do in the status window. */
-export const ATTACK_BUFFS = new Set([PR_IMPOSITIO, BS_WEAPONPERFECT, BS_OVERTHRUST, LK_AURABLADE, SN_SIGHT]);
+/** Weapon endowments: {skill id: element} (Aspersio, Enchant Poison, the Sage's four); one at a time. */
+export const ENDOWS = { 68: 6, 138: 5, 280: 3, 281: 1, 282: 4, 283: 2 };
+export const ATTACK_BUFFS = new Set([PR_IMPOSITIO, BS_WEAPONPERFECT, BS_OVERTHRUST, LK_AURABLADE, SN_SIGHT, ...Object.keys(ENDOWS).map(Number)]);
 
 function buffLv(c, id) {
 	return (c.buffs && c.buffs[id]) || 0;
+}
+
+/** The element of weapon attacks: an endowment's, over the weapon's and the ammunition's. */
+function attackEle(c) {
+	for (const [id, ele] of Object.entries(ENDOWS)) if (buffLv(c, id)) return ele;
+	return c.eq.weaponEle || ELE_NEUTRAL;
 }
 
 /** The buffs' ATK before the ratio (Impositio: 5 a level, as a mastery) and their ratio % (Over Thrust 5 as a
@@ -107,14 +115,14 @@ function applyDef(damage, mob) {
 }
 
 /** The weapon part: size, ATK %, equipment ATK, element, the card and equipment % against the monster. */
-function weaponDamage(data, c, mob, roll, overRoll, ele, nk = 0) {
+function weaponDamage(data, c, mob, roll, overRoll, ele, nk = 0, equipAtk = true) {
 	const type = c.weapon ? c.weapon.type : 0;
 	let d = weaponAtk(data, c.total, c.weapon, roll, overRoll);
 	// Weapon Perfection: no size penalty
 	if (!buffLv(c, BS_WEAPONPERFECT)) d = Math.trunc((d * data.size_fix[mob.size][type]) / 100);
 	if (LONG_WEAPONS.has(type)) d += c.eq.arrowAtk || 0; // the ammunition's ATK, after the size fix
 	if (c.eq.atkRate) d += Math.trunc((d * c.eq.atkRate) / 100);
-	d += c.eq.equipAtk;
+	if (equipAtk) d += c.eq.equipAtk;
 	if (!(nk & NK_NO_ELEFIX)) d = eleFix(data, d, ele, mob);
 	return cardFix(c.eq, d, mob, nk);
 }
@@ -144,7 +152,7 @@ function defOf(c, mob) {
 
 function hitDamage(data, c, mob, roll, critical, overRoll = roll) {
 	const type = c.weapon ? c.weapon.type : 0;
-	const weaponEle = c.eq.weaponEle || ELE_NEUTRAL;
+	const weaponEle = attackEle(c);
 	const batk = eleFix(data, statusAtk(c.total, type), ELE_NEUTRAL, mob);
 	if (mob.plant) return 1; // plants take 1 damage a hit
 	let damage = batk + weaponDamage(data, c, mob, critical ? 'max' : roll, overRoll, weaponEle) + buffAtk(c);
@@ -251,12 +259,14 @@ function skillHitDamage(data, c, mob, skillId, lv, roll, passives) {
 	const sk = data.weapon_skills[skillId];
 	const [ratio, skillEle, num] = sk.lv[lv - 1];
 	const type = c.weapon ? c.weapon.type : 0;
-	const ele = skillEle >= 0 ? skillEle : c.eq.weaponEle || ELE_NEUTRAL; // -1: the weapon's element
+	const ele = skillEle >= 0 ? skillEle : attackEle(c); // -1: the weapon's (or an endowment's) element
 	if (mob.plant) return num > 1 ? num : 1;
 	const batk = sk.nk & NK_NO_ELEFIX ? statusAtk(c.total, type) : eleFix(data, statusAtk(c.total, type), ELE_NEUTRAL, mob);
-	let damage = batk + weaponDamage(data, c, mob, roll, roll, ele, sk.nk);
+	const warg = skillId === RA_WUGDASH || skillId === RA_WUGSTRIKE || skillId === RA_WUGBITE;
+	// the warg's ATK leaves the equipment's ATK + out (jRO; arrow ATK counts)
+	let damage = batk + weaponDamage(data, c, mob, roll, roll, ele, sk.nk, !warg);
 	// Tooth of Wug: 10 ATK a level on the Warg skills, before the ratio (jRO; auriga_stats cuts Hercules' 30 to that)
-	if (skillId === RA_WUGDASH || skillId === RA_WUGSTRIKE || skillId === RA_WUGBITE) damage += 10 * ((passives && passives[RA_TOOTHOFWUG]) || 0);
+	if (warg) damage += 10 * ((passives && passives[RA_TOOTHOFWUG]) || 0);
 	damage += buffAtk(c);
 	damage = Math.trunc((damage * (ratio + buffRatio(c))) / 100);
 	const skillAtk = (c.eq.skillAtk && c.eq.skillAtk[skillId]) || 0; // the equipment's damage % for this skill

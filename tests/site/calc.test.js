@@ -178,7 +178,9 @@ describe('equipment and cards', () => {
 
 	// Characters in random equipment and cards: the status window and a normal attack, as the server computed them.
 	// Builds whose id starts with "s" start from a set (a Hercules combo or a set written in an item's script); "a"
-	// builds shoot each kind of ammunition, and other bows and guns mostly have some too.
+	// builds shoot each kind of ammunition, and other bows and guns mostly have some too; "e" builds wield each
+	// elemental weapon, "n" builds (and a third of the "e" ones) have a weapon endowment (input.buffs), over the
+	// weapon's and the ammunition's element.
 	// A build with anything the calculator marks "not counted" is left out (it says so on the page). ASPD may be 1 ms
 	// off when equipment changes it by a percentage (the server's rounding there isn't understood yet).
 	it('matches the server for every build whose items it counts', () => {
@@ -187,6 +189,8 @@ describe('equipment and cards', () => {
 		let sets = 0;
 		let ammo = 0;
 		let skills = 0;
+		let elemental = 0;
+		let endowed = 0;
 		const offered = new Set(weaponSkills(data));
 		for (const c of equip.cases) {
 			const equips = c.input.equips.map((e) => ({ item: items.get(e.item), refine: e.refine, cards: e.cards.map((x) => items.get(x)) }));
@@ -200,6 +204,12 @@ describe('equipment and cards', () => {
 				weapon: w ? { type: w.item.sub, atk: w.item.atk, matk: w.item.matk, wlv: w.item.wlv, refine: w.refine } : null,
 				shield: equips.some((e) => e.item.type === 5 && e.item.loc & 32)
 			};
+			if (c.input.buffs) {
+				input.buffs = c.input.buffs;
+				input.eq = withBuffs(data, eq, c.input.buffs, input.weapon ? input.weapon.type : 0);
+				endowed++;
+			}
+			if (c.id.startsWith('e')) elemental++;
 			const got = statusWindow(data, input);
 			for (const [field, want] of Object.entries(c.status)) {
 				const tol = field === 'amotion' && eq.aspdRate ? 1 : 0;
@@ -222,6 +232,8 @@ describe('equipment and cards', () => {
 		expect(sets).toBeGreaterThan(50);
 		expect(ammo).toBeGreaterThan(60);
 		expect(skills).toBeGreaterThan(200);
+		expect(elemental).toBeGreaterThan(25);
+		expect(endowed).toBeGreaterThan(50);
 		expect(failures.slice(0, 40)).toEqual([]);
 	});
 });

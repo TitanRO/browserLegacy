@@ -95,10 +95,10 @@ function lightColumn(textureName) {
 			circleSides: 18,
 			bottomSize: 0.6,
 			topSize: 0.6,
-			height: 6,
+			height: 3.5,
 			rotate: true,
 			angleYRandom: 360,
-			alphaMax: 0.25,
+			alphaMax: 0.2,
 			blendMode: 2,
 			attachedEntity: false,
 			duration: 2000
@@ -145,7 +145,7 @@ const GroundUnitEffects = {
 		}
 	],
 
-	// EF_VACUUM, Vacuum Extreme: two breeze sprites (actions 0 and 4) at 2.5
+	// EF_VACUUM, Vacuum Extreme: two breeze sprites (actions 0 and 4), white, about a character's size
 	921: [
 		...[0, 4].map(action => ({
 			type: '3D',
@@ -153,11 +153,9 @@ const GroundUnitEffects = {
 			sprAction: action,
 			playSprite: true,
 			attachedEntity: false,
-			size: 250,
+			size: 130,
 			alphaMax: 205 / 255,
-			red: 155 / 255,
-			green: 155 / 255,
-			blue: 155 / 255,
+			blendMode: 2,
 			duration: 2000
 		})),
 		{ wav: 'effect/s\xbd\xba\xc6\xe7\xc7\xc7\xbd\xba\xc6\xae' }
@@ -194,7 +192,7 @@ const GroundUnitEffects = {
 		}
 	],
 
-	// EF_CLOUD_KILL: particle3 sprites rising over a 5 x 5 grid
+	// EF_CLOUD_KILL: particle3 sprites rising in a fountain about 2 cells wide
 	1080: cloudKillGrid().map(point => ({
 		type: '3D',
 		spriteName: 'particle3',
@@ -202,15 +200,15 @@ const GroundUnitEffects = {
 		duplicate: 4,
 		timeBetweenDupli: 150,
 		posxStartRand: 0.4,
-		posxStartRandMiddle: point.x,
+		posxStartRandMiddle: point.x / 2,
 		posxEndRand: 0.4,
-		posxEndRandMiddle: point.x,
+		posxEndRandMiddle: point.x / 2,
 		posyStartRand: 0.4,
-		posyStartRandMiddle: point.y,
+		posyStartRandMiddle: point.y / 2,
 		posyEndRand: 0.4,
-		posyEndRandMiddle: point.y,
+		posyEndRandMiddle: point.y / 2,
 		poszStart: 0,
-		poszEnd: 1.2,
+		poszEnd: 2.5,
 		size: 38,
 		sizeRand: 15,
 		fadeIn: true,
@@ -243,7 +241,7 @@ const GroundUnitEffects = {
 			type: 'PRIM',
 			prim: 'quad',
 			texture: 'makibishi.bmp',
-			size: 2.5,
+			size: 1.2,
 			height: 0.2,
 			frames: 1e9,
 			attachedEntity: false

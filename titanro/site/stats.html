@@ -288,13 +288,18 @@ function render() {
 	input.eq = withPassives(data, input.eq, input.passives, job.id, skillNames);
 	const wpn = equips && equips.find((e) => e.item.type === 4);
 	if (wpn) {
-		input.weapon = { type: wpn.item.sub, atk: wpn.item.atk, matk: wpn.item.matk, wlv: wpn.item.wlv, refine: wpn.refine };
+		input.weapon = { type: wpn.item.sub, atk: wpn.item.atk, matk: wpn.item.matk, wlv: wpn.item.wlv, refine: wpn.refine, weight: wpn.item.weight || 0 };
 		if (![...$('wtype').options].some((o) => +o.value === wpn.item.sub)) $('wtype').appendChild(new Option(WEAPON_TYPES[wpn.item.sub], wpn.item.sub));
 		$('wtype').value = wpn.item.sub;
 		$('watk').value = wpn.item.atk; $('wmatk').value = wpn.item.matk; $('wlv').value = Math.min(wpn.item.wlv, 5) || 1; $('refine').value = wpn.refine;
 		$('wfields').hidden = false;
 	}
-	if (equips && equips.some((e) => e.item.type === 5 && e.item.loc & 32)) input.shield = true;
+	const shield = equips && equips.find((e) => e.item.type === 5 && e.item.loc & 32);
+	if (shield) {
+		input.shield = true;
+		input.shieldWeight = shield.item.weight || 0; // Shield Chain: the shield's weight and refine
+		input.shieldRefine = shield.refine || 0;
+	}
 	input.buffs = activeBuffs();
 	input.performers = state.performers;
 	input.eq = withBuffs(data, input.eq, input.buffs, input.weapon ? input.weapon.type : 0, skillNames, state.performers);

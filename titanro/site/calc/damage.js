@@ -709,7 +709,8 @@ export function skillAttack(data, input, mob, skillId, lv) {
 		crit: CRIT_SKILLS.has(skillId) ? skillHitDamage(data, c, mob, skillId, lv, 'max', input.passives, true) : null,
 		// Focused Arrow Strike: 20 Critical more (jRO; the server takes 30 off Hercules' 50)
 		critRate: CRIT_SKILLS.has(skillId) ? critChance(c, c.weapon ? c.weapon.type : 0, mob, ...CRIT_SKILLS.get(skillId)) : 0,
-		hits: Math.abs(skillRow(c, mob, skillId, lv, sk.lv[lv - 1])[2]) || 1,
+		// Throw Spirit Sphere: a hit a sphere held, up to the level (one with none)
+		hits: skillId === MO_FINGEROFFENSIVE ? Math.min(Math.max(c.spheres || 0, 1), lv) : Math.abs(skillRow(c, mob, skillId, lv, sk.lv[lv - 1])[2]) || 1,
 		hitRate: sk.nk & 0x40 ? 1 : skillHitRate(hit - mob.flee, skillId, lv)
 	};
 }

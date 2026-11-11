@@ -116,7 +116,7 @@ function applyDef(damage, mob) {
 }
 
 /** The weapon part: size, ATK %, equipment ATK, element, the card and equipment % against the monster. */
-function weaponDamage(data, c, mob, roll, overRoll, ele, nk = 0, equipAtk = true, extraAtk = 0) {
+function weaponDamage(data, c, mob, roll, overRoll, ele, nk = 0, equipAtk = true, extraAtk = 0, neutralAgain = false) {
 	const type = c.weapon ? c.weapon.type : 0;
 	let d = weaponAtk(data, c.total, c.weapon, roll, overRoll);
 	// Weapon Perfection: no size penalty
@@ -126,6 +126,8 @@ function weaponDamage(data, c, mob, roll, overRoll, ele, nk = 0, equipAtk = true
 	if (equipAtk) d += c.eq.equipAtk;
 	d += extraAtk; // a skill's own ATK, with the equipment's (Envenom)
 	if (!(nk & NK_NO_ELEFIX)) d = eleFix(data, d, ele, mob);
+	// Cart Revolution and Arm Cannon: the element table once more, neutral (Hercules battle_calc_elefix)
+	if (neutralAgain && !(nk & NK_NO_ELEFIX)) d = eleFix(data, d, ELE_NEUTRAL, mob);
 	return cardFix(c.eq, d, mob, nk);
 }
 
@@ -231,8 +233,8 @@ const NK_IGNORE_DEF = 0x20;
  * spheres, cart weight, HP or SP, a second formula): the calculator leaves them out until it has their formula.
  */
 const SPECIAL_SKILLS = new Set([
-	153, 251, 266, 365, 382, 397, 480, 503, 507, 514, 544,
-	2008, 2261, 2477, 2553, 2559, 2570, 2582, 2593, 3010, 5004, 5032,
+	251, 365, 382, 397, 480, 503, 507, 514, 544,
+	2477, 2553, 2559, 2570, 2582, 2593, 3010, 5032,
 	// counters, reflects, traps and area effects; spirit spheres, cart weight and rage counters the probe's characters
 	// don't have
 	61, 121, 139, 252, 267, 372, 390, 428, 429, 430, 485, 2314, 2476
@@ -268,6 +270,10 @@ const NJ_SYURIKEN = 523;
 const NJ_KUNAI = 524;
 const NJ_TOBIDOUGU = 522;
 const KO_HAPPOKUNAI = 3007;
+const MO_INVESTIGATE = 266;
+const RK_DRAGONTRAINING = 2007;
+const RK_DRAGONBREATH = 2008;
+const RK_DRAGONBREATH_WATER = 5004;
 
 /**
  * A MATK roll ('min' | 'max') as the server's status->get_matk: status MATK + the equipment's MATK, + the weapon's
@@ -346,6 +352,22 @@ function ownFormula(data, c, mob, skillId, lv, roll, nk) {
 		const d = Math.trunc(((plainAtk(data, c, mob, roll, nk) + (c.eq.arrowAtk || 0)) * (300 + 60 * lv)) / 100) - totalDef;
 		return eleFix(data, Math.max(d, 0), ELE_NEUTRAL, mob);
 	}
+	case RK_DRAGONBREATH:
+	case RK_DRAGONBREATH_WATER: {
+		// (HP / 50 + MaxSP / 4) x level x (95 + 5 x Dragon Training) % x BaseLv / 100 - DEF - soft DEF, with the
+		// equipment's % and the element: jRO, as the server scales Hercules' result (BaseLv / 150) to it
+		const ele = data.weapon_skills[skillId].lv[lv - 1][1];
+		const training = 95 + 5 * ((c.passives && c.passives[RK_DRAGONTRAINING]) || 0);
+		const base = (Math.trunc(c.maxHp / 50) + Math.trunc(c.maxSp / 4)) * lv;
+		const hercules = Math.trunc((Math.trunc((base * c.blv) / 150) * training) / 100);
+		const jro = Math.trunc((Math.trunc((base * training) / 100) * c.blv) / 100);
+		if (hercules <= 0) return 0;
+		let damage = eleFix(data, cardFix(c.eq, hercules, mob, nk), ele, mob);
+		if (c.eq.longAtkRate) damage += Math.trunc((damage * c.eq.longAtkRate) / 100); // a long-range attack
+		const reduced = jro - totalDef;
+		const d = reduced <= 0 || damage <= 0 ? 0 : Math.trunc((damage * reduced) / hercules);
+		return d < 1 && data.attr_fix[Math.max(mob.element_lv, 1) - 1][ele][mob.element] > 0 ? 1 : d;
+	}
 	case GS_FLING: // the job level
 		return c.jlv;
 	case MO_EXTREMITYFIST: { // ATK x (800 + 10 x SP) % + 250 + 150 x level - DEF, neutral (all the SP: the maximum)
@@ -355,6 +377,10 @@ function ownFormula(data, c, mob, skillId, lv, roll, nk) {
 	}
 	return undefined;
 }
+
+const MC_CARTREVOLUTION = 153;
+const NC_ARMSCANNON = 2261;
+const NEUTRAL_AGAIN = new Set([MC_CARTREVOLUTION, NC_ARMSCANNON]);
 
 const KN_PIERCE = 56;
 const KN_BOWLINGBASH = 62;
@@ -382,6 +408,9 @@ function skillRow(c, mob, skillId, lv, row) {
 	case CR_HOLYCROSS: // twice the level part with a two-handed spear
 		if (type === W_2HSPEAR) ratio = 100 + 70 * lv;
 		break;
+	case NC_ARMSCANNON: // jRO: 300 + 400 x level on small targets, 350 on medium, 300 on large
+		ratio = 300 + [400, 350, 300][mob.size] * lv;
+		break;
 	}
 	return [ratio, ele, num];
 }
@@ -395,13 +424,16 @@ function skillHitDamage(data, c, mob, skillId, lv, roll, passives) {
 	if (own !== undefined) return own;
 	const ele = skillEle >= 0 ? skillEle : attackEle(c); // -1: the weapon's (or an endowment's) element
 	if (mob.plant) return num > 1 ? num : 1;
-	const batk = sk.nk & NK_NO_ELEFIX ? statusAtk(c.total, type) : eleFix(data, statusAtk(c.total, type), ELE_NEUTRAL, mob);
+	let batk = sk.nk & NK_NO_ELEFIX ? statusAtk(c.total, type) : eleFix(data, statusAtk(c.total, type), ELE_NEUTRAL, mob);
+	const neutralAgain = NEUTRAL_AGAIN.has(skillId);
+	if (neutralAgain && !(sk.nk & NK_NO_ELEFIX)) batk = eleFix(data, batk, ELE_NEUTRAL, mob);
 	const warg = skillId === RA_WUGDASH || skillId === RA_WUGSTRIKE || skillId === RA_WUGBITE;
 	// the warg's ATK leaves the equipment's ATK + out (jRO; arrow ATK counts)
-	let damage = batk + weaponDamage(data, c, mob, roll, roll, ele, sk.nk, !warg, skillId === TF_POISON ? 15 * lv : 0);
+	let damage = batk + weaponDamage(data, c, mob, roll, roll, ele, sk.nk, !warg, skillId === TF_POISON ? 15 * lv : 0, neutralAgain);
 	// Tooth of Wug: 10 ATK a level on the Warg skills, before the ratio (jRO; auriga_stats cuts Hercules' 30 to that)
 	if (warg) damage += 10 * ((passives && passives[RA_TOOTHOFWUG]) || 0);
 	damage += buffAtk(c);
+	if (skillId === MO_INVESTIGATE) damage += Math.trunc(mob.def / 2); // half the target's hard DEF, before the ratio
 	// Dance with Wug on Warg Strike (and Warg Dash): 10 x level x (2 + the chorus bonus) % more ratio
 	const dance = warg ? buffLv(c, WM_DANCE_WITH_WUG) : 0;
 	const danceStep = dance ? dance * (2 + chorusBonus(c.performers)) : 0;
@@ -412,7 +444,11 @@ function skillHitDamage(data, c, mob, skillId, lv, roll, passives) {
 	const skillAtk = (c.eq.skillAtk && c.eq.skillAtk[skillId]) || 0; // the equipment's damage % for this skill
 	if (skillAtk) damage += Math.trunc((damage * skillAtk) / 100);
 	if (c.eq.longAtkRate && longSkill(sk, lv, skillId)) damage += Math.trunc((damage * c.eq.longAtkRate) / 100);
-	if (!(sk.nk & NK_IGNORE_DEF)) damage = applyDef(damage, defOf(c, mob));
+	if (skillId === MC_CARTREVOLUTION) {
+		// jRO: ATK x 150 % + ATK x the cart's weight / its capacity, DEF and soft DEF off flat
+		const cart = Math.trunc((damage * Math.min(Math.max(c.cartWeight || 0, 0), 100)) / 100);
+		damage = Math.max(Math.trunc((damage * 150) / 100) + cart - (mob.def + mob.def2), 0);
+	} else if (!(sk.nk & NK_IGNORE_DEF)) damage = applyDef(damage, defOf(c, mob));
 	damage += 20 * buffLv(c, LK_AURABLADE);
 	const hurts = data.attr_fix[Math.max(mob.element_lv, 1) - 1][ele][mob.element] > 0;
 	if (damage < 0) damage = 0;
@@ -495,8 +531,13 @@ function skillHitRate(rate, skillId, lv) {
 export function skillAttack(data, input, mob, skillId, lv) {
 	const c = { ...resolve(data, input), buffs: input.buffs, performers: input.performers };
 	const sk = data.weapon_skills[skillId];
-	if (skillId === MO_EXTREMITYFIST) c.maxSp = statusWindow(data, input).max_sp;
+	if (skillId === MO_EXTREMITYFIST || skillId === RK_DRAGONBREATH || skillId === RK_DRAGONBREATH_WATER) {
+		const w = statusWindow(data, input);
+		c.maxHp = w.max_hp; // the character at full HP and SP
+		c.maxSp = w.max_sp;
+	}
 	c.passives = input.passives;
+	c.cartWeight = input.cartWeight; // % of the cart's capacity
 	if (!sk || lv < 1 || lv > sk.lv.length || SPECIAL_SKILLS.has(skillId)) return null;
 	const hit = c.blv + c.total.dex + Math.floor(c.total.luk / 3) + 175 + c.eq.hit;
 	return {

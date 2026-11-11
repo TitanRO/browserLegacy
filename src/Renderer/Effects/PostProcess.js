@@ -12,6 +12,8 @@
 import GraphicsSettings from 'Preferences/Graphics.js';
 
 let _effects = [];
+/** The registered modules whose init has run: a module is initialized when it is first active (most are off). */
+let _initialized = new Set();
 let _activeEffects = [];
 
 // Ping-Pong Buffers (Full Resolution)
@@ -30,7 +32,8 @@ class PostProcess {
 			return;
 		}
 		_effects.push(module);
-		module.init(gl);
+		// initialized when first active (prepare): every effect is off by default, and their programs and buffers
+		// took ~15 ms to build at each map's start
 	}
 
 	/**
@@ -40,6 +43,12 @@ class PostProcess {
 	 */
 	static prepare(gl) {
 		_activeEffects = _effects.filter(e => e.isActive());
+		for (const module of _activeEffects) {
+			if (!_initialized.has(module)) {
+				module.init(gl);
+				_initialized.add(module);
+			}
+		}
 
 		// Ensure global buffers exist and match canvas size
 		this.validateBuffers(gl);
@@ -183,7 +192,7 @@ class PostProcess {
 
 		// Notify modules to recreate their internal buffers (if any)
 		_effects.forEach(module => {
-			if (module.recreateFbo) {
+			if (_initialized.has(module) && module.recreateFbo) {
 				module.recreateFbo(gl, scaledWidth, scaledHeight);
 			}
 		});
@@ -193,8 +202,13 @@ class PostProcess {
 	 * Clean current registered modules
 	 */
 	static clean(gl) {
-		_effects.forEach(module => module.clean(gl));
+		_effects.forEach(module => {
+			if (_initialized.has(module)) {
+				module.clean(gl);
+			}
+		});
 		_effects = [];
+		_initialized = new Set();
 		_activeEffects = [];
 
 		// Physically delete Ping-Pong buffers from GPU memory

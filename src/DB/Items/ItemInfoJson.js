@@ -72,7 +72,7 @@ export function latin1(bytes) {
  * @param {number} budget
  * @returns {Promise<string>}
  */
-async function latin1Sliced(bytes, pause, budget) {
+export async function latin1Sliced(bytes, pause = yieldToBrowser, budget = 10) {
 	const parts = [];
 	let sliceStart = performance.now();
 	for (let i = 0; i < bytes.length; i += 0x8000) {
@@ -91,7 +91,7 @@ async function latin1Sliced(bytes, pause, budget) {
  * @param {string} str
  * @returns {Uint8Array}
  */
-function bytesOf(str) {
+export function bytesOf(str) {
 	const bytes = new Uint8Array(str.length);
 	for (let i = 0; i < str.length; i++) {
 		bytes[i] = str.charCodeAt(i);

@@ -3,7 +3,7 @@
  * (markers, cast targets, chat and cast ranges), and the options rows both clients draw.
  */
 import { afterEach, describe, expect, it } from 'vitest';
-import VisualOptions, { PROP_ALPHA } from 'Renderer/VisualOptions.js';
+import VisualOptions, { isAttackOrCast, PROP_ALPHA } from 'Renderer/VisualOptions.js';
 import { argb } from 'Renderer/Map/GroundMarkers.js';
 import {
 	ALWAYS_KEPT,
@@ -48,6 +48,22 @@ describe('display options', () => {
 			hideWeather: false,
 			effectFilter: null
 		});
+	});
+
+	it('no adelay asks the renderer to show attacks and casts at once', () => {
+		expect(visualOptions(settings({ noAdelay: { enabled: true } })).instantActions).toBe(true);
+		expect(visualOptions(settings()).instantActions).toBe(false);
+	});
+
+	it('no adelay covers attack and cast animations only', () => {
+		// a player's action ids (EntityAction): attacks 5, 10, 11 and cast 12; walk 1, ready 4
+		const pc = { ACTION: { ATTACK: -2, ATTACK1: 5, ATTACK2: 10, ATTACK3: 11, SKILL: 12, WALK: 1, READYFIGHT: 4 } };
+		expect([5, 10, 11, 12].every(a => isAttackOrCast(pc, a))).toBe(true);
+		expect([1, 4, -1].some(a => isAttackOrCast(pc, a))).toBe(false);
+		// a monster without a cast action (SKILL -1) never matches -1
+		const mob = { ACTION: { ATTACK: -2, ATTACK1: 3, ATTACK2: -1, ATTACK3: -1, SKILL: -1 } };
+		expect(isAttackOrCast(mob, 3)).toBe(true);
+		expect(isAttackOrCast(mob, -1)).toBe(false);
 	});
 
 	it('Grayworld is the flat map and the cell grid together', () => {

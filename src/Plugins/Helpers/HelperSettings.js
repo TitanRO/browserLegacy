@@ -34,6 +34,7 @@ export const DEFAULT_SETTINGS = {
 	castRange: { enabled: false },
 	flatMap: { enabled: false, hideProps: false },
 	transparentProps: { enabled: false },
+	noAdelay: { enabled: false },
 	damageLog: { enabled: false },
 	autopot: { panel: false },
 	woeTracker: { panel: false },

@@ -32,6 +32,7 @@ import DB from 'DB/DBManager.js';
 import GraphicsSettings from 'Preferences/Graphics.js';
 import GR2ModelRenderer from 'Renderer/GR2/GR2ModelRenderer.js';
 import EntityComposer from './EntityComposer.js';
+import VisualOptions, { INSTANT_FRAME_MS, isAttackOrCast } from 'Renderer/VisualOptions.js';
 
 /**
  * Load dependencies
@@ -940,6 +941,12 @@ function calcAnimation(entity, act, type, tick) {
 	}
 	if (animation.speed) {
 		delay = animation.speed;
+	}
+	// No adelay (helpers option): attack and cast animations reach their last frame at once and hold it until the
+	// action's own end. Only the frames change: hits, damage numbers and the return to the ready stance keep the
+	// timing the server sent.
+	if (VisualOptions.instantActions && isAttackOrCast(entity, action)) {
+		delay = INSTANT_FRAME_MS;
 	}
 
 	// Get rid of doridori

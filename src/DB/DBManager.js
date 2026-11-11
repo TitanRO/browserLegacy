@@ -60,6 +60,16 @@ import PACKETVER from 'Network/PacketVerManager.js';
 import MemoryManager from 'Core/MemoryManager.js';
 import Rift from 'Core/Rift/Rift.js';
 import LuaModuleLoader from 'Core/LuaModuleLoader.js';
+import { runLuaRecipe } from 'DB/LuaRecipeRunner.js';
+import {
+	ITEM_REFORM_RECIPE,
+	ITEMDB_NAME_RECIPE,
+	LAPHINE_SYS_RECIPE,
+	LAPHINE_UPG_RECIPE,
+	QUEST_RECIPE,
+	tableRecipe,
+	valueRecipe
+} from 'DB/LuaRecipes.js';
 import { withoutAddedGlobalGetters } from 'Utils/EmscriptenGlobals.js';
 
 //Pet
@@ -5282,8 +5292,8 @@ function loadQuestInfo(filename, callback, onEnd) {
 				// check if file is ArrayBuffer and convert to Uint8Array if necessary
 				const buffer = file instanceof ArrayBuffer ? new Uint8Array(file) : file;
 
-				// get context, a proxy. It will be used to interact with lua conveniently
-				const ctx = lua.ctx;
+				// the callbacks the recipe's driver calls (DB/LuaRecipes.js QUEST_RECIPE)
+				const ctx = {};
 
 				// create required functions in context
 
@@ -5329,73 +5339,13 @@ function loadQuestInfo(filename, callback, onEnd) {
 					return 1;
 				};
 
-				// mount file
-				lua.mountFile(filename, buffer);
-				// execute file
-				await lua.doFile(filename);
-
-				// create and execute our own main function
-				lua.doStringSync(`
-					function main_quest()
-					-- Check if QuestInfoList is a table and not nil
-					if type(QuestInfoList) ~= "table" or QuestInfoList == nil then
-						return false, "Error: Quest table is nil or not a table"
-					end
-
-					for QuestID, DESC in pairs(QuestInfoList) do
-						-- Ensure DESC is a table, use empty table if nil
-						DESC = type(DESC) == "table" and DESC or {}
-
-						-- Provide default values for DESC fields if they are nil
-						local questData = {
-							Title = DESC.Title or "Unknown Quest",
-							Summary = DESC.Summary or "Unknown Quest",
-							IconName = DESC.IconName or "",
-							NpcSpr = DESC.NpcSpr or "",
-							NpcNavi = DESC.NpcNavi or "",
-							NpcPosX = DESC.NpcPosX or 0,
-							NpcPosY = DESC.NpcPosY or 0,
-							RewardItemList = DESC.RewardItemList or {},
-							RewardEXP = tonumber(DESC.RewardEXP) or 0,
-							RewardJEXP = tonumber(DESC.RewardJEXP) or 0,
-
-							Description = type(DESC.Description) == "table" and DESC.Description or {}
-						}
-
-						result, msg = AddQuestInfo(QuestID, questData.Title, questData.Summary, questData.IconName, 
-												questData.NpcSpr, questData.NpcNavi, questData.NpcPosX, 
-												questData.NpcPosY, questData.RewardEXP, 
-												questData.RewardJEXP)
-						if not result then
-							return false, msg
-						end
-
-						-- Iterate over RewardItemList table, use empty table if nil
-						for k, v in pairs(questData.RewardItemList) do
-							result, msg = AddQuestRewardItem(QuestID, v.ItemID, v.ItemNum)
-							if not result then
-								return false, msg
-							end
-						end
-
-						-- Iterate over Description table, use empty table if nil
-						for k, v in pairs(questData.Description) do
-							result, msg = AddQuestDescription(QuestID, v or "No description available")
-							if not result then
-								return false, msg
-							end
-						end
-					end
-					return true, "good"
-				end
-
-				main_quest()
-					`);
+				// the file's quests, from the prebuilt recording when there is one
+				await runLuaRecipe(lua, QUEST_RECIPE, [[filename, buffer]], ctx);
 			} catch (error) {
 				console.error('[loadQuestInfo] Error: ', error);
 			} finally {
 				// release file from memmory
-				lua.unmountFile(filename);
+				unmountLuaFile(filename);
 				// call onEnd
 				onEnd(true);
 			}
@@ -5667,7 +5617,7 @@ function loadLaphineSysFile(filename, callback, onEnd) {
 				const buffer = file instanceof ArrayBuffer ? new Uint8Array(file) : file;
 
 				// get context, a proxy. It will be used to interact with lua conveniently
-				const ctx = lua.ctx;
+				const ctx = {}; // the callbacks the recipe's driver calls (DB/LuaRecipes.js)
 
 				// create required functions in context
 				ctx.AddLaphineSysItem = (key, ItemID, NeedCount, NeedRefineMin, NeedRefineMax, NeedSource_String) => {
@@ -5699,35 +5649,13 @@ function loadLaphineSysFile(filename, callback, onEnd) {
 				};
 
 				// mount file
-				lua.mountFile('lapineddukddakbox.lub', buffer);
-
-				// execute file
-				await lua.doFile('lapineddukddakbox.lub');
-
-				// create and execute our own main function
-				lua.doStringSync(`
-						function main_laphynesys()
-                            for key, value in pairs(tblLapineDdukddakBox.sources) do
-                                result, msg = AddLaphineSysItem(key, value.ItemID, value.NeedCount, value.NeedRefineMin, value.NeedRefineMax, value.NeedSource_String)
-                                if not result then
-                                    return false, msg
-                                end
-                                for _, item in ipairs(value.SourceItems) do
-                                    result, msg = AddLaphineSysSourceItem(key, item[1], item[2], item[3])
-                                    if not result then
-                                        return false, msg
-                                    end
-
-                                end
-                            end
-                        end
-                        main_laphynesys()
-					`);
+				// the file's table, from the prebuilt recording when there is one
+				await runLuaRecipe(lua, LAPHINE_SYS_RECIPE, [['lapineddukddakbox.lub', buffer]], ctx);
 			} catch (error) {
 				console.error('[loadLaphineSysFile] Error: ', error);
 			} finally {
 				// release file from memmory
-				lua.unmountFile('lapineddukddakbox.lub');
+				unmountLuaFile('lapineddukddakbox.lub');
 				// call onEnd
 				onEnd();
 			}
@@ -5755,7 +5683,7 @@ function loadLaphineUpgFile(filename, callback, onEnd) {
 				const buffer = file instanceof ArrayBuffer ? new Uint8Array(file) : file;
 
 				// get context, a proxy. It will be used to interact with lua conveniently
-				const ctx = lua.ctx;
+				const ctx = {}; // the callbacks the recipe's driver calls (DB/LuaRecipes.js)
 
 				// create required functions in context
 				ctx.AddLaphineUpgradeItem = (
@@ -5798,35 +5726,13 @@ function loadLaphineUpgFile(filename, callback, onEnd) {
 				};
 
 				// mount file
-				lua.mountFile('lapineupgradebox.lub', buffer);
-
-				// execute file
-				await lua.doFile('lapineupgradebox.lub');
-
-				// create and execute our own main function
-				lua.doStringSync(`
-						function main_laphyneupg()
-                            for key, value in pairs(tblLapineUpgradeBox.targets) do
-                                result, msg = AddLaphineUpgradeItem(key, value.ItemID, value.NeedCount, value.NeedRefineMin, value.NeedRefineMax, value.NeedSource_String, value.NeedOptionNumMin, value.NotSocketEnchantItem)
-                                if not result then
-                                    return false, msg
-                                end
-                                for _, item in ipairs(value.TargetItems) do
-                                    result, msg = AddLaphineUpgradeTargetItem(key, item[1], item[2])
-                                    if not result then
-                                        return false, msg
-                                    end
-
-                                end
-                            end
-                        end
-                        main_laphyneupg()
-					`);
+				// the file's table, from the prebuilt recording when there is one
+				await runLuaRecipe(lua, LAPHINE_UPG_RECIPE, [['lapineupgradebox.lub', buffer]], ctx);
 			} catch (error) {
 				console.error('[loadLaphineUpgFile] Error: ', error);
 			} finally {
 				// release file from memmory
-				lua.unmountFile('lapineupgradebox.lub');
+				unmountLuaFile('lapineupgradebox.lub');
 				// call onEnd
 				onEnd();
 			}
@@ -5854,7 +5760,7 @@ function loadItemDBTable(filename, callback, onEnd) {
 				const buffer = file instanceof ArrayBuffer ? new Uint8Array(file) : file;
 
 				// get context, a proxy. It will be used to interact with lua conveniently
-				const ctx = lua.ctx;
+				const ctx = {}; // the callbacks the recipe's driver calls (DB/LuaRecipes.js)
 
 				// create required functions in context
 				ctx.AddDBItemName = (baseItem, itemID) => {
@@ -5865,28 +5771,13 @@ function loadItemDBTable(filename, callback, onEnd) {
 				};
 
 				// mount file
-				lua.mountFile('ItemDBNameTbl.lub', buffer);
-
-				// execute file
-				await lua.doFile('ItemDBNameTbl.lub');
-
-				// create and execute our own main function
-				lua.doStringSync(`
-						function main_itemDBTable()
-                            for key, value in pairs(ItemDBNameTbl) do
-                                result, msg = AddDBItemName(key, value)
-                                if not result then
-                                    return false, msg
-                                end
-                        	end
-						end
-                        main_itemDBTable()
-					`);
+				// the file's table, from the prebuilt recording when there is one
+				await runLuaRecipe(lua, ITEMDB_NAME_RECIPE, [['ItemDBNameTbl.lub', buffer]], ctx);
 			} catch (error) {
 				console.error('[loadItemDBTable] Error: ', error);
 			} finally {
 				// release file from memmory
-				lua.unmountFile('ItemDBNameTbl.lub');
+				unmountLuaFile('ItemDBNameTbl.lub');
 				// call onEnd
 				onEnd();
 			}
@@ -5914,7 +5805,7 @@ function loadItemReformFile(filename, callback, onEnd) {
 				const buffer = file instanceof ArrayBuffer ? new Uint8Array(file) : file;
 
 				// get context, a proxy. It will be used to interact with lua conveniently
-				const ctx = lua.ctx;
+				const ctx = {}; // the callbacks the recipe's driver calls (DB/LuaRecipes.js)
 
 				// create required functions in context
 				ctx.AddReformInfo = (
@@ -5987,52 +5878,13 @@ function loadItemReformFile(filename, callback, onEnd) {
 				};
 
 				// mount file
-				lua.mountFile('ItemReformSystem.lub', buffer);
-
-				// execute file
-				await lua.doFile('ItemReformSystem.lub');
-
-				// create and execute our own main function
-				lua.doStringSync(`
-						function main_itemReform()
-							for key, value in pairs(ReformInfo) do
-								result, msg = AddReformInfo(key, value.BaseItem, value.ResultItem, value.NeedRefineMin, value.NeedRefineMax, value.NeedOptionNumMin, value.IsEmptySocket, value.ChangeRefineValue, value.RandomOptionCode, value.PreserveSocketItem, value.PreserveGrade)
-								if not result then
-									return false, msg
-								end
-								if type(value.InformationString) == "table" then
-									for _, info in pairs(value.InformationString) do
-										result, msg = ReformInfoAddInformationString(key, info)
-										if not result then
-											return false, msg
-										end
-									end
-								end
-								if type(value.Material) == "table" then
-									for material, quantity in pairs(value.Material) do
-										result, msg = ReformInfoAddMaterial(key, material, quantity)
-										if not result then
-											return false, msg
-										end
-									end
-								end
-							end
-							for key, itemList in pairs(ReformItemList) do
-								for index, value in ipairs(itemList) do
-									result, msg = AddReformItem(key, value)
-									if not result then
-										return false, msg
-									end
-								end
-							end
-						end
-                        main_itemReform()
-					`);
+				// the file's table, from the prebuilt recording when there is one
+				await runLuaRecipe(lua, ITEM_REFORM_RECIPE, [['ItemReformSystem.lub', buffer]], ctx);
 			} catch (error) {
 				console.error('[loadItemReformFile] Error: ', error);
 			} finally {
 				// release file from memmory
-				lua.unmountFile('ItemReformSystem.lub');
+				unmountLuaFile('ItemReformSystem.lub');
 				// call onEnd
 				onEnd();
 			}
@@ -7398,94 +7250,57 @@ function loadStateIconInfo(basePath, callback, onEnd) {
 function loadLuaTable(file_list, table_name, callback, onEnd, contextFunc) {
 	const id_filename = file_list[0];
 	const value_table_filename = file_list[1];
+	const bytes = file => (file instanceof ArrayBuffer ? new Uint8Array(file) : file);
 
 	try {
 		console.log('Loading file "' + id_filename + '"...');
-		Client.loadFile(id_filename, async function (file) {
-			try {
-				// check if file is ArrayBuffer and convert to Uint8Array if necessary
-				const buffer = file instanceof ArrayBuffer ? new Uint8Array(file) : file;
-				// mount file
-				lua.mountFile(id_filename, buffer);
-				// execute file
-				await lua.doFile(id_filename);
-				loadValueTable();
-			} catch (hException) {
-				console.error(`(${id_filename}) error: `, hException);
-			}
-		});
-
-		function loadValueTable() {
+		Client.loadFile(id_filename, function (idFile) {
 			console.log('Loading file "' + value_table_filename + '"...');
-			Client.loadFile(value_table_filename, async function (file) {
+			Client.loadFile(value_table_filename, async function (valueFile) {
 				try {
-					// check if file is ArrayBuffer and convert to Uint8Array if necessary
-					const buffer = file instanceof ArrayBuffer ? new Uint8Array(file) : file;
-					// mount file
-					lua.mountFile(value_table_filename, buffer);
-					// execute file
-					await lua.doFile(value_table_filename);
-					parseTable();
+					// declare the table object
+					const table = {};
+
+					// the id file, then the value table read key by key (DB/LuaRecipes.js tableRecipe), from the
+					// prebuilt recording when there is one
+					await runLuaRecipe(
+						lua,
+						tableRecipe(table_name),
+						[
+							[id_filename, bytes(idFile)],
+							[value_table_filename, bytes(valueFile)]
+						],
+						{
+							addKeyAndValueToTable: (key, value) => {
+								table[key] = userStringDecoder.decodeText(value, userCharpage);
+								return 1;
+							},
+							// used in some specific cases like skilldescript.lub
+							addKeyAndMoreValuesToTable: (key, value) => {
+								if (!table[key]) {
+									table[key] = '';
+								}
+								table[key] += userStringDecoder.decodeText(value, userCharpage) + '\n';
+								return 1;
+							}
+						}
+					);
+
+					if (typeof contextFunc === 'function') {
+						contextFunc();
+					}
+
+					// unmount files
+					unmountLuaFile(value_table_filename);
+					unmountLuaFile(id_filename);
+
+					// return table
+					callback.call(null, table);
 				} catch (hException) {
 					console.error(`(${value_table_filename}) error: `, hException);
 				}
 			});
-		}
-
-		function parseTable() {
-			// declare the table object
-			const table = {};
-
-			// get context
-			const ctx = lua.ctx;
-
-			// create context function
-			ctx.addKeyAndValueToTable = (key, value) => {
-				table[key] = userStringDecoder.decodeText(value, userCharpage);
-				return 1;
-			};
-
-			// used in some specific cases like skilldescript.lub
-			ctx.addKeyAndMoreValuesToTable = (key, value) => {
-				if (!table[key]) {
-					table[key] = '';
-				}
-				table[key] += userStringDecoder.decodeText(value, userCharpage) + '\n';
-				return 1;
-			};
-
-			// create and execute a wrapper lua code
-			// this way we let webassembly handle the code and still can get the table data
-			lua.doStringSync(`
-						function main_table()
-							for key, value in pairs(${table_name}) do
-								if type(value) == "table" then
-									for k, v in pairs(value) do
-										result, msg = addKeyAndMoreValuesToTable(key, v)
-									end
-								else
-									result, msg = addKeyAndValueToTable(key, value)
-								end
-								if not result then
-									return false, msg
-								end
-							end
-							return true, "good"
-						end
-						main_table()
-					`);
-
-			if (typeof contextFunc === 'function') {
-				contextFunc();
-			}
-
-			// unmount files
-			lua.unmountFile(value_table_filename);
-			lua.unmountFile(id_filename);
-
-			// return table
-			callback.call(null, table);
-		}
+		});
 	} catch (e) {
 		console.error('error: ', e);
 	} finally {
@@ -7510,80 +7325,16 @@ function loadLuaValue(file_path, variable_name, callback, onEnd) {
 				// Check if file is ArrayBuffer and convert to Uint8Array if necessary
 				const buffer = file instanceof ArrayBuffer ? new Uint8Array(file) : file;
 
-				// Mount file
-				lua.mountFile(file_path, buffer);
-
-				// Execute file
-				await lua.doFile(file_path);
-
-				// Get context
-				const ctx = lua.ctx;
-
-				// Initialize result variable
 				let result = null;
-
-				// Add key-value pairs to objects at any nesting level
-				ctx.extractValue = value => {
-					result = JSON.parse(userStringDecoder.decode(value));
-				};
-
-				// Create and execute a wrapper Lua code to extract the variable
-				lua.doStringSync(
-					String.raw`
-							local function escape_str(str)
-								return str:gsub("\\", "\\\\"):gsub("\"", "\\\"")
-							end
-
-							local function to_json(value)
-								if type(value) == "boolean" then
-									return tostring(value)
-								elseif type(value) == "number" then
-									return value
-								elseif type(value) == "string" then
-									return "\"" .. escape_str(value) .. "\""
-								elseif type(value) == "table" then
-									-- pairs() visits keys in no set order, so count them rather than
-									-- expect 1, 2, 3...: an array is keys 1..n with none missing
-									local is_array = true
-									local count, highest = 0, 0
-									for k, _ in pairs(value) do
-										if type(k) ~= "number" or k < 1 or k % 1 ~= 0 then
-											is_array = false
-											break
-										end
-										count = count + 1
-										highest = math.max(highest, k)
-									end
-									is_array = is_array and count == highest
-
-									local result = {}
-									if is_array then
-										for _, v in ipairs(value) do
-											table.insert(result, to_json(v))
-										end
-										return "[" .. table.concat(result, ",") .. "]"
-									else
-										for k, v in pairs(value) do
-											if type(k) == "string" then
-												table.insert(result, "\"" .. escape_str(k) .. "\":" .. to_json(v))
-											elseif type(k) == "number" then
-												table.insert(result, "\"" .. tostring(k) .. "\":" .. to_json(v))
-											end
-										end
-										return "{" .. table.concat(result, ",") .. "}"
-									end
-								else
-									return "null"
-								end
-							end
-						` +
-						`
-							extractValue(to_json(${variable_name}))
-						`
-				);
+				// the value as JSON (DB/LuaRecipes.js valueRecipe), from the prebuilt recording when there is one
+				await runLuaRecipe(lua, valueRecipe(variable_name), [[file_path, buffer]], {
+					extractValue: value => {
+						result = JSON.parse(userStringDecoder.decode(value));
+					}
+				});
 
 				// Unmount file
-				lua.unmountFile(file_path);
+				unmountLuaFile(file_path);
 
 				// Return the extracted value
 				callback.call(null, result);
@@ -7601,6 +7352,19 @@ function loadLuaValue(file_path, variable_name, callback, onEnd) {
 		if (onEnd) {
 			onEnd.call();
 		}
+	}
+}
+
+/**
+ * Unmounts a Lua file, if it is mounted (a replayed recipe mounts none).
+ *
+ * @param {string} path
+ */
+function unmountLuaFile(path) {
+	try {
+		lua.unmountFile(path);
+	} catch {
+		// not mounted
 	}
 }
 

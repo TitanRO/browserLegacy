@@ -53,7 +53,8 @@ export const HELPER_OPTIONS = [
 		label: 'Broken barricades and stones vanish at once',
 		type: 'toggle'
 	},
-	{ section: 'Display', key: 'bigMvps.enabled', label: 'Bigger MVPs', type: 'toggle' }
+	{ section: 'Display', key: 'bigMvps.enabled', label: 'Bigger MVPs', type: 'toggle' },
+	{ section: 'Display', key: 'smallEmperium.enabled', label: 'Small Emperium', type: 'toggle' }
 ];
 
 /** The entries this window can show, grouped: [{section, options: [...]}] in first-appearance order. */

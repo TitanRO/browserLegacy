@@ -167,6 +167,7 @@ export function visualOptions(get, heavy) {
 		smallWoeObjects: get('smallWoeObjects', 'enabled') === true,
 		instantVanish: get('instantVanish', 'enabled') === true,
 		bigMvps: get('bigMvps', 'enabled') === true,
+		smallEmperium: get('smallEmperium', 'enabled') === true,
 		hideWeather: level >= MINIMUM,
 		effectFilter: effectFilter(level, heavy)
 	};

@@ -39,6 +39,7 @@ export const DEFAULT_SETTINGS = {
 	smallWoeObjects: { enabled: false },
 	instantVanish: { enabled: false },
 	bigMvps: { enabled: false },
+	smallEmperium: { enabled: false },
 	damageLog: { enabled: false },
 	autopot: { panel: false },
 	woeTracker: { panel: false },

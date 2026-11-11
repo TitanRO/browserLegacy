@@ -5,6 +5,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import VisualOptions, {
 	isAttackOrCast,
+	EMPERIUM_SCALE,
 	MVP_SCALE,
 	PROP_ALPHA,
 	spriteScale,
@@ -78,7 +79,8 @@ describe('display options', () => {
 			['bigStatusIcons', 'bigStatusIcons'],
 			['smallWoeObjects', 'smallWoeObjects'],
 			['instantVanish', 'instantVanish'],
-			['bigMvps', 'bigMvps']
+			['bigMvps', 'bigMvps'],
+			['smallEmperium', 'smallEmperium']
 		]) {
 			expect(visualOptions(settings({ [section]: { enabled: true } }))[option]).toBe(true);
 			expect(visualOptions(settings())[option]).toBe(false);
@@ -92,7 +94,9 @@ describe('display options', () => {
 		expect(spriteScale(on, 1905)).toBe(WOE_SCALE); // barricade
 		expect(spriteScale(on, 1907)).toBe(WOE_SCALE); // guardian stone
 		expect(spriteScale(on, 973)).toBe(WOE_SCALE); // castle flag
-		expect(spriteScale(on, 1288)).toBe(1); // the Emperium is a 3D model
+		expect(spriteScale(on, 1288)).toBe(1); // the Emperium has its own option
+		expect(spriteScale({ smallEmperium: true }, 1288)).toBe(EMPERIUM_SCALE);
+		expect(spriteScale(on, 722)).toBe(WOE_SCALE); // the 3D guild flag
 		expect(spriteScale({}, 1039)).toBe(1);
 		expect(vanishesAtOnce(on, 1906)).toBe(true);
 		expect(vanishesAtOnce(on, 973)).toBe(false); // flags don't break

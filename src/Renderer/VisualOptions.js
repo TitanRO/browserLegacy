@@ -36,7 +36,8 @@ const DEFAULTS = {
 	bigStatusIcons: false,
 	smallWoeObjects: false,
 	instantVanish: false,
-	bigMvps: false
+	bigMvps: false,
+	smallEmperium: false
 };
 
 /** No adelay: the frame time of attack and cast animations, in ms. */
@@ -62,6 +63,10 @@ export function isAttackOrCast(entity, action) {
 export const STATUS_SCALE = 2.0;
 export const WOE_SCALE = 0.6;
 export const MVP_SCALE = 1.5;
+export const EMPERIUM_SCALE = 0.6;
+/** 3D models (MonsterTable's .gr2 names, lower case): the Emperium and the guild flag. */
+const EMPERIUM_MODEL = 'empelium90_0.gr2';
+const FLAG_MODEL = 'guildflag90_1.gr2';
 /** Status icons drawn at STATUS_SCALE (attachment uids, which are the sprite names). */
 export const BIG_STATUS_ICONS = new Set(['status-stun', 'status-sleep']);
 /** Barricades and guardian stones (monster sprite names): small, and gone at once when they break. */
@@ -140,6 +145,9 @@ export function spriteName(job) {
 
 /** How much bigger (or smaller) the helpers draw a unit's sprite, from its job id; 1 for most. */
 export function spriteScale(options, job) {
+	const model = typeof MonsterTable[job] === 'string' ? MonsterTable[job].toLowerCase() : '';
+	if (model === EMPERIUM_MODEL) return options.smallEmperium ? EMPERIUM_SCALE : 1;
+	if (model === FLAG_MODEL) return options.smallWoeObjects ? WOE_SCALE : 1;
 	const name = spriteName(job);
 	if (!name) return 1;
 	if (options.smallWoeObjects && (BREAKABLE_SPRITES.has(name) || FLAG_SPRITES.has(name))) return WOE_SCALE;

@@ -51,7 +51,7 @@
 		</div>
 	</section>
 	<div class="duo">
-		<details class="box" open><summary class="bar">Passive skills <span class="barnote">self buffs and masteries not counted yet</span></summary><div class="boxbody"><div id="passives" class="passives"></div><p class="muted" id="passivenote">Passive skills that change the status window (Owl's Eye, Improve Dodge, Faith, ...), as the server gives them. Weapon masteries and self buffs don't change these numbers yet.</p></div></details>
+		<details class="box" open><summary class="bar">Passive skills <span class="barnote">self buffs and masteries not counted yet</span></summary><div class="boxbody"><div id="passives" class="passives"></div><p class="muted" id="passivenote">Passive skills that change the status window (Owl's Eye, Improve Dodge, Faith, ...), as the server gives them, and Double Attack (daggers; with a katar it raises the second hit). Weapon masteries and self buffs don't change these numbers yet.</p></div></details>
 		<details class="box"><summary class="bar">Supportive / party skills <span class="barnote">not counted yet</span></summary><div class="boxbody muted">Blessing, Increase AGI, songs and other party buffs don't change these numbers yet.</div></details>
 	</div>
 	<section class="box">
@@ -73,9 +73,10 @@
 				</div>
 			</div>
 			<p class="muted">Counted: status ATK, the weapon (refine and over-refine), equipment, card and set bonuses (as
-				listed above), size and element, the monster's DEF and FLEE, critical hits; for skills, their damage ratio, element
-				and hits. Not counted yet: passive skills, buffs, arrows, double attacks, skill cast and delay, and
-				skills with a formula of their own (they aren't listed).</p>
+				listed above), ammunition (its ATK, element and Critical), the passive skills listed above, Double Attack,
+				size and element, the monster's DEF and FLEE, critical hits; for skills, their damage ratio, element and hits.
+				Not counted yet: other passive skills, buffs, skill cast and delay, and skills with a formula of their own
+				(they aren't listed).</p>
 		</div>
 	</section>
 	<p><button type="button" class="link" id="share">Copy a link to this build</button> <span class="muted" id="shared"></span></p>
@@ -84,8 +85,8 @@
 <script type="module">
 import { STATS, WEAPON_TYPES, statusWindow, statCost, totalStatPoints, spentStatPoints, jobBonus, aspd } from './calc/calc.js';
 import { jobGroups } from './calc/jobs.js';
-import { normalAttack, mobList, weaponSkills, skillAttack } from './calc/damage.js';
-import { SLOTS as EQ_SLOTS, itemMap, canEquip, sumEquipment } from './calc/items.js';
+import { normalAttack, mobList, weaponSkills, skillAttack, ATTACK_PASSIVES } from './calc/damage.js';
+import { SLOTS as EQ_SLOTS, AMMO_OF, itemMap, canEquip, sumEquipment } from './calc/items.js';
 import { withPassives } from './calc/passives.js';
 
 const $ = (id) => document.getElementById(id);
@@ -202,13 +203,15 @@ function renderSlots(job) {
 	$('slots').innerHTML = h;
 	// datalists: what the job can wear in each slot, and cards for the slot's location
 	let dl = '';
+	const wpn = state.eq.weapon && items.get(state.eq.weapon.item);
+	const ammo = AMMO_OF[wpn ? wpn.sub : state.wtype]; // the ammunition the weapon shoots
 	for (const [key, , loc] of EQ_SLOTS) {
 		const opts = [];
 		const copts = [];
 		for (const it of items.values()) {
 			if (it.type === 6) {
 				if (it.loc & loc) copts.push(it);
-			} else if (it.loc & loc && canEquip(it, ji) && it.elv <= state.blv) opts.push(it);
+			} else if (it.loc & loc && canEquip(it, ji) && it.elv <= state.blv && (key !== 'ammo' || it.sub === ammo)) opts.push(it);
 		}
 		dl += `<datalist id="dl-${key}">${opts.map((x) => `<option value="${esc(label(x))}">`).join('')}</datalist>`;
 		dl += `<datalist id="dl-card-${key}">${copts.map((x) => `<option value="${esc(label(x))}">`).join('')}</datalist>`;
@@ -264,8 +267,9 @@ function render() {
 	if (state.wtype) input.weapon = { type: state.wtype, atk: state.watk, matk: state.wmatk, wlv: state.wlv, refine: state.refine };
 	const equips = equipment();
 	let notes = '';
-	if (equips && equips.length) input.eq = sumEquipment(data, equips, itemsJson.combos || []);
-	input.eq = withPassives(data, input.eq, jobPassives(job), job.id, skillNames);
+	if (equips && equips.length) input.eq = sumEquipment(data, equips, itemsJson.combos || [], state.wtype);
+	input.passives = jobPassives(job);
+	input.eq = withPassives(data, input.eq, input.passives, job.id, skillNames);
 	const wpn = equips && equips.find((e) => e.item.type === 4);
 	if (wpn) {
 		input.weapon = { type: wpn.item.sub, atk: wpn.item.atk, matk: wpn.item.matk, wlv: wpn.item.wlv, refine: wpn.refine };
@@ -295,10 +299,10 @@ function render() {
 	writeHash();
 }
 
-/** The job's passive skills the calculator counts in the status window: [[id, max level], ...]. */
+/** The job's passive skills the calculator counts (in the status window or in attacks): [[id, max level], ...]. */
 function passiveTree(job) {
 	const all = data.passives || {};
-	return job.tree.filter(([id]) => all[id] || all[`${id}@${job.id}`]).map(([id, max]) => [id, max]);
+	return job.tree.filter(([id]) => all[id] || all[`${id}@${job.id}`] || ATTACK_PASSIVES.has(id)).map(([id, max]) => [id, max]);
 }
 
 /** state.passives limited to the job's tree and levels. */
@@ -372,11 +376,14 @@ function renderCombat(input, w) {
 	} else {
 		const a = normalAttack(data, input, mob);
 		const avgHit = (a.minTotal + a.maxTotal) / 2;
-		const perAttack = a.critRate * a.critTotal + (1 - a.critRate) * a.hitRate * avgHit;
+		// Double Attack hits twice (the katar's extra hit stays one), critical hits too
+		const avgOf = (hits, hitRate) => a.critRate * (a.critTotal + (hits - 1) * a.crit) + (1 - a.critRate) * hitRate * (avgHit + ((hits - 1) * (a.min + a.max)) / 2);
+		const perAttack = a.double ? a.double.rate * avgOf(2, a.double.hitRate) + (1 - a.double.rate) * avgOf(1, a.hitRate) : avgOf(1, a.hitRate);
 		const interval = w.amotion ? w.amotion * 2 : null;
 		rows = [
 			['Hit ratio', pct(a.hitRate)], ['Critical rate', pct(a.critRate)], ['Critical damage', fmt(a.critTotal)],
 			['Time per hit', interval ? sec(interval) : '-'],
+			...(a.double ? [['Double Attack', `${pct(a.double.rate)}, 2 hits`], ['Hit ratio (Double Attack)', pct(a.double.hitRate)]] : []),
 			['Minimum damage', fmt(a.minTotal)], ['Maximum damage', fmt(a.maxTotal)], ['Average an attack', fmt(perAttack)],
 			['Damage per second', interval ? fmt((perAttack * 1000) / interval) : '-'],
 			['Hits to defeat (min)', hitsTo(Math.max(a.maxTotal, a.critRate > 0 ? a.critTotal : 0))],

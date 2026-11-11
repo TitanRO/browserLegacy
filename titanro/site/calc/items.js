@@ -19,8 +19,14 @@ export const SLOTS = [
 	['mid', 'Middle headgear', 512],
 	['low', 'Lower headgear', 1],
 	['acc1', 'Accessory', 8 | 128],
-	['acc2', 'Accessory', 8 | 128]
+	['acc2', 'Accessory', 8 | 128],
+	['ammo', 'Ammunition', 32768]
 ];
+
+const IT_AMMO = 10;
+/** The ammunition type (item subtype) each shooting weapon type loads (battle_check_arrows): bows arrows, guns
+ * bullets, grenade launchers grenades. */
+export const AMMO_OF = { 11: 1, 17: 3, 18: 3, 19: 3, 20: 3, 21: 5 };
 
 const IT_WEAPON = 4;
 
@@ -98,10 +104,11 @@ const OTHER = new Set([
 ]);
 
 /**
- * Sums the bonuses of equipped items (each {item, refine, cards: [card items]}): the totals the calculator applies,
+ * Sums the bonuses of equipped items (each {item, refine, cards: [card items]}; `weaponType` the weapon type when no
+ * weapon item is worn, for the ammunition): the totals the calculator applies,
  * the item DEF and refine DEF, and per item what isn't counted (`notCounted`) or doesn't show here (`other`).
  */
-export function sumEquipment(data, equips, combos = []) {
+export function sumEquipment(data, equips, combos = [], weaponType = null) {
 	const t = {
 		param: [0, 0, 0, 0, 0, 0], // from equipment and cards
 		paramEquip: [0, 0, 0, 0, 0, 0], // from equipment scripts only (not cards): auriga adds VIT/INT to MaxHP/SP
@@ -110,9 +117,11 @@ export function sumEquipment(data, equips, combos = []) {
 		equipAtk: 0, watk: 0, latk: 0, ematk: 0, aspdRate: 0, aspdAdd: 0,
 		atkRate: 0, critAtkRate: 0, longAtkRate: 0,
 		addrace: new Array(RC_MAX).fill(0), addele: new Array(10).fill(0), addsize: [0, 0, 0],
-		ignoreDef: new Array(RC_MAX).fill(0), weaponEle: 0,
+		ignoreDef: new Array(RC_MAX).fill(0), weaponEle: 0, arrowAtk: 0, arrowCri: 0, doubleRate: 0, doubleAddRate: 0,
 		refineDef: 0, notCounted: [], other: []
 	};
+	const weapon = equips.find((e) => e && e.item && e.item.type === IT_WEAPON);
+	const wtype = weapon ? weapon.item.sub : weaponType; // the weapon slot's, else the page's weapon type
 	// what's worn (cards count), for sets
 	const have = new Map();
 	const names = new Map();
@@ -129,6 +138,15 @@ export function sumEquipment(data, equips, combos = []) {
 		if (!e || !e.item) continue;
 		const it = e.item;
 		const disabled = !!it.bonuses.disabled; // the item gives nothing on field maps; its cards still count
+		if (it.type === IT_AMMO) {
+			// ammunition counts in a weapon that shoots it (a bow's arrows, a gun's bullets): its ATK and its script
+			// (lr_flag 2): its element becomes the weapon's, its Critical counts for its attacks only
+			if (AMMO_OF[wtype] !== it.sub) {
+				t.other.push(`${it.name}: not shot by this weapon`);
+				continue;
+			}
+			t.arrowAtk += it.atk;
+		}
 		if (disabled) t.other.push(`${it.name}: disabled on field maps`);
 		if (!disabled && it.type !== IT_WEAPON && it.type !== IT_CARD) {
 			t.def += it.def;
@@ -149,7 +167,7 @@ export function sumEquipment(data, equips, combos = []) {
 				t.notCounted.push(`${src.name}: depends on the wearer`);
 				continue;
 			}
-			const where = shield ? (isCard ? 'card' : 'script') : '';
+			const where = it.type === IT_AMMO ? 'ammo' : shield ? (isCard ? 'card' : 'script') : '';
 			for (const b of list) apply(t, b, src, isCard, where);
 			// a set written in its own script: what it adds with the worn items it checks for
 			const worn = (src.bonuses.partners || []).filter((id) => (have.get(id) || 0) > (id === src.id ? 1 : 0)); // itself: a second one
@@ -188,6 +206,16 @@ function apply(t, b, src, isCard, shield = '') {
 		return;
 	}
 	const val = args[args.length - 1];
+	if (shield === 'ammo' && name === 'SP_CRITICAL') {
+		t.arrowCri += val * 10;
+		return;
+	}
+	if (name === 'SP_DOUBLE_RATE' || name === 'SP_DOUBLE_ADD_RATE') {
+		if (shield) return; // the weapon hand's only (lr_flag 0)
+		if (name === 'SP_DOUBLE_RATE') t.doubleRate = Math.max(t.doubleRate, val);
+		else t.doubleAddRate += val;
+		return;
+	}
 	const a1 = args[0];
 	const a2 = args[1];
 	const stat = ['SP_STR', 'SP_AGI', 'SP_VIT', 'SP_INT', 'SP_DEX', 'SP_LUK'].indexOf(name);

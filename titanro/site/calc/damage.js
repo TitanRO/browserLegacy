@@ -187,6 +187,16 @@ function doubleAttack(c, type, passives, hit, mob) {
 	return { rate: Math.min(Math.max(chance, 0), 100) / 100, hitAdd: bonusLv && base > 0 ? Math.trunc((base * bonusLv) / 100) : 0 };
 }
 
+/** The critical chance (0..1) on `mob`, with a skill's own Critical in tenths (`add`). */
+function critChance(c, type, mob, add = 0) {
+	let cri = 10 + Math.floor(c.total.luk / 3) * 10 + c.eq.cri;
+	if (type === W_KATAR) cri *= 2;
+	if (LONG_WEAPONS.has(type)) cri += c.eq.arrowCri || 0; // the ammunition's Critical
+	cri -= Math.trunc(mob.lv / 15) + 2 * mob.luk;
+	cri += add;
+	return Math.min(Math.max(cri, 0), 1000) / 1000;
+}
+
 /**
  * A normal attack of `input` (the stat calculator's input; `input.passives` {skill id: level} for ATTACK_PASSIVES)
  * on `mob` (a mobList row): {min, max} damage of a hit, the critical hit's damage, hit and critical chances (0..1),
@@ -198,11 +208,7 @@ export function normalAttack(data, input, mob) {
 	const type = c.weapon ? c.weapon.type : 0;
 	const hit = c.blv + total.dex + Math.floor(total.luk / 3) + 175 + eq.hit;
 	const hitRate = Math.min(Math.max(hit - mob.flee, MIN_HITRATE), MAX_HITRATE) / 100;
-	let cri = 10 + Math.floor(total.luk / 3) * 10 + eq.cri;
-	if (type === W_KATAR) cri *= 2;
-	if (LONG_WEAPONS.has(type)) cri += eq.arrowCri || 0; // the ammunition's Critical
-	cri -= Math.trunc(mob.lv / 15) + 2 * mob.luk;
-	const critRate = Math.min(Math.max(cri, 0), 1000) / 1000;
+	const critRate = critChance(c, type, mob);
 	const da = doubleAttack(c, type, input.passives, hit, mob);
 	// a katar's normal attack adds a second hit of 1 % + 2 % per Double Attack level
 	const katarLv = (input.passives && input.passives[TF_DOUBLE]) || 0;
@@ -233,8 +239,8 @@ const NK_IGNORE_DEF = 0x20;
  * spheres, cart weight, HP or SP, a second formula): the calculator leaves them out until it has their formula.
  */
 const SPECIAL_SKILLS = new Set([
-	251, 365, 382, 397, 480, 503, 507, 514, 544,
-	2477, 2553, 2559, 2570, 2582, 2593, 3010, 5032,
+	251, 365, 397, 480,
+	2559, 3010,
 	// counters, reflects, traps and area effects; spirit spheres, cart weight and rage counters the probe's characters
 	// don't have
 	61, 121, 139, 252, 267, 372, 390, 428, 429, 430, 485, 2314, 2476
@@ -270,6 +276,9 @@ const NJ_SYURIKEN = 523;
 const NJ_KUNAI = 524;
 const NJ_TOBIDOUGU = 522;
 const KO_HAPPOKUNAI = 3007;
+const GS_PIERCINGSHOT = 514;
+const NJ_ISSEN = 544;
+const W_RIFLE = 18;
 const MO_INVESTIGATE = 266;
 const RK_DRAGONTRAINING = 2007;
 const RK_DRAGONBREATH = 2008;
@@ -296,7 +305,7 @@ function matkRoll(data, c, roll) {
 		atk += roll === 'max' ? max : min;
 	}
 	if (c.eq.matkRate) atk = Math.trunc((atk * Math.max(100 + c.eq.matkRate, 0)) / 100); // the equipment's MATK %
-	if (refine && wlv >= 1 && w.type !== W_BOW && !GUNS.has(w.type)) {
+	if (refine && wlv >= 1) { // every weapon (the ATK roll leaves bows and guns out)
 		const over = data.overrefine[wlv - 1][refine];
 		if (over > 0) atk += roll === 'max' ? over : 1;
 	}
@@ -368,6 +377,28 @@ function ownFormula(data, c, mob, skillId, lv, roll, nk) {
 		const d = reduced <= 0 || damage <= 0 ? 0 : Math.trunc((damage * reduced) / hercules);
 		return d < 1 && data.attr_fix[Math.max(mob.element_lv, 1) - 1][ele][mob.element] > 0 ? 1 : d;
 	}
+	case GS_PIERCINGSHOT: {
+		// the normal attack's ATK x jRO's 250 + 30 x level % with a rifle, else 200 + 20 x level %, no DEF, the
+		// element once more (the server scales Hercules' 30 / 20 x (level + 5) % to it after the element)
+		const rifle = c.weapon && c.weapon.type === W_RIFLE;
+		const hercules = (rifle ? 30 : 20) * (lv + 5);
+		const jro = rifle ? 250 + 30 * lv : 200 + 20 * lv;
+		const type = c.weapon ? c.weapon.type : 0;
+		let d = eleFix(data, statusAtk(c.total, type), ELE_NEUTRAL, mob) + weaponDamage(data, c, mob, roll, roll, attackEle(c));
+		d = Math.trunc((d * hercules) / 100);
+		const skillAtk = (c.eq.skillAtk && c.eq.skillAtk[skillId]) || 0;
+		if (skillAtk) d += Math.trunc((d * skillAtk) / 100);
+		if (c.eq.longAtkRate) d += Math.trunc((d * c.eq.longAtkRate) / 100);
+		d = eleFix(data, Math.max(d, 0), attackEle(c), mob);
+		return Math.trunc((d * jro) / hercules);
+	}
+	case NJ_ISSEN: { // ATK x level + HP (all of it) - DEF - soft DEF, halved on a boss, no DEF step, neutral
+		const type = c.weapon ? c.weapon.type : 0;
+		const atk = eleFix(data, statusAtk(c.total, type), ELE_NEUTRAL, mob) + weaponDamage(data, c, mob, roll, roll, attackEle(c));
+		let d = atk ? atk * lv + c.maxHp - totalDef : -totalDef;
+		if (mob.boss) d = Math.trunc(d / 2);
+		return eleFix(data, Math.max(d, 0), ELE_NEUTRAL, mob);
+	}
 	case GS_FLING: // the job level
 		return c.jlv;
 	case MO_EXTREMITYFIST: { // ATK x (800 + 10 x SP) % + 250 + 150 x level - DEF, neutral (all the SP: the maximum)
@@ -382,6 +413,24 @@ const MC_CARTREVOLUTION = 153;
 const NC_ARMSCANNON = 2261;
 const NEUTRAL_AGAIN = new Set([MC_CARTREVOLUTION, NC_ARMSCANNON]);
 
+const SN_SHARPSHOOTING = 382;
+const PA_SHIELDCHAIN = 480;
+const GS_MAGICALBULLET = 507;
+const GN_CARTCANNON = 2477;
+/** DEF and soft DEF off flat (Hercules renewal's flag.tdef); the element once more at the end (flag.distinct). */
+const FLAT_DEF_SKILLS = new Set([PA_SHIELDCHAIN, GS_MAGICALBULLET, GN_CARTCANNON]);
+const SU_SCAROFTAROU = 5032;
+const RL_MASS_SPIRAL = 2553;
+const RL_SLUGSHOT = 2570;
+const SJ_NOVAEXPLOSING = 2582;
+const SJ_PROMINENCEKICK = 2593;
+const ELE_FIRE = 3;
+const GS_BULLSEYE = 503;
+const RC_BRUTE = 2;
+const RC_DEMIHUMAN = 7;
+/** Weapon skills that can hit critically (the server's battle_calc_weapon_attack critical check). */
+const CRIT_SKILLS = new Map([[SN_SHARPSHOOTING, 200]]); // skill: its own Critical (tenths)
+
 const KN_PIERCE = 56;
 const KN_BOWLINGBASH = 62;
 const RG_BACKSTAP = 212;
@@ -394,6 +443,7 @@ const W_2HSPEAR = 5;
  */
 function skillRow(c, mob, skillId, lv, row) {
 	let [ratio, ele, num] = row;
+	const attrOf = (m, e) => c.attrFix[Math.max(m.element_lv, 1) - 1][e][m.element];
 	const type = c.weapon ? c.weapon.type : 0;
 	switch (skillId) {
 	case KN_PIERCE: // a hit a size step: small 1, medium 2, large 3
@@ -408,6 +458,25 @@ function skillRow(c, mob, skillId, lv, row) {
 	case CR_HOLYCROSS: // twice the level part with a two-handed spear
 		if (type === W_2HSPEAR) ratio = 100 + 70 * lv;
 		break;
+	case GS_BULLSEYE: // 500 % on a brute or demi-human that isn't a boss
+		if ((mob.race === RC_BRUTE || mob.race === RC_DEMIHUMAN) && !mob.boss) ratio += 400;
+		break;
+	case RL_MASS_SPIRAL: // (200 + the target's DEF, at most 500) x level, then the usual DEF
+		ratio = (200 + Math.min(500, mob.def)) * lv;
+		break;
+	case RL_SLUGSHOT: // 1200 x level x (2 + the target's size) on a monster
+		ratio = 1200 * lv * (2 + mob.size);
+		break;
+	case SJ_PROMINENCEKICK: { // fire in Hercules, the weapon's element in jRO: the ratio carries the change
+		ratio = 650 + 50 * lv;
+		const fire = attrOf(mob, ELE_FIRE);
+		if (fire > 0) ratio = Math.trunc((ratio * attrOf(mob, attackEle(c))) / fire);
+		ele = ELE_FIRE;
+		break;
+	}
+	case SU_SCAROFTAROU: // twice the ratio on a boss
+		if (mob.boss) ratio *= 2;
+		break;
 	case NC_ARMSCANNON: // jRO: 300 + 400 x level on small targets, 350 on medium, 300 on large
 		ratio = 300 + [400, 350, 300][mob.size] * lv;
 		break;
@@ -415,11 +484,12 @@ function skillRow(c, mob, skillId, lv, row) {
 	return [ratio, ele, num];
 }
 
-function skillHitDamage(data, c, mob, skillId, lv, roll, passives) {
+function skillHitDamage(data, c, mob, skillId, lv, roll, passives, critical = false) {
 	const sk = data.weapon_skills[skillId];
 	const [ratio, skillEle, num] = skillRow(c, mob, skillId, lv, sk.lv[lv - 1]);
 	const type = c.weapon ? c.weapon.type : 0;
 	if (mob.plant) return num > 1 ? num : 1;
+	if (skillId === SJ_PROMINENCEKICK && ratio <= 0) return 0; // a weapon element that can't hurt the target
 	const own = ownFormula(data, c, mob, skillId, lv, roll, sk.nk);
 	if (own !== undefined) return own;
 	const ele = skillEle >= 0 ? skillEle : attackEle(c); // -1: the weapon's (or an endowment's) element
@@ -434,6 +504,10 @@ function skillHitDamage(data, c, mob, skillId, lv, roll, passives) {
 	if (warg) damage += 10 * ((passives && passives[RA_TOOTHOFWUG]) || 0);
 	damage += buffAtk(c);
 	if (skillId === MO_INVESTIGATE) damage += Math.trunc(mob.def / 2); // half the target's hard DEF, before the ratio
+	// Magical Bullet: a MATK roll, neutral, added to the ATK
+	if (skillId === GS_MAGICALBULLET) damage += eleFix(data, matkRoll(data, c, roll), ELE_NEUTRAL, mob);
+	// Shield Chain: the shield's weight / 10 + 4 x its refine, before the ratio
+	if (skillId === PA_SHIELDCHAIN && c.shield) damage += Math.trunc((c.shieldWeight || 0) / 10) + 4 * (c.shieldRefine || 0);
 	// Dance with Wug on Warg Strike (and Warg Dash): 10 x level x (2 + the chorus bonus) % more ratio
 	const dance = warg ? buffLv(c, WM_DANCE_WITH_WUG) : 0;
 	const danceStep = dance ? dance * (2 + chorusBonus(c.performers)) : 0;
@@ -443,20 +517,26 @@ function skillHitDamage(data, c, mob, skillId, lv, roll, passives) {
 	damage += 2 * danceStep;
 	const skillAtk = (c.eq.skillAtk && c.eq.skillAtk[skillId]) || 0; // the equipment's damage % for this skill
 	if (skillAtk) damage += Math.trunc((damage * skillAtk) / 100);
+	if (critical && c.eq.critAtkRate) damage += Math.trunc((damage * c.eq.critAtkRate) / 100);
 	if (c.eq.longAtkRate && longSkill(sk, lv, skillId)) damage += Math.trunc((damage * c.eq.longAtkRate) / 100);
 	if (skillId === MC_CARTREVOLUTION) {
 		// jRO: ATK x 150 % + ATK x the cart's weight / its capacity, DEF and soft DEF off flat
 		const cart = Math.trunc((damage * Math.min(Math.max(c.cartWeight || 0, 0), 100)) / 100);
 		damage = Math.max(Math.trunc((damage * 150) / 100) + cart - (mob.def + mob.def2), 0);
-	} else if (!(sk.nk & NK_IGNORE_DEF)) damage = applyDef(damage, defOf(c, mob));
+	} else if (FLAT_DEF_SKILLS.has(skillId)) damage -= defOf(c, mob).def + Math.max(mob.def2, 1);
+	else if (!(sk.nk & NK_IGNORE_DEF)) damage = applyDef(damage, defOf(c, mob));
+	if (critical && damage > 0) damage += Math.trunc((damage * 40) / 100); // a critical hit: 40 % more, after DEF
 	damage += 20 * buffLv(c, LK_AURABLADE);
 	const hurts = data.attr_fix[Math.max(mob.element_lv, 1) - 1][ele][mob.element] > 0;
 	if (damage < 0) damage = 0;
 	if (num > 1) damage *= num;
 	// a skill that is Neutral in the skill db (not the weapon's element) takes the element table once more (Hercules
 	// renewal's forced Neutral skills: Warg Strike, Warg Bite, ...)
-	if (skillEle === ELE_NEUTRAL) damage = eleFix(data, damage, ELE_NEUTRAL, mob);
+	if (skillEle === ELE_NEUTRAL || FLAT_DEF_SKILLS.has(skillId)) damage = eleFix(data, damage, ele, mob);
 	if (damage < 1) damage = hurts ? 1 : 0; // at least 1 for the whole attack
+	if (skillId === PA_SHIELDCHAIN) damage *= 5; // five hits, each in full (auriga), after everything
+	// Nova Explosion: MaxHP / (6 - level) + MaxSP x 2 x level more, after everything (jRO)
+	if (skillId === SJ_NOVAEXPLOSING) damage += Math.trunc(c.maxHp / (6 - Math.min(5, lv))) + c.maxSp * 2 * lv;
 	return damage;
 }
 
@@ -521,8 +601,9 @@ export function skillTimes(data, input, skillId, lv, amotion) {
 	return { cast: Math.trunc(time) + fixed, delay: Math.max(d, amotion), cooldown };
 }
 
-/** The hit chance (0-1) from hit - flee: Pierce's 5 x level % more (the server's hit check). */
+/** The hit chance (0-1) from hit - flee: Pierce's 5 x level % more, Shield Chain's 20 more (the server's hit check). */
 function skillHitRate(rate, skillId, lv) {
+	if (skillId === PA_SHIELDCHAIN) rate += 20; // auriga: hit - flee + 20
 	if (skillId === KN_PIERCE) rate += Math.trunc((rate * 5 * lv) / 100);
 	return Math.min(Math.max(rate, MIN_HITRATE), MAX_HITRATE) / 100;
 }
@@ -531,18 +612,25 @@ function skillHitRate(rate, skillId, lv) {
 export function skillAttack(data, input, mob, skillId, lv) {
 	const c = { ...resolve(data, input), buffs: input.buffs, performers: input.performers };
 	const sk = data.weapon_skills[skillId];
-	if (skillId === MO_EXTREMITYFIST || skillId === RK_DRAGONBREATH || skillId === RK_DRAGONBREATH_WATER) {
+	if (skillId === MO_EXTREMITYFIST || skillId === RK_DRAGONBREATH || skillId === RK_DRAGONBREATH_WATER || skillId === NJ_ISSEN || skillId === SJ_NOVAEXPLOSING) {
 		const w = statusWindow(data, input);
 		c.maxHp = w.max_hp; // the character at full HP and SP
 		c.maxSp = w.max_sp;
 	}
 	c.passives = input.passives;
+	c.attrFix = data.attr_fix;
+	c.shieldWeight = input.shieldWeight; // the shield's weight (tenths) and refine: Shield Chain
+	c.shieldRefine = input.shieldRefine;
 	c.cartWeight = input.cartWeight; // % of the cart's capacity
 	if (!sk || lv < 1 || lv > sk.lv.length || SPECIAL_SKILLS.has(skillId)) return null;
 	const hit = c.blv + c.total.dex + Math.floor(c.total.luk / 3) + 175 + c.eq.hit;
 	return {
 		min: skillHitDamage(data, c, mob, skillId, lv, 'min', input.passives),
 		max: skillHitDamage(data, c, mob, skillId, lv, 'max', input.passives),
+		// a skill that can hit critically (Focused Arrow Strike): its critical hit, every roll at its highest
+		crit: CRIT_SKILLS.has(skillId) ? skillHitDamage(data, c, mob, skillId, lv, 'max', input.passives, true) : null,
+		// Focused Arrow Strike: 20 Critical more (jRO; the server takes 30 off Hercules' 50)
+		critRate: CRIT_SKILLS.has(skillId) ? critChance(c, c.weapon ? c.weapon.type : 0, mob, CRIT_SKILLS.get(skillId)) : 0,
 		hits: Math.abs(skillRow(c, mob, skillId, lv, sk.lv[lv - 1])[2]) || 1,
 		hitRate: sk.nk & 0x40 ? 1 : skillHitRate(hit - mob.flee, skillId, lv)
 	};

@@ -155,7 +155,10 @@ describe('damage calculator (normal attacks)', () => {
 			const got = skillAttack(data, prepared(c.input), mobs.get(c.mob), c.skill[0], c.skill[1]);
 			const e = c.expect;
 			checked++;
-			if (e.hit_kind !== 'hit') failures.push(`${c.id}: server min run was ${e.hit_kind}`);
+			// a skill that raises the critical chance (Focused Arrow Strike) may land its min run as a critical hit
+			if (e.hit_kind === 'crit' && got.crit != null) {
+				if (got.crit !== e.hit) failures.push(`${c.id}: server critical ${e.hit}, calculator ${got.crit}`);
+			} else if (e.hit_kind !== 'hit') failures.push(`${c.id}: server min run was ${e.hit_kind}`);
 			else if (got.min !== e.hit) failures.push(`${c.id}: server ${e.hit}, calculator ${got.min}`);
 			if (e.hit_max != null && e.hit_max > got.max) failures.push(`${c.id}: server hit ${e.hit_max}, above ${got.max}`);
 			const prep = prepared(c.input);
@@ -227,6 +230,7 @@ describe('equipment and cards', () => {
 				const se = c.skill_expect;
 				const r = offered.has(c.skill[0]) ? skillAttack(data, input, mobs.get(c.mob), c.skill[0], c.skill[1]) : null;
 				if (r && se.hit_kind === 'hit' && r.min !== se.hit) failures.push(`${c.id} skill ${c.skill}: server ${se.hit}, calculator ${r.min}`);
+				if (r && se.hit_kind === 'crit' && r.crit != null && r.crit !== se.hit) failures.push(`${c.id} skill ${c.skill}: server critical ${se.hit}, calculator ${r.crit}`);
 				if (r && se.hit_max != null && se.hit_max > r.max) failures.push(`${c.id} skill ${c.skill}: server hit ${se.hit_max}, above ${r.max}`);
 				checkTimes(`${c.id} skill ${c.skill}`, input, c.skill, got.amotion, se, failures);
 			}

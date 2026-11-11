@@ -402,11 +402,13 @@ function renderCombat(input, w) {
 	let rows;
 	if (state.skill) {
 		const r = skillAttack(data, input, mob, state.skill, state.skilllv);
-		const avg = (r.min + r.max) / 2;
+		// a skill that can hit critically: its critical hits at their own damage
+		const avg = r.critRate * (r.crit || 0) + (1 - r.critRate) * ((r.min + r.max) / 2);
 		const t = w.amotion ? skillTimes(data, input, state.skill, state.skilllv, w.amotion) : null;
 		const per = t ? t.cast + Math.max(t.delay, t.cooldown) : null; // casting the skill again and again
 		rows = [
 			['Hit ratio', pct(r.hitRate)], ['Hits', r.hits],
+			...(r.crit != null ? [['Critical rate', pct(r.critRate)], ['Critical damage', fmt(r.crit)]] : []),
 			['Minimum damage', fmt(r.min)], ['Average damage', fmt(avg)], ['Maximum damage', fmt(r.max)],
 			['Uses to defeat (min)', hitsTo(r.max)], ['Uses to defeat (avg)', hitsTo(avg * r.hitRate)], ['Uses to defeat (max)', hitsTo(r.min)],
 			['Cast time', t ? sec(t.cast) : '-'], ['After-cast delay', t ? sec(t.delay) : '-'],

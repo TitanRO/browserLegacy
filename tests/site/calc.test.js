@@ -35,7 +35,7 @@ function checkTimes(id, input, [sid, lv], amotion, e, failures) {
 	const t = skillTimes(data, input, sid, lv, amotion);
 	if (Math.abs(t.cast - e.cast) > Math.max(1, Math.ceil(e.cast * 0.0005))) failures.push(`${id} cast: server ${e.cast}, calculator ${t.cast}`);
 	const eq = input.eq || {};
-	const tol = t.delay === amotion && eq.aspdRate ? 1 : 0;
+	const tol = t.delay === amotion && (eq.aspdRate || eq.aspdHaste) ? 1 : 0;
 	if (Math.abs(t.delay - e.delay) > tol) failures.push(`${id} delay: server ${e.delay}, calculator ${t.delay}`);
 }
 
@@ -104,7 +104,7 @@ describe('skill tree simulator', () => {
 function prepared(input) {
 	if (!input.passives && !input.buffs) return input;
 	let eq = withPassives(data, input.eq, input.passives, input.job);
-	if (input.buffs) eq = withBuffs(data, eq, input.buffs, input.weapon ? input.weapon.type : 0);
+	if (input.buffs) eq = withBuffs(data, eq, input.buffs, input.weapon ? input.weapon.type : 0, new Map(), input.performers);
 	return { ...input, eq };
 }
 
@@ -158,7 +158,8 @@ describe('damage calculator (normal attacks)', () => {
 			if (e.hit_kind !== 'hit') failures.push(`${c.id}: server min run was ${e.hit_kind}`);
 			else if (got.min !== e.hit) failures.push(`${c.id}: server ${e.hit}, calculator ${got.min}`);
 			if (e.hit_max != null && e.hit_max > got.max) failures.push(`${c.id}: server hit ${e.hit_max}, above ${got.max}`);
-			checkTimes(c.id, c.input, c.skill, statusWindow(data, c.input).amotion, e, failures);
+			const prep = prepared(c.input);
+			checkTimes(c.id, prep, c.skill, statusWindow(data, prep).amotion, e, failures);
 		}
 		expect(checked).toBeGreaterThan(offered.size * 3);
 		expect(failures.slice(0, 40)).toEqual([]);

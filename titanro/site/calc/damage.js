@@ -7,6 +7,7 @@
  * the monster's DEF, the critical bonus, hit and critical chances, equipment, cards and ammunition (items.js).
  */
 import { resolve } from './calc.js';
+import { chorusBonus, WM_DANCE_WITH_WUG } from './buffs.js';
 
 const W_FIST = 0;
 const W_DAGGER = 1;
@@ -26,7 +27,7 @@ const SN_SIGHT = 380;
 /** Buffs that change attacks (input.buffs {skill id: level}); buffs.js has what they do in the status window. */
 /** Weapon endowments: {skill id: element} (Aspersio, Enchant Poison, the Sage's four); one at a time. */
 export const ENDOWS = { 68: 6, 138: 5, 280: 3, 281: 1, 282: 4, 283: 2 };
-export const ATTACK_BUFFS = new Set([PR_IMPOSITIO, BS_WEAPONPERFECT, BS_OVERTHRUST, LK_AURABLADE, SN_SIGHT, ...Object.keys(ENDOWS).map(Number)]);
+export const ATTACK_BUFFS = new Set([PR_IMPOSITIO, BS_WEAPONPERFECT, BS_OVERTHRUST, LK_AURABLADE, SN_SIGHT, WM_DANCE_WITH_WUG, ...Object.keys(ENDOWS).map(Number)]);
 
 function buffLv(c, id) {
 	return (c.buffs && c.buffs[id]) || 0;
@@ -189,7 +190,7 @@ function doubleAttack(c, type, passives, hit, mob) {
  * Double Attack (`double`: {rate, hitRate} when it can trigger; it hits twice, critical too), and the total stats.
  */
 export function normalAttack(data, input, mob) {
-	const c = { ...resolve(data, input), buffs: input.buffs };
+	const c = { ...resolve(data, input), buffs: input.buffs, performers: input.performers };
 	const { total, eq } = c;
 	const type = c.weapon ? c.weapon.type : 0;
 	const hit = c.blv + total.dex + Math.floor(total.luk / 3) + 175 + eq.hit;
@@ -268,7 +269,13 @@ function skillHitDamage(data, c, mob, skillId, lv, roll, passives) {
 	// Tooth of Wug: 10 ATK a level on the Warg skills, before the ratio (jRO; auriga_stats cuts Hercules' 30 to that)
 	if (warg) damage += 10 * ((passives && passives[RA_TOOTHOFWUG]) || 0);
 	damage += buffAtk(c);
-	damage = Math.trunc((damage * (ratio + buffRatio(c))) / 100);
+	// Dance with Wug on Warg Strike (and Warg Dash): 10 x level x (2 + the chorus bonus) % more ratio
+	const dance = warg ? buffLv(c, WM_DANCE_WITH_WUG) : 0;
+	const danceStep = dance ? dance * (2 + chorusBonus(c.performers)) : 0;
+	const danceRatio = skillId === RA_WUGBITE ? 0 : 10 * danceStep;
+	damage = Math.trunc((damage * (ratio + buffRatio(c) + danceRatio)) / 100);
+	// and 2 x level x (2 + the chorus bonus) ATK on the three Warg skills, after the ratio (Hercules battle.cpp)
+	damage += 2 * danceStep;
 	const skillAtk = (c.eq.skillAtk && c.eq.skillAtk[skillId]) || 0; // the equipment's damage % for this skill
 	if (skillAtk) damage += Math.trunc((damage * skillAtk) / 100);
 	if (c.eq.longAtkRate && longSkill(sk, lv, skillId)) damage += Math.trunc((damage * c.eq.longAtkRate) / 100);
@@ -330,6 +337,8 @@ export function skillTimes(data, input, skillId, lv, amotion) {
 			largest = Math.max(largest, own(eq.skillFixCastRate), eq.fixCastRate);
 			added += Math.min(eq.fixCastRate, 0);
 		}
+		// status effects' reductions (auriga skill_castfix, not for skills that ignore status effects): Dance with Wug
+		if (!(castnodex & 2)) largest = Math.max(largest, eq.fixCastLargest || 0);
 		fixed = Math.trunc((fixed * (100 - Math.min(largest + added, 100))) / 100);
 	}
 	fixed = Math.max(fixed, 0);
@@ -345,7 +354,7 @@ export function skillTimes(data, input, skillId, lv, amotion) {
 
 /** A weapon skill (`skillId` at `lv`) of `input` on `mob`: {min, max} damage, hits, hit chance. */
 export function skillAttack(data, input, mob, skillId, lv) {
-	const c = { ...resolve(data, input), buffs: input.buffs };
+	const c = { ...resolve(data, input), buffs: input.buffs, performers: input.performers };
 	const sk = data.weapon_skills[skillId];
 	if (!sk || lv < 1 || lv > sk.lv.length || SPECIAL_SKILLS.has(skillId)) return null;
 	const hit = c.blv + c.total.dex + Math.floor(c.total.luk / 3) + 175 + c.eq.hit;

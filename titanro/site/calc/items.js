@@ -118,6 +118,8 @@ export function sumEquipment(data, equips, combos = [], weaponType = null) {
 		atkRate: 0, critAtkRate: 0, longAtkRate: 0,
 		addrace: new Array(RC_MAX).fill(0), addele: new Array(10).fill(0), addsize: [0, 0, 0],
 		ignoreDef: new Array(RC_MAX).fill(0), weaponEle: 0, arrowAtk: 0, arrowCri: 0, doubleRate: 0, doubleAddRate: 0,
+		varCastRate: 0, fixCastRate: 0, addVarCast: 0, addFixCast: 0, delayRate: 0,
+		skillCast: {}, skillFixCastRate: {}, skillVarCast: {}, skillFixCast: {},
 		refineDef: 0, notCounted: [], other: []
 	};
 	const weapon = equips.find((e) => e && e.item && e.item.type === IT_WEAPON);
@@ -198,6 +200,25 @@ export function sumEquipment(data, equips, combos = [], weaponType = null) {
 /** Bonuses kept in the hand's weapon data (Hercules' right_weapon / left_weapon): the left hand's don't count here. */
 const WEAPON_HAND = new Set(['SP_ADDRACE', 'SP_ADDELE', 'SP_ADDSIZE', 'SP_ATK1', 'SP_ATKELE', 'SP_ADDRACE2', 'SP_ADD_DAMAGE_CLASS']);
 
+/** Cast and delay bonuses, kept as the server keeps them (pc_bonus / pc_bonus2 with RENEWAL_CAST). */
+const CAST_BONUS = new Set(['SP_VARCASTRATE', 'SP_CASTRATE', 'SP_FIXCASTRATE', 'SP_ADD_VARIABLECAST', 'SP_ADD_FIXEDCAST',
+	'SP_SKILL_VARIABLECAST', 'SP_SKILL_FIXEDCAST', 'SP_DELAYRATE']);
+function castBonus(t, name, args) {
+	const val = args[args.length - 1];
+	const per = args.length > 1 ? args[0] : null; // bonus2: one skill
+	const add = (o, k, v) => { o[k] = (o[k] || 0) + v; };
+	switch (name) {
+		case 'SP_VARCASTRATE': if (per === null) t.varCastRate -= val; else add(t.skillCast, per, -val); return;
+		case 'SP_CASTRATE': add(t.skillCast, per, val); return; // bonus2 bCastrate: the same per-skill rate, other sign
+		case 'SP_FIXCASTRATE': if (per === null) t.fixCastRate -= val; else add(t.skillFixCastRate, per, -val); return;
+		case 'SP_ADD_VARIABLECAST': t.addVarCast += val; return;
+		case 'SP_ADD_FIXEDCAST': t.addFixCast += val; return;
+		case 'SP_SKILL_VARIABLECAST': add(t.skillVarCast, per, val); return;
+		case 'SP_SKILL_FIXEDCAST': add(t.skillFixCast, per, val); return;
+		case 'SP_DELAYRATE': t.delayRate += val; return;
+	}
+}
+
 function apply(t, b, src, isCard, shield = '') {
 	const [name, ...args] = b;
 	if (shield === 'script' && WEAPON_HAND.has(name)) return;
@@ -208,6 +229,11 @@ function apply(t, b, src, isCard, shield = '') {
 	const val = args[args.length - 1];
 	if (shield === 'ammo' && name === 'SP_CRITICAL') {
 		t.arrowCri += val * 10;
+		return;
+	}
+	if (CAST_BONUS.has(name) && !(name === 'SP_CASTRATE' && args.length < 2)) {
+		if (shield === 'ammo') return; // not from ammunition (lr_flag 2)
+		castBonus(t, name, args);
 		return;
 	}
 	if (name === 'SP_DOUBLE_RATE' || name === 'SP_DOUBLE_ADD_RATE') {

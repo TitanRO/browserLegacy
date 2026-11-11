@@ -76,9 +76,10 @@ function attrRatio(data, mob) {
 function applyDef(damage, mob) {
 	const def1 = Math.max(mob.def, 0);
 	const vitDef = Math.max(mob.def2, 1);
-	// the server is built with -ffast-math, which computes (100 - q × 90) / 100 as 1 - q × 0.9 in floats (1 more at DEF 500)
+	// the server is built with -ffast-math, which computes (100 - q × 90) / 100 × damage as damage - q × 0.9 × damage
+	// in floats (1 more than the plain formula at DEF 160 or 500)
 	const q = f(def1 / f(def1 + 400));
-	return Math.trunc(f(f(f(1 - f(q * f(0.9))) * damage) - vitDef));
+	return Math.trunc(f(f(damage - f(f(q * f(0.9)) * damage)) - vitDef));
 }
 
 /** The weapon part: size, ATK %, equipment ATK, element, the card and equipment % against the monster. */
@@ -211,6 +212,16 @@ export function weaponSkills(data) {
 		.filter((id) => !SPECIAL_SKILLS.has(id) && !passive.has(id));
 }
 
+const KN_BRANDISHSPEAR = 57;
+
+/** A long-range skill (the server's battle_range_type for players: its skill db range 5 or more, a negative one as
+ * its size; Brandish Spear in renewal): the equipment's long-range damage % counts. */
+function longSkill(sk, lv, skillId) {
+	if (skillId === KN_BRANDISHSPEAR) return true;
+	const range = sk.time && sk.time[lv - 1][6];
+	return range != null && Math.abs(range) >= 5;
+}
+
 function skillHitDamage(data, c, mob, skillId, lv, roll) {
 	const sk = data.weapon_skills[skillId];
 	const [ratio, skillEle, num] = sk.lv[lv - 1];
@@ -220,12 +231,72 @@ function skillHitDamage(data, c, mob, skillId, lv, roll) {
 	const batk = sk.nk & NK_NO_ELEFIX ? statusAtk(c.total, type) : eleFix(data, statusAtk(c.total, type), ELE_NEUTRAL, mob);
 	let damage = batk + weaponDamage(data, c, mob, roll, roll, ele, sk.nk);
 	damage = Math.trunc((damage * ratio) / 100);
+	if (c.eq.longAtkRate && longSkill(sk, lv, skillId)) damage += Math.trunc((damage * c.eq.longAtkRate) / 100);
 	if (!(sk.nk & NK_IGNORE_DEF)) damage = applyDef(damage, defOf(c, mob));
 	const hurts = data.attr_fix[Math.max(mob.element_lv, 1) - 1][ele][mob.element] > 0;
 	if (damage < 0) damage = 0;
 	if (num > 1) damage *= num;
 	if (damage < 1) damage = hurts ? 1 : 0; // at least 1 for the whole attack
 	return damage;
+}
+
+const WL_RADIUS = 2208;
+/** Monk combo skills: their after-cast delay isn't reduced by AGI / DEX on this server (auriga_stats). */
+const COMBO_SKILLS = new Set([263, 272, 273, 371, 372, 2326, 2329, 2593]);
+
+/**
+ * Cast time and after-cast delay of a weapon skill (ms), as the server's auriga_stats plugin computes them (auriga
+ * RR's skill_castfix and jRO's delay floor): variable cast reduced by DEX + INT / 2 on a square-root curve (none at
+ * 265) and the equipment's percentages added up; fixed cast with flat additions, then the largest reduction;
+ * after-cast delay scaled by the equipment's delay rate, at least the attack motion. `amotion` from statusWindow.
+ */
+export function skillTimes(data, input, skillId, lv, amotion) {
+	const c = input.total ? input : resolve(data, input);
+	const sk = data.weapon_skills[skillId];
+	if (!sk || !sk.time) return null;
+	const [cast, fixcast, delay, cooldown, castnodex, delaynodex] = sk.time[lv - 1];
+	const eq = c.eq;
+	const own = (o) => (o && o[skillId]) || 0;
+	// variable cast
+	let time = Math.max(cast, 0);
+	let skillRate = 0;
+	if (!(castnodex & 4)) {
+		time += eq.addVarCast + own(eq.skillVarCast);
+		skillRate = own(eq.skillCast);
+	}
+	if (time > 0) {
+		if (!(castnodex & 1)) {
+			const stat = c.total.dex + Math.trunc(c.total.int / 2);
+			const max = 265;
+			time = stat >= max ? 0 : Math.trunc(time * f(1 - f(Math.sqrt(f(stat / max)))));
+		}
+		const reduce = castnodex & 4 ? 0 : eq.varCastRate;
+		if (skillRate) time = (time * (100 - skillRate)) / 100;
+		time = (time * (100 - reduce)) / 100;
+	}
+	time = Math.max(time, 0);
+	// fixed cast
+	let fixed = Math.max(fixcast, 0);
+	if (!(castnodex & 4)) fixed += eq.addFixCast + own(eq.skillFixCast);
+	if (fixed > 0) {
+		const radius = (input.passives && input.passives[WL_RADIUS]) || 0;
+		let largest = radius > 0 ? 5 + radius * 5 : 0;
+		let added = 0;
+		if (!(castnodex & 4)) {
+			largest = Math.max(largest, own(eq.skillFixCastRate), eq.fixCastRate);
+			added += Math.min(eq.fixCastRate, 0);
+		}
+		fixed = Math.trunc((fixed * (100 - Math.min(largest + added, 100))) / 100);
+	}
+	fixed = Math.max(fixed, 0);
+	// after-cast delay
+	let d = delay < 0 ? -delay + amotion : delay;
+	const combo = COMBO_SKILLS.has(skillId) ? 4 * c.total.agi + 2 * c.total.dex : 0;
+	d -= combo;
+	if (!(delaynodex & 4) && eq.delayRate) d = Math.trunc((d * (100 + eq.delayRate)) / 100);
+	d = Math.max(d, 0);
+	if (combo) d = Math.min(d + combo, delay);
+	return { cast: Math.trunc(time) + fixed, delay: Math.max(d, amotion), cooldown };
 }
 
 /** A weapon skill (`skillId` at `lv`) of `input` on `mob`: {min, max} damage, hits, hit chance. */

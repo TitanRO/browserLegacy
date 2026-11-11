@@ -9,7 +9,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { statusWindow, jobById } from '../../titanro/site/calc/calc.js';
 import { tiersOf, treeOf, setLevel } from '../../titanro/site/calc/skilltree.js';
-import { normalAttack, mobList, weaponSkills, skillAttack } from '../../titanro/site/calc/damage.js';
+import { normalAttack, mobList, weaponSkills, skillAttack, skillTimes } from '../../titanro/site/calc/damage.js';
 import { itemMap, sumEquipment, AMMO_OF } from '../../titanro/site/calc/items.js';
 import { withPassives } from '../../titanro/site/calc/passives.js';
 
@@ -24,6 +24,20 @@ const { cases, source } = JSON.parse(fs.readFileSync(path.join(root, 'tests/site
  * critical, or hit twice (`multi`). The min run's rolls at 0 always trigger Double Attack; a double critical hit
  * counts as a hit in the sample.
  */
+/**
+ * A skill's cast time and after-cast delay against the server's (`e.cast`, `e.delay`). The cast time may be 1 ms off
+ * (0.05 % for long ones): the server's square root (built with -ffast-math) isn't exact. A delay at the attack motion
+ * has the ASPD tolerance.
+ */
+function checkTimes(id, input, [sid, lv], amotion, e, failures) {
+	if (e.cast == null) return;
+	const t = skillTimes(data, input, sid, lv, amotion);
+	if (Math.abs(t.cast - e.cast) > Math.max(1, Math.ceil(e.cast * 0.0005))) failures.push(`${id} cast: server ${e.cast}, calculator ${t.cast}`);
+	const eq = input.eq || {};
+	const tol = t.delay === amotion && eq.aspdRate ? 1 : 0;
+	if (Math.abs(t.delay - e.delay) > tol) failures.push(`${id} delay: server ${e.delay}, calculator ${t.delay}`);
+}
+
 function checkNormal(id, got, e, failures) {
 	const katar = got.minTotal - got.min > 0 || got.maxTotal - got.max > 0;
 	const twice = got.double ? 2 : 1;
@@ -122,6 +136,7 @@ describe('damage calculator (normal attacks)', () => {
 			if (e.hit_kind !== 'hit') failures.push(`${c.id}: server min run was ${e.hit_kind}`);
 			else if (got.min !== e.hit) failures.push(`${c.id}: server ${e.hit}, calculator ${got.min}`);
 			if (e.hit_max != null && e.hit_max > got.max) failures.push(`${c.id}: server hit ${e.hit_max}, above ${got.max}`);
+			checkTimes(c.id, c.input, c.skill, statusWindow(data, c.input).amotion, e, failures);
 		}
 		expect(checked).toBeGreaterThan(offered.size * 3);
 		expect(failures.slice(0, 40)).toEqual([]);
@@ -149,6 +164,8 @@ describe('equipment and cards', () => {
 		let checked = 0;
 		let sets = 0;
 		let ammo = 0;
+		let skills = 0;
+		const offered = new Set(weaponSkills(data));
 		for (const c of equip.cases) {
 			const equips = c.input.equips.map((e) => ({ item: items.get(e.item), refine: e.refine, cards: e.cards.map((x) => items.get(x)) }));
 			const eq = sumEquipment(data, equips, itemsJson.combos);
@@ -169,10 +186,20 @@ describe('equipment and cards', () => {
 			const a = normalAttack(data, input, mobs.get(c.mob));
 			if (input.weapon && AMMO_OF[input.weapon.type] && equips.some((e) => e.item.type === 10)) ammo++;
 			checkNormal(c.id, a, c.expect, failures);
+			if (c.skill && c.skill_expect) {
+				// the build's weapon skill, when the calculator offers it: damage, cast time, after-cast delay
+				skills++;
+				const se = c.skill_expect;
+				const r = offered.has(c.skill[0]) ? skillAttack(data, input, mobs.get(c.mob), c.skill[0], c.skill[1]) : null;
+				if (r && se.hit_kind === 'hit' && r.min !== se.hit) failures.push(`${c.id} skill ${c.skill}: server ${se.hit}, calculator ${r.min}`);
+				if (r && se.hit_max != null && se.hit_max > r.max) failures.push(`${c.id} skill ${c.skill}: server hit ${se.hit_max}, above ${r.max}`);
+				checkTimes(`${c.id} skill ${c.skill}`, input, c.skill, got.amotion, se, failures);
+			}
 		}
 		expect(checked).toBeGreaterThan(400);
 		expect(sets).toBeGreaterThan(50);
 		expect(ammo).toBeGreaterThan(60);
+		expect(skills).toBeGreaterThan(200);
 		expect(failures.slice(0, 40)).toEqual([]);
 	});
 });

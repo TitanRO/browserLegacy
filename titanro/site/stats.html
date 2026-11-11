@@ -74,8 +74,9 @@
 			</div>
 			<p class="muted">Counted: status ATK, the weapon (refine and over-refine), equipment, card and set bonuses (as
 				listed above), ammunition (its ATK, element and Critical), the passive skills listed above, Double Attack,
-				size and element, the monster's DEF and FLEE, critical hits; for skills, their damage ratio, element and hits.
-				Not counted yet: other passive skills, buffs, skill cast and delay, and skills with a formula of their own
+				size and element, the monster's DEF and FLEE, critical hits; for skills, their damage ratio, element and hits,
+				cast time and after-cast delay (from DEX, INT and equipment). Not counted yet: other passive skills, buffs, and
+				skills with a formula of their own
 				(they aren't listed).</p>
 		</div>
 	</section>
@@ -85,7 +86,7 @@
 <script type="module">
 import { STATS, WEAPON_TYPES, statusWindow, statCost, totalStatPoints, spentStatPoints, jobBonus, aspd } from './calc/calc.js';
 import { jobGroups } from './calc/jobs.js';
-import { normalAttack, mobList, weaponSkills, skillAttack, ATTACK_PASSIVES } from './calc/damage.js';
+import { normalAttack, mobList, weaponSkills, skillAttack, skillTimes, ATTACK_PASSIVES } from './calc/damage.js';
 import { SLOTS as EQ_SLOTS, AMMO_OF, itemMap, canEquip, sumEquipment } from './calc/items.js';
 import { withPassives } from './calc/passives.js';
 
@@ -367,11 +368,15 @@ function renderCombat(input, w) {
 	if (state.skill) {
 		const r = skillAttack(data, input, mob, state.skill, state.skilllv);
 		const avg = (r.min + r.max) / 2;
+		const t = w.amotion ? skillTimes(data, input, state.skill, state.skilllv, w.amotion) : null;
+		const per = t ? t.cast + Math.max(t.delay, t.cooldown) : null; // casting the skill again and again
 		rows = [
 			['Hit ratio', pct(r.hitRate)], ['Hits', r.hits],
 			['Minimum damage', fmt(r.min)], ['Average damage', fmt(avg)], ['Maximum damage', fmt(r.max)],
 			['Uses to defeat (min)', hitsTo(r.max)], ['Uses to defeat (avg)', hitsTo(avg * r.hitRate)], ['Uses to defeat (max)', hitsTo(r.min)],
-			['Time per use', '<span class="nc">not counted yet</span>']
+			['Cast time', t ? sec(t.cast) : '-'], ['After-cast delay', t ? sec(t.delay) : '-'],
+			...(t && t.cooldown ? [['Cooldown', sec(t.cooldown)]] : []),
+			['Time per use', per ? sec(per) : '-'], ['Damage per second', per ? fmt((avg * r.hitRate * 1000) / per) : '-']
 		];
 	} else {
 		const a = normalAttack(data, input, mob);

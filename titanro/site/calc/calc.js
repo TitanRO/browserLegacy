@@ -105,8 +105,9 @@ export function resolve(data, input) {
 	const total = {};
 	const own = {}; // the stats without the buffs' (status effects')
 	STATS.forEach((s, i) => {
-		own[s] = input.stats[s] + bonus[i] + eq.param[i];
-		total[s] = own[s] + (eq.buffParam ? eq.buffParam[i] : 0);
+		// a stat the equipment lowers below 0 counts as 0 (the server's status window shows 0)
+		own[s] = Math.max(0, input.stats[s] + bonus[i] + eq.param[i]);
+		total[s] = Math.max(0, own[s] + (eq.buffParam ? eq.buffParam[i] : 0));
 	});
 	let weapon = input.weapon || null;
 	if (weapon && eq.watk) weapon = { ...weapon, atk: weapon.atk + eq.watk };

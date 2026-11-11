@@ -283,7 +283,7 @@ function render() {
 	if (state.wtype) input.weapon = { type: state.wtype, atk: state.watk, matk: state.wmatk, wlv: state.wlv, refine: state.refine };
 	const equips = equipment();
 	let notes = '';
-	if (equips && equips.length) input.eq = sumEquipment(data, equips, itemsJson.combos || [], state.wtype);
+	if (equips && equips.length) input.eq = sumEquipment(data, equips, itemsJson.combos || [], state.wtype, jobIndex.get(state.job));
 	input.passives = jobPassives(job);
 	input.eq = withPassives(data, input.eq, input.passives, job.id, skillNames);
 	const wpn = equips && equips.find((e) => e.item.type === 4);

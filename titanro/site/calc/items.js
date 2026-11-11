@@ -1,8 +1,9 @@
 /**
  * TitanRO calculator: equipment, cards and their bonuses. items.json lists every item and card with the bonuses the
  * game server's own script evaluation gives it (exported by TitanRO's server tools: each script run on the server, its
- * bonus calls recorded). Items whose bonuses depend on the wearer (job, level, stats, another slot's refine) are
- * marked `varies` and not counted. Sets count once: Hercules' combos (items.json `combos`) and sets written in an
+ * bonus calls recorded). Items whose bonuses depend on the job only are evaluated for every job that wears them
+ * (`perjob`: groups of jobs and their bonuses); items that depend on level, stats, skills or another slot's refine
+ * are marked `varies` and not counted. Sets count once: Hercules' combos (items.json `combos`) and sets written in an
  * item's own script (`partners`: the items it checks for; `sets`: what it adds with each group of them worn, as the
  * server evaluated it). tests/site/calc.test.js checks equipped characters against the server
  * (tests/site/equip-cases.json), a fifth of them built around a set.
@@ -43,6 +44,8 @@ export function itemMap(items) {
 	for (const row of items.items) {
 		const it = Object.fromEntries(items.columns.map((c, i) => [c, row[i]]));
 		it.jobBits = BigInt('0x' + it.jobs);
+		// an item whose bonuses depend on the job: per group of jobs (bitmask over data.jobs), what they get
+		if (it.bonuses.perjob) it.perjob = it.bonuses.perjob.map(([mask, b]) => [BigInt('0x' + mask), b]);
 		map.set(it.id, it);
 	}
 	return map;
@@ -53,10 +56,19 @@ export function canEquip(item, jobIndex) {
 	return item.type === IT_CARD || ((item.jobBits >> BigInt(jobIndex)) & 1n) === 1n;
 }
 
-/** The bonus list of an item at a refine level, or null when it depends on the wearer. */
-export function itemBonuses(item, refine) {
-	const b = item.bonuses;
+/**
+ * The bonus list of an item at a refine level, or null when it depends on the wearer. An item whose bonuses depend on
+ * the job takes those of the group holding `jobIndex` (data.jobs index); null without one.
+ */
+export function itemBonuses(item, refine, jobIndex = null) {
+	let b = item.bonuses;
 	if (b.disabled) return [];
+	if (b.perjob) {
+		const groups = item.perjob || b.perjob.map(([mask, x]) => [BigInt('0x' + mask), x]);
+		const g = jobIndex == null ? null : groups.find(([mask]) => ((mask >> BigInt(jobIndex)) & 1n) === 1n);
+		if (!g) return null;
+		b = g[1];
+	}
 	if (b.fixed) return b.fixed;
 	if (b.ref) return b.ref[Math.min(refine || 0, b.ref.length - 1)];
 	return null;
@@ -108,7 +120,7 @@ const OTHER = new Set([
  * weapon item is worn, for the ammunition): the totals the calculator applies,
  * the item DEF and refine DEF, and per item what isn't counted (`notCounted`) or doesn't show here (`other`).
  */
-export function sumEquipment(data, equips, combos = [], weaponType = null) {
+export function sumEquipment(data, equips, combos = [], weaponType = null, jobIndex = null) {
 	const t = {
 		param: [0, 0, 0, 0, 0, 0], // from equipment and cards
 		paramEquip: [0, 0, 0, 0, 0, 0], // from equipment scripts only (not cards): auriga adds VIT/INT to MaxHP/SP
@@ -164,7 +176,7 @@ export function sumEquipment(data, equips, combos = [], weaponType = null) {
 				continue;
 			}
 			if (src.bonuses.onequip) t.notCounted.push(`${src.name}: an effect started when it's put on`);
-			const list = itemBonuses(src, refine);
+			const list = itemBonuses(src, refine, jobIndex);
 			if (list === null) {
 				t.notCounted.push(`${src.name}: depends on the wearer`);
 				continue;
@@ -217,6 +229,21 @@ function castBonus(t, name, args) {
 		case 'SP_SKILL_FIXEDCAST': add(t.skillFixCast, per, val); return;
 		case 'SP_DELAYRATE': t.delayRate += val; return;
 	}
+}
+
+// battle flags (Hercules map/battle.h)
+const BF_WEAPON = 0x0001, BF_MAGIC = 0x0002, BF_MISC = 0x0004, BF_SHORT = 0x0010, BF_LONG = 0x0040, BF_SKILL = 0x0100, BF_NORMAL = 0x0200;
+const BF_WEAPONMASK = 0x000f, BF_RANGEMASK = 0x00f0, BF_SKILLMASK = 0x0f00;
+/** Whether bonus3 bAddEle's flag, completed as pc_bonus_addele does, covers every weapon attack. */
+function addEleCovers(flag) {
+	let f = flag;
+	if (!(f & BF_RANGEMASK)) f |= BF_SHORT | BF_LONG;
+	if (!(f & BF_WEAPONMASK)) f |= BF_WEAPON;
+	if (!(f & BF_SKILLMASK)) {
+		if (f & (BF_MAGIC | BF_MISC)) f |= BF_SKILL;
+		if (f & BF_WEAPON) f |= BF_NORMAL | BF_SKILL;
+	}
+	return (f & BF_WEAPON) !== 0 && (f & BF_SHORT) !== 0 && (f & BF_LONG) !== 0 && (f & BF_NORMAL) !== 0 && (f & BF_SKILL) !== 0;
 }
 
 function apply(t, b, src, isCard, shield = '') {
@@ -286,10 +313,21 @@ function apply(t, b, src, isCard, shield = '') {
 			for (let r = 0; r < RC_MAX; r++) if (m & (1 << r)) t.addrace[r] += val;
 			return;
 		}
-		case 'SP_ADDELE':
-			if (a1 === 255) for (let e = 0; e < 10; e++) t.addele[e] += val; // ELE_ALL
-			else if (a1 >= 0 && a1 < 10) t.addele[a1] += val;
+		case 'SP_ADDELE': {
+			// bonus2 bAddEle,e,n; bonus3 bAddEle,e,n,flag (the rate is the second value): the flag as the server completes
+			// it (pc_bonus_addele) must cover weapon attacks, near and far, normal and skill, for the calculator to count it
+			let rate = val;
+			if (args.length >= 3) {
+				rate = args[1];
+				if (!addEleCovers(args[2])) {
+					t.notCounted.push(`${src.name}: element damage for some attacks only`);
+					return;
+				}
+			}
+			if (a1 === 255) for (let e = 0; e < 10; e++) t.addele[e] += rate; // ELE_ALL
+			else if (a1 >= 0 && a1 < 10) t.addele[a1] += rate;
 			return;
+		}
 		case 'SP_ADDSIZE':
 			if (a1 === 3) for (let z = 0; z < 3; z++) t.addsize[z] += val; // Size_All
 			else if (a1 >= 0 && a1 < 3) t.addsize[a1] += val;

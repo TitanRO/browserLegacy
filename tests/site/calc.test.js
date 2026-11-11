@@ -192,13 +192,15 @@ describe('equipment and cards', () => {
 		let skills = 0;
 		let elemental = 0;
 		let endowed = 0;
+		let perjob = 0;
 		const offered = new Set(weaponSkills(data));
 		for (const c of equip.cases) {
 			const equips = c.input.equips.map((e) => ({ item: items.get(e.item), refine: e.refine, cards: e.cards.map((x) => items.get(x)) }));
-			const eq = sumEquipment(data, equips, itemsJson.combos);
+			const eq = sumEquipment(data, equips, itemsJson.combos, null, data.jobs.findIndex((j) => j.id === c.input.job));
 			if (eq.notCounted.length) continue;
 			checked++;
 			if (c.id.startsWith('s')) sets++;
+			if (c.id.startsWith('pj')) perjob++;
 			const w = equips.find((e) => e.item.type === 4);
 			const input = {
 				job: c.input.job, blv: c.input.blv, jlv: c.input.jlv, stats: c.input.stats, eq,
@@ -235,6 +237,7 @@ describe('equipment and cards', () => {
 		expect(skills).toBeGreaterThan(200);
 		expect(elemental).toBeGreaterThan(25);
 		expect(endowed).toBeGreaterThan(50);
+		expect(perjob).toBeGreaterThan(150);
 		expect(failures.slice(0, 40)).toEqual([]);
 	});
 });

@@ -239,7 +239,7 @@ const NK_IGNORE_DEF = 0x20;
  * spheres, cart weight, HP or SP, a second formula): the calculator leaves them out until it has their formula.
  */
 const SPECIAL_SKILLS = new Set([
-	251, 365, 397, 480,
+	251, 365,
 	2559, 3010,
 	// counters, reflects, traps and area effects; spirit spheres, cart weight and rage counters the probe's characters
 	// don't have
@@ -276,6 +276,7 @@ const NJ_SYURIKEN = 523;
 const NJ_KUNAI = 524;
 const NJ_TOBIDOUGU = 522;
 const KO_HAPPOKUNAI = 3007;
+const LK_SPIRALPIERCE = 397;
 const GS_PIERCINGSHOT = 514;
 const NJ_ISSEN = 544;
 const W_RIFLE = 18;
@@ -376,6 +377,22 @@ function ownFormula(data, c, mob, skillId, lv, roll, nk) {
 		const reduced = jro - totalDef;
 		const d = reduced <= 0 || damage <= 0 ? 0 : Math.trunc((damage * reduced) / hercules);
 		return d < 1 && data.attr_fix[Math.max(mob.element_lv, 1) - 1][ele][mob.element] > 0 ? 1 : d;
+	}
+	case LK_SPIRALPIERCE: {
+		// jRO: 70 % of the normal attack's ATK + 70 % of the weapon's weight, x 115 / 100 / 85 % by size, x (100 + 50
+		// x level) %, 5 hits; the server keeps Hercules' size steps (130 / 115 / 100 %) and scales its ratio to jRO's
+		const type = c.weapon ? c.weapon.type : 0;
+		let d = eleFix(data, statusAtk(c.total, type), ELE_NEUTRAL, mob) + weaponDamage(data, c, mob, roll, roll, attackEle(c));
+		d = Math.trunc((d * 70) / 100) + Math.trunc((((c.weapon && c.weapon.weight) || 0) * 7) / 100);
+		const hercules = [130, 115, 100][mob.size];
+		d = Math.trunc((d * hercules) / 100);
+		const ratio = Math.trunc(((100 + 50 * lv) * [115, 100, 85][mob.size]) / hercules);
+		d = Math.trunc((d * ratio) / 100);
+		const skillAtk = (c.eq.skillAtk && c.eq.skillAtk[skillId]) || 0;
+		if (skillAtk) d += Math.trunc((d * skillAtk) / 100);
+		d = Math.max(applyDef(d, defOf(c, mob)), 0) * 5;
+		if (d < 1) d = c.attrFix[Math.max(mob.element_lv, 1) - 1][attackEle(c)][mob.element] > 0 ? 1 : 0;
+		return d + (d > 0 ? 20 * buffLv(c, LK_AURABLADE) * 5 : 0); // Aura Blade on each hit
 	}
 	case GS_PIERCINGSHOT: {
 		// the normal attack's ATK x jRO's 250 + 30 x level % with a rifle, else 200 + 20 x level %, no DEF, the

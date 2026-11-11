@@ -207,9 +207,14 @@ describe('equipment and cards', () => {
 			const w = equips.find((e) => e.item.type === 4);
 			const input = {
 				job: c.input.job, blv: c.input.blv, jlv: c.input.jlv, stats: c.input.stats, eq,
-				weapon: w ? { type: w.item.sub, atk: w.item.atk, matk: w.item.matk, wlv: w.item.wlv, refine: w.refine } : null,
+				weapon: w ? { type: w.item.sub, atk: w.item.atk, matk: w.item.matk, wlv: w.item.wlv, refine: w.refine, weight: w.item.weight || 0 } : null,
 				shield: equips.some((e) => e.item.type === 5 && e.item.loc & 32)
 			};
+			const sh = equips.find((e) => e.item.type === 5 && e.item.loc & 32);
+			if (sh) {
+				input.shieldWeight = sh.item.weight || 0;
+				input.shieldRefine = sh.refine || 0;
+			}
 			if (c.input.buffs) {
 				input.buffs = c.input.buffs;
 				input.eq = withBuffs(data, eq, c.input.buffs, input.weapon ? input.weapon.type : 0);

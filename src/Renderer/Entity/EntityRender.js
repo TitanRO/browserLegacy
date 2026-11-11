@@ -32,7 +32,7 @@ import DB from 'DB/DBManager.js';
 import GraphicsSettings from 'Preferences/Graphics.js';
 import GR2ModelRenderer from 'Renderer/GR2/GR2ModelRenderer.js';
 import EntityComposer from './EntityComposer.js';
-import VisualOptions, { INSTANT_FRAME_MS, isAttackOrCast, spriteScale } from 'Renderer/VisualOptions.js';
+import VisualOptions, { INSTANT_FRAME_MS, isAttackOrCast, PLAYER_SCALE, spriteScale } from 'Renderer/VisualOptions.js';
 
 /**
  * Load dependencies
@@ -343,7 +343,12 @@ const renderEntity = (function renderEntityClosure() {
 		SpriteRenderer.zIndex = 1;
 
 		// Display helpers: bigger MVPs, smaller WoE objects (players keep their size)
-		this.helperScale = this.objecttype === this.constructor.TYPE_PC ? 1 : spriteScale(VisualOptions, this.job);
+		this.helperScale =
+			this.objecttype === this.constructor.TYPE_PC
+				? VisualOptions.bigPlayers
+					? PLAYER_SCALE
+					: 1
+				: spriteScale(VisualOptions, this.job);
 
 		const animation = this.animation;
 		const Entity = this.constructor;

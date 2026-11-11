@@ -61,7 +61,27 @@ export const HELPER_OPTIONS = [
 		key: 'stunFreezeShouts.enabled',
 		label: 'Scream and Frost Joker say STUN and FREEZE',
 		type: 'toggle'
-	}
+	},
+	{
+		section: 'Display',
+		key: 'effectTimers.enabled',
+		label: 'Effect countdown timers (Pneuma, Safety Wall, LP, Fire Wall, Ice Wall)',
+		type: 'toggle'
+	},
+	{ section: 'Display', key: 'woeMarks.enabled', label: 'WoE maps: castle names, numbered warps', type: 'toggle' },
+	{
+		section: 'Display',
+		key: 'bigPlayers.enabled',
+		label: 'Bigger players (125%, the same for everyone)',
+		type: 'toggle'
+	},
+	{ section: 'Display', key: 'cursor.enabled', label: 'Bigger, coloured cursor', type: 'toggle' },
+	{ section: 'Display', key: 'cursor.size', label: 'Cursor: 150%', type: 'choice', value: 150 },
+	{ section: 'Display', key: 'cursor.size', label: 'Cursor: 200%', type: 'choice', value: 200 },
+	{ section: 'Display', key: 'cursor.color', label: 'Cursor colour: its own', type: 'choice', value: 0 },
+	{ section: 'Display', key: 'cursor.color', label: 'Cursor colour: yellow', type: 'choice', value: 1 },
+	{ section: 'Display', key: 'cursor.color', label: 'Cursor colour: cyan', type: 'choice', value: 2 },
+	{ section: 'Display', key: 'cursor.color', label: 'Cursor colour: magenta', type: 'choice', value: 3 }
 ];
 
 /** The entries this window can show, grouped: [{section, options: [...]}] in first-appearance order. */

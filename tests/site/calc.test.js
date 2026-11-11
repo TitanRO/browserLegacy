@@ -12,7 +12,7 @@ import { tiersOf, treeOf, setLevel } from '../../titanro/site/calc/skilltree.js'
 import { normalAttack, mobList, weaponSkills, skillAttack, skillTimes } from '../../titanro/site/calc/damage.js';
 import { itemMap, sumEquipment, AMMO_OF } from '../../titanro/site/calc/items.js';
 import { withPassives } from '../../titanro/site/calc/passives.js';
-import { withBuffs } from '../../titanro/site/calc/buffs.js';
+import { withBuffs, buffContext } from '../../titanro/site/calc/buffs.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const data = JSON.parse(fs.readFileSync(path.join(root, 'titanro/site/calc/data.json'), 'utf8'));
@@ -101,10 +101,21 @@ describe('skill tree simulator', () => {
 });
 
 /** A case's input with its passive skills and buffs added to the equipment totals, as the page does. */
+const ammoItems = itemMap(JSON.parse(fs.readFileSync(path.join(root, 'titanro/site/calc/items.json'), 'utf8')));
+
 function prepared(input) {
-	if (!input.passives && !input.buffs) return input;
-	let eq = withPassives(data, input.eq, input.passives, input.job);
-	if (input.buffs) eq = withBuffs(data, eq, input.buffs, input.weapon ? input.weapon.type : 0, new Map(), input.performers);
+	if (!input.passives && !input.buffs && !input.ammo) return input;
+	let eq = input.eq;
+	if (input.ammo) {
+		// the case's ammunition (a shuriken or kunai for the throwing skills), as the page sums it
+		const job = data.jobs.findIndex((j) => j.id === input.job);
+		eq = sumEquipment(data, [{ item: ammoItems.get(input.ammo), refine: 0, cards: [] }], [], input.weapon ? input.weapon.type : 0, job);
+	}
+	eq = withPassives(data, eq, input.passives, input.job);
+	if (input.buffs) {
+		const ctx = buffContext(data, input, { ...(input.caster || {}), lesson: input.lesson });
+		eq = withBuffs(data, eq, input.buffs, input.weapon ? input.weapon.type : 0, new Map(), input.performers, ctx);
+	}
 	return { ...input, eq };
 }
 

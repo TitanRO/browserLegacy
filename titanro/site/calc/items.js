@@ -28,6 +28,8 @@ const IT_AMMO = 10;
 /** The ammunition type (item subtype) each shooting weapon type loads (battle_check_arrows): bows arrows, guns
  * bullets, grenade launchers grenades. */
 export const AMMO_OF = { 11: 1, 17: 3, 18: 3, 19: 3, 20: 3, 21: 5 };
+/** Thrown ammunition (shurikens, kunai): the Ninja line equips it with any weapon, for its throwing skills. */
+export const THROWN_AMMO = new Set([6, 7]);
 
 const IT_WEAPON = 4;
 
@@ -155,11 +157,13 @@ export function sumEquipment(data, equips, combos = [], weaponType = null, jobIn
 		if (it.type === IT_AMMO) {
 			// ammunition counts in a weapon that shoots it (a bow's arrows, a gun's bullets): its ATK and its script
 			// (lr_flag 2): its element becomes the weapon's, its Critical counts for its attacks only
-			if (AMMO_OF[wtype] !== it.sub) {
+			if (AMMO_OF[wtype] !== it.sub && !THROWN_AMMO.has(it.sub)) {
 				t.other.push(`${it.name}: not shot by this weapon`);
 				continue;
 			}
 			t.arrowAtk += it.atk;
+			// shurikens and kunai: their ATK and element count in the throwing skills, not in normal attacks
+			if (THROWN_AMMO.has(it.sub)) t.thrown = true;
 		}
 		if (disabled) t.other.push(`${it.name}: disabled on field maps`);
 		if (!disabled && it.type !== IT_WEAPON && it.type !== IT_CARD) {
@@ -308,7 +312,10 @@ function apply(t, b, src, isCard, shield = '') {
 		case 'SP_ATK_RATE': t.atkRate += val; return;
 		case 'SP_CRIT_ATK_RATE': t.critAtkRate += val; return;
 		case 'SP_LONG_ATK_RATE': t.longAtkRate += val; return;
-		case 'SP_ATKELE': t.weaponEle = val; return;
+		case 'SP_ATKELE':
+			if (shield === 'ammo' && t.thrown) t.arrowEle = val; // a kunai's element: the throwing skills' (arrow_ele)
+			else t.weaponEle = val;
+			return;
 		case 'SP_ADDRACE': {
 			const m = raceMask(a1);
 			for (let r = 0; r < RC_MAX; r++) if (m & (1 << r)) t.addrace[r] += val;

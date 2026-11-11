@@ -52,7 +52,7 @@
 	</section>
 	<div class="duo">
 		<details class="box" open><summary class="bar">Passive skills <span class="barnote">weapon masteries not counted yet</span></summary><div class="boxbody"><div id="passives" class="passives"></div><p class="muted" id="passivenote">Passive skills that change the status window (Owl's Eye, Improve Dodge, Faith, ...), as the server gives them, Double Attack (daggers; with a katar it raises the second hit) and Tooth of Warg (the Warg skills). Weapon masteries don't change these numbers yet.</p></div></details>
-		<details class="box" open><summary class="bar">Supportive / party skills <span class="barnote">songs and dances other than Dance with Wug not counted yet</span></summary><div class="boxbody"><div id="buffs" class="passives"></div><p id="performersrow" hidden><label>Minstrels and Wanderers in the party <input id="performers" type="number" min="0" max="12" value="0" style="width:4em"></label> <span class="muted">Dance with Wug grows with 3 or more (the chorus bonus, at most with 7).</span></p><p class="muted">Buffs on the character, as the server gives them: stats, DEF, HIT, FLEE, Critical, ASPD (the strongest haste counts), and the ATK buffs in attacks. Over Thrust as the Blacksmith's own; Two-Hand Quicken, Spear Quicken and Adrenaline Rush need their weapon. Dance with Wug: ASPD, fixed cast time and the Warg skills, by the Minstrels and Wanderers in the party. Buffs whose strength depends on the caster (Concentration, Clementia, Canto Candidus) and the other songs aren't counted yet.</p></div></details>
+		<details class="box" open><summary class="bar">Supportive / party skills <span class="barnote">one song of each group at a time, as in the game</span></summary><div class="boxbody"><div id="buffs" class="passives"></div><p id="casterrow" hidden><span id="caster_blessing_l"><label>Arch Bishop's Blessing level <input id="caster_blessing" type="number" min="0" max="10" value="10" style="width:4em"></label> </span><span id="caster_incagi_l"><label>Increase AGI level <input id="caster_incagi" type="number" min="0" max="10" value="10" style="width:4em"></label> </span><span id="caster_jlv_l"><label>Arch Bishop's job level <input id="caster_jlv" type="number" min="1" max="70" value="50" style="width:4em"></label> </span><span id="caster_lesson_l"><label>Voice Lesson level of the Wanderer / Minstrel <input id="caster_lesson" type="number" min="0" max="10" value="10" style="width:4em"></label></span></p><p id="performersrow" hidden><label>Minstrels and Wanderers in the party <input id="performers" type="number" min="0" max="12" value="0" style="width:4em"></label> <span class="muted">Dance with Wug grows with 3 or more (the chorus bonus, at most with 7).</span></p><p class="muted">Buffs on the character, as the server gives them: stats, DEF, HIT, FLEE, Critical, ASPD (the strongest haste counts), and the ATK buffs in attacks. Over Thrust as the Blacksmith's own; Two-Hand Quicken, Spear Quicken and Adrenaline Rush need their weapon. Dance with Wug and Lerad's Dew grow with the Minstrels and Wanderers in the party; Clementia and Canto Candidus with the Arch Bishop's Blessing / Increase AGI level and job level; Swing Dance, Symphony of Lovers, Rush Windmill and Echo Song with the performer's Voice Lesson level and your own job level. Poem of Bragi shortens skill cast times and delays, Fortune's Kiss adds critical damage. The Bard and Dancer songs end each other, and so do the Voice Lesson songs.</p></div></details>
 	</div>
 	<section class="box">
 		<h2 class="bar">Monster combat simulation</h2>
@@ -90,9 +90,9 @@
 import { STATS, WEAPON_TYPES, statusWindow, statCost, totalStatPoints, spentStatPoints, jobBonus, aspd } from './calc/calc.js';
 import { jobGroups } from './calc/jobs.js';
 import { normalAttack, mobList, weaponSkills, skillAttack, skillTimes, ATTACK_PASSIVES, ATTACK_BUFFS, ENDOWS, SKILL_RESOURCES } from './calc/damage.js';
-import { SLOTS as EQ_SLOTS, AMMO_OF, itemMap, canEquip, sumEquipment } from './calc/items.js';
+import { SLOTS as EQ_SLOTS, AMMO_OF, THROWN_AMMO, itemMap, canEquip, sumEquipment } from './calc/items.js';
 import { withPassives } from './calc/passives.js';
-import { BUFF_ORDER, withBuffs, WM_DANCE_WITH_WUG } from './calc/buffs.js';
+import { BUFF_ORDER, withBuffs, WM_DANCE_WITH_WUG, buffContext, BUFF_CASTER, SONG_GROUPS } from './calc/buffs.js';
 
 const $ = (id) => document.getElementById(id);
 const LABEL = { str: 'STR', agi: 'AGI', vit: 'VIT', int: 'INT', dex: 'DEX', luk: 'LUK' };
@@ -117,7 +117,7 @@ const skillMax = new Map(data.skills.map((x) => [x.id, x.max]));
 /** The buffs the page offers ([[id, max level], ...]): those the calculator counts at some level. */
 const BUFF_LIST = BUFF_ORDER.filter((id) => ATTACK_BUFFS.has(id) || (data.buffs && (data.buffs[id] || []).some(Boolean)))
 	.map((id) => [id, (data.buffs && data.buffs[id] ? data.buffs[id].length : skillMax.get(id)) || 1]);
-const state = { eq: {}, passives: {}, buffs: {}, skill: 0, skilllv: 1, mob: 1002, job: 4008, blv: 99, jlv: 70, stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, wtype: 0, watk: 0, wmatk: 0, wlv: 1, refine: 0, shield: false, edef: 0, emdef: 0, performers: 0, spheres: 0, cartweight: 0, rage: 0 };
+const state = { eq: {}, passives: {}, buffs: {}, skill: 0, skilllv: 1, mob: 1002, job: 4008, blv: 99, jlv: 70, stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, wtype: 0, watk: 0, wmatk: 0, wlv: 1, refine: 0, shield: false, edef: 0, emdef: 0, performers: 0, spheres: 0, cartweight: 0, rage: 0, caster_blessing: 10, caster_incagi: 10, caster_jlv: 50, caster_lesson: 10 };
 const DEFAULTS = JSON.parse(JSON.stringify(state));
 
 function readHash() {
@@ -125,7 +125,7 @@ function readHash() {
 	const num = (k, d) => (p.has(k) && isFinite(+p.get(k)) ? Math.trunc(+p.get(k)) : d);
 	state.job = jobs.has(num('job', DEFAULTS.job)) ? num('job', DEFAULTS.job) : data.jobs[0].id;
 	// a key missing from the link takes its default, so an edited link never keeps an earlier build's value
-	for (const k of ['blv', 'jlv', 'wtype', 'watk', 'wmatk', 'wlv', 'refine', 'edef', 'emdef', 'mob', 'skill', 'skilllv', 'performers', 'spheres', 'cartweight', 'rage']) state[k] = num(k, DEFAULTS[k]);
+	for (const k of ['blv', 'jlv', 'wtype', 'watk', 'wmatk', 'wlv', 'refine', 'edef', 'emdef', 'mob', 'skill', 'skilllv', 'performers', 'spheres', 'cartweight', 'rage', 'caster_blessing', 'caster_incagi', 'caster_jlv', 'caster_lesson']) state[k] = num(k, DEFAULTS[k]);
 	state.stats = { ...DEFAULTS.stats };
 	if (p.has('s')) p.get('s').split('.').forEach((v, i) => { if (i < 6 && isFinite(+v)) state.stats[STATS[i]] = Math.max(1, Math.trunc(+v)); });
 	state.shield = p.get('shield') === '1';
@@ -166,6 +166,7 @@ function writeHash() {
 	if (bf.length) p.set('bf', bf.join(','));
 	if (state.performers) p.set('performers', state.performers);
 	for (const k of ['spheres', 'cartweight', 'rage']) if (state[k]) p.set(k, state[k]);
+	for (const k of ['caster_blessing', 'caster_incagi', 'caster_jlv', 'caster_lesson']) if (state[k] !== DEFAULTS[k]) p.set(k, state[k]);
 	p.set('mob', state.mob);
 	if (state.skill) { p.set('skill', state.skill); p.set('skilllv', state.skilllv); }
 	history.replaceState(null, '', '#' + p.toString());
@@ -230,7 +231,7 @@ function renderSlots(job) {
 		for (const it of items.values()) {
 			if (it.type === 6) {
 				if (it.loc & loc) copts.push(it);
-			} else if (it.loc & loc && canEquip(it, ji) && it.elv <= state.blv && (key !== 'ammo' || it.sub === ammo)) opts.push(it);
+			} else if (it.loc & loc && canEquip(it, ji) && it.elv <= state.blv && (key !== 'ammo' || it.sub === ammo || THROWN_AMMO.has(it.sub))) opts.push(it);
 		}
 		dl += `<datalist id="dl-${key}">${opts.map((x) => `<option value="${esc(label(x))}">`).join('')}</datalist>`;
 		dl += `<datalist id="dl-card-${key}">${copts.map((x) => `<option value="${esc(label(x))}">`).join('')}</datalist>`;
@@ -309,7 +310,8 @@ function render() {
 	input.spheres = state.spheres; // the attack's resources (SKILL_RESOURCES)
 	input.cartWeight = state.cartweight * 10; // the load as the client shows it, in the server's tenths
 	input.rage = state.rage;
-	input.eq = withBuffs(data, input.eq, input.buffs, input.weapon ? input.weapon.type : 0, skillNames, state.performers);
+	const caster = { blessing: state.caster_blessing, incagi: state.caster_incagi, jlv: state.caster_jlv, lesson: state.caster_lesson };
+	input.eq = withBuffs(data, input.eq, input.buffs, input.weapon ? input.weapon.type : 0, skillNames, state.performers, buffContext(data, input, caster));
 	const nc = [...new Set(input.eq.notCounted)];
 	const other = [...new Set(input.eq.other)];
 	if (nc.length) notes += `<b>Not counted yet:</b> ${nc.map(esc).join('; ')}. `;
@@ -367,7 +369,14 @@ function renderBuffs() {
 		const opts = Array.from({ length: max + 1 }, (_, i) => `<option value="${i}"${i === lv ? ' selected' : ''}>${i ? 'Lv ' + i : '-'}</option>`).join('');
 		return `<label>${esc(skillNames.get(id) || String(id))} <select data-buff="${id}">${opts}</select></label>`;
 	}).join('');
-	$('performersrow').hidden = !(state.buffs[WM_DANCE_WITH_WUG] > 0);
+	$('performersrow').hidden = !(state.buffs[WM_DANCE_WITH_WUG] > 0 || state.buffs[2431] > 0);
+	// the caster inputs the chosen buffs read
+	const reads = new Set(Object.keys(BUFF_CASTER).filter((id) => state.buffs[id] > 0).flatMap((id) => BUFF_CASTER[id]));
+	$('casterrow').hidden = !reads.size;
+	for (const k of ['blessing', 'incagi', 'jlv', 'lesson']) {
+		$('caster_' + k + '_l').hidden = !reads.has(k);
+		$('caster_' + k).value = state['caster_' + k];
+	}
 	$('performers').value = state.performers;
 }
 
@@ -502,9 +511,14 @@ $('buffs').addEventListener('change', (e) => {
 	if (!id) return;
 	// one endowment at a time: a new one ends the one before, as in the game
 	if (id in ENDOWS && +e.target.value) for (const other of Object.keys(ENDOWS)) delete state.buffs[other];
+	// one song of a group at a time: a new song ends the one before
+	for (const group of SONG_GROUPS) if (group.includes(id) && +e.target.value) for (const other of group) delete state.buffs[other];
 	state.buffs[id] = +e.target.value;
 	render();
 });
+for (const [id, min, max] of [['caster_blessing', 0, 10], ['caster_incagi', 0, 10], ['caster_jlv', 1, 70], ['caster_lesson', 0, 10]]) {
+	$(id).addEventListener('change', (e) => { state[id] = Math.max(min, Math.min(max, Math.trunc(+e.target.value) || 0)); render(); });
+}
 for (const [id, max] of [['spheres', 15], ['cartweight', 10500], ['rage', 15]]) {
 	$(id).addEventListener('change', (e) => { state[id] = Math.max(0, Math.min(max, Math.trunc(+e.target.value) || 0)); render(); });
 }

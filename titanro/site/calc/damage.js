@@ -343,7 +343,7 @@ function ownFormula(data, c, mob, skillId, lv, roll, nk) {
 		return Math.max(d - totalDef - totalMdef, 0);
 	}
 	case GS_GROUNDDRIFT: // ATK (status + weapon, the attack's element) x (200 + 20 x level) %, DEF
-	case NJ_SYURIKEN: // (ATK + the shuriken's) x (100 + 5 x level) %, DEF (the calculator has no thrown ammunition: neutral)
+	case NJ_SYURIKEN: // (ATK + the shuriken's) x (100 + 5 x level) %, the ammunition's element on the weapon part, DEF
 	case NJ_KUNAI: { // (ATK + the kunai's + 3 x Dagger Throwing Practice) x 100 x level %, as Shuriken Throw
 		const type = c.weapon ? c.weapon.type : 0;
 		const batk = statusAtk(c.total, type);
@@ -352,14 +352,14 @@ function ownFormula(data, c, mob, skillId, lv, roll, nk) {
 		if (skillId !== GS_GROUNDDRIFT) {
 			ratio = skillId === NJ_SYURIKEN ? 100 + 5 * lv : 100 * lv;
 			const weapon = Math.max(atk - batk, 0);
-			atk = batk + eleFix(data, weapon, ELE_NEUTRAL, mob) + (c.eq.arrowAtk || 0);
+			atk = batk + eleFix(data, weapon, c.eq.arrowEle || ELE_NEUTRAL, mob) + (c.eq.arrowAtk || 0);
 			if (skillId === NJ_KUNAI) atk += 3 * ((c.passives && c.passives[NJ_TOBIDOUGU]) || 0);
 		}
 		return Math.max(applyDef(Math.trunc((atk * ratio) / 100), defOf(c, mob)), 0);
 	}
-	case KO_HAPPOKUNAI: { // (ATK + the kunai's) x (300 + 60 x level) % - DEF, neutral without a kunai
+	case KO_HAPPOKUNAI: { // (ATK + the kunai's) x (300 + 60 x level) % - DEF, the kunai's element
 		const d = Math.trunc(((plainAtk(data, c, mob, roll, nk) + (c.eq.arrowAtk || 0)) * (300 + 60 * lv)) / 100) - totalDef;
-		return eleFix(data, Math.max(d, 0), ELE_NEUTRAL, mob);
+		return eleFix(data, Math.max(d, 0), c.eq.arrowEle || ELE_NEUTRAL, mob);
 	}
 	case RK_DRAGONBREATH:
 	case RK_DRAGONBREATH_WATER: {
@@ -645,7 +645,8 @@ export function skillTimes(data, input, skillId, lv, amotion) {
 			const max = 265;
 			time = stat >= max ? 0 : Math.trunc(time * f(1 - f(Math.sqrt(f(stat / max)))));
 		}
-		const reduce = castnodex & 4 ? 0 : eq.varCastRate;
+		let reduce = castnodex & 4 ? 0 : eq.varCastRate;
+		if (!(castnodex & 2) && eq.bragi) reduce += 2 * eq.bragi; // Poem of Bragi: 2 % a level, with the others
 		if (skillRate) time = (time * (100 - skillRate)) / 100;
 		time = (time * (100 - reduce)) / 100;
 	}
@@ -670,6 +671,7 @@ export function skillTimes(data, input, skillId, lv, amotion) {
 	let d = delay < 0 ? -delay + amotion : delay;
 	const combo = COMBO_SKILLS.has(skillId) ? 4 * c.total.agi + 2 * c.total.dex : 0;
 	d -= combo;
+	if (!(delaynodex & 2) && eq.bragi) d -= Math.trunc((d * 3 * eq.bragi) / 100); // Poem of Bragi: 3 % a level
 	if (!(delaynodex & 4) && eq.delayRate) d = Math.trunc((d * (100 + eq.delayRate)) / 100);
 	d = Math.max(d, 0);
 	if (combo) d = Math.min(d + combo, delay);

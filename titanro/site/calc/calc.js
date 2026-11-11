@@ -155,8 +155,16 @@ export function statusWindow(data, input) {
 	maxSp = Math.max(0, maxSp + eq.maxsp);
 	if (eq.hprate !== 100) maxHp = Math.floor((maxHp * Math.max(eq.hprate, 0)) / 100);
 	if (eq.sprate !== 100) maxSp = Math.floor((maxSp * Math.max(eq.sprate, 0)) / 100);
+	// the buffs' MaxHP / MaxSP (songs), after the equipment's rates, in the server's order
+	for (const [op, v] of eq.scMaxHp || []) maxHp = op === 'rate' ? maxHp + Math.trunc((maxHp * v) / 100) : maxHp + v;
+	if (eq.scMaxSpRate) maxSp += Math.trunc((maxSp * eq.scMaxSpRate) / 100);
 	maxHp = Math.max(maxHp, 1);
 	maxSp = Math.max(maxSp, 1);
+	// Echo Song: soft DEF % (status_calc_def2); Symphony of Lovers: equipment MDEF % (status_calc_mdef)
+	if (eq.defRate) def1 += Math.trunc((def1 * eq.defRate) / 100);
+	const def2 = (input.equipDef || 0) + eq.def;
+	let mdef2 = (input.equipMdef || 0) + eq.mdef;
+	if (eq.mdefRate) mdef2 += Math.trunc((mdef2 * eq.mdefRate) / 100);
 
 	return {
 		atk1,
@@ -164,9 +172,9 @@ export function statusWindow(data, input) {
 		matk1,
 		matk2,
 		def1,
-		def2: (input.equipDef || 0) + eq.def,
+		def2,
 		mdef1,
-		mdef2: Math.max((input.equipMdef || 0) + eq.mdef, 0), // the client gets 0 for less (clif_updatestatus)
+		mdef2: Math.max(mdef2, 0), // the client gets 0 for less (clif_updatestatus)
 		hit,
 		flee1,
 		flee2,

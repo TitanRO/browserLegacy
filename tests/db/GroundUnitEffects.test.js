@@ -64,6 +64,13 @@ describe('Ground skill units', () => {
 		UNT_FIRE_RAIN: 'ef_rl_fire_rain'
 	};
 
+	it('draws Poison Smoke as effect 772 with puffs, and nothing for Psychic Wave', () => {
+		expect(SkillUnit[SU.UNT_POISONSMOKE]).toEqual([772, 'ef_poisonsmoke_puff']);
+		expect(EffectTable[772][0]).toMatchObject({ type: '3D', spriteName: 'particle3' });
+		expect(EffectTable.ef_poisonsmoke_puff[0]).toMatchObject({ type: 'STR', rand: [1, 2] });
+		expect(EffectTable[SkillUnit[SU.UNT_PSYCHIC_WAVE]]).toBeUndefined();
+	});
+
 	it('launches the effect the official client launches, and the table has it', () => {
 		for (const [name, effectId] of Object.entries(drawn)) {
 			expect(SkillUnit[SU[name]], name).toBe(effectId);

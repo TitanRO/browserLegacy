@@ -132,6 +132,14 @@ describe('the helper settings client', () => {
 		expect(changes).toHaveBeenCalled();
 	});
 
+	it('turns Grayworld on for a guest whose saved cell grid was on (the grid is part of Grayworld now)', () => {
+		const local = memoryStorage();
+		local.setItem('titanro.helperSettings', JSON.stringify({ cellGrid: { enabled: true } }));
+		const settings = new HelperSettingsClient({ local, session: memoryStorage() });
+		expect(settings.get('flatMap', 'enabled')).toBe(true);
+		expect(settings.get('cellGrid', 'enabled')).toBeUndefined();
+	});
+
 	it('keeps a guest’s settings in this browser, and falls back to them when the token is refused', async () => {
 		const local = memoryStorage();
 		const settings = new HelperSettingsClient({ fetch: vi.fn(async () => response(401, {})), local, session: memoryStorage() });

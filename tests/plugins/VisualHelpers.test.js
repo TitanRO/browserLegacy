@@ -50,12 +50,16 @@ describe('display options', () => {
 		});
 	});
 
+	it('Grayworld is the flat map and the cell grid together', () => {
+		expect(visualOptions(settings({ flatMap: { enabled: true } }))).toMatchObject({ flatGround: true, cellGrid: true });
+		expect(visualOptions(settings({ flatMap: { enabled: false } }))).toMatchObject({ flatGround: false, cellGrid: false });
+	});
+
 	it('each setting turns its option on', () => {
 		const options = visualOptions(
 			settings({
 				flatMap: { enabled: true, hideProps: true },
 				transparentProps: { enabled: true },
-				cellGrid: { enabled: true },
 				lowEffects: { level: MINIMUM }
 			})
 		);

@@ -169,7 +169,9 @@ const SPECIAL_SKILLS = new Set([
 	2008, 2261, 2477, 2553, 2559, 2570, 2582, 2593, 3007, 3010, 5004, 5032,
 	// counters, reflects, traps and area effects; spirit spheres, cart weight and rage counters the probe's characters
 	// don't have
-	61, 121, 139, 252, 267, 372, 390, 428, 429, 430, 485, 2314, 2476
+	61, 121, 139, 252, 267, 372, 390, 428, 429, 430, 485, 2314, 2476,
+	// Warg Strike, Warg Bite: the warg's element against non-neutral monsters
+	2243, 2244
 ]);
 
 /** The weapon skills the calculator knows: data.weapon_skills (their ratio doesn't depend on the caster), less the

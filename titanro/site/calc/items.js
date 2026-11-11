@@ -1,8 +1,11 @@
 /**
  * TitanRO calculator: equipment, cards and their bonuses. items.json lists every item and card with the bonuses the
  * game server's own script evaluation gives it (exported by TitanRO's server tools: each script run on the server, its
- * bonus calls recorded). Items whose bonuses depend on the wearer (job, level, stats) are marked `varies` and
- * not counted. tests/site/calc.test.js checks equipped characters against the server (tests/site/equip-cases.json).
+ * bonus calls recorded). Items whose bonuses depend on the wearer (job, level, stats, another slot's refine) are
+ * marked `varies` and not counted. Sets count once: Hercules' combos (items.json `combos`) and sets written in an
+ * item's own script (`partners`: the items it checks for; `sets`: what it adds with each group of them worn, as the
+ * server evaluated it). tests/site/calc.test.js checks equipped characters against the server
+ * (tests/site/equip-cases.json), a fifth of them built around a set.
  */
 
 /** Equipment slots: [key, label, item location bits]. */
@@ -110,6 +113,18 @@ export function sumEquipment(data, equips, combos = []) {
 		ignoreDef: new Array(RC_MAX).fill(0), weaponEle: 0,
 		refineDef: 0, notCounted: [], other: []
 	};
+	// what's worn (cards count), for sets
+	const have = new Map();
+	const names = new Map();
+	const off = new Set(); // disabled on field maps: no set with them counts
+	for (const e of equips) {
+		if (!e || !e.item) continue;
+		if (e.item.bonuses.disabled) off.add(e.item.id);
+		for (const x of [e.item].concat((e.cards || []).filter(Boolean))) {
+			have.set(x.id, (have.get(x.id) || 0) + 1);
+			names.set(x.id, x.name);
+		}
+	}
 	for (const e of equips) {
 		if (!e || !e.item) continue;
 		const it = e.item;
@@ -134,34 +149,29 @@ export function sumEquipment(data, equips, combos = []) {
 				t.notCounted.push(`${src.name}: depends on the wearer`);
 				continue;
 			}
-			for (const b of list) apply(t, b, src, isCard, shield ? (isCard ? 'card' : 'script') : '');
+			const where = shield ? (isCard ? 'card' : 'script') : '';
+			for (const b of list) apply(t, b, src, isCard, where);
+			// a set written in its own script: what it adds with the worn items it checks for
+			const worn = (src.bonuses.partners || []).filter((id) => (have.get(id) || 0) > (id === src.id ? 1 : 0)); // itself: a second one
+			if (worn.length) {
+				const set = (src.bonuses.sets || []).find(([p]) => p.length === worn.length && p.every((id) => worn.includes(id)));
+				if (set) for (const b of set[1]) apply(t, b, src, isCard, where);
+				else t.notCounted.push(`${src.name}: a set effect with other worn items`);
+			}
 		}
 	}
-	// item combos (sets): every listed item equipped (cards count), each combo once
-	const have = new Map();
-	const names = new Map();
-	for (const e of equips) {
-		if (!e || !e.item) continue;
-		for (const x of [e.item].concat((e.cards || []).filter(Boolean))) {
-			have.set(x.id, (have.get(x.id) || 0) + 1);
-			names.set(x.id, x.name);
-		}
-	}
+	// item combos (sets): every listed item equipped (cards count), each combo once; the server runs their scripts
+	// after the equipment's, as neither an equipment script nor a weapon hand's (stats count as a card's)
 	for (const [ids, b] of combos) {
 		const need = new Map();
 		for (const id of ids) need.set(id, (need.get(id) || 0) + 1);
-		if (![...need].every(([id, n]) => (have.get(id) || 0) >= n)) continue;
-		// set bonuses aren't counted yet: the server's totals for some sets don't match their scripts' bonuses
-		t.notCounted.push('Set bonus (' + ids.map((id) => names.get(id) || id).join(' + ') + ')');
-		void b;
-	}
-	// items whose own script checks for other items (a set inside the script): not counted when one of those is worn
-	for (const e of equips) {
-		if (!e || !e.item) continue;
-		for (const x of [e.item].concat((e.cards || []).filter(Boolean))) {
-			const p = x.bonuses.partners;
-			if (p && p.some((id) => have.has(id))) t.notCounted.push(`${x.name}: a set effect with other worn items`);
+		if (![...need].every(([id, n]) => (have.get(id) || 0) >= n) || ids.some((id) => off.has(id))) continue;
+		const label = 'Set bonus (' + ids.map((id) => names.get(id) || id).join(' + ') + ')';
+		if (!b.fixed) {
+			t.notCounted.push(label + ': depends on the wearer');
+			continue;
 		}
+		for (const x of b.fixed) apply(t, x, { name: label }, true, '');
 	}
 	t.def += Math.trunc((t.refineDef + 50) / 100);
 	return t;
@@ -219,7 +229,7 @@ function apply(t, b, src, isCard, shield = '') {
 			return;
 		}
 		case 'SP_ADDELE':
-			if (a1 === 10) for (let e = 0; e < 10; e++) t.addele[e] += val; // ELE_ALL
+			if (a1 === 255) for (let e = 0; e < 10; e++) t.addele[e] += val; // ELE_ALL
 			else if (a1 >= 0 && a1 < 10) t.addele[a1] += val;
 			return;
 		case 'SP_ADDSIZE':

@@ -51,7 +51,7 @@
 		</div>
 	</section>
 	<div class="duo">
-		<details class="box"><summary class="bar">Passive / duration skills <span class="barnote">not counted yet</span></summary><div class="boxbody muted">Passive skills (masteries, Owl's Eye, Faith, ...) and self buffs don't change these numbers yet.</div></details>
+		<details class="box" open><summary class="bar">Passive skills <span class="barnote">self buffs and masteries not counted yet</span></summary><div class="boxbody"><div id="passives" class="passives"></div><p class="muted" id="passivenote">Passive skills that change the status window (Owl's Eye, Improve Dodge, Faith, ...), as the server gives them. Weapon masteries and self buffs don't change these numbers yet.</p></div></details>
 		<details class="box"><summary class="bar">Supportive / party skills <span class="barnote">not counted yet</span></summary><div class="boxbody muted">Blessing, Increase AGI, songs and other party buffs don't change these numbers yet.</div></details>
 	</div>
 	<section class="box">
@@ -72,9 +72,9 @@
 					<table class="grid kv" id="results"></table>
 				</div>
 			</div>
-			<p class="muted">Counted: status ATK, the weapon (refine and over-refine), equipment and card bonuses (as listed
-				above), size and element, the monster's DEF and FLEE, critical hits; for skills, their damage ratio, element and
-				hits. Not counted yet: set bonuses, passive skills, buffs, arrows, double attacks, skill cast and delay, and
+			<p class="muted">Counted: status ATK, the weapon (refine and over-refine), equipment, card and set bonuses (as
+				listed above), size and element, the monster's DEF and FLEE, critical hits; for skills, their damage ratio, element
+				and hits. Not counted yet: passive skills, buffs, arrows, double attacks, skill cast and delay, and
 				skills with a formula of their own (they aren't listed).</p>
 		</div>
 	</section>
@@ -86,6 +86,7 @@ import { STATS, WEAPON_TYPES, statusWindow, statCost, totalStatPoints, spentStat
 import { jobGroups } from './calc/jobs.js';
 import { normalAttack, mobList, weaponSkills, skillAttack } from './calc/damage.js';
 import { SLOTS as EQ_SLOTS, itemMap, canEquip, sumEquipment } from './calc/items.js';
+import { withPassives } from './calc/passives.js';
 
 const $ = (id) => document.getElementById(id);
 const LABEL = { str: 'STR', agi: 'AGI', vit: 'VIT', int: 'INT', dex: 'DEX', luk: 'LUK' };
@@ -106,7 +107,7 @@ let items = null;
 const itemsReady = fetch('calc/items.json').then((r) => r.json()).then((j) => { itemsJson = j; items = itemMap(j); });
 const jobIndex = new Map(data.jobs.map((j, i) => [j.id, i]));
 const skillNames = new Map(data.skills.map((x) => [x.id, x.desc]));
-const state = { eq: {}, skill: 0, skilllv: 1, mob: 1002, job: 4008, blv: 99, jlv: 70, stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, wtype: 0, watk: 0, wmatk: 0, wlv: 1, refine: 0, shield: false, edef: 0, emdef: 0 };
+const state = { eq: {}, passives: {}, skill: 0, skilllv: 1, mob: 1002, job: 4008, blv: 99, jlv: 70, stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, wtype: 0, watk: 0, wmatk: 0, wlv: 1, refine: 0, shield: false, edef: 0, emdef: 0 };
 const DEFAULTS = JSON.parse(JSON.stringify(state));
 
 function readHash() {
@@ -118,6 +119,12 @@ function readHash() {
 	state.stats = { ...DEFAULTS.stats };
 	if (p.has('s')) p.get('s').split('.').forEach((v, i) => { if (i < 6 && isFinite(+v)) state.stats[STATS[i]] = Math.max(1, Math.trunc(+v)); });
 	state.shield = p.get('shield') === '1';
+	// ps=skill:level,...
+	state.passives = {};
+	for (const part of (p.get('ps') || '').split(',')) {
+		const [id, lv] = part.split(':').map(Number);
+		if (id > 0 && lv > 0) state.passives[id] = lv;
+	}
 	// eq=slot:item:refine:card:card...;...
 	state.eq = {};
 	for (const part of (p.get('eq') || '').split(';')) {
@@ -137,6 +144,8 @@ function writeHash() {
 	if (state.emdef) p.set('emdef', state.emdef);
 	const eqs = Object.entries(state.eq).filter(([, e]) => e && e.item).map(([k, e]) => [k, e.item, e.refine].concat(e.cards).join(':'));
 	if (eqs.length) p.set('eq', eqs.join(';'));
+	const ps = Object.entries(state.passives).filter(([, lv]) => lv > 0).map(([id, lv]) => `${id}:${lv}`);
+	if (ps.length) p.set('ps', ps.join(','));
 	p.set('mob', state.mob);
 	if (state.skill) { p.set('skill', state.skill); p.set('skilllv', state.skilllv); }
 	history.replaceState(null, '', '#' + p.toString());
@@ -250,26 +259,26 @@ function render() {
 	$('edef').value = state.edef; $('emdef').value = state.emdef;
 
 	renderSlots(job);
+	renderPassives(job);
 	const input = { job, blv: state.blv, jlv: state.jlv, stats: state.stats, shield: state.shield, equipDef: state.edef, equipMdef: state.emdef };
 	if (state.wtype) input.weapon = { type: state.wtype, atk: state.watk, matk: state.wmatk, wlv: state.wlv, refine: state.refine };
 	const equips = equipment();
 	let notes = '';
-	if (equips && equips.length) {
-		input.eq = sumEquipment(data, equips, itemsJson.combos || []);
-		const w = equips.find((e) => e.item.type === 4);
-		if (w) {
-			input.weapon = { type: w.item.sub, atk: w.item.atk, matk: w.item.matk, wlv: w.item.wlv, refine: w.refine };
-			if (![...$('wtype').options].some((o) => +o.value === w.item.sub)) $('wtype').appendChild(new Option(WEAPON_TYPES[w.item.sub], w.item.sub));
-			$('wtype').value = w.item.sub;
-			$('watk').value = w.item.atk; $('wmatk').value = w.item.matk; $('wlv').value = Math.min(w.item.wlv, 5) || 1; $('refine').value = w.refine;
-			$('wfields').hidden = false;
-		}
-		if (equips.some((e) => e.item.type === 5 && e.item.loc & 32)) input.shield = true;
-		const nc = [...new Set(input.eq.notCounted)];
-		const other = [...new Set(input.eq.other)];
-		if (nc.length) notes += `<b>Not counted yet:</b> ${nc.map(esc).join('; ')}. `;
-		if (other.length) notes += `<span class="muted">Effects these numbers don't show: ${other.map(esc).join('; ')}.</span>`;
+	if (equips && equips.length) input.eq = sumEquipment(data, equips, itemsJson.combos || []);
+	input.eq = withPassives(data, input.eq, jobPassives(job), job.id, skillNames);
+	const wpn = equips && equips.find((e) => e.item.type === 4);
+	if (wpn) {
+		input.weapon = { type: wpn.item.sub, atk: wpn.item.atk, matk: wpn.item.matk, wlv: wpn.item.wlv, refine: wpn.refine };
+		if (![...$('wtype').options].some((o) => +o.value === wpn.item.sub)) $('wtype').appendChild(new Option(WEAPON_TYPES[wpn.item.sub], wpn.item.sub));
+		$('wtype').value = wpn.item.sub;
+		$('watk').value = wpn.item.atk; $('wmatk').value = wpn.item.matk; $('wlv').value = Math.min(wpn.item.wlv, 5) || 1; $('refine').value = wpn.refine;
+		$('wfields').hidden = false;
 	}
+	if (equips && equips.some((e) => e.item.type === 5 && e.item.loc & 32)) input.shield = true;
+	const nc = [...new Set(input.eq.notCounted)];
+	const other = [...new Set(input.eq.other)];
+	if (nc.length) notes += `<b>Not counted yet:</b> ${nc.map(esc).join('; ')}. `;
+	if (other.length) notes += `<span class="muted">Effects these numbers don't show: ${other.map(esc).join('; ')}.</span>`;
 	$('eqnote').innerHTML = notes;
 	$('wnote').textContent = equips && equips.some((e) => e.item.type === 4) ? 'from the weapon slot' : 'or pick a weapon below';
 	for (const id of ['wtype', 'watk', 'wmatk', 'wlv', 'refine']) $(id).disabled = !!(equips && equips.some((e) => e.item.type === 4));
@@ -284,6 +293,30 @@ function render() {
 	$('window').innerHTML = cells.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('');
 	renderCombat(input, w);
 	writeHash();
+}
+
+/** The job's passive skills the calculator counts in the status window: [[id, max level], ...]. */
+function passiveTree(job) {
+	const all = data.passives || {};
+	return job.tree.filter(([id]) => all[id] || all[`${id}@${job.id}`]).map(([id, max]) => [id, max]);
+}
+
+/** state.passives limited to the job's tree and levels. */
+function jobPassives(job) {
+	const out = {};
+	for (const [id, max] of passiveTree(job)) if (state.passives[id]) out[id] = Math.min(state.passives[id], max);
+	return out;
+}
+
+function renderPassives(job) {
+	const tree = passiveTree(job);
+	$('passives').innerHTML = tree.length
+		? tree.map(([id, max]) => {
+			const lv = Math.min(state.passives[id] || 0, max);
+			const opts = Array.from({ length: max + 1 }, (_, i) => `<option value="${i}"${i === lv ? ' selected' : ''}>${i ? 'Lv ' + i : '-'}</option>`).join('');
+			return `<label>${esc(skillNames.get(id) || String(id))} <select data-passive="${id}">${opts}</select></label>`;
+		}).join('')
+		: '<span class="muted">None for this job.</span>';
 }
 
 const kv = (rows) => rows.map((r) => `<tr>${r.map((c, i) => (i % 2 ? `<td class="num">${c}</td>` : `<th>${c}</th>`)).join('')}</tr>`).join('');
@@ -393,6 +426,10 @@ $('slots').addEventListener('change', (e) => {
 		state.eq[key] = { ...cur, refine: +t.value };
 	}
 	render();
+});
+$('passives').addEventListener('change', (e) => {
+	const id = +e.target.dataset.passive;
+	if (id) { state.passives[id] = +e.target.value; render(); }
 });
 $('skill').addEventListener('change', (e) => { state.skill = +e.target.value; state.skilllv = 99; render(); });
 $('skilllv').addEventListener('change', (e) => { state.skilllv = +e.target.value; render(); });

@@ -65,3 +65,6 @@ main.wide { max-width: 1240px; }
 .calc table.slots input.item { min-width: 16em; padding: 2px 4px; font: inherit; font-size: 13px; }
 .calc table.slots input.card { width: 10em; margin: 0 4px 2px 0; padding: 2px 4px; font: inherit; font-size: 13px; }
 .calc table.slots td.cards { white-space: normal; }
+
+.passives { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 8px; }
+.passives label { white-space: nowrap; }

@@ -11,6 +11,7 @@ import { statusWindow, jobById } from '../../titanro/site/calc/calc.js';
 import { tiersOf, treeOf, setLevel } from '../../titanro/site/calc/skilltree.js';
 import { normalAttack, mobList, weaponSkills, skillAttack } from '../../titanro/site/calc/damage.js';
 import { itemMap, sumEquipment } from '../../titanro/site/calc/items.js';
+import { withPassives } from '../../titanro/site/calc/passives.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const data = JSON.parse(fs.readFileSync(path.join(root, 'titanro/site/calc/data.json'), 'utf8'));
@@ -121,16 +122,19 @@ describe('equipment and cards', () => {
 	});
 
 	// Characters in random equipment and cards: the status window and a normal attack, as the server computed them.
+	// Builds whose id starts with "s" start from a set (a Hercules combo or a set written in an item's script).
 	// A build with anything the calculator marks "not counted" is left out (it says so on the page). ASPD may be 1 ms
 	// off when equipment changes it by a percentage (the server's rounding there isn't understood yet).
 	it('matches the server for every build whose items it counts', () => {
 		const failures = [];
 		let checked = 0;
+		let sets = 0;
 		for (const c of equip.cases) {
 			const equips = c.input.equips.map((e) => ({ item: items.get(e.item), refine: e.refine, cards: e.cards.map((x) => items.get(x)) }));
 			const eq = sumEquipment(data, equips, itemsJson.combos);
 			if (eq.notCounted.length) continue;
 			checked++;
+			if (c.id.startsWith('s')) sets++;
 			const w = equips.find((e) => e.item.type === 4);
 			const input = {
 				job: c.input.job, blv: c.input.blv, jlv: c.input.jlv, stats: c.input.stats, eq,
@@ -149,6 +153,30 @@ describe('equipment and cards', () => {
 			if (e.hit_max != null && (e.hit_max > a.maxTotal || e.hit_max < a.minTotal)) failures.push(`${c.id} hit seen ${e.hit_max} outside ${a.minTotal}-${a.maxTotal}`);
 		}
 		expect(checked).toBeGreaterThan(400);
+		expect(sets).toBeGreaterThan(50);
+		expect(failures.slice(0, 40)).toEqual([]);
+	});
+});
+
+describe('passive skills', () => {
+	const passive = JSON.parse(fs.readFileSync(path.join(root, 'tests/site/passive-cases.json'), 'utf8'));
+
+	it('uses cases from the same server build', () => {
+		expect(passive.source.titanro2).toBe(data.source.titanro2);
+		expect(passive.cases.length).toBeGreaterThan(200);
+	});
+
+	// Characters with random levels of their job's passive skills, bare-handed: the status window as the server
+	// computed it.
+	it('matches the server status window', () => {
+		const failures = [];
+		for (const c of passive.cases) {
+			const eq = withPassives(data, null, c.input.passives, c.input.job);
+			const got = statusWindow(data, { ...c.input, eq });
+			for (const [field, want] of Object.entries(c.status)) {
+				if (got[field] !== want) failures.push(`${c.id} ${field}: server ${want}, calculator ${got[field]}`);
+			}
+		}
 		expect(failures.slice(0, 40)).toEqual([]);
 	});
 });

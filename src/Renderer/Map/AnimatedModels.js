@@ -144,49 +144,49 @@ function precalcFlatNormals(node) {
 }
 
 /**
- * Precompute smooth normals per smoothGroup in node model-space
+ * Precompute smooth normals per smoothGroup in node model-space: per group, each vertex's normal is the normalized sum
+ * of the flat normals of the group's faces that use it (a face once, even if it lists the vertex twice). One pass
+ * over the faces, adding in face order (a big model took 100+ ms with a scan of all faces per vertex).
  */
-function precalcSmoothNormals(node, flatNormals) {
+export function precalcSmoothNormals(node, flatNormals) {
 	const faces = node.faces;
-	const vertices = node.vertices;
-	const groupUsed = [];
+	const numVerts = node.vertices.length;
+	const sums = [];
+	const groups = [];
 
 	for (let f = 0; f < faces.length; f++) {
-		const sg = faces[f].smoothGroup;
-		if (sg !== undefined && sg >= 0 && sg < 32) {
-			groupUsed[sg] = true;
+		const face = faces[f];
+		const sg = face.smoothGroup;
+		if (sg === undefined || sg < 0 || sg >= 32) {
+			continue;
+		}
+		// summed in doubles, as one vertex's sum was before, then written to float32 normalized
+		const norm = sums[sg] || (sums[sg] = new Float64Array(numVerts * 3));
+		const [a, b, c] = face.vertidx;
+		const base = f * 3;
+		const nx = flatNormals[base];
+		const ny = flatNormals[base + 1];
+		const nz = flatNormals[base + 2];
+		// each distinct vertex of the face, once
+		addTo(norm, a, numVerts, nx, ny, nz);
+		if (b !== a) {
+			addTo(norm, b, numVerts, nx, ny, nz);
+		}
+		if (c !== a && c !== b) {
+			addTo(norm, c, numVerts, nx, ny, nz);
 		}
 	}
 
-	const groups = [];
-	const numVerts = vertices.length;
-
-	for (let j = 0; j < 32; j++) {
-		if (!groupUsed[j]) {
+	for (let j = 0; j < sums.length; j++) {
+		const sum = sums[j];
+		if (!sum) {
 			continue;
 		}
-
-		const norm = new Float32Array(numVerts * 3);
-		groups[j] = norm;
-
-		for (let v = 0; v < numVerts; v++) {
-			let x = 0;
-			let y = 0;
-			let z = 0;
-
-			for (let f = 0; f < faces.length; f++) {
-				const face = faces[f];
-				if (
-					face.smoothGroup === j &&
-					(face.vertidx[0] === v || face.vertidx[1] === v || face.vertidx[2] === v)
-				) {
-					const base = f * 3;
-					x += flatNormals[base];
-					y += flatNormals[base + 1];
-					z += flatNormals[base + 2];
-				}
-			}
-
+		const norm = (groups[j] = new Float32Array(numVerts * 3));
+		for (let l = 0; l < sum.length; l += 3) {
+			let x = sum[l];
+			let y = sum[l + 1];
+			let z = sum[l + 2];
 			let len = x * x + y * y + z * z;
 			if (len > 0) {
 				len = 1.0 / Math.sqrt(len);
@@ -194,7 +194,6 @@ function precalcSmoothNormals(node, flatNormals) {
 				y *= len;
 				z *= len;
 			}
-			const l = v * 3;
 			norm[l] = x;
 			norm[l + 1] = y;
 			norm[l + 2] = z;
@@ -202,6 +201,15 @@ function precalcSmoothNormals(node, flatNormals) {
 	}
 
 	return groups;
+}
+
+function addTo(norm, v, numVerts, nx, ny, nz) {
+	if (v >= 0 && v < numVerts) {
+		const l = v * 3;
+		norm[l] += nx;
+		norm[l + 1] += ny;
+		norm[l + 2] += nz;
+	}
 }
 
 function isNodeStatic(node) {

@@ -317,8 +317,9 @@ async function onFileLoaded(data, error, input) {
 		switch (input.filename.substr(-3)) {
 			// Remove magenta on textures
 			case 'bmp':
-				Texture.load(data, function () {
-					Memory.set(input.filename, this.toDataURL(), error);
+				// decoded, cleared and encoded off the main thread where the browser can (Texture.loadAsDataURL)
+				Texture.loadAsDataURL(data, dataURL => {
+					Memory.set(input.filename, dataURL, dataURL ? error : error || 'unreadable image');
 				});
 				return;
 

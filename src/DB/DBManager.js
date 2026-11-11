@@ -5494,9 +5494,9 @@ function loadItemInfoPreferJson(filename, callback, onEnd) {
 	new Promise((resolve, reject) => {
 		Client.loadFile(jsonPath, resolve, reject);
 	})
-		.then(file => {
+		.then(async file => {
 			const started = performance.now();
-			const count = applyItemInfoJson(file instanceof ArrayBuffer ? new Uint8Array(file) : file, {
+			const count = await applyItemInfoJson(file instanceof ArrayBuffer ? new Uint8Array(file) : file, {
 				language: loadedLanguage(Configs.get('remoteClient')),
 				itemTable: ItemTable,
 				decodeText: bytes => userStringDecoder.decodeText(bytes, userCharpage),

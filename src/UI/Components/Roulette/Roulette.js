@@ -118,8 +118,13 @@ function onClickIcon() {
  * Once append to the DOM
  */
 Roulette.onAppend = function onAppend() {
-	this._host.style.top = Math.min(Math.max(0, _preferences.y), Renderer.height - this._host.offsetHeight) + 'px';
-	this._host.style.left = Math.min(Math.max(0, _preferences.x), Renderer.width - this._host.offsetWidth) + 'px';
+	// placed within the screen on the next frame, when the browser has laid it out anyway (reading its size here
+	// forced a layout of every window appended with it when entering the game)
+	const host = this._host;
+	requestAnimationFrame(() => {
+		host.style.top = Math.min(Math.max(0, _preferences.y), Renderer.height - host.offsetHeight) + 'px';
+		host.style.left = Math.min(Math.max(0, _preferences.x), Renderer.width - host.offsetWidth) + 'px';
+	});
 
 	if (!_preferences.show) {
 		this._host.style.display = 'none';

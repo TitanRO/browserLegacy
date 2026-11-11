@@ -38,6 +38,19 @@ export function loadedLanguage(remoteClient) {
 }
 
 /**
+ * Lets the browser run (input, rendering) before the next slice of a long job: scheduler.yield where there is one,
+ * else a zero-delay timeout.
+ *
+ * @returns {Promise<void>}
+ */
+export function yieldToBrowser() {
+	if (typeof globalThis.scheduler?.yield === 'function') {
+		return globalThis.scheduler.yield();
+	}
+	return new Promise(resolve => setTimeout(resolve, 0));
+}
+
+/**
  * Bytes as a string of one character per byte.
  *
  * @param {Uint8Array} bytes
@@ -47,6 +60,27 @@ export function latin1(bytes) {
 	const parts = [];
 	for (let i = 0; i < bytes.length; i += 0x8000) {
 		parts.push(String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)));
+	}
+	return parts.join('');
+}
+
+/**
+ * As latin1, a slice of `budget` ms at a time (a 15 MB table takes ~150 ms in one go).
+ *
+ * @param {Uint8Array} bytes
+ * @param {function(): Promise<void>} pause
+ * @param {number} budget
+ * @returns {Promise<string>}
+ */
+async function latin1Sliced(bytes, pause, budget) {
+	const parts = [];
+	let sliceStart = performance.now();
+	for (let i = 0; i < bytes.length; i += 0x8000) {
+		parts.push(String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)));
+		if (performance.now() - sliceStart > budget) {
+			await pause();
+			sliceStart = performance.now();
+		}
 	}
 	return parts.join('');
 }
@@ -66,7 +100,32 @@ function bytesOf(str) {
 }
 
 /**
- * Fills the item table from a prebuilt JSON table, as the Lua loader's AddItem* calls do.
+ * Defines `key` on `obj` as `make()`, computed the first time it is read (then a plain property); assigning it first
+ * replaces it.
+ *
+ * @param {object} obj
+ * @param {string} key
+ * @param {function(): *} make
+ */
+function lazyProperty(obj, key, make) {
+	Object.defineProperty(obj, key, {
+		configurable: true,
+		enumerable: true,
+		get() {
+			const value = make();
+			Object.defineProperty(this, key, { value, writable: true, enumerable: true, configurable: true });
+			return value;
+		},
+		set(value) {
+			Object.defineProperty(this, key, { value, writable: true, enumerable: true, configurable: true });
+		}
+	});
+}
+
+/**
+ * Fills the item table from a prebuilt JSON table, as the Lua loader's AddItem* calls do. The work is cut into
+ * slices of `budget` ms with the browser running in between (the table is 15 MB of JSON for 28,000 items), and the
+ * descriptions (340,000 lines) are decoded when an item's description is first read.
  *
  * @param {Uint8Array} data - The JSON file.
  * @param {object} options
@@ -74,16 +133,22 @@ function bytesOf(str) {
  * @param {object} options.itemTable - The table to fill.
  * @param {function(Uint8Array): string} options.decodeText - Decodes display strings.
  * @param {function(Uint8Array): string} options.decodeName - Decodes resource names.
- * @returns {number} The number of items, or 0 when the table is not this language's or not this format.
+ * @param {function(): Promise<void>} [options.pause] - Yields to the browser between slices.
+ * @param {number} [options.budget] - Milliseconds a slice may run.
+ * @returns {Promise<number>} The number of items, or 0 when the table is not this language's or not this format.
  */
-export function applyItemInfoJson(data, { language, itemTable, decodeText, decodeName }) {
-	const table = JSON.parse(latin1(data));
+export async function applyItemInfoJson(
+	data,
+	{ language, itemTable, decodeText, decodeName, pause = yieldToBrowser, budget = 10 }
+) {
+	const table = JSON.parse(await latin1Sliced(data, pause, budget));
 	if (!table || table.format !== 1 || table.lang !== language || typeof table.items !== 'object') {
 		return 0;
 	}
 	const text = s => (typeof s === 'string' ? decodeText(bytesOf(s)) : s);
 	const name = s => (typeof s === 'string' ? decodeName(bytesOf(s)) : s);
 	let count = 0;
+	let sliceStart = performance.now();
 	for (const id in table.items) {
 		const [
 			unDisplay,
@@ -98,21 +163,26 @@ export function applyItemInfoJson(data, { language, itemTable, decodeText, decod
 			costume,
 			packageId
 		] = table.items[id];
-		itemTable[id] = {
+		const item = {
 			...(typeof itemTable[id] === 'object' && itemTable[id]),
 			unidentifiedDisplayName: text(unDisplay),
 			unidentifiedResourceName: name(unResource),
 			identifiedDisplayName: text(display),
 			identifiedResourceName: name(resource),
-			unidentifiedDescriptionName: (unDesc || []).map(text),
-			identifiedDescriptionName: (desc || []).map(text),
 			EffectID: effectId ?? null,
 			costume: costume ?? null,
 			PackageID: packageId ?? null,
 			slotCount: slotCount,
 			ClassNum: classNum
 		};
+		lazyProperty(item, 'unidentifiedDescriptionName', () => (unDesc || []).map(text));
+		lazyProperty(item, 'identifiedDescriptionName', () => (desc || []).map(text));
+		itemTable[id] = item;
 		count++;
+		if (performance.now() - sliceStart > budget) {
+			await pause();
+			sliceStart = performance.now();
+		}
 	}
 	return count;
 }

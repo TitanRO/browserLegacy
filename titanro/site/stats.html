@@ -92,7 +92,7 @@ import { jobGroups } from './calc/jobs.js';
 import { normalAttack, mobList, weaponSkills, skillAttack, skillTimes, ATTACK_PASSIVES, ATTACK_BUFFS, ENDOWS, SKILL_RESOURCES } from './calc/damage.js';
 import { SLOTS as EQ_SLOTS, AMMO_OF, THROWN_AMMO, itemMap, canEquip, sumEquipment } from './calc/items.js';
 import { withPassives } from './calc/passives.js';
-import { BUFF_ORDER, withBuffs, WM_DANCE_WITH_WUG, buffContext, BUFF_CASTER, SONG_GROUPS } from './calc/buffs.js';
+import { BUFF_ORDER, withBuffs, WM_DANCE_WITH_WUG, buffContext, BUFF_CASTER, SONG_GROUPS, FORMULA_BUFFS } from './calc/buffs.js';
 
 const $ = (id) => document.getElementById(id);
 const LABEL = { str: 'STR', agi: 'AGI', vit: 'VIT', int: 'INT', dex: 'DEX', luk: 'LUK' };
@@ -115,7 +115,7 @@ const jobIndex = new Map(data.jobs.map((j, i) => [j.id, i]));
 const skillNames = new Map(data.skills.map((x) => [x.id, x.desc]));
 const skillMax = new Map(data.skills.map((x) => [x.id, x.max]));
 /** The buffs the page offers ([[id, max level], ...]): those the calculator counts at some level. */
-const BUFF_LIST = BUFF_ORDER.filter((id) => ATTACK_BUFFS.has(id) || (data.buffs && (data.buffs[id] || []).some(Boolean)))
+const BUFF_LIST = BUFF_ORDER.filter((id) => ATTACK_BUFFS.has(id) || FORMULA_BUFFS.has(id) || (data.buffs && (data.buffs[id] || []).some(Boolean)))
 	.map((id) => [id, (data.buffs && data.buffs[id] ? data.buffs[id].length : skillMax.get(id)) || 1]);
 const state = { eq: {}, passives: {}, buffs: {}, skill: 0, skilllv: 1, mob: 1002, job: 4008, blv: 99, jlv: 70, stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, wtype: 0, watk: 0, wmatk: 0, wlv: 1, refine: 0, shield: false, edef: 0, emdef: 0, performers: 0, spheres: 0, cartweight: 0, rage: 0, caster_blessing: 10, caster_incagi: 10, caster_jlv: 50, caster_lesson: 10 };
 const DEFAULTS = JSON.parse(JSON.stringify(state));

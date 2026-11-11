@@ -27,6 +27,7 @@ import PerfProbe from 'Core/PerfProbe.js';
 import SpriteBatch from 'Renderer/SpriteBatch.js';
 import EntityComposer from 'Renderer/Entity/EntityComposer.js';
 import FramePacer from 'Renderer/FramePacer.js';
+import FrameStats from 'Renderer/FrameStats.js';
 
 const { mat4 } = glMatrix;
 
@@ -391,6 +392,8 @@ class Renderer {
 			PerfProbe.frameStart(now);
 		}
 
+		const workStart = FrameStats.listener ? performance.now() : 0;
+
 		// Use Date.now for serverTick and Events processing, to keep existing behavior intact
 		const newTick = Date.now();
 
@@ -429,6 +432,11 @@ class Renderer {
 		}
 
 		Cursor.render(this.tick);
+
+		// The performance panel: this frame's time and its JavaScript work
+		if (FrameStats.listener) {
+			FrameStats.frame(now, performance.now() - workStart);
+		}
 
 		if (PerfProbe.enabled) {
 			PerfProbe.frameEnd();

@@ -16,6 +16,9 @@
  *   the panel shows, a {"type":"mvps"} JSON message to the map server beside the game data, which the mvp_status
  *   plugin answers the same way (Network.sendJson / Network.onJson; no game packet changes).
  *
+ * - Performance (panels.perf, performance.enabled): FPS, frame and CPU time, FPS low/high over 10 s, latency and the
+ *   map server's time from a {"type":"ping"} every 2 s while the panel shows, the JS heap (PerfCore.js).
+ *
  * The state and text are InfoCore.js; this file turns received packets into its events (read-only, after the game
  * has handled them) and draws the panels.
  *
@@ -40,6 +43,8 @@ import {
 	targetText,
 	woeLines
 } from './InfoCore.js';
+import { Perf } from './PerfCore.js';
+import FrameStats from 'Renderer/FrameStats.js';
 
 const ALERT_SOUND = 'effect/number_change.wav';
 const TINT = [1, 225 / 255, 110 / 255, 1];
@@ -373,6 +378,46 @@ export function startInfoPanels({ network, settings, panels }) {
 				},
 				unmount() {
 					clearInterval(timer);
+				}
+			});
+		}
+	});
+
+	// The performance panel: measures only while it shows (Renderer/FrameStats.js), pings the map server every 2 s
+	let perf = null;
+	network.onJson('pong', answer => {
+		if (perf) perf.pong(performance.now(), answer);
+	});
+	panels.register({
+		id: 'perf',
+		title: 'Performance',
+		width: 240,
+		enabled: ['performance', 'enabled'],
+		mount(body) {
+			perf = new Perf();
+			FrameStats.listener = (at, work) => perf && perf.frame(at, work);
+			const tick = () => {
+				if (!perf) return;
+				const memory = performance.memory;
+				perf.mem = memory && memory.usedJSHeapSize > 0 ? memory.usedJSHeapSize : null;
+				const ping = perf.pingDue(performance.now());
+				if (ping) network.sendJson(ping);
+				refresh('perf');
+			};
+			const timer = setInterval(tick, 500);
+			tick();
+			return (views.perf = {
+				update() {
+					if (perf)
+						lines(
+							body,
+							perf.lines().map(l => ({ text: l.text, cls: l.na ? 'grey' : '' }))
+						);
+				},
+				unmount() {
+					clearInterval(timer);
+					FrameStats.listener = null;
+					perf = null;
 				}
 			});
 		}

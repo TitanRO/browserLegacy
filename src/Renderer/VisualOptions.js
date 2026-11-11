@@ -16,6 +16,8 @@
  * Flat map: the ground's grey; cell grid: the line darkness and the tint of cells nobody can walk on (RCX's dead
  * cells: magenta at half strength).
  */
+import MonsterTable from 'DB/Monsters/MonsterTable.js';
+
 export const GRID = Object.freeze({ flatGrey: 0.62, line: 0.55, deadCell: Object.freeze([1, 0, 1, 0.5]) });
 
 /** See-through props: the opacity of map models. */
@@ -30,7 +32,11 @@ const DEFAULTS = {
 	effectFilter: null,
 	hideWeather: false,
 	/** No adelay: attack and cast animations shown at once (frames only; hits and damage keep the server's timing). */
-	instantActions: false
+	instantActions: false,
+	bigStatusIcons: false,
+	smallWoeObjects: false,
+	instantVanish: false,
+	bigMvps: false
 };
 
 /** No adelay: the frame time of attack and cast animations, in ms. */
@@ -47,6 +53,103 @@ export function isAttackOrCast(entity, action) {
 			action === A.ATTACK3 ||
 			action === A.SKILL)
 	);
+}
+
+/**
+ * WoE GRF helpers (roadmap "Titan GRF parity"), drawing only. The Windows client's TitanRONet.dll (sizes.rs) rewrites
+ * the same sprites with the same numbers; keep them in step.
+ */
+export const STATUS_SCALE = 2.0;
+export const WOE_SCALE = 0.6;
+export const MVP_SCALE = 1.5;
+/** Status icons drawn at STATUS_SCALE (attachment uids, which are the sprite names). */
+export const BIG_STATUS_ICONS = new Set(['status-stun', 'status-sleep']);
+/** Barricades and guardian stones (monster sprite names): small, and gone at once when they break. */
+export const BREAKABLE_SPRITES = new Set(['barricade', 's_empel_1', 's_empel_2']);
+/** Castle flags (small only). */
+export const FLAG_SPRITES = new Set(['1_flag_lion', '1_flag_eagle']);
+/**
+ * MVP sprites (mob_db MvpExp > 0), leaving out any a monster that is neither an MVP nor a boss also uses (Poring, the
+ * Biolab and Valkyrie sprites). The same list as the DLL's MVP_SPRITES (TitanRO/client tools/mvp-sprites/gen.py).
+ */
+export const MVP_SPRITES = new Set([
+	'amon_ra',
+	'apocalips_h',
+	'atros',
+	'bakonawa',
+	'baphomet',
+	'beelzebub_',
+	'boitata',
+	'buwaya',
+	'daehyon',
+	'dark_lord',
+	'dark_snake_lord',
+	'detale',
+	'dr_big_eggring',
+	'dracula',
+	'drake',
+	'eddga',
+	'event_bapho',
+	'faceworm_queen',
+	'faceworm_queen_b',
+	'faceworm_queen_g',
+	'faceworm_queen_y',
+	'fallingbishop',
+	'garm',
+	'gioia',
+	'gloomundernight',
+	'golden_bug',
+	'i_queen_scaraba',
+	'ifrit',
+	'incantation_samurai',
+	'kades',
+	'kiel_',
+	'kraken',
+	'kublin',
+	'lady_tanee',
+	'leak',
+	'lord_of_death',
+	'maya',
+	'mechaspider',
+	'mg_amdarais',
+	'mg_corruption_root',
+	'mistress',
+	'moonlight',
+	'morocc',
+	'n_amon_ra',
+	'orc_lord',
+	'ork_hero',
+	'osiris',
+	'pharaoh',
+	'phreeoni',
+	'pyuriel',
+	'queen_scaraba',
+	'rsx_0806',
+	'tao_gunka',
+	'thanatos',
+	'timeholder',
+	'turtle_general',
+	'xm_celine_kimi'
+]);
+
+/** The monster or NPC sprite name of a job id (lower case), or '' (players, 3D models, unknown ids). */
+export function spriteName(job) {
+	const name = MonsterTable[job];
+	return typeof name === 'string' && !name.endsWith('.gr2') ? name.toLowerCase() : '';
+}
+
+/** How much bigger (or smaller) the helpers draw a unit's sprite, from its job id; 1 for most. */
+export function spriteScale(options, job) {
+	const name = spriteName(job);
+	if (!name) return 1;
+	if (options.smallWoeObjects && (BREAKABLE_SPRITES.has(name) || FLAG_SPRITES.has(name))) return WOE_SCALE;
+	if (options.bigMvps && MVP_SPRITES.has(name)) return MVP_SCALE;
+	return 1;
+}
+
+/** Whether a unit of this job id vanishes at once when it breaks (instantVanish). */
+export function vanishesAtOnce(options, job) {
+	return !!options.instantVanish && BREAKABLE_SPRITES.has(spriteName(job));
 }
 
 const _listeners = new Set();

@@ -3,7 +3,14 @@
  * (markers, cast targets, chat and cast ranges), and the options rows both clients draw.
  */
 import { afterEach, describe, expect, it } from 'vitest';
-import VisualOptions, { isAttackOrCast, PROP_ALPHA } from 'Renderer/VisualOptions.js';
+import VisualOptions, {
+	isAttackOrCast,
+	MVP_SCALE,
+	PROP_ALPHA,
+	spriteScale,
+	vanishesAtOnce,
+	WOE_SCALE
+} from 'Renderer/VisualOptions.js';
 import { argb } from 'Renderer/Map/GroundMarkers.js';
 import {
 	ALWAYS_KEPT,
@@ -64,6 +71,32 @@ describe('display options', () => {
 		const mob = { ACTION: { ATTACK: -2, ATTACK1: 3, ATTACK2: -1, ATTACK3: -1, SKILL: -1 } };
 		expect(isAttackOrCast(mob, 3)).toBe(true);
 		expect(isAttackOrCast(mob, -1)).toBe(false);
+	});
+
+	it('the WoE GRF helpers each follow their setting', () => {
+		for (const [section, option] of [
+			['bigStatusIcons', 'bigStatusIcons'],
+			['smallWoeObjects', 'smallWoeObjects'],
+			['instantVanish', 'instantVanish'],
+			['bigMvps', 'bigMvps']
+		]) {
+			expect(visualOptions(settings({ [section]: { enabled: true } }))[option]).toBe(true);
+			expect(visualOptions(settings())[option]).toBe(false);
+		}
+	});
+
+	it('bigger MVPs, smaller WoE objects, by sprite', () => {
+		const on = { bigMvps: true, smallWoeObjects: true, instantVanish: true };
+		expect(spriteScale(on, 1039)).toBe(MVP_SCALE); // Baphomet
+		expect(spriteScale(on, 1002)).toBe(1); // Poring
+		expect(spriteScale(on, 1905)).toBe(WOE_SCALE); // barricade
+		expect(spriteScale(on, 1907)).toBe(WOE_SCALE); // guardian stone
+		expect(spriteScale(on, 973)).toBe(WOE_SCALE); // castle flag
+		expect(spriteScale(on, 1288)).toBe(1); // the Emperium is a 3D model
+		expect(spriteScale({}, 1039)).toBe(1);
+		expect(vanishesAtOnce(on, 1906)).toBe(true);
+		expect(vanishesAtOnce(on, 973)).toBe(false); // flags don't break
+		expect(vanishesAtOnce({}, 1906)).toBe(false);
 	});
 
 	it('Grayworld is the flat map and the cell grid together', () => {

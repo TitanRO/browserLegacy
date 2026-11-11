@@ -32,7 +32,7 @@ import DB from 'DB/DBManager.js';
 import GraphicsSettings from 'Preferences/Graphics.js';
 import GR2ModelRenderer from 'Renderer/GR2/GR2ModelRenderer.js';
 import EntityComposer from './EntityComposer.js';
-import VisualOptions, { INSTANT_FRAME_MS, isAttackOrCast } from 'Renderer/VisualOptions.js';
+import VisualOptions, { INSTANT_FRAME_MS, isAttackOrCast, spriteScale } from 'Renderer/VisualOptions.js';
 
 /**
  * Load dependencies
@@ -255,8 +255,8 @@ const calculateBoundingRect = (function calculateBoundingRectClosure() {
 	return function _calculateBoundingRect(entity, matrix) {
 		let tmp;
 
-		const fx = entity.xSize / 175;
-		const fy = entity.ySize / 175;
+		const fx = (entity.xSize * entity.helperScale) / 175;
+		const fy = (entity.ySize * entity.helperScale) / 175;
 
 		size[0] = window.innerWidth * 0.5;
 		size[1] = window.innerHeight * 0.5;
@@ -341,6 +341,9 @@ const renderEntity = (function renderEntityClosure() {
 		// Update shadow
 		SpriteRenderer.shadow = Ground.getShadowFactor(this.position[0], this.position[1]);
 		SpriteRenderer.zIndex = 1;
+
+		// Display helpers: bigger MVPs, smaller WoE objects (players keep their size)
+		this.helperScale = this.objecttype === this.constructor.TYPE_PC ? 1 : spriteScale(VisualOptions, this.job);
 
 		const animation = this.animation;
 		const Entity = this.constructor;
@@ -1149,8 +1152,11 @@ function renderLayer(layer, spr, pal, size, pos, type, isBlendModeOne) {
 	SpriteRenderer.size[1] = height;
 	SpriteRenderer.offset[0] = layer.pos[0] + pos[0];
 	SpriteRenderer.offset[1] = layer.pos[1] + pos[1];
-	SpriteRenderer.xSize = this.xSize;
-	SpriteRenderer.ySize = this.ySize;
+	// The helpers' scale applies to the unit's own sprite, not its shadow or attachments (the DLL rewrites only the
+	// unit's .act)
+	const helperScale = type && type !== 'shadow' ? this.helperScale : 1;
+	SpriteRenderer.xSize = this.xSize * helperScale;
+	SpriteRenderer.ySize = this.ySize * helperScale;
 	SpriteRenderer.image.texture = frame.texture;
 	SpriteRenderer.image.spr = spr;
 	SpriteRenderer.image.frame = frame;

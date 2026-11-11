@@ -163,6 +163,10 @@ export function visualOptions(get, heavy) {
 		propAlpha: get('transparentProps', 'enabled') === true ? PROP_ALPHA : 1,
 		cellGrid: get('flatMap', 'enabled') === true, // Grayworld: flat ground and the cell grid together
 		instantActions: get('noAdelay', 'enabled') === true,
+		bigStatusIcons: get('bigStatusIcons', 'enabled') === true,
+		smallWoeObjects: get('smallWoeObjects', 'enabled') === true,
+		instantVanish: get('instantVanish', 'enabled') === true,
+		bigMvps: get('bigMvps', 'enabled') === true,
 		hideWeather: level >= MINIMUM,
 		effectFilter: effectFilter(level, heavy)
 	};

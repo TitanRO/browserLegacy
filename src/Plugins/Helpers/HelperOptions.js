@@ -39,7 +39,21 @@ export const HELPER_OPTIONS = [
 		key: 'noAdelay.enabled',
 		label: 'No adelay (attacks and casts shown at once)',
 		type: 'toggle'
-	}
+	},
+	{ section: 'Display', key: 'bigStatusIcons.enabled', label: 'Big stun and sleep icons', type: 'toggle' },
+	{
+		section: 'Display',
+		key: 'smallWoeObjects.enabled',
+		label: 'Small barricades, guardian stones and flags',
+		type: 'toggle'
+	},
+	{
+		section: 'Display',
+		key: 'instantVanish.enabled',
+		label: 'Broken barricades and stones vanish at once',
+		type: 'toggle'
+	},
+	{ section: 'Display', key: 'bigMvps.enabled', label: 'Bigger MVPs', type: 'toggle' }
 ];
 
 /** The entries this window can show, grouped: [{section, options: [...]}] in first-appearance order. */

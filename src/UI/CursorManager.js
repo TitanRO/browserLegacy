@@ -18,6 +18,7 @@ import EntityManager from 'Renderer/EntityManager.js';
 import Entity from 'Renderer/Entity/Entity.js';
 import SpriteRenderer from 'Renderer/SpriteRenderer.js';
 import Mouse from 'Controls/MouseEventHandler.js';
+import VisualOptions, { CURSOR_TINTS } from 'Renderer/VisualOptions.js';
 
 /**
  * @type {integer} tick
@@ -287,10 +288,13 @@ class Cursor {
 			}
 		}
 
-		if (animation.compiledStyleIndex !== _lastStyleId || x !== _lastX || y !== _lastY) {
+		// display helper: a bigger cursor (VisualOptions.cursorScale), around its hotspot
+		const scale = VisualOptions.cursorScale || 1;
+		if (animation.compiledStyleIndex !== _lastStyleId || x !== _lastX || y !== _lastY || scale !== _lastScale) {
 			_lastStyleId = animation.compiledStyleIndex;
 			_lastX = x;
 			_lastY = y;
+			_lastScale = scale;
 
 			const cursorSprite = document.querySelector('.cursor__sprite');
 			if (cursorSprite) {
@@ -299,7 +303,11 @@ class Cursor {
 
 			const cursor = document.querySelector('.cursor');
 			if (cursor) {
-				cursor.style.transform = `translate(-${_lastX}px, -${_lastY}px)`;
+				cursor.style.transformOrigin = `${_lastX}px ${_lastY}px`;
+				cursor.style.transform =
+					scale === 1
+						? `translate(-${_lastX}px, -${_lastY}px)`
+						: `translate(-${_lastX}px, -${_lastY}px) scale(${scale})`;
 			}
 		}
 	}
@@ -580,6 +588,22 @@ function createSpriteSheet() {
 	}
 
 	function finalizeSpriteSheet() {
+		// display helper: the cursor in a colour (VisualOptions.cursorTint), its shape and transparency kept
+		const tint = CURSOR_TINTS[VisualOptions.cursorTint || 0];
+		if (tint) {
+			const shape = document.createElement('canvas');
+			shape.width = spriteSheetWidth;
+			shape.height = spriteSheetHeight;
+			shape.getContext('2d').drawImage(spriteSheetCanvas, 0, 0);
+			ctx.globalCompositeOperation = 'multiply';
+			ctx.fillStyle = `rgb(${tint[0]},${tint[1]},${tint[2]})`;
+			ctx.fillRect(0, 0, spriteSheetWidth, spriteSheetHeight);
+			ctx.globalCompositeOperation = 'destination-in';
+			ctx.drawImage(shape, 0, 0);
+			ctx.globalCompositeOperation = 'source-over';
+		}
+		_sheetTint = VisualOptions.cursorTint || 0;
+
 		// Convert the sprite sheet canvas to a data URL
 		const spriteSheetDataURL = spriteSheetCanvas.toDataURL('image/png');
 
@@ -605,6 +629,7 @@ function createSpriteSheet() {
 		);
 		const cursorEl = document.querySelector('.cursor');
 		if (cursorEl) {
+			for (const old of cursorEl.querySelectorAll('.cursor__sprite')) old.remove();
 			cursorEl.appendChild(imageElem);
 		}
 	}
@@ -613,6 +638,15 @@ function createSpriteSheet() {
 		drawSprite(i);
 	}
 }
+
+/** The tint the cursor sheet was built with; a change of VisualOptions.cursorTint builds it again. */
+let _sheetTint = 0;
+let _lastScale = 1;
+VisualOptions.onChange(options => {
+	if ((options.cursorTint || 0) !== _sheetTint && _compiledStyle && _compiledStyle.length) {
+		createSpriteSheet();
+	}
+});
 
 /**
  * Export

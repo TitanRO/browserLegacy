@@ -28,6 +28,9 @@ import SK from 'DB/Skills/SkillConst.js';
 import EC from 'DB/Effects/EffectConst.js';
 import SkillEffect from 'DB/Skills/SkillEffect.js';
 import SkillUnit from 'DB/Skills/SkillUnit.js';
+import { GroundTimers } from './GroundTimers.js';
+import WoeMarks from './WoeMarks.json';
+import MapLabels from 'Renderer/Map/MapLabels.js';
 
 /** Weather: the map's weather effects (WeatherTable, and the server's weather effect packets). */
 export const WEATHER_EFFECTS = new Set([
@@ -154,6 +157,11 @@ export function effectFilter(level, heavy = heavyEffects()) {
 	};
 }
 
+/** A WoE map mark that is a castle's name (rather than a warp's number or "Exit"). */
+export function isMarkName(text) {
+	return text !== 'Exit' && !text.startsWith('>') && !text.endsWith('>');
+}
+
 /** What the settings ask of the renderers (VisualOptions.set). */
 export function visualOptions(get, heavy) {
 	const level = Number(get('lowEffects', 'level')) || NORMAL;
@@ -170,6 +178,13 @@ export function visualOptions(get, heavy) {
 		smallEmperium: get('smallEmperium', 'enabled') === true,
 		tarotCards: get('tarotCards', 'enabled') === true,
 		stunFreezeShouts: get('stunFreezeShouts', 'enabled') === true,
+		bigPlayers: get('bigPlayers', 'enabled') === true,
+		cursorScale:
+			get('cursor', 'enabled') === true
+				? Math.max(1, Math.min(2, (Number(get('cursor', 'size')) || 150) / 100))
+				: 1,
+		cursorTint:
+			get('cursor', 'enabled') === true ? Math.max(0, Math.min(3, Number(get('cursor', 'color')) || 0)) : 0,
 		hideWeather: level >= MINIMUM,
 		effectFilter: effectFilter(level, heavy)
 	};
@@ -346,5 +361,29 @@ export function startVisualHelpers({ settings, network, packets, context, onAppl
 		if (pkt.xPos || pkt.yPos) casts.start(pkt.AID, pkt.SKID, pkt.xPos, pkt.yPos, pkt.delayTime || 0);
 	});
 	listen(['DISPEL'], pkt => casts.cancel(pkt.AID));
-	return { apply, traps, casts };
+
+	// effect countdowns and WoE map marks: text over their cells (Renderer/Map/MapLabels.js)
+	const timers = new GroundTimers();
+	const clock = () => performance.now();
+	listen(['NOTIFY_GROUNDSKILL'], pkt => timers.groundSkill(pkt.SKID, pkt.level, pkt.xPos, pkt.yPos, clock()));
+	listen(['SKILL_ENTRY', 'SKILL_ENTRY2', 'SKILL_ENTRY3', 'SKILL_ENTRY4', 'SKILL_ENTRY5'], pkt =>
+		timers.unit(pkt.AID, pkt.job, pkt.xPos, pkt.yPos, clock())
+	);
+	listen(['SKILL_DISAPPEAR'], pkt => timers.unitGone(pkt.AID));
+	listen(['NPCACK_MAPMOVE', 'NPCACK_SERVERMOVE', 'NPCACK_SERVERMOVE2'], () => timers.clear());
+	MapLabels.addLayer(() => {
+		const labels = [];
+		if (on('effectTimers')) {
+			for (const l of timers.labels(clock())) {
+				labels.push({ ...l, color: l.text.length === 1 && l.text <= '3' ? '#ff5050' : '#ffe040' });
+			}
+		}
+		if (on('woeMarks')) {
+			for (const [x, y, text] of WoeMarks[context.map ? context.map() : ''] || []) {
+				labels.push({ x, y, text, color: isMarkName(text) ? '#60e8ff' : '#ffffff' });
+			}
+		}
+		return labels;
+	});
+	return { apply, traps, casts, timers };
 }

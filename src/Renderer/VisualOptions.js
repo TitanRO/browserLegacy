@@ -39,7 +39,10 @@ const DEFAULTS = {
 	bigMvps: false,
 	smallEmperium: false,
 	tarotCards: false,
-	stunFreezeShouts: false
+	stunFreezeShouts: false,
+	bigPlayers: false,
+	cursorScale: 1,
+	cursorTint: 0
 };
 
 /** No adelay: the frame time of attack and cast animations, in ms. */
@@ -68,6 +71,10 @@ export const ICE_SCALE = 1.5;
 export const WOE_SCALE = 0.6;
 export const MVP_SCALE = 1.5;
 export const EMPERIUM_SCALE = 0.6;
+/** Enlarged players: one capped scale for everyone (bigger sprites are bigger click targets). */
+export const PLAYER_SCALE = 1.25;
+/** The cursor's colours (cursor.color): 0 its own, then yellow, cyan, magenta (RGB, multiplied into the sprite). */
+export const CURSOR_TINTS = [null, [255, 235, 60], [80, 230, 255], [255, 90, 230]];
 /** 3D models (MonsterTable's .gr2 names, lower case): the Emperium and the guild flag. */
 const EMPERIUM_MODEL = 'empelium90_0.gr2';
 const FLAG_MODEL = 'guildflag90_1.gr2';

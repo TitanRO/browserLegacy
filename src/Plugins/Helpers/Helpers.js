@@ -99,7 +99,9 @@ export default function Init(params) {
 			player: () =>
 				Session.Entity && Session.Entity.position
 					? { x: Math.round(Session.Entity.position[0]), y: Math.round(Session.Entity.position[1]) }
-					: null
+					: null,
+			// the map's name without its extension (the WoE map marks are by map)
+			map: () => (MapRenderer.currentMap || '').replace(/\.[^.]*$/, '')
 		},
 		onApplied: before => {
 			if (before.filter !== VisualOptions.effectFilter) {

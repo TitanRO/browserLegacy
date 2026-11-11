@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TitanRO Features</title>
+<meta name="description" content="What is new in TitanRO's season server: two clients, one sign-in, jRO mechanics, built-in tools and a new server architecture.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap">
+<style>
+/* Layout: a titanro.net-style sky band with the title, then one column of sections; feature cards in a two-column grid. */
+:root {
+	--bg: #efe9df;
+	--panel: #fffdf9;
+	--ink: #2b211b;
+	--muted: #6e6258;
+	--line: #ddd2c3;
+	--head: #8c3404;
+	--accent: #b35e29;
+	--link: #8c3404;
+	--live: #2f8a2f;
+	--wip: #7d756d;
+	--plan: #3d6fa8;
+	--band-ink: #ffffff;
+	--band-head: #ffdd74;
+	--shot-edge: #cfc3b2;
+	--font: "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	--img: url("https://titanro-patch.nyc3.cdn.digitaloceanspaces.com/features/bg.webp");
+}
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--bg: #16120f; --panel: #251b16; --ink: #f1e9df; --muted: #b4a597; --line: #423330;
+		--head: #ffdd74; --accent: #ffb848; --link: #ffd375; --live: #5fd35f; --wip: #c9c0b6; --plan: #8fb8ea;
+		--shot-edge: #423330; color-scheme: dark;
+	}
+}
+:root[data-theme="dark"] {
+	--bg: #16120f; --panel: #251b16; --ink: #f1e9df; --muted: #b4a597; --line: #423330;
+	--head: #ffdd74; --accent: #ffb848; --link: #ffd375; --live: #5fd35f; --wip: #c9c0b6; --plan: #8fb8ea;
+	--shot-edge: #423330; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 var(--font); }
+a { color: var(--link); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.inner { max-width: 1040px; margin: 0 auto; }
+
+.sky { background: linear-gradient(rgba(16, 24, 34, 0.55), rgba(16, 24, 34, 0.25) 45%, rgba(16, 24, 34, 0.55)), #1b3a52 var(--img) center top / cover no-repeat; color: var(--band-ink); }
+.sky .inner { padding-block: 18px 40px; }
+.sky nav { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; font-weight: 700; }
+.sky nav a { color: var(--band-ink); text-decoration: none; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); }
+.sky nav a:hover { color: var(--band-head); }
+.sky h1 { margin: 36px 0 8px; font-weight: 900; font-size: clamp(30px, 6vw, 46px); line-height: 1.1; color: var(--band-head); text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55); text-wrap: balance; }
+.sky p.lead { margin: 0; max-width: 62ch; font-size: 17px; background: rgba(22, 18, 15, 0.72); padding: 12px 14px; border-radius: 4px; }
+.legend { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 14px; background: rgba(22, 18, 15, 0.72); padding: 8px 14px; border-radius: 4px; width: fit-content; max-width: 100%; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sky .st-live { color: #5fd35f; } .sky .st-wip { color: #d6cec6; } .sky .st-plan { color: #9cc2ef; }
+
+main .inner { padding-block: 8px 48px; }
+section.group { padding-top: 28px; }
+section.group > h2 { margin: 0 0 4px; font-size: 26px; font-weight: 900; color: var(--head); text-wrap: balance; }
+section.group > p.intro { margin: 0 0 16px; color: var(--muted); max-width: 70ch; }
+.toc { display: flex; flex-wrap: wrap; gap: 6px 14px; padding-top: 20px; font-size: 14px; }
+.toc a { text-decoration: none; font-weight: 700; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 14px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; min-width: 0; }
+.card.wide { grid-column: 1 / -1; }
+.card h3 { margin: 0 0 6px; font-size: 18px; display: flex; align-items: center; gap: 8px; text-wrap: balance; }
+.card p { margin: 6px 0; }
+.card ul { margin: 6px 0; padding-left: 20px; }
+.card li { margin: 2px 0; }
+.note { color: var(--muted); font-size: 14px; }
+
+.st { display: inline-flex; flex: none; width: 22px; height: 22px; }
+.st svg { width: 100%; height: 100%; }
+.st-live { color: var(--live); } .st-wip { color: var(--wip); } .st-plan { color: var(--plan); }
+
+figure { margin: 10px 0 4px; }
+figure img { display: block; width: 100%; max-width: 100%; height: auto; border: 1px solid var(--shot-edge); border-radius: 4px; background: #000; }
+figcaption { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 10px; }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { font-size: 13px; color: var(--muted); font-weight: 700; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.icon { width: 30px; }
+code { font-size: 0.92em; background: var(--bg); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
+footer { color: var(--muted); font-size: 13px; padding-block: 0 32px; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+	<symbol id="i-live" viewBox="0 0 24 24"><path d="M4.5 12.5l4.8 4.8L19.5 7" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+	<symbol id="i-wip" viewBox="0 0 24 24"><path d="M4 14.2c1.6-3.2 3.9-4.4 6.2-3 1.6 1 2.3 2.6 4.1 2.8 1.6.2 3-.8 5.7-3.8" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+	<symbol id="i-plan" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke-linecap="round"/></g><rect x="7" y="13" width="3" height="3" rx=".5" fill="currentColor"/></symbol>
+</svg>
+
+<div class="sky gutter">
+	<div class="inner">
+		<nav aria-label="Site"><a href="./">Play</a><a href="market.html">Market</a><a href="woe.html">WoE</a><a href="mvp.html">MVP</a><a href="search.html">Database</a><a href="stats.html">Stats</a><a href="skills.html">Skills</a><a href="tools.html">Tools</a></nav>
+		<h1>What's new on TitanRO</h1>
+		<p class="lead">The season server at play.titanro.net is a rebuild of TitanRO from the client up: two clients with one sign-in, jRO mechanics, the tools players used to download now built in, and game servers that update without kicking everyone. This page lists what is in the game today and what is still being built.</p>
+		<div class="legend" aria-label="Legend">
+			<span class="st-live"><span class="st" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>Live: in the game now</span>
+			<span class="st-wip"><span class="st" role="img" aria-label="In progress"><svg><title>In progress</title><use href="#i-wip"/></svg></span>In progress</span>
+			<span class="st-plan"><span class="st" role="img" aria-label="Planned"><svg><title>Planned</title><use href="#i-plan"/></svg></span>Planned</span>
+		</div>
+	</div>
+</div>
+
+<main class="gutter">
+<div class="inner">
+	<nav class="toc" aria-label="Sections">
+		<a href="#play">Play anywhere</a><a href="#tools">Built-in tools</a><a href="#site">Site tools</a><a href="#content">jRO mechanics &amp; dungeons</a><a href="#woe">WoE</a><a href="#security">Security &amp; community</a><a href="#delivery">Patcher</a><a href="#servers">Server architecture</a><a href="#languages">Languages</a><a href="#next">Planned</a>
+	</nav>
+
+	<section class="group" id="play">
+		<h2>Play anywhere</h2>
+		<p class="intro">One TitanRO account, two clients, and no game passwords.</p>
+		<div class="cards">
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>Two clients, one world</h3>
+				<p>Play on the Windows client or in the browser at <a href="./">play.titanro.net</a>. Both connect to the same servers, so friends can play together on either.</p>
+				<p class="note">The web client is made for desktop browsers. Phones and tablets haven't been tested yet.</p>
+			</article>
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>No passwords</h3>
+				<p>Sign in once with Discord, an emailed code or a passkey. The launcher (or the web client's start screen) shows all your characters. Pick one and you're in game, with no login or character-select screens.</p>
+				<p>Each login uses a single-use token that expires within two minutes, so there is no game password to steal or reuse.</p>
+			</article>
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>One master account</h3>
+				<p>Your TitanRO account holds all your characters, your language, and your helper settings, which carry over between the Windows and web clients. The same sign-in opens the site pages (market, WoE stills).</p>
+				<p class="note">Up to two characters online at once per account, on any mix of clients.</p>
+			</article>
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>Fast launch</h3>
+				<p>We rewrote the Windows client's startup. Game connections now open while the client loads, and the client no longer checks its game data for old files at every start.</p>
+				<div class="table-wrap"><table>
+					<thead><tr><th>Client start to standing on the map</th><th class="num">Time</th></tr></thead>
+					<tbody>
+						<tr><td>Before</td><td class="num">7.6 s</td></tr>
+						<tr><td>Now</td><td class="num">3.3 s</td></tr>
+					</tbody>
+				</table></div>
+				<p class="note">Median of test runs on a Windows PC against the live servers.</p>
+			</article>
+			<article class="card">
+				<h3><span class="st st-wip" role="img" aria-label="In progress"><svg><title>In progress</title><use href="#i-wip"/></svg></span>Quick Invite links</h3>
+				<p>In game, <code>@quickinvite</code> makes a short link. A friend who opens it plays a guest character in the web client, placed next to you, with no install and no sign-up.</p>
+				<p class="note">Working, and limited to game masters while we test it.</p>
+			</article>
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>Discord presence</h3>
+				<p>The launcher shows what you're playing in your Discord status, with a "Play TitanRO" button for friends.</p>
+			</article>
+		</div>
+	</section>
+
+	<section class="group" id="tools">
+		<h2>Built-in tools</h2>
+		<p class="intro">Helpers that used to need third-party programs or edited game files are built into both clients, the same for everyone. Press <code>Ctrl+H</code> in game to turn each one on or off. The <a href="tools.html">allowed tools</a> page lists which outside tools they replace.</p>
+		<div class="cards">
+			<article class="card wide">
+				<div class="table-wrap"><table>
+					<thead><tr><th></th><th>Tool</th><th>What it does</th></tr></thead>
+					<tbody>
+						<tr><td class="icon"><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span></td><td>Autopot</td><td><code>@autopot</code>: two potion rules per character, run by the server, at the same item delay as using items by hand.</td></tr>
+						<tr><td class="icon"><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span></td><td>RCX-style ground overlays</td><td>A colored cell marker for every trap and ground skill (including Land Protector and Fog Wall), ground-cast areas while casting, and chat range and cast range rings. In the Windows client, ground-skill markers (Safety Wall, Pneuma, Quagmire) and both range rings are checked on screen; cast areas and the Ankle Snare marker are still being checked.</td></tr>
+						<tr><td class="icon"><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span></td><td>Cell grid</td><td>Cell lines on the ground, with unwalkable cells tinted.</td></tr>
+						<tr><td class="icon"><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span></td><td>Flat map (greyworld)</td><td>Flat grey ground. Map models can also be hidden (Windows) or made see-through (web).</td></tr>
+						<tr><td class="icon"><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span></td><td>Effects level</td><td>Normal, minimum (no weather, map ambience or heavy area-skill effects) or none. Damage numbers, cast areas and ground markers always stay.</td></tr>
+						<tr><td class="icon"><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span></td><td>Borderless window and free mouse</td><td>Windows client: borderless at your screen's resolution or a set window size, and a cursor that can leave the window.</td></tr>
+						<tr><td class="icon"><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span></td><td>Exp tracker</td><td>Base and job exp per hour, time to next level, and zeny per hour.</td></tr>
+						<tr><td class="icon"><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span></td><td>Loot and drop alerts</td><td>An alert and sound for cards, rare drops and your watch list. Rare drops can be shown at double size and tinted.</td></tr>
+						<tr><td class="icon"><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span></td><td>MVP timers</td><td>Which MVPs are alive and each one's respawn window, from the server. Also on <a href="mvp.html">mvp.html</a>.</td></tr>
+						<tr><td class="icon"><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span></td><td>Damage log and DPS</td><td>Damage and DPS per skill, for your own character, homunculus and mercenary only.</td></tr>
+						<tr><td class="icon"><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span></td><td>WoE tracker</td><td>Castle owners, Emperium breaks and the top guilds of the last WoE, in game and on <a href="woe.html">woe.html</a>.</td></tr>
+						<tr><td class="icon"><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span></td><td>Market search</td><td><code>@market</code> searches every shop, and <code>@price</code> shows recent sale prices.</td></tr>
+						<tr><td class="icon"><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span></td><td>Player reports</td><td><code>@report</code> files a report that includes the reported player's recent actions and chat lines as the server saw them, so you don't need to record a replay.</td></tr>
+						<tr><td class="icon"><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span></td><td>Auto-follow</td><td>Shift + right-click a character to follow them. Walking only, on field maps.</td></tr>
+						<tr><td class="icon"><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span></td><td>Same zoom for everyone</td><td>Both clients zoom out to the same limit, so a zoom hack gives no advantage.</td></tr>
+					</tbody>
+				</table></div>
+			</article>
+			<article class="card">
+				<h3>Chat and cast range (Windows)</h3>
+				<figure><img src="https://titanro-patch.nyc3.cdn.digitaloceanspaces.com/features/rcx-ranges-windows.webp" alt="Windows client: a green square at 9 cells marks chat range and a purple ring marks cast range around the character" loading="lazy" width="960" height="541"><figcaption>Chat range (green) and cast range (purple), drawn on the ground.</figcaption></figure>
+			</article>
+			<article class="card">
+				<h3>Ground-skill markers (web)</h3>
+				<figure><img src="https://titanro-patch.nyc3.cdn.digitaloceanspaces.com/features/rcx-markers.webp" alt="Web client: traps and ground skills each drawn as colored cells" loading="lazy" width="960" height="675"><figcaption>Each trap and ground skill gets cells in its own color.</figcaption></figure>
+			</article>
+			<article class="card wide">
+				<h3>Effects level: normal and none</h3>
+				<div class="pair">
+					<figure><img src="https://titanro-patch.nyc3.cdn.digitaloceanspaces.com/features/effects-normal.webp" alt="Storm Gust at the normal effects level, with snow particles over the cast area" loading="lazy" width="760" height="600"><figcaption>Normal</figcaption></figure>
+					<figure><img src="https://titanro-patch.nyc3.cdn.digitaloceanspaces.com/features/effects-none.webp" alt="The same Storm Gust with effects at none: only the cell marker remains" loading="lazy" width="760" height="600"><figcaption>None: the marker stays</figcaption></figure>
+				</div>
+			</article>
+			<article class="card wide">
+				<h3>Flat map</h3>
+				<div class="pair">
+					<figure><img src="https://titanro-patch.nyc3.cdn.digitaloceanspaces.com/features/town-default.webp" alt="Prontera with the normal ground texture" loading="lazy" width="960" height="675"><figcaption>Default</figcaption></figure>
+					<figure><img src="https://titanro-patch.nyc3.cdn.digitaloceanspaces.com/features/town-flat.webp" alt="Prontera with flat grey ground" loading="lazy" width="960" height="675"><figcaption>Flat map</figcaption></figure>
+				</div>
+			</article>
+			<article class="card wide">
+				<h3>Information panels</h3>
+				<figure><img src="https://titanro-patch.nyc3.cdn.digitaloceanspaces.com/features/panels.webp" alt="Web client with the target, loot, exp, damage, MVP timers and WoE panels open" loading="lazy" width="1000" height="480"><figcaption>Target, loot, exp, damage, MVP timer and WoE panels in the web client. The Windows client draws the same panels as native windows.</figcaption></figure>
+			</article>
+		</div>
+	</section>
+
+	<section class="group" id="site">
+		<h2>Site tools</h2>
+		<p class="intro">Pages on play.titanro.net that use data from the game server.</p>
+		<div class="cards">
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span><a href="stats.html">Stat and damage calculator</a></h3>
+				<p>Status window, normal attacks and weapon skills against any monster, with equipment, cards, sets, passives, ammunition and cast time. The numbers come from the game server's own tables and formulas, and are checked against the server on thousands of test cases.</p>
+			</article>
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span><a href="skills.html">Skill tree simulator</a></h3>
+				<p>Plan a build on the same skill trees and prerequisites the server uses.</p>
+			</article>
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span><a href="market.html">Market</a></h3>
+				<p>Search what's for sale in shops, with price history from real sales.</p>
+			</article>
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span><a href="search.html">Database</a>, <a href="mvp.html">MVP timers</a>, <a href="woe.html">WoE tracker</a></h3>
+				<p>Item, monster and drop search from the server's own databases; MVP status; castle owners and WoE results.</p>
+			</article>
+		</div>
+	</section>
+
+	<section class="group" id="content">
+		<h2>jRO mechanics &amp; dungeons</h2>
+		<p class="intro">The game follows Japan's official server (jRO) as of 2021-12-31: skills, skill trees, level caps, exp tables and stat formulas.</p>
+		<div class="cards">
+			<article class="card wide">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>jRO 2021 mechanics</h3>
+				<p>Skills, skill trees, max skill levels, cast times and descriptions follow jRO at our pinned date, including the Evolution update. Base level goes to 185 and job level to 65 (Doram 55), with jRO's exp tables. Automated tests compare skills, items and formulas against a reference implementation on thousands of cases, and every intended difference is written down with its source.</p>
+				<p><b>Every stat point counts.</b> Stats add to their values point by point instead of in steps of 10, and most stats feed several values, so balanced builds are viable alongside all-in ones:</p>
+				<div class="table-wrap"><table>
+					<thead><tr><th>Stat</th><th>Each point adds to</th></tr></thead>
+					<tbody>
+						<tr><td>STR</td><td>ATK +1 with melee weapons (+1 per 5 with bows, instruments, whips and guns)</td></tr>
+						<tr><td>AGI</td><td>FLEE +1, ASPD, soft DEF +1 per 5</td></tr>
+						<tr><td>VIT</td><td>Max HP +1%, soft DEF +1 per 2, soft MDEF +1 per 5</td></tr>
+						<tr><td>INT</td><td>MATK +1 (more as INT grows), soft MDEF +1, Max SP +1%, shorter variable cast</td></tr>
+						<tr><td>DEX</td><td>HIT +1, ATK with ranged weapons (melee +1 per 5), MATK +1 per 5, higher minimum weapon damage, ASPD, shorter variable cast</td></tr>
+						<tr><td>LUK</td><td>CRIT +1 per 3, ATK, MATK and HIT +1 per 3, FLEE +1 per 5, perfect dodge</td></tr>
+					</tbody>
+				</table></div>
+				<p class="note">Variable cast time drops with DEX + INT/2 on a curve. Try any build in the <a href="stats.html">calculator</a>.</p>
+			</article>
+			<article class="card">
+				<h3><span class="st st-wip" role="img" aria-label="In progress"><svg><title>In progress</title><use href="#i-wip"/></svg></span>jRO dungeons</h3>
+				<p>We're adding the dungeons and instances jRO had by 2021-12-31. Live now:</p>
+				<ul>
+					<li>Glast Heim Abyss and Nogue Road 3F, with jRO's six weekly Terror quests and essences</li>
+					<li>Memorial dungeons such as Orc's Memory, Last Room and the Shrine of Demon God</li>
+					<li>Illusion dungeons: Frozen, Moonlight, Vampire, Turtle Island, Teddy Bear, Luanda, Labyrinth</li>
+					<li>Nightmare Bio Lab, Rockridge and the Prontera Underground Prison</li>
+				</ul>
+				<figure><img src="https://titanro-patch.nyc3.cdn.digitaloceanspaces.com/features/memorial-demon-god.webp" alt="A Rune Knight at the entrance of the Shrine of Demon God memorial" loading="lazy" width="960" height="720"><figcaption>Shrine of Demon God memorial.</figcaption></figure>
+			</article>
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>Rifts: generated maps</h3>
+				<p>Rifts are new maps put together from pieces of existing dungeons such as the Culvert and Glast Heim. Both clients build the map from its name, so there's nothing to download. Each rift has monsters, a boss and a boss chest, and closes an hour after it opens or a minute after everyone has left.</p>
+				<p class="note">Open to everyone through the Rift Warden in Prontera while we tune them.</p>
+				<figure><img src="https://titanro-patch.nyc3.cdn.digitaloceanspaces.com/features/rift-culvert.webp" alt="Entering a generated Culvert rift in the web client" loading="lazy" width="960" height="720"><figcaption>Entering a Culvert rift in the web client.</figcaption></figure>
+			</article>
+		</div>
+	</section>
+
+	<section class="group" id="woe">
+		<h2>War of Emperium</h2>
+		<div class="cards">
+			<article class="card wide">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>Castle stills</h3>
+				<p>When an Emperium breaks, and again when WoE ends, the server records a still of the whole castle: every player, monster and NPC with their facing and status effects, every ground skill, and the guilds present. After WoE, anyone signed in can open the still and walk around it in 3D. Hidden players and invisible traps show only to the viewer's own guild and its allies.</p>
+				<div class="pair">
+					<figure><img src="https://titanro-patch.nyc3.cdn.digitaloceanspaces.com/features/woe-ally.webp" alt="Castle still as an allied guild sees it, with a hidden player shown as a dark figure" loading="lazy" width="960" height="600"><figcaption>As an ally sees it: the hidden player is shown.</figcaption></figure>
+					<figure><img src="https://titanro-patch.nyc3.cdn.digitaloceanspaces.com/features/woe-enemy.webp" alt="The same castle still as an enemy sees it, without the hidden player" loading="lazy" width="960" height="600"><figcaption>As an enemy sees it: the hidden player is not shown.</figcaption></figure>
+				</div>
+				<p><a href="woe-view.html?id=1">Open the sample still</a> (no sign-in needed). It's a staged test WoE, not a real one.</p>
+			</article>
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>WoE tracker</h3>
+				<p>Castle owners, breaks and guild kills per WoE on <a href="woe.html">woe.html</a> and in an in-game panel.</p>
+			</article>
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>One character per account in castles</h3>
+				<p>Only one character from each TitanRO account can be inside a WoE castle at a time.</p>
+			</article>
+		</div>
+	</section>
+
+	<section class="group" id="security">
+		<h2>Security &amp; community</h2>
+		<div class="cards">
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>Encrypted connections</h3>
+				<p>The clients' connections to our servers are encrypted (TLS):</p>
+				<ul>
+					<li>game traffic from both clients, starting with the first login packet: chat, trades, market searches and everything else</li>
+					<li>the Windows client's web services (settings, guild emblems, party board)</li>
+					<li>sign-in and the launcher's downloads and updates</li>
+				</ul>
+				<p class="note">The unencrypted game ports are closed.</p>
+			</article>
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>Nothing hidden to reveal</h3>
+				<p>In PvP and WoE, the server doesn't send enemies anything the game hides from them, such as hidden characters and invisible traps. A modified client has nothing to reveal.</p>
+			</article>
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>Account-wide blocking</h3>
+				<p><code>/ex name</code> blocks the whole account behind that character, not just one character: chat, whispers, invitations and trade requests from any of its characters stop. <code>@blocklist</code> and <code>@unblock</code> manage the list.</p>
+			</article>
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>Reports and chat sanctions</h3>
+				<p><code>@report</code> files a report with the evidence attached. Reports about one account are grouped into one case. Public chat sanctions go 1 day, then 3 days, then permanent; whispers, party and guild chat stay open, and 90 clean days reset the count.</p>
+			</article>
+		</div>
+	</section>
+
+	<section class="group" id="delivery">
+		<h2>Smart patcher</h2>
+		<div class="cards">
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>Downloads only what changed</h3>
+				<p>The launcher compares your files with the release and fetches only the changed parts, compressed and often as small binary diffs.</p>
+				<p>We removed game data nobody can reach (unused maps, art for items that can't be obtained, and more):</p>
+				<div class="table-wrap"><table>
+					<thead><tr><th></th><th class="num">Before</th><th class="num">Now</th></tr></thead>
+					<tbody>
+						<tr><td>Game data (data.grf)</td><td class="num">3.58 GiB</td><td class="num">2.12 GiB</td></tr>
+						<tr><td>Full install</td><td class="num">4.38 GiB</td><td class="num">2.98 GiB</td></tr>
+					</tbody>
+				</table></div>
+			</article>
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>Missing files come back by themselves</h3>
+				<p>If the Windows client asks for a map, model, sprite, texture or sound it doesn't have, it gets the file on the spot and reports it. A nightly job adds every reported file back into the release for everyone.</p>
+			</article>
+		</div>
+	</section>
+
+	<section class="group" id="servers">
+		<h2>Server architecture</h2>
+		<div class="cards">
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>Several map servers</h3>
+				<p>The world is split across three map servers (Rune-Midgarts, Schwarzwald and Arunafeltz, and the rest) that share players' load. Whispers, parties, guilds, friends, channels and GM commands work across all of them.</p>
+			</article>
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>Shared towns and ghosts</h3>
+				<p>Busy maps can run on two servers at once (Prontera and some of its fields for now). Players on the other copy show up as translucent "ghosts" you can see walking and sitting but not interact with.</p>
+				<figure><img src="https://titanro-patch.nyc3.cdn.digitaloceanspaces.com/features/ghost.webp" alt="Prontera with a translucent grey ghost of a player on the other map server" loading="lazy" width="960" height="675"><figcaption>A player on the other copy of Prontera, shown as a ghost (right).</figcaption></figure>
+			</article>
+			<article class="card">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>Updates without kicking everyone</h3>
+				<p>Old and new server builds work side by side, so an update restarts one server at a time instead of all at once. Players on a shared map move to its other copy when their server restarts.</p>
+			</article>
+			<article class="card">
+				<h3><span class="st st-wip" role="img" aria-label="In progress"><svg><title>In progress</title><use href="#i-wip"/></svg></span>Guild Wars-style rollouts</h3>
+				<p>After a non-critical update, you can stay on your current map server for up to 24 hours. When you change maps, you land on the newest build of the target map. WoE castles always run the newest build.</p>
+				<p class="note">The servers for this are built and switched off until it's ready.</p>
+			</article>
+			<article class="card">
+				<h3><span class="st st-plan" role="img" aria-label="Planned"><svg><title>Planned</title><use href="#i-plan"/></svg></span>Map servers in other regions</h3>
+				<p>Because maps can sit on any map server, a region's maps could run closer to its players, for example a Prontera WoE hosted in North America and a Geffen WoE in Southeast Asia. All map servers run in one data center today.</p>
+			</article>
+		</div>
+	</section>
+
+	<section class="group" id="languages">
+		<h2>Languages</h2>
+		<div class="cards">
+			<article class="card wide">
+				<h3><span class="st st-live" role="img" aria-label="Live"><svg><title>Live</title><use href="#i-live"/></svg></span>English, Portuguese (Brazil) and Korean</h3>
+				<p>Both clients use UTF-8, so chat and character, party and guild names can use accents and Hangul. Pick your language once on your TitanRO account. New translations ship without a server update and load the next time the map servers start.</p>
+				<div class="pair">
+					<figure><img src="https://titanro-patch.nyc3.cdn.digitaloceanspaces.com/features/skilltree-ko.webp" alt="Skill window in Korean" loading="lazy" width="572" height="415"><figcaption>Korean</figcaption></figure>
+					<figure><img src="https://titanro-patch.nyc3.cdn.digitaloceanspaces.com/features/skilltree-pt-br.webp" alt="Skill window in Portuguese" loading="lazy" width="572" height="415"><figcaption>Portuguese (Brazil)</figcaption></figure>
+				</div>
+			</article>
+		</div>
+	</section>
+
+	<section class="group" id="next">
+		<h2>Planned</h2>
+		<div class="cards">
+			<article class="card">
+				<h3><span class="st st-plan" role="img" aria-label="Planned"><svg><title>Planned</title><use href="#i-plan"/></svg></span>Account friends</h3>
+				<p>Friends between TitanRO accounts, separate from in-game character friends. An account friend sees whether you're online on any character without seeing which characters are yours. Messages sent while you're offline are waiting when you log in.</p>
+			</article>
+		</div>
+	</section>
+</div>
+</main>
+<footer class="gutter"><div class="inner">Screenshots are from test characters on the live servers and our test servers. Ragnarok Online art &copy; Gravity Co., Ltd. &amp; Lee Myoungjin; GungHo Online Entertainment.</div></footer>
+</body>
+</html>

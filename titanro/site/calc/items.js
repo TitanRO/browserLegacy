@@ -104,7 +104,7 @@ const OTHER = new Set([
 	'SP_SHORT_WEAPON_DAMAGE_RETURN', 'SP_LONG_WEAPON_DAMAGE_RETURN', 'SP_MAGIC_DAMAGE_RETURN', 'SP_HP_RECOV_RATE',
 	'SP_SP_RECOV_RATE', 'SP_SPRATE', 'SP_HPRATE', 'SP_SPEED_RATE', 'SP_SPEED_ADDRATE', 'SP_HP_DRAIN_RATE',
 	'SP_SP_DRAIN_RATE', 'SP_HP_DRAIN_VALUE', 'SP_SP_DRAIN_VALUE', 'SP_MAGIC_ADDRACE', 'SP_MAGIC_ADDELE',
-	'SP_MAGIC_ADDSIZE', 'SP_MAGIC_ATK_ELE', 'SP_IGNORE_MDEF_RATE', 'SP_IGNORE_MDEF_ELE', 'SP_MATK_RATE', 'SP_ADD_STEAL_RATE',
+	'SP_MAGIC_ADDSIZE', 'SP_MAGIC_ATK_ELE', 'SP_IGNORE_MDEF_RATE', 'SP_IGNORE_MDEF_ELE', 'SP_ADD_STEAL_RATE',
 	'SP_GET_ZENY_NUM', 'SP_ADD_GET_ZENY_NUM', 'SP_ITEMHEAL_RATE', 'SP_ITEMGROUPHEALRATE', 'SP_WEAPON_COMA_ELE',
 	'SP_WEAPON_COMA_RACE', 'SP_BREAK_WEAPON_RATE', 'SP_BREAK_ARMOR_RATE', 'SP_NO_KNOCKBACK', 'SP_NO_GEMSTONE',
 	'SP_INTRAVISION', 'SP_NO_WALK_DELAY', 'SP_UNSTRIPABLE', 'SP_UNSTRIPABLE_WEAPON', 'SP_UNSTRIPABLE_ARMOR',
@@ -129,7 +129,7 @@ export function sumEquipment(data, equips, combos = [], weaponType = null, jobIn
 		equipAtk: 0, watk: 0, latk: 0, ematk: 0, aspdRate: 0, aspdAdd: 0,
 		atkRate: 0, critAtkRate: 0, longAtkRate: 0,
 		addrace: new Array(RC_MAX).fill(0), addele: new Array(10).fill(0), addsize: [0, 0, 0],
-		ignoreDef: new Array(RC_MAX).fill(0), weaponEle: 0, arrowAtk: 0, arrowCri: 0, doubleRate: 0, doubleAddRate: 0,
+		ignoreDef: new Array(RC_MAX).fill(0), matkRate: 0, weaponEle: 0, arrowAtk: 0, arrowCri: 0, doubleRate: 0, doubleAddRate: 0,
 		varCastRate: 0, fixCastRate: 0, addVarCast: 0, addFixCast: 0, delayRate: 0,
 		skillCast: {}, skillFixCastRate: {}, skillVarCast: {}, skillFixCast: {}, skillAtk: {},
 		refineDef: 0, notCounted: [], other: []
@@ -302,6 +302,7 @@ function apply(t, b, src, isCard, shield = '') {
 		case 'SP_BASE_ATK': t.equipAtk += val; return;
 		case 'SP_ATK1': t.watk += val; return;
 		case 'SP_EMATK': t.ematk += val; return;
+		case 'SP_MATK_RATE': t.matkRate += val; return;
 		case 'SP_ASPD_RATE': t.aspdRate += val; return;
 		case 'SP_ASPD': t.aspdAdd -= 10 * val; return;
 		case 'SP_ATK_RATE': t.atkRate += val; return;

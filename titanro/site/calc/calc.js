@@ -86,7 +86,7 @@ export const NO_EQUIPMENT = {
 	param: [0, 0, 0, 0, 0, 0], paramEquip: [0, 0, 0, 0, 0, 0], maxhp: 0, maxsp: 0, hprate: 100, sprate: 100,
 	def: 0, mdef: 0, hit: 0, flee: 0, flee2: 0, cri: 0, equipAtk: 0, watk: 0, latk: 0, ematk: 0, aspdRate: 0, aspdAdd: 0,
 	atkRate: 0, critAtkRate: 0, longAtkRate: 0, addrace: new Array(14).fill(0), addele: new Array(10).fill(0),
-	addsize: [0, 0, 0], ignoreDef: new Array(14).fill(0), weaponEle: 0, arrowAtk: 0, arrowCri: 0, doubleRate: 0, doubleAddRate: 0,
+	addsize: [0, 0, 0], ignoreDef: new Array(14).fill(0), matkRate: 0, weaponEle: 0, arrowAtk: 0, arrowCri: 0, doubleRate: 0, doubleAddRate: 0,
 	varCastRate: 0, fixCastRate: 0, addVarCast: 0, addFixCast: 0, delayRate: 0, skillCast: {}, skillFixCastRate: {},
 	skillVarCast: {}, skillFixCast: {}, skillAtk: {}, notCounted: [], other: []
 };

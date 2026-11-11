@@ -6,7 +6,7 @@
  * Counted: status ATK, the weapon (ATK, level, refine and over-refine), size and element modifiers (neutral attacks),
  * the monster's DEF, the critical bonus, hit and critical chances, equipment, cards and ammunition (items.js).
  */
-import { resolve } from './calc.js';
+import { resolve, statusWindow } from './calc.js';
 import { chorusBonus, WM_DANCE_WITH_WUG } from './buffs.js';
 
 const W_FIST = 0;
@@ -116,7 +116,7 @@ function applyDef(damage, mob) {
 }
 
 /** The weapon part: size, ATK %, equipment ATK, element, the card and equipment % against the monster. */
-function weaponDamage(data, c, mob, roll, overRoll, ele, nk = 0, equipAtk = true) {
+function weaponDamage(data, c, mob, roll, overRoll, ele, nk = 0, equipAtk = true, extraAtk = 0, neutralAgain = false) {
 	const type = c.weapon ? c.weapon.type : 0;
 	let d = weaponAtk(data, c.total, c.weapon, roll, overRoll);
 	// Weapon Perfection: no size penalty
@@ -124,7 +124,10 @@ function weaponDamage(data, c, mob, roll, overRoll, ele, nk = 0, equipAtk = true
 	if (LONG_WEAPONS.has(type)) d += c.eq.arrowAtk || 0; // the ammunition's ATK, after the size fix
 	if (c.eq.atkRate) d += Math.trunc((d * c.eq.atkRate) / 100);
 	if (equipAtk) d += c.eq.equipAtk;
+	d += extraAtk; // a skill's own ATK, with the equipment's (Envenom)
 	if (!(nk & NK_NO_ELEFIX)) d = eleFix(data, d, ele, mob);
+	// Cart Revolution and Arm Cannon: the element table once more, neutral (Hercules battle_calc_elefix)
+	if (neutralAgain && !(nk & NK_NO_ELEFIX)) d = eleFix(data, d, ELE_NEUTRAL, mob);
 	return cardFix(c.eq, d, mob, nk);
 }
 
@@ -230,8 +233,8 @@ const NK_IGNORE_DEF = 0x20;
  * spheres, cart weight, HP or SP, a second formula): the calculator leaves them out until it has their formula.
  */
 const SPECIAL_SKILLS = new Set([
-	52, 56, 62, 153, 212, 230, 251, 253, 266, 271, 365, 379, 382, 397, 480, 490, 501, 503, 507, 514, 521, 523, 524, 544,
-	2008, 2261, 2477, 2553, 2559, 2570, 2582, 2593, 3007, 3010, 5004, 5032,
+	251, 365, 382, 397, 480, 503, 507, 514, 544,
+	2477, 2553, 2559, 2570, 2582, 2593, 3010, 5032,
 	// counters, reflects, traps and area effects; spirit spheres, cart weight and rage counters the probe's characters
 	// don't have
 	61, 121, 139, 252, 267, 372, 390, 428, 429, 430, 485, 2314, 2476
@@ -256,19 +259,181 @@ function longSkill(sk, lv, skillId) {
 	return range != null && Math.abs(range) >= 5;
 }
 
+const TF_POISON = 52;
+const AM_ACIDTERROR = 230;
+const MO_EXTREMITYFIST = 271;
+const ASC_BREAKER = 379;
+const CR_ACIDDEMONSTRATION = 490;
+const GS_FLING = 501;
+const GS_GROUNDDRIFT = 521;
+const NJ_SYURIKEN = 523;
+const NJ_KUNAI = 524;
+const NJ_TOBIDOUGU = 522;
+const KO_HAPPOKUNAI = 3007;
+const MO_INVESTIGATE = 266;
+const RK_DRAGONTRAINING = 2007;
+const RK_DRAGONBREATH = 2008;
+const RK_DRAGONBREATH_WATER = 5004;
+
+/**
+ * A MATK roll ('min' | 'max') as the server's status->get_matk: status MATK + the equipment's MATK, + the weapon's
+ * MATK (with its refine, but a bow's) from a DEX-raised minimum to the weapon level's maximum, less a cost INT lowers
+ * (auriga RR), x the equipment's MATK %, + the over-refine roll.
+ */
+function matkRoll(data, c, roll) {
+	const t = c.total;
+	const base = t.int + Math.floor(Math.floor(t.int / 7) ** 2 / 3) + Math.floor(t.dex / 5) + Math.floor(t.luk / 3) + (c.eq.ematk || 0);
+	const w = c.weapon;
+	if (!w) return base;
+	const wlv = Math.min(w.wlv, data.refine.length);
+	const refine = w.refine || 0;
+	const wmatk = (w.matk || 0) + (refine && w.type !== W_BOW && wlv >= 1 ? data.refine[wlv - 1][refine] : 0);
+	let atk = base;
+	if (wmatk > 0) {
+		const cost = wlv > 0 ? Math.max(0, Math.trunc((wmatk * 2) / 3) - Math.trunc((Math.trunc(t.int / 5) ** 2) / wlv)) : 0;
+		const max = Math.trunc((wmatk * (100 + 10 * wlv)) / 100) - cost;
+		const min = Math.min(Math.trunc((wmatk * 5 + t.dex * (12 + 2 * wlv)) / 15) - cost, max);
+		atk += roll === 'max' ? max : min;
+	}
+	if (c.eq.matkRate) atk = Math.trunc((atk * Math.max(100 + c.eq.matkRate, 0)) / 100); // the equipment's MATK %
+	if (refine && wlv >= 1 && w.type !== W_BOW && !GUNS.has(w.type)) {
+		const over = data.overrefine[wlv - 1][refine];
+		if (over > 0) atk += roll === 'max' ? over : 1;
+	}
+	return atk;
+}
+
+/** Status ATK + the weapon's (size, equipment ATK, neutral; the skill's card bonuses): the acid skills' ATK. */
+function plainAtk(data, c, mob, roll, nk) {
+	const type = c.weapon ? c.weapon.type : 0;
+	return eleFix(data, statusAtk(c.total, type), ELE_NEUTRAL, mob) + weaponDamage(data, c, mob, roll, roll, ELE_NEUTRAL, nk);
+}
+
+/**
+ * Weapon skills the server computes with a formula of their own (auriga_stats' battle_calc_weapon_attack_acid_post,
+ * as jRO): the damage of the attack, or undefined for the usual steps.
+ */
+function ownFormula(data, c, mob, skillId, lv, roll, nk) {
+	const totalDef = mob.def + mob.def2;
+	const totalMdef = mob.mdef + mob.mdef2;
+	switch (skillId) {
+	case AM_ACIDTERROR: { // (ATK + MATK) x (100 + 100 x level) % - DEF - MDEF, halved on a boss, neutral
+		let d = Math.trunc(((plainAtk(data, c, mob, roll, nk) + matkRoll(data, c, roll)) * (100 + 100 * lv)) / 100) - totalDef - totalMdef;
+		d = Math.max(d, 0);
+		if (mob.boss) d = Math.trunc(d / 2);
+		return eleFix(data, d, ELE_NEUTRAL, mob);
+	}
+	case CR_ACIDDEMONSTRATION: { // (ATK + MATK) x VIT x 7 / 10, - half DEF and half MDEF, / 10 x level, neutral
+		let d = Math.trunc(((plainAtk(data, c, mob, roll, nk) + matkRoll(data, c, roll)) * mob.vit * 7) / 10);
+		d = Math.trunc((d - (Math.trunc(totalDef / 2) + Math.trunc(totalMdef / 2))) / 10) * lv;
+		return eleFix(data, Math.max(d, 0), ELE_NEUTRAL, mob);
+	}
+	case ASC_BREAKER: { // ATK x (300 + 50 x level) % + MATK x that %, - DEF - MDEF
+		const ratio = 300 + 50 * lv;
+		const d = Math.trunc((plainAtk(data, c, mob, roll, nk) * ratio) / 100) + Math.trunc((matkRoll(data, c, roll) * ratio) / 100);
+		return Math.max(d - totalDef - totalMdef, 0);
+	}
+	case GS_GROUNDDRIFT: // ATK (status + weapon, the attack's element) x (200 + 20 x level) %, DEF
+	case NJ_SYURIKEN: // (ATK + the shuriken's) x (100 + 5 x level) %, DEF (the calculator has no thrown ammunition: neutral)
+	case NJ_KUNAI: { // (ATK + the kunai's + 3 x Dagger Throwing Practice) x 100 x level %, as Shuriken Throw
+		const type = c.weapon ? c.weapon.type : 0;
+		const batk = statusAtk(c.total, type);
+		let atk = eleFix(data, batk, ELE_NEUTRAL, mob) + weaponDamage(data, c, mob, roll, roll, attackEle(c), 0);
+		let ratio = 200 + 20 * lv;
+		if (skillId !== GS_GROUNDDRIFT) {
+			ratio = skillId === NJ_SYURIKEN ? 100 + 5 * lv : 100 * lv;
+			const weapon = Math.max(atk - batk, 0);
+			atk = batk + eleFix(data, weapon, ELE_NEUTRAL, mob) + (c.eq.arrowAtk || 0);
+			if (skillId === NJ_KUNAI) atk += 3 * ((c.passives && c.passives[NJ_TOBIDOUGU]) || 0);
+		}
+		return Math.max(applyDef(Math.trunc((atk * ratio) / 100), defOf(c, mob)), 0);
+	}
+	case KO_HAPPOKUNAI: { // (ATK + the kunai's) x (300 + 60 x level) % - DEF, neutral without a kunai
+		const d = Math.trunc(((plainAtk(data, c, mob, roll, nk) + (c.eq.arrowAtk || 0)) * (300 + 60 * lv)) / 100) - totalDef;
+		return eleFix(data, Math.max(d, 0), ELE_NEUTRAL, mob);
+	}
+	case RK_DRAGONBREATH:
+	case RK_DRAGONBREATH_WATER: {
+		// (HP / 50 + MaxSP / 4) x level x (95 + 5 x Dragon Training) % x BaseLv / 100 - DEF - soft DEF, with the
+		// equipment's % and the element: jRO, as the server scales Hercules' result (BaseLv / 150) to it
+		const ele = data.weapon_skills[skillId].lv[lv - 1][1];
+		const training = 95 + 5 * ((c.passives && c.passives[RK_DRAGONTRAINING]) || 0);
+		const base = (Math.trunc(c.maxHp / 50) + Math.trunc(c.maxSp / 4)) * lv;
+		const hercules = Math.trunc((Math.trunc((base * c.blv) / 150) * training) / 100);
+		const jro = Math.trunc((Math.trunc((base * training) / 100) * c.blv) / 100);
+		if (hercules <= 0) return 0;
+		let damage = eleFix(data, cardFix(c.eq, hercules, mob, nk), ele, mob);
+		if (c.eq.longAtkRate) damage += Math.trunc((damage * c.eq.longAtkRate) / 100); // a long-range attack
+		const reduced = jro - totalDef;
+		const d = reduced <= 0 || damage <= 0 ? 0 : Math.trunc((damage * reduced) / hercules);
+		return d < 1 && data.attr_fix[Math.max(mob.element_lv, 1) - 1][ele][mob.element] > 0 ? 1 : d;
+	}
+	case GS_FLING: // the job level
+		return c.jlv;
+	case MO_EXTREMITYFIST: { // ATK x (800 + 10 x SP) % + 250 + 150 x level - DEF, neutral (all the SP: the maximum)
+		const d = Math.trunc((plainAtk(data, c, mob, roll, nk) * (800 + 10 * c.maxSp)) / 100) + 250 + 150 * lv - totalDef;
+		return eleFix(data, Math.max(d, 0), ELE_NEUTRAL, mob);
+	}
+	}
+	return undefined;
+}
+
+const MC_CARTREVOLUTION = 153;
+const NC_ARMSCANNON = 2261;
+const NEUTRAL_AGAIN = new Set([MC_CARTREVOLUTION, NC_ARMSCANNON]);
+
+const KN_PIERCE = 56;
+const KN_BOWLINGBASH = 62;
+const RG_BACKSTAP = 212;
+const CR_HOLYCROSS = 253;
+const W_2HSPEAR = 5;
+
+/**
+ * A weapon skill's ratio % and hits (negative: shown as that many, dealt once) where the server's differ from the
+ * skill db row: by the weapon type or the target's size.
+ */
+function skillRow(c, mob, skillId, lv, row) {
+	let [ratio, ele, num] = row;
+	const type = c.weapon ? c.weapon.type : 0;
+	switch (skillId) {
+	case KN_PIERCE: // a hit a size step: small 1, medium 2, large 3
+		num = mob.size + 1;
+		break;
+	case KN_BOWLINGBASH: // two hits, each dealt in full (jRO)
+		num = 2;
+		break;
+	case RG_BACKSTAP: // half the ratio with a bow
+		if (type === W_BOW) ratio = Math.trunc((300 + 40 * lv) / 2);
+		break;
+	case CR_HOLYCROSS: // twice the level part with a two-handed spear
+		if (type === W_2HSPEAR) ratio = 100 + 70 * lv;
+		break;
+	case NC_ARMSCANNON: // jRO: 300 + 400 x level on small targets, 350 on medium, 300 on large
+		ratio = 300 + [400, 350, 300][mob.size] * lv;
+		break;
+	}
+	return [ratio, ele, num];
+}
+
 function skillHitDamage(data, c, mob, skillId, lv, roll, passives) {
 	const sk = data.weapon_skills[skillId];
-	const [ratio, skillEle, num] = sk.lv[lv - 1];
+	const [ratio, skillEle, num] = skillRow(c, mob, skillId, lv, sk.lv[lv - 1]);
 	const type = c.weapon ? c.weapon.type : 0;
+	if (mob.plant) return num > 1 ? num : 1;
+	const own = ownFormula(data, c, mob, skillId, lv, roll, sk.nk);
+	if (own !== undefined) return own;
 	const ele = skillEle >= 0 ? skillEle : attackEle(c); // -1: the weapon's (or an endowment's) element
 	if (mob.plant) return num > 1 ? num : 1;
-	const batk = sk.nk & NK_NO_ELEFIX ? statusAtk(c.total, type) : eleFix(data, statusAtk(c.total, type), ELE_NEUTRAL, mob);
+	let batk = sk.nk & NK_NO_ELEFIX ? statusAtk(c.total, type) : eleFix(data, statusAtk(c.total, type), ELE_NEUTRAL, mob);
+	const neutralAgain = NEUTRAL_AGAIN.has(skillId);
+	if (neutralAgain && !(sk.nk & NK_NO_ELEFIX)) batk = eleFix(data, batk, ELE_NEUTRAL, mob);
 	const warg = skillId === RA_WUGDASH || skillId === RA_WUGSTRIKE || skillId === RA_WUGBITE;
 	// the warg's ATK leaves the equipment's ATK + out (jRO; arrow ATK counts)
-	let damage = batk + weaponDamage(data, c, mob, roll, roll, ele, sk.nk, !warg);
+	let damage = batk + weaponDamage(data, c, mob, roll, roll, ele, sk.nk, !warg, skillId === TF_POISON ? 15 * lv : 0, neutralAgain);
 	// Tooth of Wug: 10 ATK a level on the Warg skills, before the ratio (jRO; auriga_stats cuts Hercules' 30 to that)
 	if (warg) damage += 10 * ((passives && passives[RA_TOOTHOFWUG]) || 0);
 	damage += buffAtk(c);
+	if (skillId === MO_INVESTIGATE) damage += Math.trunc(mob.def / 2); // half the target's hard DEF, before the ratio
 	// Dance with Wug on Warg Strike (and Warg Dash): 10 x level x (2 + the chorus bonus) % more ratio
 	const dance = warg ? buffLv(c, WM_DANCE_WITH_WUG) : 0;
 	const danceStep = dance ? dance * (2 + chorusBonus(c.performers)) : 0;
@@ -279,7 +444,11 @@ function skillHitDamage(data, c, mob, skillId, lv, roll, passives) {
 	const skillAtk = (c.eq.skillAtk && c.eq.skillAtk[skillId]) || 0; // the equipment's damage % for this skill
 	if (skillAtk) damage += Math.trunc((damage * skillAtk) / 100);
 	if (c.eq.longAtkRate && longSkill(sk, lv, skillId)) damage += Math.trunc((damage * c.eq.longAtkRate) / 100);
-	if (!(sk.nk & NK_IGNORE_DEF)) damage = applyDef(damage, defOf(c, mob));
+	if (skillId === MC_CARTREVOLUTION) {
+		// jRO: ATK x 150 % + ATK x the cart's weight / its capacity, DEF and soft DEF off flat
+		const cart = Math.trunc((damage * Math.min(Math.max(c.cartWeight || 0, 0), 100)) / 100);
+		damage = Math.max(Math.trunc((damage * 150) / 100) + cart - (mob.def + mob.def2), 0);
+	} else if (!(sk.nk & NK_IGNORE_DEF)) damage = applyDef(damage, defOf(c, mob));
 	damage += 20 * buffLv(c, LK_AURABLADE);
 	const hurts = data.attr_fix[Math.max(mob.element_lv, 1) - 1][ele][mob.element] > 0;
 	if (damage < 0) damage = 0;
@@ -352,16 +521,29 @@ export function skillTimes(data, input, skillId, lv, amotion) {
 	return { cast: Math.trunc(time) + fixed, delay: Math.max(d, amotion), cooldown };
 }
 
+/** The hit chance (0-1) from hit - flee: Pierce's 5 x level % more (the server's hit check). */
+function skillHitRate(rate, skillId, lv) {
+	if (skillId === KN_PIERCE) rate += Math.trunc((rate * 5 * lv) / 100);
+	return Math.min(Math.max(rate, MIN_HITRATE), MAX_HITRATE) / 100;
+}
+
 /** A weapon skill (`skillId` at `lv`) of `input` on `mob`: {min, max} damage, hits, hit chance. */
 export function skillAttack(data, input, mob, skillId, lv) {
 	const c = { ...resolve(data, input), buffs: input.buffs, performers: input.performers };
 	const sk = data.weapon_skills[skillId];
+	if (skillId === MO_EXTREMITYFIST || skillId === RK_DRAGONBREATH || skillId === RK_DRAGONBREATH_WATER) {
+		const w = statusWindow(data, input);
+		c.maxHp = w.max_hp; // the character at full HP and SP
+		c.maxSp = w.max_sp;
+	}
+	c.passives = input.passives;
+	c.cartWeight = input.cartWeight; // % of the cart's capacity
 	if (!sk || lv < 1 || lv > sk.lv.length || SPECIAL_SKILLS.has(skillId)) return null;
 	const hit = c.blv + c.total.dex + Math.floor(c.total.luk / 3) + 175 + c.eq.hit;
 	return {
 		min: skillHitDamage(data, c, mob, skillId, lv, 'min', input.passives),
 		max: skillHitDamage(data, c, mob, skillId, lv, 'max', input.passives),
-		hits: Math.abs(sk.lv[lv - 1][2]) || 1,
-		hitRate: sk.nk & 0x40 ? 1 : Math.min(Math.max(hit - mob.flee, MIN_HITRATE), MAX_HITRATE) / 100
+		hits: Math.abs(skillRow(c, mob, skillId, lv, sk.lv[lv - 1])[2]) || 1,
+		hitRate: sk.nk & 0x40 ? 1 : skillHitRate(hit - mob.flee, skillId, lv)
 	};
 }

@@ -66,6 +66,8 @@ export function attackDelay(data, job, input, total, eq = NO_EQUIPMENT) {
 		: Math.sqrt(agi * (10 + 10 / 111) + Math.floor(dex * 9) / 49);
 	let amotion = 2000 - Math.trunc(base + (s * penalty) / 100) * 10;
 	if (input.shield && job.shield) amotion += job.shield;
+	// buffs: the strongest skill haste % (Two-Hand Quicken, Adrenaline Rush, ...), before the equipment's rates
+	if (eq.aspdHaste) amotion = (amotion * (100 - eq.aspdHaste)) / 100;
 	// equipment: ASPD + % (bAspdRate) and ASPD + n (bAspd, -10 ms each)
 	if (eq.aspdRate) amotion = (amotion * (100 - eq.aspdRate)) / 100;
 	amotion += eq.aspdAdd;
@@ -101,16 +103,18 @@ export function resolve(data, input) {
 	const eq = input.eq || NO_EQUIPMENT;
 	const bonus = jobBonus(job, jlv);
 	const total = {};
+	const own = {}; // the stats without the buffs' (status effects')
 	STATS.forEach((s, i) => {
-		total[s] = input.stats[s] + bonus[i] + eq.param[i];
+		own[s] = input.stats[s] + bonus[i] + eq.param[i];
+		total[s] = own[s] + (eq.buffParam ? eq.buffParam[i] : 0);
 	});
 	let weapon = input.weapon || null;
 	if (weapon && eq.watk) weapon = { ...weapon, atk: weapon.atk + eq.watk };
-	return { job, blv, jlv, total, weapon, shield: !!input.shield, eq };
+	return { job, blv, jlv, total, own, weapon, shield: !!input.shield, eq };
 }
 
 export function statusWindow(data, input) {
-	const { job, blv, total, weapon, shield, eq } = resolve(data, input);
+	const { job, blv, total, own, weapon, shield, eq } = resolve(data, input);
 	const type = weapon ? weapon.type : 0;
 	const dexWeapon = DEX_WEAPONS.has(type);
 
@@ -129,12 +133,16 @@ export function statusWindow(data, input) {
 
 	const matk2 = total.int + Math.floor(Math.floor(total.int / 7) ** 2 / 3) + Math.floor(total.dex / 5) + Math.floor(total.luk / 3);
 
-	const def1 = Math.floor((blv + total.vit) / 2 + total.agi / 5);
-	const mdef1 = Math.floor(total.int + blv / 4 + (total.dex + total.vit) / 5);
+	// soft DEF and MDEF, and Critical below: a buff's stats add on their own (Hercules status_calc_bl_main)
+	let def1 = Math.floor((blv + own.vit) / 2 + own.agi / 5);
+	def1 += Math.trunc((5 * (total.vit - own.vit) + 2 * (total.agi - own.agi)) / 10);
+	if (eq.vitDefRate) def1 += Math.trunc((Math.trunc(total.vit / 2) * eq.vitDefRate) / 100); // Angelus
+	let mdef1 = Math.floor(own.int + blv / 4 + (own.dex + own.vit) / 5) + total.int - own.int;
+	mdef1 += Math.trunc((total.dex - own.dex + total.vit - own.vit) / 5);
 	const hit = blv + total.dex + Math.floor(total.luk / 3) + 175 + eq.hit;
 	const flee1 = blv + total.agi + Math.floor(total.luk / 5) + 100 + eq.flee;
 	const flee2 = Math.floor(((SUMMONER_JOBS.has(job.id) ? Math.floor((total.luk * 120) / 100) + 10 : total.luk + 10) * 1 + eq.flee2) / 10);
-	const cri = 10 + Math.floor(total.luk / 3) * 10 + eq.cri;
+	const cri = 10 + Math.floor(own.luk / 3) * 10 + eq.cri - Math.trunc((own.luk * 10) / 3) + Math.trunc((total.luk * 10) / 3);
 
 	const rate = job.upper ? 125 : job.baby ? 70 : 100;
 	const hpBase = data.tables[job.hp][blv - 1];

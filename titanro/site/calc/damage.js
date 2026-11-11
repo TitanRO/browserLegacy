@@ -12,8 +12,32 @@ const W_FIST = 0;
 const W_DAGGER = 1;
 const W_BOW = 11;
 const TF_DOUBLE = 48;
-/** Passive skills that change normal attacks (the page's passive skill panel lists them too). */
-export const ATTACK_PASSIVES = new Set([TF_DOUBLE]);
+const RA_WUGDASH = 2242;
+const RA_WUGSTRIKE = 2243;
+const RA_WUGBITE = 2244;
+const RA_TOOTHOFWUG = 2245;
+/** Passive skills that change attacks (the page's passive skill panel lists them too). */
+export const ATTACK_PASSIVES = new Set([TF_DOUBLE, RA_TOOTHOFWUG]);
+const PR_IMPOSITIO = 66;
+const BS_WEAPONPERFECT = 112;
+const BS_OVERTHRUST = 113;
+const LK_AURABLADE = 355;
+const SN_SIGHT = 380;
+/** Buffs that change attacks (input.buffs {skill id: level}); buffs.js has what they do in the status window. */
+export const ATTACK_BUFFS = new Set([PR_IMPOSITIO, BS_WEAPONPERFECT, BS_OVERTHRUST, LK_AURABLADE, SN_SIGHT]);
+
+function buffLv(c, id) {
+	return (c.buffs && c.buffs[id]) || 0;
+}
+
+/** The buffs' ATK before the ratio (Impositio: 5 a level, as a mastery) and their ratio % (Over Thrust 5 as a
+ * party member gets it, True Sight 2 a level). */
+function buffAtk(c) {
+	return 5 * buffLv(c, PR_IMPOSITIO);
+}
+function buffRatio(c) {
+	return (buffLv(c, BS_OVERTHRUST) ? 5 : 0) + 2 * buffLv(c, SN_SIGHT);
+}
 const W_KATAR = 16;
 const DEX_WEAPONS = new Set([11, 13, 14, 17, 18, 19, 20, 21]);
 const GUNS = new Set([17, 18, 19, 20, 21]);
@@ -86,7 +110,8 @@ function applyDef(damage, mob) {
 function weaponDamage(data, c, mob, roll, overRoll, ele, nk = 0) {
 	const type = c.weapon ? c.weapon.type : 0;
 	let d = weaponAtk(data, c.total, c.weapon, roll, overRoll);
-	d = Math.trunc((d * data.size_fix[mob.size][type]) / 100);
+	// Weapon Perfection: no size penalty
+	if (!buffLv(c, BS_WEAPONPERFECT)) d = Math.trunc((d * data.size_fix[mob.size][type]) / 100);
 	if (LONG_WEAPONS.has(type)) d += c.eq.arrowAtk || 0; // the ammunition's ATK, after the size fix
 	if (c.eq.atkRate) d += Math.trunc((d * c.eq.atkRate) / 100);
 	d += c.eq.equipAtk;
@@ -122,14 +147,16 @@ function hitDamage(data, c, mob, roll, critical, overRoll = roll) {
 	const weaponEle = c.eq.weaponEle || ELE_NEUTRAL;
 	const batk = eleFix(data, statusAtk(c.total, type), ELE_NEUTRAL, mob);
 	if (mob.plant) return 1; // plants take 1 damage a hit
-	let damage = batk + weaponDamage(data, c, mob, critical ? 'max' : roll, overRoll, weaponEle);
+	let damage = batk + weaponDamage(data, c, mob, critical ? 'max' : roll, overRoll, weaponEle) + buffAtk(c);
+	const ratio = 100 + buffRatio(c);
+	if (ratio !== 100) damage = Math.trunc((damage * ratio) / 100);
 	if (critical && c.eq.critAtkRate) damage += Math.trunc((damage * c.eq.critAtkRate) / 100);
 	if (LONG_WEAPONS.has(type) && c.eq.longAtkRate) damage += Math.trunc((damage * c.eq.longAtkRate) / 100);
 	damage = applyDef(damage, defOf(c, mob));
 	const hurts = data.attr_fix[Math.max(mob.element_lv, 1) - 1][weaponEle][mob.element] > 0;
 	if (damage < 1) damage = hurts ? 1 : 0; // a hit does at least 1, unless the element can't hurt the monster
 	if (critical) damage += Math.trunc((damage * 40) / 100);
-	return damage;
+	return damage + (hurts ? 20 * buffLv(c, LK_AURABLADE) : 0); // Aura Blade: 20 a level, after everything
 }
 
 /**
@@ -154,7 +181,7 @@ function doubleAttack(c, type, passives, hit, mob) {
  * Double Attack (`double`: {rate, hitRate} when it can trigger; it hits twice, critical too), and the total stats.
  */
 export function normalAttack(data, input, mob) {
-	const c = resolve(data, input);
+	const c = { ...resolve(data, input), buffs: input.buffs };
 	const { total, eq } = c;
 	const type = c.weapon ? c.weapon.type : 0;
 	const hit = c.blv + total.dex + Math.floor(total.luk / 3) + 175 + eq.hit;
@@ -198,9 +225,7 @@ const SPECIAL_SKILLS = new Set([
 	2008, 2261, 2477, 2553, 2559, 2570, 2582, 2593, 3007, 3010, 5004, 5032,
 	// counters, reflects, traps and area effects; spirit spheres, cart weight and rage counters the probe's characters
 	// don't have
-	61, 121, 139, 252, 267, 372, 390, 428, 429, 430, 485, 2314, 2476,
-	// Warg Strike, Warg Bite: the warg's element against non-neutral monsters
-	2243, 2244
+	61, 121, 139, 252, 267, 372, 390, 428, 429, 430, 485, 2314, 2476
 ]);
 
 /** The weapon skills the calculator knows: data.weapon_skills (their ratio doesn't depend on the caster), less the
@@ -222,7 +247,7 @@ function longSkill(sk, lv, skillId) {
 	return range != null && Math.abs(range) >= 5;
 }
 
-function skillHitDamage(data, c, mob, skillId, lv, roll) {
+function skillHitDamage(data, c, mob, skillId, lv, roll, passives) {
 	const sk = data.weapon_skills[skillId];
 	const [ratio, skillEle, num] = sk.lv[lv - 1];
 	const type = c.weapon ? c.weapon.type : 0;
@@ -230,14 +255,21 @@ function skillHitDamage(data, c, mob, skillId, lv, roll) {
 	if (mob.plant) return num > 1 ? num : 1;
 	const batk = sk.nk & NK_NO_ELEFIX ? statusAtk(c.total, type) : eleFix(data, statusAtk(c.total, type), ELE_NEUTRAL, mob);
 	let damage = batk + weaponDamage(data, c, mob, roll, roll, ele, sk.nk);
-	damage = Math.trunc((damage * ratio) / 100);
+	// Tooth of Wug: 10 ATK a level on the Warg skills, before the ratio (jRO; auriga_stats cuts Hercules' 30 to that)
+	if (skillId === RA_WUGDASH || skillId === RA_WUGSTRIKE || skillId === RA_WUGBITE) damage += 10 * ((passives && passives[RA_TOOTHOFWUG]) || 0);
+	damage += buffAtk(c);
+	damage = Math.trunc((damage * (ratio + buffRatio(c))) / 100);
 	const skillAtk = (c.eq.skillAtk && c.eq.skillAtk[skillId]) || 0; // the equipment's damage % for this skill
 	if (skillAtk) damage += Math.trunc((damage * skillAtk) / 100);
 	if (c.eq.longAtkRate && longSkill(sk, lv, skillId)) damage += Math.trunc((damage * c.eq.longAtkRate) / 100);
 	if (!(sk.nk & NK_IGNORE_DEF)) damage = applyDef(damage, defOf(c, mob));
+	damage += 20 * buffLv(c, LK_AURABLADE);
 	const hurts = data.attr_fix[Math.max(mob.element_lv, 1) - 1][ele][mob.element] > 0;
 	if (damage < 0) damage = 0;
 	if (num > 1) damage *= num;
+	// a skill that is Neutral in the skill db (not the weapon's element) takes the element table once more (Hercules
+	// renewal's forced Neutral skills: Warg Strike, Warg Bite, ...)
+	if (skillEle === ELE_NEUTRAL) damage = eleFix(data, damage, ELE_NEUTRAL, mob);
 	if (damage < 1) damage = hurts ? 1 : 0; // at least 1 for the whole attack
 	return damage;
 }
@@ -303,13 +335,13 @@ export function skillTimes(data, input, skillId, lv, amotion) {
 
 /** A weapon skill (`skillId` at `lv`) of `input` on `mob`: {min, max} damage, hits, hit chance. */
 export function skillAttack(data, input, mob, skillId, lv) {
-	const c = resolve(data, input);
+	const c = { ...resolve(data, input), buffs: input.buffs };
 	const sk = data.weapon_skills[skillId];
 	if (!sk || lv < 1 || lv > sk.lv.length || SPECIAL_SKILLS.has(skillId)) return null;
 	const hit = c.blv + c.total.dex + Math.floor(c.total.luk / 3) + 175 + c.eq.hit;
 	return {
-		min: skillHitDamage(data, c, mob, skillId, lv, 'min'),
-		max: skillHitDamage(data, c, mob, skillId, lv, 'max'),
+		min: skillHitDamage(data, c, mob, skillId, lv, 'min', input.passives),
+		max: skillHitDamage(data, c, mob, skillId, lv, 'max', input.passives),
 		hits: Math.abs(sk.lv[lv - 1][2]) || 1,
 		hitRate: sk.nk & 0x40 ? 1 : Math.min(Math.max(hit - mob.flee, MIN_HITRATE), MAX_HITRATE) / 100
 	};

@@ -51,8 +51,8 @@
 		</div>
 	</section>
 	<div class="duo">
-		<details class="box" open><summary class="bar">Passive skills <span class="barnote">self buffs and masteries not counted yet</span></summary><div class="boxbody"><div id="passives" class="passives"></div><p class="muted" id="passivenote">Passive skills that change the status window (Owl's Eye, Improve Dodge, Faith, ...), as the server gives them, and Double Attack (daggers; with a katar it raises the second hit). Weapon masteries and self buffs don't change these numbers yet.</p></div></details>
-		<details class="box"><summary class="bar">Supportive / party skills <span class="barnote">not counted yet</span></summary><div class="boxbody muted">Blessing, Increase AGI, songs and other party buffs don't change these numbers yet.</div></details>
+		<details class="box" open><summary class="bar">Passive skills <span class="barnote">weapon masteries not counted yet</span></summary><div class="boxbody"><div id="passives" class="passives"></div><p class="muted" id="passivenote">Passive skills that change the status window (Owl's Eye, Improve Dodge, Faith, ...), as the server gives them, Double Attack (daggers; with a katar it raises the second hit) and Tooth of Warg (the Warg skills). Weapon masteries don't change these numbers yet.</p></div></details>
+		<details class="box" open><summary class="bar">Supportive / party skills <span class="barnote">songs and dances not counted yet</span></summary><div class="boxbody"><div id="buffs" class="passives"></div><p class="muted">Buffs on the character, as the server gives them: stats, DEF, HIT, FLEE, Critical, ASPD (the strongest haste counts), and the ATK buffs in attacks. Over Thrust as the Blacksmith's own; Two-Hand Quicken, Spear Quicken and Adrenaline Rush need their weapon. Buffs whose strength depends on the caster (Concentration, Clementia, Canto Candidus) and songs aren't counted yet.</p></div></details>
 	</div>
 	<section class="box">
 		<h2 class="bar">Monster combat simulation</h2>
@@ -73,10 +73,10 @@
 				</div>
 			</div>
 			<p class="muted">Counted: status ATK, the weapon (refine and over-refine), equipment, card and set bonuses (as
-				listed above), ammunition (its ATK, element and Critical), the passive skills listed above, Double Attack,
-				size and element, the monster's DEF and FLEE, critical hits; for skills, their damage ratio, element and hits,
-				cast time and after-cast delay (from DEX, INT and equipment). Not counted yet: other passive skills, buffs, and
-				skills with a formula of their own
+				listed above), ammunition (its ATK, element and Critical), the passive skills and buffs listed above, Double
+				Attack, size and element, the monster's DEF and FLEE, critical hits; for skills, their damage ratio, element and
+				hits, cast time and after-cast delay (from DEX, INT and equipment). Not counted yet: other passive skills,
+				songs, and skills with a formula of their own
 				(they aren't listed).</p>
 		</div>
 	</section>
@@ -86,9 +86,10 @@
 <script type="module">
 import { STATS, WEAPON_TYPES, statusWindow, statCost, totalStatPoints, spentStatPoints, jobBonus, aspd } from './calc/calc.js';
 import { jobGroups } from './calc/jobs.js';
-import { normalAttack, mobList, weaponSkills, skillAttack, skillTimes, ATTACK_PASSIVES } from './calc/damage.js';
+import { normalAttack, mobList, weaponSkills, skillAttack, skillTimes, ATTACK_PASSIVES, ATTACK_BUFFS } from './calc/damage.js';
 import { SLOTS as EQ_SLOTS, AMMO_OF, itemMap, canEquip, sumEquipment } from './calc/items.js';
 import { withPassives } from './calc/passives.js';
+import { BUFF_ORDER, withBuffs } from './calc/buffs.js';
 
 const $ = (id) => document.getElementById(id);
 const LABEL = { str: 'STR', agi: 'AGI', vit: 'VIT', int: 'INT', dex: 'DEX', luk: 'LUK' };
@@ -109,7 +110,11 @@ let items = null;
 const itemsReady = fetch('calc/items.json').then((r) => r.json()).then((j) => { itemsJson = j; items = itemMap(j); });
 const jobIndex = new Map(data.jobs.map((j, i) => [j.id, i]));
 const skillNames = new Map(data.skills.map((x) => [x.id, x.desc]));
-const state = { eq: {}, passives: {}, skill: 0, skilllv: 1, mob: 1002, job: 4008, blv: 99, jlv: 70, stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, wtype: 0, watk: 0, wmatk: 0, wlv: 1, refine: 0, shield: false, edef: 0, emdef: 0 };
+const skillMax = new Map(data.skills.map((x) => [x.id, x.max]));
+/** The buffs the page offers ([[id, max level], ...]): those the calculator counts at some level. */
+const BUFF_LIST = BUFF_ORDER.filter((id) => ATTACK_BUFFS.has(id) || (data.buffs && (data.buffs[id] || []).some(Boolean)))
+	.map((id) => [id, (data.buffs && data.buffs[id] ? data.buffs[id].length : skillMax.get(id)) || 1]);
+const state = { eq: {}, passives: {}, buffs: {}, skill: 0, skilllv: 1, mob: 1002, job: 4008, blv: 99, jlv: 70, stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, wtype: 0, watk: 0, wmatk: 0, wlv: 1, refine: 0, shield: false, edef: 0, emdef: 0 };
 const DEFAULTS = JSON.parse(JSON.stringify(state));
 
 function readHash() {
@@ -126,6 +131,12 @@ function readHash() {
 	for (const part of (p.get('ps') || '').split(',')) {
 		const [id, lv] = part.split(':').map(Number);
 		if (id > 0 && lv > 0) state.passives[id] = lv;
+	}
+	// bf=skill:level,...
+	state.buffs = {};
+	for (const part of (p.get('bf') || '').split(',')) {
+		const [id, lv] = part.split(':').map(Number);
+		if (BUFF_LIST.some(([b]) => b === id) && lv > 0) state.buffs[id] = lv;
 	}
 	// eq=slot:item:refine:card:card...;...
 	state.eq = {};
@@ -148,6 +159,8 @@ function writeHash() {
 	if (eqs.length) p.set('eq', eqs.join(';'));
 	const ps = Object.entries(state.passives).filter(([, lv]) => lv > 0).map(([id, lv]) => `${id}:${lv}`);
 	if (ps.length) p.set('ps', ps.join(','));
+	const bf = Object.entries(state.buffs).filter(([, lv]) => lv > 0).map(([id, lv]) => `${id}:${lv}`);
+	if (bf.length) p.set('bf', bf.join(','));
 	p.set('mob', state.mob);
 	if (state.skill) { p.set('skill', state.skill); p.set('skilllv', state.skilllv); }
 	history.replaceState(null, '', '#' + p.toString());
@@ -264,6 +277,7 @@ function render() {
 
 	renderSlots(job);
 	renderPassives(job);
+	renderBuffs();
 	const input = { job, blv: state.blv, jlv: state.jlv, stats: state.stats, shield: state.shield, equipDef: state.edef, equipMdef: state.emdef };
 	if (state.wtype) input.weapon = { type: state.wtype, atk: state.watk, matk: state.wmatk, wlv: state.wlv, refine: state.refine };
 	const equips = equipment();
@@ -280,6 +294,8 @@ function render() {
 		$('wfields').hidden = false;
 	}
 	if (equips && equips.some((e) => e.item.type === 5 && e.item.loc & 32)) input.shield = true;
+	input.buffs = activeBuffs();
+	input.eq = withBuffs(data, input.eq, input.buffs, input.weapon ? input.weapon.type : 0, skillNames);
 	const nc = [...new Set(input.eq.notCounted)];
 	const other = [...new Set(input.eq.other)];
 	if (nc.length) notes += `<b>Not counted yet:</b> ${nc.map(esc).join('; ')}. `;
@@ -322,6 +338,21 @@ function renderPassives(job) {
 			return `<label>${esc(skillNames.get(id) || String(id))} <select data-passive="${id}">${opts}</select></label>`;
 		}).join('')
 		: '<span class="muted">None for this job.</span>';
+}
+
+/** state.buffs limited to the offered buffs and their levels. */
+function activeBuffs() {
+	const out = {};
+	for (const [id, max] of BUFF_LIST) if (state.buffs[id]) out[id] = Math.min(state.buffs[id], max);
+	return out;
+}
+
+function renderBuffs() {
+	$('buffs').innerHTML = BUFF_LIST.map(([id, max]) => {
+		const lv = Math.min(state.buffs[id] || 0, max);
+		const opts = Array.from({ length: max + 1 }, (_, i) => `<option value="${i}"${i === lv ? ' selected' : ''}>${i ? 'Lv ' + i : '-'}</option>`).join('');
+		return `<label>${esc(skillNames.get(id) || String(id))} <select data-buff="${id}">${opts}</select></label>`;
+	}).join('');
 }
 
 const kv = (rows) => rows.map((r) => `<tr>${r.map((c, i) => (i % 2 ? `<td class="num">${c}</td>` : `<th>${c}</th>`)).join('')}</tr>`).join('');
@@ -442,6 +473,10 @@ $('slots').addEventListener('change', (e) => {
 $('passives').addEventListener('change', (e) => {
 	const id = +e.target.dataset.passive;
 	if (id) { state.passives[id] = +e.target.value; render(); }
+});
+$('buffs').addEventListener('change', (e) => {
+	const id = +e.target.dataset.buff;
+	if (id) { state.buffs[id] = +e.target.value; render(); }
 });
 $('skill').addEventListener('change', (e) => { state.skill = +e.target.value; state.skilllv = 99; render(); });
 $('skilllv').addEventListener('change', (e) => { state.skilllv = +e.target.value; render(); });

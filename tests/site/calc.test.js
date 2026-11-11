@@ -12,6 +12,7 @@ import { tiersOf, treeOf, setLevel } from '../../titanro/site/calc/skilltree.js'
 import { normalAttack, mobList, weaponSkills, skillAttack, skillTimes } from '../../titanro/site/calc/damage.js';
 import { itemMap, sumEquipment, AMMO_OF } from '../../titanro/site/calc/items.js';
 import { withPassives } from '../../titanro/site/calc/passives.js';
+import { withBuffs } from '../../titanro/site/calc/buffs.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const data = JSON.parse(fs.readFileSync(path.join(root, 'titanro/site/calc/data.json'), 'utf8'));
@@ -99,6 +100,14 @@ describe('skill tree simulator', () => {
 	});
 });
 
+/** A case's input with its passive skills and buffs added to the equipment totals, as the page does. */
+function prepared(input) {
+	if (!input.passives && !input.buffs) return input;
+	let eq = withPassives(data, input.eq, input.passives, input.job);
+	if (input.buffs) eq = withBuffs(data, eq, input.buffs, input.weapon ? input.weapon.type : 0);
+	return { ...input, eq };
+}
+
 describe('damage calculator (normal attacks)', () => {
 	const mobs = new Map(mobList(JSON.parse(fs.readFileSync(path.join(root, 'titanro/site/calc/mobs.json'), 'utf8'))).map((m) => [m.id, m]));
 	const damage = JSON.parse(fs.readFileSync(path.join(root, 'tests/site/damage-cases.json'), 'utf8'));
@@ -112,13 +121,26 @@ describe('damage calculator (normal attacks)', () => {
 	it('matches the server: lowest hit, critical hit, highest seen, hit, critical and double attack rates', () => {
 		const failures = [];
 		let doubles = 0;
+		let buffed = 0;
 		for (const c of damage.cases) {
 			if (c.skill) continue;
-			const got = normalAttack(data, c.input, mobs.get(c.mob));
+			const got = normalAttack(data, prepared(c.input), mobs.get(c.mob));
 			if (got.double) doubles++;
+			if (c.input.buffs) {
+				buffed++;
+				// the status window with the buffs; ASPD may be 1 ms off with a haste (the server's delay before it
+				// isn't a whole number)
+				const input = prepared(c.input);
+				const w = statusWindow(data, input);
+				for (const [field, want] of Object.entries(c.status || {})) {
+					const tol = field === 'amotion' && input.eq.aspdHaste ? 1 : 0;
+					if (Math.abs(w[field] - want) > tol) failures.push(`${c.id} ${field}: server ${want}, calculator ${w[field]}`);
+				}
+			}
 			checkNormal(c.id, got, c.expect, failures);
 		}
 		expect(doubles).toBeGreaterThan(100);
+		expect(buffed).toBeGreaterThan(300);
 		expect(failures.slice(0, 40)).toEqual([]);
 	});
 
@@ -130,7 +152,7 @@ describe('damage calculator (normal attacks)', () => {
 		let checked = 0;
 		for (const c of damage.cases) {
 			if (!c.skill || !offered.has(c.skill[0])) continue;
-			const got = skillAttack(data, c.input, mobs.get(c.mob), c.skill[0], c.skill[1]);
+			const got = skillAttack(data, prepared(c.input), mobs.get(c.mob), c.skill[0], c.skill[1]);
 			const e = c.expect;
 			checked++;
 			if (e.hit_kind !== 'hit') failures.push(`${c.id}: server min run was ${e.hit_kind}`);

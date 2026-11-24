@@ -39,6 +39,18 @@ function getShouldOpenWhisperBox(nickname) {
 }
 
 /**
+ * The sender id of a whisper as the official client prints it: decimal digits with a dash before the last
+ * three (801346 is "801-346"). The server sends a number that stays the same for a character.
+ *
+ * @param {number} id
+ * @returns {string}
+ */
+function formatSenderId(id) {
+	const digits = String(id >>> 0);
+	return digits.length > 3 ? `${digits.slice(0, -3)}-${digits.slice(-3)}` : digits;
+}
+
+/**
  * Main Player received PM
  *
  * @param {object} pkt - PACKET.ZC.WHISPER
@@ -57,8 +69,10 @@ function onPrivateMessage(pkt) {
 
 	// Fallback to main ChatBox
 	const sender = ChatBox.escapeHTML(pkt.sender);
+	// The sender id (0x9de only) follows the name, so two names that look alike can be told apart
+	const senderId = pkt.senderGID ? ` (${formatSenderId(pkt.senderGID)})` : '';
 	ChatBox.addText(
-		`[ ${ChatBox.escapeHTML(prefix)} <span class="nickname-link" data-nickname="${sender}" style="cursor:pointer; text-decoration:underline;">${sender}</span> ] : ${ChatBox.messageToHTML(msg)}`,
+		`[ ${ChatBox.escapeHTML(prefix)} <span class="nickname-link" data-nickname="${sender}" style="cursor:pointer; text-decoration:underline;">${sender}</span>${senderId} ] : ${ChatBox.messageToHTML(msg)}`,
 		ChatBox.TYPE.PRIVATE,
 		ChatBox.FILTER.WHISPER,
 		null,

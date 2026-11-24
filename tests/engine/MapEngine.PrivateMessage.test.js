@@ -22,6 +22,8 @@ vi.mock('UI/Components/ChatBox/ChatBox.js', () => ({
 	default: {
 		addText: (...args) => mocks.chat(...args),
 		saveNickName: vi.fn(),
+		escapeHTML: text => text,
+		messageToHTML: text => text,
 		PrivateMessageStorage: mocks.storage,
 		TYPE: { PRIVATE: 4, BLUE: 256 },
 		FILTER: { WHISPER: 2 }
@@ -134,5 +136,38 @@ describe('block list', () => {
 			['Alice', 256, 2],
 			['Bob Two', 256, 2]
 		]);
+	});
+});
+
+describe('received whispers', () => {
+	/** The text of the only chat line, without the markup around the name. */
+	function line() {
+		expect(mocks.chat).toHaveBeenCalledTimes(1);
+		return mocks.chat.mock.calls[0][0].replace(/<[^>]+>/g, '');
+	}
+
+	it('prints the sender id after the name with a dash before the last three digits', () => {
+		deliver(PACKET.ZC.WHISPER2, { senderGID: 801346, sender: 'Alice', isAdmin: 0, msg: 'psst' });
+
+		expect(line()).toBe('[ From Alice (801-346) ] : psst');
+	});
+
+	it.each([
+		[1234567, '1234-567'],
+		[1005, '1-005'],
+		[123, '123']
+	])('prints id %i as %s', (senderGID, text) => {
+		deliver(PACKET.ZC.WHISPER2, { senderGID, sender: 'Alice', isAdmin: 0, msg: 'psst' });
+
+		expect(line()).toBe(`[ From Alice (${text}) ] : psst`);
+	});
+
+	it('prints no id when the packet has none', () => {
+		deliver(PACKET.ZC.WHISPER2, { senderGID: 0, sender: 'Alice', isAdmin: 0, msg: 'psst' });
+		expect(line()).toBe('[ From Alice ] : psst');
+
+		mocks.chat.mockClear();
+		deliver(PACKET.ZC.WHISPER, { sender: 'Alice', isAdmin: 0, msg: 'psst' });
+		expect(line()).toBe('[ From Alice ] : psst');
 	});
 });

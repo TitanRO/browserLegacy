@@ -140,16 +140,23 @@ describe('block list', () => {
 });
 
 describe('received whispers', () => {
-	/** The text of the only chat line, without the markup around the name. */
+	/** The chat line of a whisper from Alice, with what follows her name inside the brackets. */
+	function lineWith(afterName) {
+		const name =
+			'<span class="nickname-link" data-nickname="Alice" style="cursor:pointer; text-decoration:underline;">Alice</span>';
+		return `[ From ${name}${afterName} ] : psst`;
+	}
+
+	/** The text of the only chat line. */
 	function line() {
 		expect(mocks.chat).toHaveBeenCalledTimes(1);
-		return mocks.chat.mock.calls[0][0].replace(/<[^>]+>/g, '');
+		return mocks.chat.mock.calls[0][0];
 	}
 
 	it('prints the sender id after the name with a dash before the last three digits', () => {
 		deliver(PACKET.ZC.WHISPER2, { senderGID: 801346, sender: 'Alice', isAdmin: 0, msg: 'psst' });
 
-		expect(line()).toBe('[ From Alice (801-346) ] : psst');
+		expect(line()).toBe(lineWith(' (801-346)'));
 	});
 
 	it.each([
@@ -159,15 +166,15 @@ describe('received whispers', () => {
 	])('prints id %i as %s', (senderGID, text) => {
 		deliver(PACKET.ZC.WHISPER2, { senderGID, sender: 'Alice', isAdmin: 0, msg: 'psst' });
 
-		expect(line()).toBe(`[ From Alice (${text}) ] : psst`);
+		expect(line()).toBe(lineWith(` (${text})`));
 	});
 
 	it('prints no id when the packet has none', () => {
 		deliver(PACKET.ZC.WHISPER2, { senderGID: 0, sender: 'Alice', isAdmin: 0, msg: 'psst' });
-		expect(line()).toBe('[ From Alice ] : psst');
+		expect(line()).toBe(lineWith(''));
 
 		mocks.chat.mockClear();
 		deliver(PACKET.ZC.WHISPER, { sender: 'Alice', isAdmin: 0, msg: 'psst' });
-		expect(line()).toBe('[ From Alice ] : psst');
+		expect(line()).toBe(lineWith(''));
 	});
 });

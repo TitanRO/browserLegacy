@@ -1,6 +1,6 @@
 # Pipelines-as-Code: the PR check "titanro-ci / pr" on pull requests to master, three tasks in parallel:
 # - image: build Dockerfile.titanro WITHOUT pushing it and scan it with Trivy against the image deployed now (pinned in
-#   TitanRO/sysops argo/prod-season/robrowser). Fails on a build error or on a NEW fixable HIGH/CRITICAL vulnerability.
+#   TitanRO/sysops argo/test-season/robrowser). Fails on a build error or on a NEW fixable HIGH/CRITICAL vulnerability.
 # - tests: vitest. lint: ESLint and the Prettier check, both always run (Task run-check in TitanRO/sysops: the PR
 #   code runs with no credentials). The pre-commit hook (lint-staged, installed by npm install) applies the same
 #   fixes on commit.
@@ -40,7 +40,7 @@ spec:
                   - { name: context, value: . }
                   - { name: dockerfile, value: Dockerfile.titanro }
                   - { name: image-name, value: robrowser }
-                  - { name: sysops-path, value: argo/prod-season/robrowser }
+                  - { name: sysops-path, value: argo/test-season/robrowser }
               workspaces:
                   - { name: github-app, workspace: github-app }
                   - { name: dockerconfig, workspace: docr-pull }

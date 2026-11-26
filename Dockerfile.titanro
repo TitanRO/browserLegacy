@@ -1,7 +1,9 @@
 # TitanRO image (upstream's Dockerfile is left untouched for their docker-compose setups).
 # doctl registry login --expiry-seconds 3600 && docker build -f Dockerfile.titanro -t registry.digitalocean.com/titanro-nyc/robrowserlegacy . && docker image push registry.digitalocean.com/titanro-nyc/robrowserlegacy
 # Normally built by Tekton Pipelines-as-Code (.tekton/push.yaml) on pushes to master; titanro-ci[bot] pins the digest in
-# TitanRO/sysops argo/prod-season/robrowser and argo/test-season/robrowser, and Argo CD deploys it.
+# TitanRO/sysops argo/test-season/robrowser (test.titanro.net, against the auriga test server), and Argo CD deploys it.
+# play.titanro.net no longer runs this image: players use the Rust client's web build there, and TitanRO's site pages
+# (market, WoE tracker, calculators, ...) are TitanRO/titanro-site.
 
 # -slim: the full image only adds build tools Vite doesn't need, and costs kaniko ~25 s more to unpack per build.
 FROM node:24.22.2-slim AS node
@@ -34,11 +36,9 @@ RUN a2enmod rewrite
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
 # dist/Web: index.html, Config.js (upstream defaults), Online.js, ThreadEventHandler.js, PathFindingWorker.js, and
-# WoeViewer.js (titanro/site/woe-view-legacy.html's castle stills; players open stills in the Rust web build at
-# /game/?view=woe&id=N, and woe-view.html sends old links there).
+# WoeViewer.js (castle stills; no page here loads it any more: stills open in the Rust web build at
+# play.titanro.net/game/?view=woe&id=N).
 # Plugins in src/Plugins are bundled into Online.js. Config.local.js holds our settings (merged over Config.js).
 # --chown instead of a later `RUN chown -R`, which re-wrote every file into a second layer.
 COPY --chown=www-data:www-data --from=node /usr/app/dist/Web /var/www/html
 COPY --chown=www-data:www-data ./Config.local.js /var/www/html/
-# TitanRO's own pages next to the client (market, ...): they read public game data from the account service at runtime.
-COPY --chown=www-data:www-data ./titanro/site/ /var/www/html/

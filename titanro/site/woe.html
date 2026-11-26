@@ -80,7 +80,7 @@
 					[String(s.units), 'num']
 				]);
 				var a = el('a', s.kind === 'BREAK' ? 'Emperium broken' : 'WoE ended');
-				a.href = 'woe-view.html?id=' + encodeURIComponent(s.id);
+				a.href = 'game/?view=woe&id=' + encodeURIComponent(s.id);
 				tr.children[2].appendChild(a);
 				stills.appendChild(tr);
 			});
